@@ -231,3 +231,28 @@ these tests. A full future source-release rebuild/apply remains an E2E gate.
 
 Current frozen paired/audio beta eboot SHA256: `11c2d3b4ae3eee8d4735cbaf6c4d1acd822ed37c5866efad7f0e77f8117dfcca`.
 Its 34-file app manifest is frozen privately; the candidate is not deployed.
+
+## Next optional controls candidate (offline, 2026-10-14)
+
+- Actual patched runtime input with SDL virtual controller and snapshot backend:
+  A/B/Z/L/R/Start, activation boundaries after upstream deadzone normalization,
+  simultaneous accelerator/brake, Cross/Square alternatives, touchpad shortcut,
+  neutral blocked/disconnected input, source uniqueness and four-player isolation pass.
+- Actual settings binding writer records/loader and controls snapshot round-trip pass;
+  no settings file schema or save directory change. This isolates the binding records,
+  not the full native filesystem settings lifecycle.
+- Actual preset and binding-row functions with real ImGui gamepad navigation pass:
+  labels, vertical geometry, scrolling, Down/Up order, activation/capture and undo.
+  Fixture presentation helpers replace fonts/device discovery; physical rendering is pending.
+- Actual capture handler passes modeled controller ownership, touchpad cancellation
+  without saving, bindable Circle and trigger capture boundary checks.
+- Native target compilation, linking and FSELF integrity inspection pass. Only the
+  candidate executable changes relative to the frozen private beta.1 app bundle.
+- No console contact or installation in this offline work. Conventional trigger
+  controls are not adaptive-trigger resistance, detailed haptics or native gyro support.
+
+Reproduce the ROM-free controls tests after source preparation:
+`python3 tools/test_controller_presets.py ABSOLUTE_GAME_WORK`.
+Alternatively, omit the work path to fetch/hash-check only the pinned public DKR-R
+and ImGui inputs. `--cache ABSOLUTE_DOWNLOAD_CACHE` can avoid those downloads.
+SDL2 development headers/library and Clang are required. ASan/UBSan are enabled.

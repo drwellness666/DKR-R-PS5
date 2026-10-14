@@ -239,3 +239,9 @@ ROMs and saved progress stay in place. The beta has no in-game automatic install
 [DUALSENSE_CONCEPT.md](DUALSENSE_CONCEPT.md) audits the native controller backend
 and proposes optional gyro, light, adaptive-trigger and haptic improvements.
 These are future features, not active promises of this beta.
+
+The next optional controls candidate adds a per-player **R2 / L2 driving** preset,
+classic layout/undo, PlayStation button names and vertically navigated binding fields.
+[Mapping and local test boundaries](CONSOLE_FEATURES.md#optional-dualsense-driving-layout).
+Physical PS5 acceptance is pending; this does not advertise adaptive resistance or
+native gyro. The published beta.1 snapshot remains available unchanged.

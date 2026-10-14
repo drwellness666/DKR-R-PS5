@@ -357,9 +357,32 @@
   "current_render_diagnostic_count": 9,
   "source_release_updater": "PASS offline fixture digest/extraction/channel/redirect authorization guards; no authenticated network or full future update E2E yet.",
   "private_beta_source_CI_local": {
-    "passed": 21,
-    "total": 21,
+    "passed": 22,
+    "total": 22,
     "github_actions_executed": false,
-    "scope": "Actual exported source workflow commands; no console, game ROM or matchmaking connection"
+    "scope": "21 actual adapter/source workflow commands plus complete current source SHA256 inventory; no console/game ROM/matchmaking connection"
+  },
+  "dualsense_concept": "Research only: pinned native SDL sensors/adaptive effects unsupported; ordinary rumble/LED paths exist; no new effects in current candidate.",
+  "source_release_actual_archive_roundtrip": "PASS own real ROM-free asset through actual source updater/extraction, clean-source scan and all source SHA256; no network/build/console operation.",
+  "next_optional_controller_candidate": {
+    "title_id": "PPSA94678",
+    "eboot_sha256": "2f6d93a87cc7c7155b9ba42ed26a63775d133ce807d22ddf862e2d2843c7316e",
+    "app_manifest_sha256": "63ff7081de436bdb5b8933389efee214c99449faa508108aaec2b2f552f4dd48",
+    "native_integrity": "PASS",
+    "console_deployed": false,
+    "console_tested": false,
+    "changes": [
+      "eboot.bin"
+    ],
+    "controller_presets": [
+      "Classic",
+      "R2/L2 driving"
+    ],
+    "per_player": true,
+    "settings_schema_unchanged": true,
+    "default_mapping_unchanged": true,
+    "advanced_effects_added": false,
+    "frame_input_path_unchanged": true,
+    "actual_runtime_settings_navigation_and_capture": "Locally tested; hardware acceptance pending"
   }
 }

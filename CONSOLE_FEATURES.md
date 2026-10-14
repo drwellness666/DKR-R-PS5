@@ -54,6 +54,48 @@ the current port. PAL support would require independently matching its CPU
 payload, revision addresses/hooks, ROM identity, video cadence and runtime data;
 renaming a PAL file or allowing its hash alone does not provide that support.
 
+## Optional DualSense driving layout
+
+The next controls candidate adds **Controls → Button mapping → Driving layout**.
+It starts with the existing bindings; no update silently selects a new preset.
+Choose **R2 / L2 driving** for the selected player, or **Classic DKR controls** to
+restore the original controller layout. A preset replaces that player's controller
+bindings, retains their keyboard mappings, and leaves other players and overlay
+shortcuts alone. **Undo** restores the previous controls snapshot on this page.
+Changes use the existing per-player settings records in the active US revision's
+profile; no new save layout or preset preference file is introduced.
+
+| Action | R2 / L2 driving layout |
+| --- | --- |
+| Accelerate / original N64 A | R2 or Cross |
+| Brake / original N64 B | L2 or Square |
+| Item / original N64 Z | L1 |
+| Drift / original N64 R | R1 |
+| Original N64 L | Triangle |
+| Pause / original Start | Options |
+| Recompiled menu | Touchpad, existing shortcut |
+| Steering / C-button camera inputs | Existing stick mappings |
+
+The bindings preserve the original digital N64 A/B actions in **Accurate** and
+**Modern**. They do not add analog throttle, brake physics or adaptive resistance.
+Existing upstream axis deadzone/normalization remains intact: the half-value
+activation threshold applies after normalization, not at half physical trigger
+travel. A/B do not use Modern's separate Z/Accelerate trigger-threshold setting.
+
+On PS5 the mapping fields use PlayStation names and appear vertically, with the
+primary binding followed by its alternate. During binding capture, the assigned
+player's **Touchpad cancels** without saving a new binding; Circle remains available
+as a bindable input. The existing global Touchpad shortcut may also return Player 1
+to the race. Device assignment and global shortcuts retain their existing ownership.
+
+Local tests exercise the actual runtime input through both SDL virtual controllers
+and controller snapshots, actual settings binding records/loader and undo snapshot,
+plus actual preset/binding rows with real ImGui gamepad navigation. The capture
+handler is tested with modeled device ownership. Native compilation/link/FSELF
+inspection passes. Physical trigger feel, controller menu navigation and native
+settings persistence still require the next PS5 session. The published beta.1
+snapshot is preserved while this separate controls candidate is qualified.
+
 ## Controller Pak and Rumble Pak
 
 Upstream provides four virtual 32-KiB Controller Pak images, separate from

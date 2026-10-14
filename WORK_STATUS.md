@@ -85,3 +85,14 @@ kontrollierte RADV-Diskcache-Vergleich ist über `shader_cache=1` vorbereitet,
 standardmäßig aber aus. Ohne Konsolenvergleich wird keine Rucklerkorrektur behauptet.
 Der Quellrelease-Prüfer und Download sowie der explizite lokale Updatebuild sind
 umgesetzt; automatische Installation im laufenden Spiel ist kein Beta-Feature.
+
+## Optionales Controllerprofil, 2026-10-14
+
+Ein separater nächster Teststand enthält pro Spieler R2/L2-Gas/Bremse mit L1-Items,
+klassische Belegung und Rückgängig, PlayStation-Tastennamen und vertikale
+Belegungsfelder. Die tatsächlichen Eingabe-, Settings-, Capture- und
+ImGui-Navigationstests sowie nativer Build/Link sind lokal geprüft. Der bisher
+gefrorene Beta.1-Kandidat und seine Rückfallartefakte bleiben erhalten. Keine
+Konsolenverbindung/Installation; physische Eingaben und Speichern/Wiederladen auf
+PS5 stehen noch aus. Adaptive Trigger, detaillierte Haptik und native Gyro-Samples
+sind weiterhin Vorhaben mit den dokumentierten Backend-Grenzen.
