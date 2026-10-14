@@ -218,8 +218,7 @@ before a fresh game log, including the restored previously accepted single
 US build. This does not isolate the dual code as their cause. The console is
 powered off and the new language candidate has not been deployed or tested on it.
 
-[TITLE_PRESENTATION.md](TITLE_PRESENTATION.md) records the home-menu-only art policy,
-the paired-image policy and unresolved Shell background registration. The
+[TITLE_PRESENTATION.md](TITLE_PRESENTATION.md) records the paired selection/launch image policy and unresolved Shell background registration. The
 latest candidate also removes the extra narrow native sidebar stripe; actual
 Play-page gamepad navigation and absence of marker geometry pass local tests.
 
@@ -236,3 +235,7 @@ exclusive disk cache for a cold/warm comparison; it remains off by default.
 [UPDATE_GUIDE.md](UPDATE_GUIDE.md) documents verified port-source release checking,
 local private rebuilds and incremental updates with an exact rollback. Unchanged
 ROMs and saved progress stay in place. The beta has no in-game automatic installer.
+
+[DUALSENSE_CONCEPT.md](DUALSENSE_CONCEPT.md) audits the native controller backend
+and proposes optional gyro, light, adaptive-trigger and haptic improvements.
+These are future features, not active promises of this beta.
