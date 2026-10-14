@@ -1,0 +1,18 @@
+{
+  "plume_commit": "d890ac899e505fb30040e037a4037cdeca68f033",
+  "files": {
+    "plume_render_interface_types.h": {
+      "original_sha256": "9ff137103bbfa63c66f1f23a926f7efad6aaebbafb0554df9966e1978246d17b",
+      "patched_sha256": "0207a4e8b3e4a3795aac59c54aa563095c6201da5db798e95e4ae4649abcb641"
+    },
+    "plume_vulkan.h": {
+      "original_sha256": "ca8f3abc3507e61da6e85e7acc30168ec6cc41adf7a368db1947cb6995554977",
+      "patched_sha256": "421582b55ba2a0afcdf721b8d8ccbe8cf4fcb95c6b07960d83c3894458aa5526"
+    },
+    "plume_vulkan.cpp": {
+      "original_sha256": "70ecc88658c7231497836d15ea9f98d80861a6e991cc6128d40c7ac980193038",
+      "patched_sha256": "dd399685d800804d116a1283e6d392c5f72037855ff8db8353b5252eb4eec78f"
+    }
+  },
+  "patch_sha256": "d2288b2051193e56a5c802a4135aa754fbb100aa06e641cc48f0aa24e9fb2272"
+}

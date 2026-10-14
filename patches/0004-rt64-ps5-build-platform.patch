@@ -1,0 +1,197 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -69,10 +69,25 @@
+ set(ZSTD_BUILD_STATIC ON)
+ set(ZSTD_BUILD_SHARED OFF)
+ 
+-add_subdirectory(src/tools/file_to_c)
++if(PS5)
++    if(NOT EXISTS "${DKR_PS5_FILE_TO_C}")
++        message(FATAL_ERROR "Set DKR_PS5_FILE_TO_C to the native host helper")
++    endif()
++    add_executable(file_to_c IMPORTED GLOBAL)
++    set_target_properties(file_to_c PROPERTIES IMPORTED_LOCATION "${DKR_PS5_FILE_TO_C}")
++else()
++    add_subdirectory(src/tools/file_to_c)
++endif()
+ add_subdirectory(src/contrib/re-spirv)
+-add_subdirectory(src/contrib/nativefiledialog-extended)
++if(NOT PS5)
++    add_subdirectory(src/contrib/nativefiledialog-extended)
++endif()
+ add_subdirectory(src/contrib/zstd/build/cmake)
++if(PS5)
++    # Native SCE imports cannot represent optional unresolved ELF weak hooks.
++    # These are profiling callbacks; the supported switch keeps compression intact.
++    target_compile_definitions(libzstd_static PRIVATE ZSTD_TRACE=0)
++endif()
+ 
+ if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND RT64_SDL_WINDOW_VULKAN)
+     set(PLUME_SDL_VULKAN_ENABLED TRUE)
+@@ -290,7 +305,15 @@
+     set(SDL2_LIBRARIES "SDL2" "SDL2main")
+     link_directories("${PROJECT_SOURCE_DIR}/src/contrib/mupen64plus-win32-deps/SDL2-2.26.3/lib/x64")
+ else()
+-    find_package(SDL2 REQUIRED)
++    if(PS5)
++        if(NOT EXISTS "${DKR_PS5_SDL_SOURCE}/include/SDL.h" OR NOT EXISTS "${DKR_PS5_SDL_ARCHIVE}")
++            message(FATAL_ERROR "Set DKR_PS5_SDL_SOURCE and DKR_PS5_SDL_ARCHIVE")
++        endif()
++        set(SDL2_INCLUDE_DIRS "${DKR_PS5_SDL_SOURCE}/include")
++        set(SDL2_LIBRARIES "${DKR_PS5_SDL_ARCHIVE}")
++    else()
++        find_package(SDL2 REQUIRED)
++    endif()
+ endif()
+ 
+ message(STATUS "${SDL2_INCLUDE_DIRS} ${SDL2_LIBRARIES}")
+@@ -441,13 +464,17 @@
+ 
+ # Add common libraries.
+ target_link_libraries(rt64 re-spirv)
+-target_link_libraries(rt64 nfd)
++if(NOT PS5)
++    target_link_libraries(rt64 nfd)
++endif()
+ target_link_libraries(rt64 libzstd_static)
+ target_link_libraries(rt64 plume)
+ 
+ # Add tools.
+-add_subdirectory(src/tools/texture_hasher)
+-add_subdirectory(src/tools/texture_packer)
++if(NOT PS5)
++    add_subdirectory(src/tools/texture_hasher)
++    add_subdirectory(src/tools/texture_packer)
++endif()
+ 
+ # Add any Apple-specific source files and libraries
+ if (APPLE)
+--- a/src/hle/rt64_application_window.cpp
++++ b/src/hle/rt64_application_window.cpp
+@@ -82,6 +82,14 @@
+     void ApplicationWindow::setup(const char *windowTitle, Listener *listener) {
+         assert(windowTitle != nullptr);
+ 
++#if defined(__PROSPERO__)
++        // KHR_display owns VideoOut on PS5. Do not also create an SDL software
++        // video window; SDL controller/audio events remain independent.
++        setup(static_cast<RenderWindow>(this), listener, 0);
++        fullScreen = true;
++        refreshRate = 60;
++        return;
++#else
+         // Find the right window dimension and placement.
+         const int Width = 1280;
+         const int Height = 720;
+@@ -169,6 +177,7 @@
+ #   else
+         setup(windowHandle, listener, pthread_self());
+ #   endif
++#endif
+     }
+ 
+     void ApplicationWindow::setFullScreen(bool newFullScreen) {
+@@ -227,6 +236,9 @@
+         }
+ 
+         fullScreen = newFullScreen;
++#   elif defined(__PROSPERO__)
++        // Direct display always fills the console output.
++        fullScreen = true;
+ #   elif defined(__APPLE__)
+         windowWrapper->toggleFullscreen();
+ #   elif defined(RT64_SDL_WINDOW_VULKAN)
+@@ -249,7 +261,11 @@
+     }
+ 
+     void ApplicationWindow::detectRefreshRate() {
+-#   if defined(_WIN32)
++#   if defined(__PROSPERO__)
++        // The display swapchain supplies its measured rate to presentation;
++        // retain a conservative 60 Hz window hint for the integer fallback.
++        refreshRate = 60;
++#   elif defined(_WIN32)
+         HMONITOR monitor = MonitorFromWindow(windowHandle, MONITOR_DEFAULTTONEAREST);
+         MONITORINFOEX info = {};
+         info.cbSize = sizeof(info);
+--- a/src/common/rt64_thread.cpp
++++ b/src/common/rt64_thread.cpp
+@@ -10,8 +10,11 @@
+ #if defined(_WIN64)
+ #   include <Windows.h>
+ #   include "utf8conv/utf8conv.h"
+-#elif defined(__linux__)
++#elif defined(__linux__) || defined(__PROSPERO__)
+ #   include <pthread.h>
++#   if defined(__PROSPERO__)
++#       include <pthread_np.h>
++#   endif
+ #endif
+ 
+ namespace RT64 {
+@@ -43,6 +46,8 @@
+ #   if defined(_WIN32)
+         std::wstring nameWide = win32::Utf8ToUtf16(str);
+         SetThreadDescription(GetCurrentThread(), nameWide.c_str());
++#   elif defined(__PROSPERO__)
++        pthread_set_name_np(pthread_self(), str.c_str());
+ #   elif defined(__linux__)
+         pthread_setname_np(pthread_self(), str.c_str());
+ #   elif defined(__APPLE__)
+@@ -55,6 +60,9 @@
+     void Thread::setCurrentThreadPriority(Priority priority) {
+ #   if defined(_WIN32)
+         SetThreadPriority(GetCurrentThread(), toWindowsPriority(priority));
++#   elif defined(__PROSPERO__)
++        // Preserve the console's default scheduling policy during bring-up.
++        (void)priority;
+ #   elif defined(__linux__) || defined(__APPLE__)
+         // On Linux, thread priorities can't be changed under the default scheduler policy (SCHED_OTHER) and the other policies
+         // that are available without root privileges are lower priority. Instead you can set the thread's "nice" value, which ranges
+--- a/src/common/rt64_user_paths.cpp
++++ b/src/common/rt64_user_paths.cpp
+@@ -24,7 +24,9 @@
+     std::filesystem::path UserPaths::detectDataPath(const std::filesystem::path &appId) {
+         std::filesystem::path resultPath;
+ 
+-#   if defined(_WIN32)
++#   if defined(__PROSPERO__)
++        resultPath = std::filesystem::path("/data/dkrr") / appId.filename();
++#   elif defined(_WIN32)
+         PWSTR knownPath = NULL;
+         HRESULT result = SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &knownPath);
+         if (result == S_OK) {
+--- a/src/gui/rt64_file_dialog.cpp
++++ b/src/gui/rt64_file_dialog.cpp
+@@ -6,13 +6,24 @@
+ 
+ #include <cassert>
+ 
++#if !defined(__PROSPERO__)
+ #include <nfd.h>
++#endif
+ 
+ namespace RT64 {
+     // FileDialog
+ 
+     std::atomic<bool> FileDialog::isOpen = false;
+ 
++#if defined(__PROSPERO__)
++    // Desktop file dialogs do not exist on PS5. Return the normal cancelled
++    // result; the game host supplies its own controller-based ROM selection.
++    void FileDialog::initialize() {}
++    void FileDialog::finish() {}
++    std::filesystem::path FileDialog::getDirectoryPath() { return {}; }
++    std::filesystem::path FileDialog::getOpenFilename(const std::vector<FileFilter> &) { return {}; }
++    std::filesystem::path FileDialog::getSaveFilename(const std::vector<FileFilter> &) { return {}; }
++#else
+     void FileDialog::initialize() {
+         NFD_Init();
+     }
+@@ -76,4 +87,5 @@
+         isOpen = false;
+         return path;
+     }
++#endif
+ };
+\ No newline at end of file

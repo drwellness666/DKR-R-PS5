@@ -1,0 +1,215 @@
+--- a/src/video/ps5/SDL_ps5video.c
++++ b/src/video/ps5/SDL_ps5video.c
+@@ -24,6 +24,11 @@
+ #ifdef SDL_VIDEO_DRIVER_PS5
+ 
+ #include <errno.h>
++#include <stdio.h>
++#include <sys/mman.h>
++
++/* DKR-R diagnostic adaptation: size buffers for 1080p, log SCE codes,
++ * and clean up allocated/mapped memory on partial initialization failure. */
+ 
+ #include "SDL_ps5video.h"
+ #include "SDL_ps5keyboard.h"
+@@ -73,6 +78,7 @@
+     SDL_Surface *surface;
+     struct kevent evt;
+     int junk;
++    int rc;
+ 
+     surface = window->surface;
+     if (!surface) {
+@@ -98,12 +104,18 @@
+                          (device_data->surface->h - surface->h) / 2);
+     }
+ 
+-    if (sceVideoOutSubmitFlip(device_data->handle, idx, 1, frame_id)) {
+-        return SDL_SetError("sceVideoOutSubmitFlip: %s", strerror(errno));
+-    }
+-
+-    if (sceKernelWaitEqueue(device_data->evt_queue, &evt, 1, &junk, 0)) {
+-        return SDL_SetError("sceKernelWaitEqueue: %s", strerror(errno));
++    errno = 0;
++    rc = sceVideoOutSubmitFlip(device_data->handle, idx, 1, frame_id);
++    if (rc) {
++        return SDL_SetError("sceVideoOutSubmitFlip: rc=0x%08x errno=%d (%s)",
++                            (unsigned)rc, errno, strerror(errno));
++    }
++
++    errno = 0;
++    rc = sceKernelWaitEqueue(device_data->evt_queue, &evt, 1, &junk, 0);
++    if (rc) {
++        return SDL_SetError("sceKernelWaitEqueue: rc=0x%08x errno=%d (%s)",
++                            (unsigned)rc, errno, strerror(errno));
+     }
+     frame_id++;
+ 
+@@ -192,6 +204,8 @@
+     SDL_DisplayMode mode;
+     PS5_VideoAttr vattr;
+     void *vaddr = 0;
++    size_t buffer_size;
++    int rc;
+ 
+     SDL_zero(mode);
+     mode.format = SDL_PIXELFORMAT_ABGR8888;
+@@ -205,40 +219,65 @@
+     sceSystemServiceHideSplashScreen();
+     device_data->handle = sceVideoOutOpen(0xff, 0, 0, NULL);
+     if (device_data->handle < 0) {
+-        return SDL_SetError("sceVideoOutOpen: %s", strerror(errno));
+-    }
+-    device_data->memsize = 0x4000000;
+-    if (sceKernelAllocateMainDirectMemory(device_data->memsize, 0x20000, 3,
+-                                          &device_data->paddr)) {
+-        return SDL_SetError("sceKernelAllocateMainDirectMemory: %s",
+-                            strerror(errno));
+-    }
+-
+-    if (sceKernelMapDirectMemory(&vaddr, device_data->memsize, 0x33, 0,
+-                                 device_data->paddr, 0x20000)) {
+-        return SDL_SetError("sceKernelMapDirectMemory: %s", strerror(errno));
+-    }
++        return SDL_SetError("sceVideoOutOpen: rc=0x%08x errno=%d (%s)",
++                            (unsigned)device_data->handle, errno, strerror(errno));
++    }
++    /* Use the backend's tiled layout, then align each buffer to 128 KiB.
++     * At 1920x1080 this requires 8.5 MiB per buffer, 17 MiB total. */
++    buffer_size = (PS5_Tilemap_BufferSize(mode.w, mode.h) + 0x1ffff) & ~(size_t)0x1ffff;
++    device_data->memsize = 2 * buffer_size;
++    fprintf(stderr, "ps5-video: mode=%dx%d direct-bytes=%zu per-buffer=%zu\n",
++            mode.w, mode.h, device_data->memsize, buffer_size);
++    errno = 0;
++    rc = sceKernelAllocateMainDirectMemory(device_data->memsize, 0x20000, 3,
++                                           &device_data->paddr);
++    if (rc) {
++        return SDL_SetError("sceKernelAllocateMainDirectMemory: rc=0x%08x bytes=%zu errno=%d (%s)",
++                            (unsigned)rc, device_data->memsize, errno, strerror(errno));
++    }
++    device_data->memory_allocated = 1;
++
++    errno = 0;
++    rc = sceKernelMapDirectMemory(&vaddr, device_data->memsize, 0x33, 0,
++                                  device_data->paddr, 0x20000);
++    if (rc) {
++        return SDL_SetError("sceKernelMapDirectMemory: rc=0x%08x errno=%d (%s)",
++                            (unsigned)rc, errno, strerror(errno));
++    }
++    device_data->memory_mapped = 1;
+ 
+     device_data->vbuf[0].data = vaddr;
+     device_data->vbuf[1].data = vaddr + (device_data->memsize / 2);
+ 
+-    if (sceKernelCreateEqueue(&device_data->evt_queue, "flip queue")) {
+-        return SDL_SetError("sceKernelCreateEqueue: %s", strerror(errno));
+-    }
+-
+-    if (sceVideoOutAddFlipEvent(device_data->evt_queue, device_data->handle, 0)) {
+-        return SDL_SetError("sceVideoOutAddFlipEvent: %s", strerror(errno));
+-    }
+-    if (sceVideoOutSetFlipRate(device_data->handle, 0)) {
+-        return SDL_SetError("sceVideoOutSetFlipRate: %s", strerror(errno));
++    errno = 0;
++    rc = sceKernelCreateEqueue(&device_data->evt_queue, "flip queue");
++    if (rc) {
++        return SDL_SetError("sceKernelCreateEqueue: rc=0x%08x errno=%d (%s)",
++                            (unsigned)rc, errno, strerror(errno));
++    }
++
++    errno = 0;
++    rc = sceVideoOutAddFlipEvent(device_data->evt_queue, device_data->handle, 0);
++    if (rc) {
++        return SDL_SetError("sceVideoOutAddFlipEvent: rc=0x%08x errno=%d (%s)",
++                            (unsigned)rc, errno, strerror(errno));
++    }
++    errno = 0;
++    rc = sceVideoOutSetFlipRate(device_data->handle, 0);
++    if (rc) {
++        return SDL_SetError("sceVideoOutSetFlipRate: rc=0x%08x errno=%d (%s)",
++                            (unsigned)rc, errno, strerror(errno));
+     }
+ 
+     sceVideoOutSetBufferAttribute2(&vattr, 0x8000000022000000UL, 0,
+                                    mode.w, mode.h, 0, 0, 0);
+ 
+-    if (sceVideoOutRegisterBuffers2(device_data->handle, 0, 0,
+-                                    device_data->vbuf, 2, &vattr, 0, NULL)) {
+-        return SDL_SetError("sceVideoOutRegisterBuffers2: %s", strerror(errno));
++    errno = 0;
++    rc = sceVideoOutRegisterBuffers2(device_data->handle, 0, 0,
++                                    device_data->vbuf, 2, &vattr, 0, NULL);
++    if (rc) {
++        return SDL_SetError("sceVideoOutRegisterBuffers2: rc=0x%08x errno=%d (%s)",
++                            (unsigned)rc, errno, strerror(errno));
+     }
+ 
+     device_data->surface = SDL_CreateRGBSurfaceWithFormat(0, mode.w, mode.h, 32,
+@@ -264,21 +303,34 @@
+ static void PS5_VideoQuit(_THIS)
+ {
+     PS5_DeviceData *device_data = (PS5_DeviceData *)_this->driverdata;
+-
+-    if (device_data->handle != 0) {
++    int rc;
++
++    if (device_data->evt_queue) {
++        sceVideoOutDeleteFlipEvent(device_data->evt_queue, device_data->handle);
++        sceKernelDeleteEqueue(device_data->evt_queue);
++        device_data->evt_queue = NULL;
++    }
++    if (device_data->handle >= 0) {
+         sceVideoOutClose(device_data->handle);
+-        device_data->handle = 0;
+-    }
+-
+-    if (device_data->paddr) {
+-        sceKernelReleaseDirectMemory(device_data->paddr, device_data->memsize);
++        device_data->handle = -1;
++    }
++    if (device_data->memory_mapped) {
++        if (munmap(device_data->vbuf[0].data, device_data->memsize)) {
++            fprintf(stderr, "ps5-video: munmap failed errno=%d (%s)\n", errno, strerror(errno));
++        }
++        device_data->memory_mapped = 0;
++    }
++    if (device_data->memory_allocated) {
++        rc = sceKernelReleaseDirectMemory(device_data->paddr, device_data->memsize);
++        if (rc) {
++            fprintf(stderr, "ps5-video: release failed rc=0x%08x\n", (unsigned)rc);
++        }
++        device_data->memory_allocated = 0;
+         device_data->paddr = 0;
+-        device_data->memsize = 0;
+-    }
+-    if (device_data->evt_queue) {
+-        sceKernelDeleteEqueue(device_data->evt_queue);
+-    }
+-
++    }
++    device_data->memsize = 0;
++    SDL_FreeSurface(device_data->surface);
++    device_data->surface = NULL;
+     PS5_Tilemap_Destroy(device_data->tmap);
+     device_data->tmap = NULL;
+ }
+@@ -320,6 +372,8 @@
+         SDL_OutOfMemory();
+         return NULL;
+     }
++
++    ((PS5_DeviceData *)device->driverdata)->handle = -1;
+ 
+     PS5_Remote_Init();
+     PS5_Keyboard_Init();
+--- a/src/video/ps5/SDL_ps5video.h
++++ b/src/video/ps5/SDL_ps5video.h
+@@ -45,6 +45,8 @@
+     struct kevent *evt_queue;
+     intptr_t paddr;
+     size_t memsize;
++    int memory_allocated;
++    int memory_mapped; /* DKR-R adaptation: track successful init stages. */
+     SDL_Surface *surface;
+     PS5_Tilemap* tmap;
+ } PS5_DeviceData;

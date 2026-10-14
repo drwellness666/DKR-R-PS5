@@ -1,0 +1,26 @@
+{
+  "revision": "6f1c2d99a4ea571c139f449c326fd176ba8f3496",
+  "patch_sha256": "3cedbce812cd37d3ee2c7da98d6ad6e75a66d8bda79024477bcb9d439957f768",
+  "files": {
+    "CMakeLists.txt": {
+      "original_sha256": "4d6cb49be103302c019405794995aac6b526b759f257f4786a7a2a00d4de3fa2",
+      "patched_sha256": "be84b41e30ff423cd3d25d4f199c1b4617fc02522d2b039aaec012ddb256b15b"
+    },
+    "src/hle/rt64_application_window.cpp": {
+      "original_sha256": "75df5c4be1c41cd05cfa016d88c3b590629efcbd89d8aaf908e3ebcebcc34c94",
+      "patched_sha256": "20fb71f53cf59880378ca012df13378b8f73a9bfbbe0a4c91d50dcafcc76ab29"
+    },
+    "src/common/rt64_thread.cpp": {
+      "original_sha256": "0f1f64aa782995439edc2ccde75652ef8b6f819a8c353f6047bf848b6ed76a68",
+      "patched_sha256": "0c01d9698d5fdd5ee1f923e5cadc9e5856659296238db6306db45d6d9e79ddcf"
+    },
+    "src/common/rt64_user_paths.cpp": {
+      "original_sha256": "c0a423f39533bbd5df159a9a873648aa10468d9c5cf1a2385075b03ef97f436a",
+      "patched_sha256": "cd9107f63f3b310e902a4ccfe9efb79d167c2e48696a4cb78897fcd3d983cbc8"
+    },
+    "src/gui/rt64_file_dialog.cpp": {
+      "original_sha256": "34350d2dfa1efc270c78f26447fe5b5af87fa6f151a91082298008711b533ddf",
+      "patched_sha256": "9bf3b2f04860d166da4fded152da7db3d3a8a715552fd40be888f9516c807b09"
+    }
+  }
+}

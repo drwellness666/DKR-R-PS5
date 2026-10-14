@@ -1,0 +1,935 @@
+--- a/runtime-recomp/CMakeLists.txt
++++ b/runtime-recomp/CMakeLists.txt
+@@ -1,6 +1,11 @@
+ cmake_minimum_required(VERSION 3.24)
+ 
+ project(DKRRuntimePreparation LANGUAGES C CXX)
++if(PS5)
++    # libc++18 exposes the header-only C++20 cancellation APIs behind this gate.
++    # Avoid -fexperimental-library, which adds an absent desktop-only archive.
++    add_compile_definitions(_LIBCPP_ENABLE_EXPERIMENTAL)
++endif()
+ if(APPLE)
+     enable_language(OBJC OBJCXX)
+ endif()
+@@ -126,8 +131,30 @@
+ option(DKR_NETPLAY_WEBRTC "Build the optional five-character Quick Join transport" ON)
+ include(cmake/DependencyPreflight.cmake)
+ 
++set(DKR_PAYLOAD_V77_ENABLED 1)
++set(DKR_PAYLOAD_V80_ENABLED 1)
++if(PS5)
++    set(DKR_PS5_REVISIONS "77;80" CACHE STRING "Owned PS5 ROM payloads: 77, 80, or 77;80")
++    set(DKR_PAYLOAD_V77_ENABLED 0)
++    set(DKR_PAYLOAD_V80_ENABLED 0)
++    foreach(revision IN LISTS DKR_PS5_REVISIONS)
++        if(revision STREQUAL "77")
++            set(DKR_PAYLOAD_V77_ENABLED 1)
++        elseif(revision STREQUAL "80")
++            set(DKR_PAYLOAD_V80_ENABLED 1)
++        else()
++            message(FATAL_ERROR "Unsupported PS5 ROM revision: ${revision}")
++        endif()
++    endforeach()
++    if(NOT DKR_PAYLOAD_V77_ENABLED AND NOT DKR_PAYLOAD_V80_ENABLED)
++        message(FATAL_ERROR "Select at least one owned PS5 ROM revision")
++    endif()
++    file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/dkr-ps5-profile.json"
++        CONTENT "{\"v77\":${DKR_PAYLOAD_V77_ENABLED},\"v80\":${DKR_PAYLOAD_V80_ENABLED},\"interface_fonts\":\"Selawik-OFL\"}\n")
++endif()
++
+ if(DKR_RUNTIME_BUILD_GENERATED)
+-    if(DKR_GENERATED_SOURCE_V80 STREQUAL "")
++    if(DKR_PAYLOAD_V80_ENABLED AND DKR_GENERATED_SOURCE_V80 STREQUAL "")
+         message(FATAL_ERROR
+             "DKR_GENERATED_SOURCE_V80 must name the generated US Rev A/v1.1 "
+             "CPU source directory. Both revision payloads are linked into the "
+@@ -137,8 +164,8 @@
+         "${DKR_GENERATED_SOURCE_V77}" ABSOLUTE)
+     get_filename_component(DKR_GENERATED_SOURCE_V80_ABSOLUTE
+         "${DKR_GENERATED_SOURCE_V80}" ABSOLUTE)
+-    if(DKR_GENERATED_SOURCE_V77_ABSOLUTE STREQUAL
+-       DKR_GENERATED_SOURCE_V80_ABSOLUTE)
++    if(DKR_PAYLOAD_V77_ENABLED AND DKR_PAYLOAD_V80_ENABLED AND
++       DKR_GENERATED_SOURCE_V77_ABSOLUTE STREQUAL DKR_GENERATED_SOURCE_V80_ABSOLUTE)
+         message(FATAL_ERROR
+             "The v1.0 and Rev A CPU payloads must come from different generated "
+             "source directories; protected generated output is never rewritten.")
+@@ -387,7 +414,7 @@
+             "Run Prepare-DKR-Runtime.cmd first.")
+     endif()
+     set(RT64_STATIC TRUE CACHE BOOL "Build RT64 as a static runtime dependency" FORCE)
+-    if(ANDROID)
++    if(ANDROID OR PS5)
+         set(RT64_SDL_WINDOW_VULKAN FALSE CACHE BOOL "Android uses ANativeWindow" FORCE)
+     else()
+         set(RT64_SDL_WINDOW_VULKAN TRUE CACHE BOOL "Allow SDL/Vulkan window integration" FORCE)
+@@ -639,7 +666,9 @@
+     set(DKR_V80_SYMBOL_MAP
+         "${CMAKE_BINARY_DIR}/generated/dkr_v80_symbol_map.hpp")
+     include("${CMAKE_CURRENT_LIST_DIR}/cmake/RevisionSymbolMap.cmake")
+-    dkr_generate_revision_symbol_map("${DKR_GENERATED_SOURCE_V80}" "dkr_v80_" "${DKR_V80_SYMBOL_MAP}")
++    if(DKR_PAYLOAD_V80_ENABLED)
++        dkr_generate_revision_symbol_map("${DKR_GENERATED_SOURCE_V80}" "dkr_v80_" "${DKR_V80_SYMBOL_MAP}")
++    endif()
+ 
+     # Each ROM revision contributes only its generated CPU payload. The
+     # frontend, renderer, audio, input, netplay and settings runtime are linked
+@@ -678,6 +707,9 @@
+             "dkr_legacy_character_cinematic_portrait"
+             "dkr_legacy_character_race_sound"
+             "dkr_legacy_character_play_sound")
++        if(CMAKE_SYSTEM_NAME STREQUAL "Prospero")
++            list(APPEND REQUIRED_INPUT_HOOKS "dkr_european_language_cycle")
++        endif()
+         foreach(REQUIRED_INPUT_HOOK IN LISTS REQUIRED_INPUT_HOOKS)
+             set(REQUIRED_INPUT_HOOK_FOUND FALSE)
+             foreach(GENERATED_FILE IN LISTS GENERATED_FILES)
+@@ -739,13 +771,17 @@
+         set(DKR_GENERATED_FILE_COUNT "${TOTAL_GENERATED_COUNT}" PARENT_SCOPE)
+     endfunction()
+ 
+-    dkr_add_recompiled_payload(
+-        DKRRecompiledFuncsV77 77 "${DKR_GENERATED_SOURCE_V77}"
+-        "${CMAKE_CURRENT_LIST_DIR}/src/game/game_payload_v77.cpp")
+-    dkr_add_recompiled_payload(
+-        DKRRecompiledFuncsV80 80 "${DKR_GENERATED_SOURCE_V80}"
+-        "${CMAKE_CURRENT_LIST_DIR}/src/game/game_payload_v80.cpp"
+-        "${DKR_V80_SYMBOL_MAP}")
++    set(DKR_SELECTED_PAYLOAD_TARGETS)
++    if(DKR_PAYLOAD_V77_ENABLED)
++        dkr_add_recompiled_payload(DKRRecompiledFuncsV77 77 "${DKR_GENERATED_SOURCE_V77}"
++            "${CMAKE_CURRENT_LIST_DIR}/src/game/game_payload_v77.cpp")
++        list(APPEND DKR_SELECTED_PAYLOAD_TARGETS DKRRecompiledFuncsV77)
++    endif()
++    if(DKR_PAYLOAD_V80_ENABLED)
++        dkr_add_recompiled_payload(DKRRecompiledFuncsV80 80 "${DKR_GENERATED_SOURCE_V80}"
++            "${CMAKE_CURRENT_LIST_DIR}/src/game/game_payload_v80.cpp" "${DKR_V80_SYMBOL_MAP}")
++        list(APPEND DKR_SELECTED_PAYLOAD_TARGETS DKRRecompiledFuncsV80)
++    endif()
+ endif()
+ 
+ if(DKR_RUNTIME_BUILD_GENERATED)
+@@ -854,7 +890,25 @@
+         set_property(SOURCE resources/dkr-r.rc APPEND PROPERTY COMPILE_DEFINITIONS
+             "DKR_RELEASE_RESOURCE_VERSION=${DKR_RELEASE_RESOURCE_VERSION},${DKR_RELEASE_BUILD_NUMBER}")
+     endif()
+-    if(ANDROID)
++    if(PS5)
++        # Public PS5 builds embed only Selawik (OFL), without the separately licensed fonts.
++        list(FILTER DKR_GAME_SOURCES EXCLUDE REGEX "generated/(jumpman_font|racing_banana_font)\\.c$")
++        # Native CRT/linking is supplied by the public PS5 toolchain adapter.
++        add_library(DKRPortGame STATIC ${DKR_GAME_SOURCES})
++        set_source_files_properties(src/game/game_main.cpp PROPERTIES
++            COMPILE_DEFINITIONS main=dkrr_game_main)
++        target_sources(DKRPortGame PRIVATE "${DKR_PS5_ADAPTERS_ROOT}/ps5_game_language.cpp")
++        target_include_directories(DKRPortGame PRIVATE "${DKR_PS5_SDL_SOURCE}/include" "${DKR_PS5_ADAPTERS_ROOT}")
++        target_compile_definitions(DKRPortGame PRIVATE
++            DKR_PAYLOAD_V77_ENABLED=${DKR_PAYLOAD_V77_ENABLED}
++            DKR_PAYLOAD_V80_ENABLED=${DKR_PAYLOAD_V80_ENABLED})
++        target_link_libraries(DKRPortGame PRIVATE "${DKR_PS5_SDL_ARCHIVE}")
++        if(DKR_RUNTIME_BUILD_RT64)
++            add_library(nfd STATIC "${DKR_PS5_ADAPTERS_ROOT}/ps5_nfd.c")
++            target_include_directories(nfd PUBLIC "${DKR_RT64_SOURCE}/src/contrib/nativefiledialog-extended/src/include")
++            target_link_libraries(DKRPortGame PRIVATE nfd)
++        endif()
++    elseif(ANDROID)
+         add_library(DKRPortGame SHARED ${DKR_GAME_SOURCES} src/android/android_platform.cpp src/android/mobile_ui.cpp)
+         target_link_libraries(DKRPortGame PRIVATE SDL2::SDL2 SDL2::SDL2main android log)
+     else()
+@@ -901,13 +955,14 @@
+     # unresolved on Linux. MSVC is order-independent, and this ordering keeps
+     # both platforms on the same single-runtime link graph.
+     target_link_libraries(DKRPortGame PRIVATE
+-        DKRRecompiledFuncsV77
+-        DKRRecompiledFuncsV80
++        ${DKR_SELECTED_PAYLOAD_TARGETS}
+         ultramodern
+         librecomp)
+     target_link_libraries(DKRPortGame PRIVATE DKRNetplayCore)
+     target_link_libraries(DKRPortGame PRIVATE DKRLegacyModLaunch DKRLegacyGuestIO)
+-    add_dependencies(DKRPortGame DKRLegacyModWorker)
++    if(NOT PS5)
++        add_dependencies(DKRPortGame DKRLegacyModWorker)
++    endif()
+     if(MSVC)
+         target_compile_options(DKRPortGame PRIVATE /FS)
+     endif()
+@@ -947,6 +1002,9 @@
+                     "$<TARGET_FILE_DIR:DKRPortGame>/SDL2.dll"
+                 VERBATIM
+             )
++        elseif(PS5)
++            target_include_directories(DKRPortGame PRIVATE "${DKR_PS5_SDL_SOURCE}/include")
++            target_link_libraries(DKRPortGame PRIVATE "${DKR_PS5_SDL_ARCHIVE}")
+         elseif(IOS)
+             dkr_ios_finish(DKRPortGame)
+         else()
+--- a/runtime-recomp/src/game/mods/legacy_mod_process.cpp
++++ b/runtime-recomp/src/game/mods/legacy_mod_process.cpp
+@@ -45,7 +45,7 @@
+ }
+ #endif
+ }
+-#if !defined(_WIN32)
++#if !defined(_WIN32) && !defined(__PROSPERO__)
+ namespace {
+ // Exit with the parent so an abandoned worker never outlives the app.
+ void exit_with_parent() {
+@@ -84,7 +84,10 @@
+ }
+ #endif
+ void constrain_import_worker() {
+-#if !defined(_WIN32)
++#if defined(__PROSPERO__)
++    // Native titles do not have the desktop worker-launch/sandbox contract.
++    throw Error("Legacy mod import is not available in the PS5 preview.");
++#elif !defined(_WIN32)
+     exit_with_parent();
+     const rlimit cpu{120,120}, output{MaxStaged+2*MiB,MaxStaged+2*MiB}, no_core{0,0};
+     if(setrlimit(RLIMIT_CPU,&cpu) || setrlimit(RLIMIT_FSIZE,&output) || setrlimit(RLIMIT_CORE,&no_core))
+@@ -120,12 +123,12 @@
+ }
+ WorkerResult run_worker(const std::filesystem::path& executable,const std::filesystem::path& request,
+     const std::function<bool()>& keep_running,std::chrono::milliseconds timeout) {
+-#if defined(DKR_IOS)
++#if defined(DKR_IOS) || defined(__PROSPERO__)
+     (void)executable;
+     (void)request;
+     (void)keep_running;
+     (void)timeout;
+-    throw Error("Legacy mod import is not available in the iOS app.");
++    throw Error("Legacy mod import is not available on this platform.");
+ #else
+     if(!executable.is_absolute() || !request.is_absolute() || timeout.count()<=0)
+         throw Error("Importer requires absolute private executable/request paths and a bounded timeout.");
+--- a/runtime-recomp/src/game/mods/online_mod_runtime.cpp
++++ b/runtime-recomp/src/game/mods/online_mod_runtime.cpp
+@@ -14,7 +14,7 @@
+ #elif defined(__APPLE__)
+ #include <mach/mach.h>
+ #include <sys/sysctl.h>
+-#else
++#elif defined(__linux__)
+ #include <sys/sysinfo.h>
+ #endif
+ 
+@@ -42,6 +42,10 @@
+         return 0;
+     const std::uint64_t available=(std::uint64_t(vm.free_count)+vm.inactive_count+vm.speculative_count)*vm_page_size;
+     return resource_cache_budget(physical,available,false);
++#elif defined(__PROSPERO__)
++    // The native title budget is not Linux system RAM. Retain no optional
++    // online collection until a reliable title-budget query is implemented.
++    return 0;
+ #else
+     struct sysinfo memory{};
+     if(sysinfo(&memory)!=0)return 0;
+--- a/runtime-recomp/src/game/netplay/datagram_socket.cpp
++++ b/runtime-recomp/src/game/netplay/datagram_socket.cpp
+@@ -13,6 +13,7 @@
+ #include <cerrno>
+ #include <fcntl.h>
+ #include <netdb.h>
++#include <netinet/in.h>
+ #include <sys/socket.h>
+ #include <unistd.h>
+ #endif
+@@ -94,6 +95,9 @@
+         return false;
+     }
+     sockaddr_in local{};
++#if defined(__PROSPERO__) || defined(__FreeBSD__)
++    local.sin_len = sizeof(local);
++#endif
+     local.sin_family = AF_INET;
+     local.sin_addr.s_addr = htonl(INADDR_ANY);
+     local.sin_port = htons(port);
+--- a/runtime-recomp/src/game/netplay/network_interfaces.cpp
++++ b/runtime-recomp/src/game/netplay/network_interfaces.cpp
+@@ -22,6 +22,7 @@
+ #include <iphlpapi.h>
+ #else
+ #include <arpa/inet.h>
++#include <netinet/in.h>
+ #include <cerrno>
+ #include <fcntl.h>
+ #include <ifaddrs.h>
+--- a/runtime-recomp/src/game/runtime_platform.cpp
++++ b/runtime-recomp/src/game/runtime_platform.cpp
+@@ -1,5 +1,8 @@
+ #include "runtime_platform.hpp"
+ #include "audio_equalizer.hpp"
++#if defined(__PROSPERO__)
++#include "ps5_neutral_audio.h"
++#endif
+ #include "controller_snapshot.hpp"
+ #include "controller_mapping_policy.hpp"
+ #include "custom_music.hpp"
+@@ -1520,6 +1523,19 @@
+ 
+ #if DKR_RUNTIME_HAS_RT64
+ ultramodern::renderer::WindowHandle dkr::runtime::platform::create_window() {
++#if defined(__PROSPERO__)
++    // RT64 owns VideoOut. SDL keeps a dummy window for input/UI bookkeeping,
++    // avoiding a second native display owner and its direct-memory buffers.
++    if (g_window == nullptr) {
++        SDL_VideoQuit();
++        if (SDL_VideoInit("dummy") != 0) {
++            std::fprintf(stderr,"[boot][ps5] dummy input window failed: %s\n",SDL_GetError());
++            return {};
++        }
++        g_window = SDL_CreateWindow("DKR-R PS5",0,0,1920,1080,0);
++    }
++    return g_window;
++#endif
+     if (g_window == nullptr) {
+ #if defined(DKR_IOS)
+         // Desktop fullscreen, as on the Mac. Real fullscreen makes SDL restore
+@@ -2194,6 +2210,17 @@
+             dkr::runtime::custom_music::render(g_custom_music_buffer.data(),
+                                                sample_count / 2U, g_audio_frequency);
+         }
++#if defined(__PROSPERO__)
++        // Exact neutral stereo conversion avoids floating point rounding and
++        // per-sample atomic loads. All enhanced/non-neutral paths keep the
++        // original mixer, queue priming and emulated AI timing unchanged.
++        const bool copied_neutral_audio = dkrr_ps5_neutral_audio(
++            g_audio_swap_buffer.data(), samples, sample_count,
++            g_audio_equalizer.neutral(),
++            g_master_volume.load(std::memory_order_relaxed), custom_music_active,
++            g_ui_tone_frames_remaining != 0U);
++        if (!copied_neutral_audio)
++#endif
+         for (std::size_t i = 0; i < sample_count; i += 2) {
+             // RDRAM's 32-bit word swap leaves each native stereo pair in R,L
+             // order. Restore conventional L,R order before sending it to SDL.
+@@ -2436,7 +2463,11 @@
+     }
+     const bool blocked = dkr::runtime::ui::overlay_visible();
+     const bool window_focused = g_window != nullptr &&
++#if defined(__PROSPERO__)
++        true; // A dummy window has no OS focus; native scePad supplies samples.
++#else
+         (SDL_GetWindowFlags(g_window) & SDL_WINDOW_INPUT_FOCUS) != 0U;
++#endif
+     const bool online_routing =
+         g_online_input_routing.load(std::memory_order_acquire);
+     const int configured_keyboard_player =
+--- a/runtime-recomp/src/game/rt64_renderer.cpp
++++ b/runtime-recomp/src/game/rt64_renderer.cpp
+@@ -1,4 +1,8 @@
+ #include "rt64_renderer.hpp"
++#if defined(__PROSPERO__)
++// Same native-title handoff used by the accepted Plume/RT64 probes.
++extern "C" int sceSystemServiceHideSplashScreen(void);
++#endif
+ #include "render_power_policy.hpp"
+ #include "performance_trace.hpp"
+ #include "water_performance.hpp"
+@@ -388,7 +392,7 @@
+         return;
+     }
+     core.window = native_window.info.android.window;
+-#elif defined(__linux__)
++#elif defined(__linux__) || defined(__PROSPERO__)
+     core.window = window_handle;
+ #elif defined(__APPLE__)
+     core.window.window = window_handle.window;
+@@ -429,6 +433,10 @@
+     application_config.appId = "dkr-port";
+     application_config.useConfigurationFile = false;
+     application_config.detectDataPath = true;
++#if defined(__PROSPERO__)
++    application_config.detectDataPath = false;
++    application_config.dataPath = "/data/dkrr/renderer";
++#endif
+ #if defined(__ANDROID__)
+     // Desktop path detection can select /data/.dkr-port on Android and throw
+     // from RT64's constructor before its setup error handling is reached.
+@@ -465,10 +473,13 @@
+     }
+ #endif
+     auto config = ultramodern::renderer::get_graphics_config();
+-#if defined(__ANDROID__)
++#if defined(__ANDROID__) || defined(__PROSPERO__)
+     if (!dkr::runtime::enhancements::modern_presentation_enabled()) {
+         dkr::runtime::mobile_graphics::apply_accurate_budget(config);
+     }
++#endif
++#if defined(__PROSPERO__)
++    config.api_option = ultramodern::renderer::GraphicsApi::Vulkan;
+ #endif
+     const auto effective_anisotropy =
+         static_cast<std::uint32_t>(
+@@ -493,6 +504,9 @@
+         const auto application_started_at =
+             dkr::runtime::startup_performance::Clock::now();
+         application_ = std::make_unique<RT64::Application>(core, application_config);
++#if defined(__PROSPERO__)
++        application_->threadsAvailable = 4;
++#endif
+         ApplyConfig(*application_, config);
+         application_->userConfig.developerMode = developer_mode;
+         // DKR renders a canonical 320x240 VI image. RT64's generic VI height
+@@ -846,6 +860,11 @@
+             dkr::runtime::graphics_health::first_presentation.store(true);
+ #endif
+             dkr::runtime::startup_performance::mark("first-successful-presentation");
++#if defined(__PROSPERO__)
++            const int splash_result = sceSystemServiceHideSplashScreen();
++            std::fprintf(stderr, "[boot][ps5] hide-splash rc=0x%08x after first presentation\n",
++                         static_cast<unsigned>(splash_result));
++#endif
+         }
+         dkr::runtime::telemetry::record_presented_frames(
+             dkr::runtime::presentation_counter::consume_delta(
+--- a/runtime-recomp/src/game/game_main.cpp
++++ b/runtime-recomp/src/game/game_main.cpp
+@@ -116,7 +116,7 @@
+     }
+ #endif
+     std::setvbuf(stderr, nullptr, _IONBF, 0);
+-#if defined(__ANDROID__) || defined(DKR_IOS)
++#if defined(__ANDROID__) || defined(DKR_IOS) || defined(__PROSPERO__)
+     // RT64 writes GPU/driver identification to stdout. Keep it in the same
+     // private log as startup errors so phone users can export both together.
+     dup2(STDERR_FILENO, STDOUT_FILENO);
+@@ -127,6 +127,10 @@
+ }
+ 
+ std::filesystem::path DefaultConfigDirectory(const char* executable_argument) {
++#if defined(__PROSPERO__)
++    (void)executable_argument;
++    return "/data/dkrr/profile";
++#endif
+     (void)executable_argument;
+     const auto& executable_directory = dkr::runtime::portable::application_directory();
+     if (dkr::runtime::portable::enabled_at_startup()) {
+@@ -498,7 +502,7 @@
+ } // namespace
+ 
+ bool RelaunchApplication(int argc, char** argv) {
+-#if defined(DKR_IOS)
++#if defined(DKR_IOS) || defined(__PROSPERO__)
+     (void)argc;
+     (void)argv;
+     // The sandbox rejects execv. main() exits and the icon starts a new process.
+@@ -772,7 +776,7 @@
+         }
+     }
+ #endif
+-#if !defined(_WIN32) && !defined(__ANDROID__)
++#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__PROSPERO__)
+     InstallRuntimeSignalHandlers();
+ #endif
+     // Android keeps its own fatal-signal handler: replacing it with _exit
+@@ -838,6 +842,12 @@
+         ultramodern::renderer::HighPrecisionFramebuffer::Auto;
+     graphics_config.rr_manual_value = 30;
+     graphics_config.ds_option = 1;
++#if defined(__PROSPERO__)
++    graphics_config.api_option = ultramodern::renderer::GraphicsApi::Vulkan;
++    graphics_config.res_option = ultramodern::renderer::Resolution::Original2x;
++    graphics_config.wm_option = ultramodern::renderer::WindowMode::Fullscreen;
++    graphics_config.hpfb_option = ultramodern::renderer::HighPrecisionFramebuffer::Off;
++#endif
+ #if defined(__ANDROID__)
+     // First-run mobile budget. ui::configure below restores saved settings.
+     graphics_config.res_option = ultramodern::renderer::Resolution::Original2x;
+@@ -1135,6 +1145,15 @@
+             dkr::runtime::pak::begin_session_directory(dkr::runtime::saves::runtime_pak_directory());
+         } catch(const std::exception& error) {
+             std::fprintf(stderr,"[legacy][launch] %s\n",error.what());
++#if defined(__PROSPERO__)
++            // The preview has no SDL display owner for the desktop launcher.
++            // Refuse safely and let the native wrapper close this title.
++            dkr::runtime::pak::begin_session_directory({});
++            dkr::runtime::saves::retire_runtime_save_context();
++            dkr::runtime::legacy::begin_session(nullptr);
++            dkr::runtime::platform::shutdown();
++            return 4;
++#endif
+ #if DKR_RUNTIME_HAS_RT64
+             if (selecting_save_owner) {
+                 // No guest producer exists yet. A locked/invalid route is a
+@@ -1428,6 +1447,13 @@
+ #endif
+         if (lifecycle_request == dkr::runtime::ui::LifecycleRequest::StopGame || !mod_failure.empty() || !save_failure.empty() ||
+             (return_from_owned && lifecycle_request==dkr::runtime::ui::LifecycleRequest::None)) {
++#if defined(__PROSPERO__)
++            // Session workers and save owners have already been retired above.
++            // Closing avoids a hidden desktop launcher on the dummy SDL window.
++            std::fprintf(stderr,"[boot][ps5] session ended; closing native preview\n");
++            dkr::runtime::platform::shutdown();
++            return (!mod_failure.empty() || !save_failure.empty()) ? 5 : 0;
++#endif
+             if(!mod_failure.empty())dkr::runtime::ui::report_mod_error("Custom content stopped safely: "+mod_failure);
+             std::fprintf(stderr,
+                          "[boot][stop] game stopped; returning to launcher\n");
+--- a/runtime-recomp/src/game/runtime_portable.cpp
++++ b/runtime-recomp/src/game/runtime_portable.cpp
+@@ -95,7 +95,7 @@
+ const std::filesystem::path& application_directory() { return g_application_directory; }
+ const std::filesystem::path& marker_path() { return g_marker; }
+ bool supported() {
+-#if defined(DKR_IOS)
++#if defined(DKR_IOS) || defined(__PROSPERO__)
+     return false; // signed bundle cannot hold portable.txt
+ #elif defined(__ANDROID__)
+     return false;
+--- a/runtime-recomp/src/game/runtime_support.cpp
++++ b/runtime-recomp/src/game/runtime_support.cpp
+@@ -23,9 +23,11 @@
+ #elif defined(__APPLE__)
+ #include <sys/sysctl.h>
+ #include <unistd.h>
+-#else
++#elif defined(__linux__)
+ #include <sys/sysinfo.h>
+ #include <sys/utsname.h>
++#include <unistd.h>
++#else
+ #include <unistd.h>
+ #endif
+ 
+@@ -266,6 +268,9 @@
+         error = "Windows could not open that DKR-R support folder.";
+         return false;
+     }
++#elif defined(__PROSPERO__)
++    error = "Support files are stored in " + directory.string() + ". Open them with your PS5 file manager.";
++    return false;
+ #elif defined(DKR_IOS)
+     // iOS cannot fork. The directory was created above for the Files app.
+     error = "On iPhone, that folder is in the Files app under DKR-R.";
+@@ -338,7 +343,14 @@
+ 
+ SystemSummary collect_system_summary() {
+     SystemSummary result{};
+-#if defined(_WIN32)
++#if defined(__PROSPERO__)
++    result.operating_system = "PlayStation 5 (native homebrew)";
++    result.cpu = "Native x86-64";
++    result.memory = "Title memory budget not queried";
++    result.gpu = "PS5 / RADV";
++    result.boot_drive = "PS5 storage";
++    result.application_drive = "/app0; user data in /data/dkrr";
++#elif defined(_WIN32)
+     result.operating_system = "Windows";
+     result.cpu = WindowsCpuName();
+     MEMORYSTATUSEX memory{};
+--- a/runtime-recomp/tests/quick_join_transport_tests.cpp
++++ b/runtime-recomp/tests/quick_join_transport_tests.cpp
+@@ -134,6 +134,12 @@
+            protocol::kMaximumDatagramBytes);
+     auto quick_join_transport = make_quick_join_session_transport(
+         true, "ABCDE", transport_error);
++#if !DKR_NETPLAY_WEBRTC
++    // Optional-transport builds must refuse cleanly, preserving UDP support.
++    assert(!quick_join_transport);
++    assert(transport_error == "This build does not include the optional Quick Join transport.");
++    return 0;
++#endif
+     assert(quick_join_transport);
+     assert(quick_join_transport->maximum_plaintext_datagram_bytes() ==
+            protocol::kMaximumQuickJoinDatagramBytes);
+--- a/runtime-recomp/src/game/runtime_ui.cpp
++++ b/runtime-recomp/src/game/runtime_ui.cpp
+@@ -19,6 +19,9 @@
+ #include "generated/jumpman_font.h"
+ #include "generated/racing_banana_font.h"
+ #include "generated/selawik_font.h"
++#if defined(__PROSPERO__)
++#include "ps5_revision_selection.h"
++#endif
+ #include "countdown_tone_policy.hpp"
+ #include "custom_tracks.hpp"
+ #include "launcher_render_policy.hpp"
+@@ -479,17 +482,21 @@
+ bool g_online_guide_reopen_requested = false;
+ #if defined(DKR_IOS)
+ RefreshRate g_modern_refresh_mode = RefreshRate::Display;
+-#elif defined(__ANDROID__)
++#elif defined(__ANDROID__) || defined(__PROSPERO__)
+ // Conservative first-use defaults only. The settings loader restores all
+ // existing choices, and explicit presets below disclose the quality tradeoff.
+ RefreshRate g_modern_refresh_mode = RefreshRate::Manual;
+ #else
+ RefreshRate g_modern_refresh_mode = RefreshRate::Display;
+ #endif
++#if defined(__PROSPERO__)
++int g_modern_refresh_target = 30;
++#else
+ int g_modern_refresh_target = 60;
++#endif
+ #if defined(DKR_IOS)
+ Resolution g_modern_resolution = Resolution::Original2x;
+-#elif defined(__ANDROID__)
++#elif defined(__ANDROID__) || defined(__PROSPERO__)
+ Resolution g_modern_resolution = Resolution::Original2x;
+ #else
+ Resolution g_modern_resolution = Resolution::Auto;
+@@ -498,7 +505,7 @@
+ Antialiasing g_modern_antialiasing = Antialiasing::None;
+ #if defined(DKR_IOS)
+ HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
+-#elif defined(__ANDROID__)
++#elif defined(__ANDROID__) || defined(__PROSPERO__)
+ HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::Off;
+ #else
+ HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
+@@ -1206,6 +1213,9 @@
+ }
+ 
+ void LoadLauncherFonts() {
++#if defined(__PROSPERO__)
++#include "ps5_ui_fonts.inl"
++#else
+     ++g_font_generation;
+     ImGuiIO& io = ImGui::GetIO();
+     static constexpr ImWchar kLauncherGlyphRanges[] = {
+@@ -1336,9 +1346,22 @@
+         g_font_fps = g_font_controls != nullptr ? g_font_controls : body_font;
+     }
+     LoadBrandLogoIntoAtlas();
++#if defined(__PROSPERO__)
++    // Separate CPU atlas construction from later Vulkan texture upload in logs.
++    unsigned char* atlas_pixels = nullptr;
++    int atlas_width = 0, atlas_height = 0;
++    io.Fonts->GetTexDataAsRGBA32(&atlas_pixels, &atlas_width, &atlas_height);
++    const ImFontGlyph* body_a = body_font != nullptr ? body_font->FindGlyph('A') : nullptr;
++    const ImFontGlyph* reading_a = g_paddock_reading[0][0] != nullptr
++        ? g_paddock_reading[0][0]->FindGlyph('A') : nullptr;
++    std::fprintf(stderr, "[ps5][ui] atlas=%dx%d fonts=%d pixels=%d body-A=%d reading-A=%d\n",
++        atlas_width, atlas_height, io.Fonts->Fonts.Size, atlas_pixels != nullptr,
++        body_a != nullptr && body_a->Visible, reading_a != nullptr && reading_a->Visible);
++#endif
+ #if defined(__ANDROID__) || defined(DKR_IOS)
+     dkr::runtime::mobile::install_context();
+ #endif
++#endif // native PS5 uses only OFL fonts
+ }
+ 
+ class ControlFontScope {
+@@ -1533,6 +1556,10 @@
+ #if defined(__ANDROID__)
+     // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
+     dkr::runtime::mobile_graphics::apply_accurate_budget(config);
++#endif
++#if defined(__PROSPERO__)
++    dkr::runtime::mobile_graphics::apply_accurate_budget(config);
++    config.api_option = GraphicsApi::Vulkan;
+ #endif
+ }
+ 
+@@ -4307,6 +4334,11 @@
+ }
+ 
+ void DrawSidebarCurrentStripe() {
++#if defined(__PROSPERO__)
++    // The native page colour already marks the current page. A narrow extra
++    // stripe looked like a stray clipped artifact on TV; do not draw it.
++    return;
++#else
+     const ImVec2 minimum = ImGui::GetItemRectMin();
+     const ImVec2 maximum = ImGui::GetItemRectMax();
+     ImDrawList* draw = ImGui::GetWindowDrawList();
+@@ -4322,6 +4354,7 @@
+     draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
+                         std::max(rounding - 1.0F, 0.0F));
+     draw->PopClipRect();
++#endif
+ }
+ 
+ bool SidebarButton(const char* label, int page, int& sidebar_selection,
+@@ -8179,6 +8212,12 @@
+             g_overlay_visible.store(false, std::memory_order_release);
+         }
+         ImGui::PopStyleColor(2);
++#if defined(__PROSPERO__)
++        ImGui::Dummy({0.0F, 22.0F});
++        {
++#include "ps5_revision_ui.inl"
++        }
++#endif
+     } else if (g_overlay_page == kPageGraphics) {
+         DrawGraphicsPage(content_width, true);
+     } else if (g_overlay_page == kPageSound) {
+@@ -9461,7 +9500,8 @@
+         const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
+         const float overlay_margin = menu.margin;
+         const float sidebar_width = menu.sidebar_width;
+-        const float overlay_height = menu.height;
++        // Reserve a fixed footer outside the scrolling content and navigation rail.
++        const float overlay_height = std::max(menu.height - (kConsoleMenuLayout ? 46.0F : 0.0F), 1.0F);
+         const float content_x = menu.content_x;
+         const float content_panel_width = menu.content_width;
+         ImGui::SetCursorPos({overlay_margin, overlay_margin});
+@@ -9574,6 +9614,11 @@
+         ImGui::PopItemWidth();
+         ImGui::EndChild();
+         ImGui::PopStyleColor(2);
++#if defined(__PROSPERO__)
++        ImGui::SetCursorPos({overlay_margin, overlay_margin + overlay_height + 10.0F});
++        const ControlFontScope console_hint_font;
++        ImGui::TextUnformatted("L1 / R1: Pages    D-pad: Select    Cross: Confirm    Circle: Back    Touchpad: Resume");
++#endif
+ #endif
+         if (request_quit_popup) {
+             // Open the modal in the same parent ID scope where it is rendered.
+@@ -9756,6 +9801,18 @@
+         return false;
+     }
+     std::scoped_lock frame_lock(g_inspector->frameMutex);
++#if defined(__PROSPERO__)
++    // Let ImGui cancel active sliders and popups first. Circle from an idle
++    // page returns to the race, without leaking that press into game input.
++    if (overlay_visible() && !input_capture_active() &&
++        event->type == SDL_CONTROLLERBUTTONDOWN &&
++        event->cbutton.button == SDL_CONTROLLER_BUTTON_B &&
++        GImGui->ActiveId == 0 &&
++        !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
++        toggle_overlay();
++        return true;
++    }
++#endif
+     // RT64's ImGui backend owns normal pointer, keyboard and gamepad event
+     // delivery. Do not turn those events into page-focus requests: ImGui must
+     // be allowed to retain the item selected by the previous event so the
+--- a/runtime-recomp/src/game/runtime_settings_ui.inl
++++ b/runtime-recomp/src/game/runtime_settings_ui.inl
+@@ -399,7 +399,7 @@
+ template <typename Left, typename Right>
+ void SettingsCardPair(const char* key, float width, bool stacked, float gap,
+                       Left&& left, Right&& right) {
+-    if (stacked) {
++    if (stacked || kConsoleMenuLayout) {
+         SettingsCard(width, left);
+         PaddockGap(gap);
+         SettingsCard(width, right);
+@@ -509,7 +509,7 @@
+     int index = 0;
+ 
+     SettingsColumns(float total, bool one_column, float column_gap = 18.0F)
+-        : origin(ImGui::GetCursorScreenPos()), width(total), gap(column_gap), single(one_column) {
++        : origin(ImGui::GetCursorScreenPos()), width(total), gap(column_gap), single(one_column || kConsoleMenuLayout) {
+         column = single ? total : std::floor((total - gap) * 0.5F);
+         row_top = origin.y;
+         row_bottom = origin.y;
+--- a/runtime-recomp/src/game/runtime_ui_paddock.inl
++++ b/runtime-recomp/src/game/runtime_ui_paddock.inl
+@@ -6,6 +6,13 @@
+ // Sizes below are CSS pixels, as in tools/launcher-html. Dear ImGui sizes a face
+ // by its ascent - descent, CSS by its em square, so every face carries the
+ // ratio between the two.
++
++// Console pages use one vertical flow so D-pad movement follows the reading order.
++#if defined(__PROSPERO__)
++constexpr bool kConsoleMenuLayout = true;
++#else
++constexpr bool kConsoleMenuLayout = false;
++#endif
+ 
+ // ------------------------------------------------------------------ colour
+ 
+@@ -381,9 +388,9 @@
+         }
+     }
+     if (type.font == nullptr) type.font = ImGui::GetFont();
+-    type.size = px;
+-    type.ascent = px;
+-    type.content = px;
++    type.size = kConsoleMenuLayout ? px * g_paddock_reading_scale : px;
++    type.ascent = kConsoleMenuLayout ? px * 2210.0F / 2048.0F : px;
++    type.content = kConsoleMenuLayout ? px * 2724.0F / 2048.0F : px;
+     type.line = px * line_height;
+     type.tracking = px * tracking_em;
+     return type;
+--- a/runtime-recomp/src/game/runtime_graphics_ui.inl
++++ b/runtime-recomp/src/game/runtime_graphics_ui.inl
+@@ -92,8 +92,8 @@
+     // Both menu surfaces use the same full-width responsive cards.
+     const float width = std::max(available_width, 1.0F);
+     // Container queries on the content panel.
+-    const bool stacked = available_width <= 850.0F;
+-    const bool single = available_width <= 540.0F;
++    const bool stacked = kConsoleMenuLayout || available_width <= 850.0F;
++    const bool single = kConsoleMenuLayout || available_width <= 540.0F;
+     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.0F, 0.0F});
+ 
+     DrawPageHeading("GRAPHICS");
+--- a/runtime-recomp/src/game/runtime_saves_ui.inl
++++ b/runtime-recomp/src/game/runtime_saves_ui.inl
+@@ -174,7 +174,7 @@
+     float row_bottom = 0.0F;
+ 
+     SavesGrid(float width, float panel) : origin(ImGui::GetCursorScreenPos()) {
+-        per_row = panel <= 540.0F ? 1 : panel <= 780.0F ? 2 : 3;
++        per_row = kConsoleMenuLayout ? 1 : panel <= 540.0F ? 1 : panel <= 780.0F ? 2 : 3;
+         column = std::floor((width - 16.0F * static_cast<float>(per_row - 1)) / static_cast<float>(per_row));
+         row_top = row_bottom = origin.y;
+     }
+@@ -358,12 +358,19 @@
+     grid.End();
+     grid.Begin();
+     int language = settings.language;
+-    if (SettingsDropdown("language", "Language", &language, {"English", "German", "French", "Japanese"},
++    std::vector<SettingsChoice> language_choices{{"English", {}, false},
++        {"German", {}, false}, {"French", {}, false}};
++    if (!kConsoleMenuLayout) language_choices.push_back({"Japanese", {}, false});
++    if (SettingsDropdown("language", "Game language", &language, language_choices,
+                          grid.column)) {
+         settings.language = static_cast<std::uint8_t>(language);
+     }
+     grid.End();
+     grid.Finish(width);
++    if (kConsoleMenuLayout) {
++        SavesNote("German text is included in the supported US Game Paks. Apply this draft before starting "
++                  "the game. This changes game text; the Recompiled interface stays English.", width);
++    }
+ 
+     SavesSeparator("T.T. time-trial victories", width, false);
+     constexpr std::array<const char*, 20> kTrials{{
+@@ -563,7 +570,7 @@
+         if (state.summary) {
+             SavesSeparator("Adventure slots", width);
+             PaddockGap(10.0F);
+-            const bool stacked = panel <= 540.0F;
++            const bool stacked = kConsoleMenuLayout || panel <= 540.0F;
+             const float column = stacked ? width : std::floor((width - 32.0F) / 3.0F);
+             const ImVec2 at = ImGui::GetCursorScreenPos();
+             float bottom = at.y;
+@@ -683,7 +690,7 @@
+     SavesSeparator("Move your offline saves", width, false);
+     SavesNote("Transfer ordinary offline Adventure progress and offline Controller Paks. Online and mod-set saves are separate and are not included.",
+               width);
+-    const bool stacked = panel <= 540.0F;
++    const bool stacked = kConsoleMenuLayout || panel <= 540.0F;
+     const float half = stacked ? width : std::floor((width - 10.0F) * 0.5F);
+     if (SavesRaceButton("EXPORT OFFLINE GARAGE", half)) ExportSaveBundleWithDialog();
+     if (!stacked) ImGui::SameLine(0.0F, 10.0F); else PaddockGap(10.0F);
+@@ -974,7 +981,17 @@
+         const auto route = dkr::runtime::saves::runtime_save_path();
+         SavesNote(owner.online ? "ACTIVE: ONLINE SESSION SAVE" : route.parent_path().filename() == "saves"
+             ? "ACTIVE: YOUR OFFLINE ADVENTURE" : "ACTIVE: MOD-SET SAVE (OFFLINE)", inner, 16.0F, kSetText);
++#if defined(__PROSPERO__)
++        SavesNote(dkrr_ps5_active_revision() == 80
++            ? "Diddy Kong Racing - US 1.1 profile"
++            : "Diddy Kong Racing - US 1.0 profile", inner, 16.0F);
++        if (ImGui::TreeNode("Storage location")) {
++            SavesNote(PathUtf8(route), inner, 14.0F);
++            ImGui::TreePop();
++        }
++#else
+         SavesNote(PathUtf8(route), inner, 14.0F);
++#endif
+         PaddockText(PaddockSign(19.0F, 1.45F, 0.0F), PaddockRgb(kSetText), "PIT LANE SAFETY LOCK", inner);
+         PaddockGap(12.0F);
+         PaddockText(PaddockReading(16.0F, false, 1.45F), PaddockRgb(kSetMuted),
+--- a/runtime-recomp/src/game/game_payload.cpp
++++ b/runtime-recomp/src/game/game_payload.cpp
+@@ -4,8 +4,18 @@
+ 
+ namespace dkr::runtime {
+ 
++#ifndef DKR_PAYLOAD_V77_ENABLED
++#define DKR_PAYLOAD_V77_ENABLED 1
++#endif
++#ifndef DKR_PAYLOAD_V80_ENABLED
++#define DKR_PAYLOAD_V80_ENABLED 1
++#endif
++#if DKR_PAYLOAD_V77_ENABLED
+ const GamePayload& payload_v77();
++#endif
++#if DKR_PAYLOAD_V80_ENABLED
+ const GamePayload& payload_v80();
++#endif
+ 
+ namespace {
+ 
+@@ -16,9 +26,17 @@
+ const GamePayload* payload_for(rom::Revision revision) {
+     switch (revision) {
+     case rom::Revision::UsV77:
++#if DKR_PAYLOAD_V77_ENABLED
+         return &payload_v77();
++#else
++        return nullptr;
++#endif
+     case rom::Revision::UsV80:
++#if DKR_PAYLOAD_V80_ENABLED
+         return &payload_v80();
++#else
++        return nullptr;
++#endif
+     default:
+         return nullptr;
+     }
+--- a/scripts/generate_legacy_menu_qualification.py
++++ b/scripts/generate_legacy_menu_qualification.py
+@@ -15,9 +15,11 @@
+ def main(argv=None):
+     parser=argparse.ArgumentParser(description=__doc__)
+     parser.add_argument("--output",type=Path,required=True)
+-    parser.add_argument("--v77-build",type=Path,required=True)
+-    parser.add_argument("--v80-build",type=Path,required=True)
++    parser.add_argument("--v77-build",type=Path)
++    parser.add_argument("--v80-build",type=Path)
++    parser.add_argument("--revisions",type=int,nargs="+",choices=(77,80),default=(77,80),help="Generate only selected owned revisions; default preserves the unified build")
+     parser.add_argument("--recompiler",type=Path,required=True)
++    parser.add_argument("--european-languages-policy", type=Path, help="Explicit checked native US language adapter")
+     parser.add_argument("--characters",action="store_true",help="Include the checked character resource adapter")
+     parser.add_argument("--character-menu",action="store_true",help="Include the checked additive character selector")
+     parser.add_argument("--refresh-presentation",action="store_true",help="Refresh the reviewed presentation layer in an already-composed committed policy")
+@@ -38,6 +40,8 @@
+         parser.error(f"Recompiler must be an existing executable: {args.recompiler}")
+     # Validate both revisions before any subprocess or output mutation.
+     for revision, source, explicit in ((77,args.v77_build,args.v77_policy), (80,args.v80_build,args.v80_policy)):
++        if revision not in args.revisions: continue
++        if source is None: parser.error(f"Missing --v{revision}-build for selected revision")
+         required = [source/f"dkr.us.v{revision}.elf", source/f"dkr.us.v{revision}.z64"]
+         policies = [explicit or root/f"runtime-recomp/dkr.us.v{revision}.recomp-policy.json",
+                     root/f"runtime-recomp/legacy-mods.v{revision}.recomp-fragment.json",
+@@ -71,6 +75,7 @@
+ 
+ def generate(args, root, output):
+     for revision,source,entry in ((77,args.v77_build,"0x80065D40"),(80,args.v80_build,"0x80065F80")):
++        if revision not in args.revisions: continue
+         elf=source/f"dkr.us.v{revision}.elf"
+         rom=source/f"dkr.us.v{revision}.z64"
+         policy=output/f"menu-v{revision}.policy.json"
+@@ -99,6 +104,7 @@
+             config=output/f"menu-{'pipeline-' if isolated else ''}v{revision}.toml"
+             command=[sys.executable,str(root/"scripts/generate_recomp_config.py"),"--policy",str(policy),
+                 "--elf",str(elf),"--rom",str(rom),"--output-functions",str(functions),"--entrypoint",entry,"--output",str(config)]
++            if args.european_languages_policy is not None:command += ["--european-languages-policy", str(args.european_languages_policy)]
+             if isolated:command += ["--functions-per-output-file","1"]
+             run_stage(command, f"v{revision} config generation")
+             run_stage([str(args.recompiler.resolve()),str(config)], f"v{revision} recompilation ({config.name})")
+--- a/scripts/generate_recomp_config.py
++++ b/scripts/generate_recomp_config.py
+@@ -27,6 +27,7 @@
+     parser.add_argument("--entrypoint", required=True)
+     parser.add_argument("--output", required=True, type=Path)
+     parser.add_argument("--use-mdebug", action="store_true")
++    parser.add_argument("--european-languages-policy", type=Path, help="Explicit checked native US language adapter")
+     parser.add_argument("--water-profile", action="store_true", help="Compose checked water timing hooks")
+     parser.add_argument("--functions-per-output-file", type=int,
+                         help="Optional source granularity for isolated Patch Pipeline qualification")
+@@ -63,6 +64,15 @@
+     if arguments.water_profile:
+         from water_profile_policy import compose_water_profile
+         policy = compose_water_profile(policy, arguments.elf)
++
++    if arguments.european_languages_policy is not None:
++        import importlib.util
++        module = importlib.util.spec_from_file_location("dkrr_native_languages", arguments.european_languages_policy)
++        if module is None or module.loader is None:
++            raise ValueError("Missing native language policy module")
++        language_policy = importlib.util.module_from_spec(module)
++        module.loader.exec_module(language_policy)
++        policy = language_policy.compose(policy, arguments.elf, revision)
+ 
+     manual = ", ".join(
+         "{ name = %s, section = %s, vram = %s, size = %s }"

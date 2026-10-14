@@ -1,0 +1,13 @@
+{
+  "patch_sha256": "512f17085dc39707a3223baed5041148a8577a31ecebbf56770084393c318a24",
+  "files": {
+    "src/video/ps5/SDL_ps5video.c": {
+      "original": "25015e47346ac5723ec0b01fd623be2c859bd0d4062b53817813747b8699fc47",
+      "patched": "cd7c16ec1e382441b643b131ef682bcc736b787fc4bbc55922336a4c00b1f880"
+    },
+    "src/video/ps5/SDL_ps5video.h": {
+      "original": "bda84b76849326695c9d227a5f0cbfed8a8fcc159fb64dcf25b37806b476a793",
+      "patched": "096cbc1343ffa4c55ef476125176caeabf87c196da0b6d6544f2da1acc9a400f"
+    }
+  }
+}
