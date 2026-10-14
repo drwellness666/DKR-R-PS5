@@ -62,6 +62,8 @@ Choose **R2 / L2 driving** for the selected player, or **Classic DKR controls** 
 restore the original controller layout. A preset replaces that player's controller
 bindings, retains their keyboard mappings, and leaves other players and overlay
 shortcuts alone. **Undo** restores the previous controls snapshot on this page.
+Choosing another player, beginning a new binding capture or leaving this page ends
+that undo; later mapping edits cannot be rolled back by an earlier preset button.
 Changes use the existing per-player settings records in the active US revision's
 profile; no new save layout or preset preference file is introduced.
 

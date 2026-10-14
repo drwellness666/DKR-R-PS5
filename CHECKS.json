@@ -366,8 +366,8 @@
   "source_release_actual_archive_roundtrip": "PASS own real ROM-free asset through actual source updater/extraction, clean-source scan and all source SHA256; no network/build/console operation.",
   "next_optional_controller_candidate": {
     "title_id": "PPSA94678",
-    "eboot_sha256": "2f6d93a87cc7c7155b9ba42ed26a63775d133ce807d22ddf862e2d2843c7316e",
-    "app_manifest_sha256": "63ff7081de436bdb5b8933389efee214c99449faa508108aaec2b2f552f4dd48",
+    "eboot_sha256": "f321ad9256b7b0476f574972cac05270f33fa1637422cf3bfc509a36b2e099d6",
+    "app_manifest_sha256": "f8207f531a3d04b05121592b2ac39124ddc584ecbeb86767af7d814fe251d002",
     "native_integrity": "PASS",
     "console_deployed": false,
     "console_tested": false,
@@ -383,6 +383,7 @@
     "default_mapping_unchanged": true,
     "advanced_effects_added": false,
     "frame_input_path_unchanged": true,
-    "actual_runtime_settings_navigation_and_capture": "Locally tested; hardware acceptance pending"
+    "actual_runtime_settings_navigation_and_capture": "Locally tested; hardware acceptance pending",
+    "undo_ownership_guard": "PASS actual player selection and binding capture entry"
   }
 }

@@ -243,6 +243,7 @@ Its 34-file app manifest is frozen privately; the candidate is not deployed.
   not the full native filesystem settings lifecycle.
 - Actual preset and binding-row functions with real ImGui gamepad navigation pass:
   labels, vertical geometry, scrolling, Down/Up order, activation/capture and undo.
+  Actual player selection and capture entry invalidate a preceding undo snapshot.
   Fixture presentation helpers replace fonts/device discovery; physical rendering is pending.
 - Actual capture handler passes modeled controller ownership, touchpad cancellation
   without saving, bindable Circle and trigger capture boundary checks.
