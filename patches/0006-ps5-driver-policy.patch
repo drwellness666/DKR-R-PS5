@@ -1,0 +1,54 @@
+diff --git a/src/amd/vulkan/winsys/ps5/radv_ps5_cs.c b/src/amd/vulkan/winsys/ps5/radv_ps5_cs.c
+--- a/src/amd/vulkan/winsys/ps5/radv_ps5_cs.c
++++ b/src/amd/vulkan/winsys/ps5/radv_ps5_cs.c
+@@ -13,6 +13,7 @@
+ 
+ #include "util/os_time.h"
+ #include "util/u_atomic.h"
++#include "util/u_debug.h"
+ #include "util/u_math.h"
+ #include "sid.h"
+ 
+@@ -510,6 +511,10 @@
+ static void
+ radv_ps5_note_submission(uint32_t words, uint64_t claim_ns, uint64_t copy_ns)
+ {
++   /* A synchronous stderr write under the submit lock can stall a frame.
++    * Keep detailed queue statistics only for explicitly enabled diagnostics. */
++   if (!debug_get_bool_option("DKR_POWER_PROFILE", false))
++      return;
+    const uint64_t now = os_time_get_nano();
+    if (!radv_ps5_submit_window.window_start)
+       radv_ps5_submit_window.window_start = now;
+diff --git a/src/vulkan/wsi/wsi_common_videoout.c b/src/vulkan/wsi/wsi_common_videoout.c
+--- a/src/vulkan/wsi/wsi_common_videoout.c
++++ b/src/vulkan/wsi/wsi_common_videoout.c
+@@ -359,6 +359,19 @@
+    return intervals[VIDEOOUT_PERIOD_INTERVALS / 2];
+ }
+ 
++/* Configuring HDMI is asynchronous. Sample a bounded number of windows before
++ * deciding that a successfully accepted high-refresh mode stayed at 60 Hz.
++ * Failed waits still fall back immediately; the 12.5 ms validity gate remains.
++ * This runs only during output initialization, never in the present loop. */
++static uint64_t
++videoout_high_refresh_period_ns(int handle)
++{
++   uint64_t period = videoout_vblank_period_ns(handle);
++   for (unsigned attempt = 1; period > VIDEOOUT_HIGH_REFRESH_LIMIT_NS && attempt < 4; attempt++)
++      period = videoout_vblank_period_ns(handle);
++   return period;
++}
++
+ /* Opens VideoOut once per process, in the high-frame-rate mode where the
+  * title declares it, the output takes it and the display then refreshes at
+  * it. Under lock. */
+@@ -389,7 +402,7 @@
+       out->high_frame_rate = supported > 0 && configured == 0;
+       if (out->high_frame_rate) {
+          /* A period of 0 is a failed wait: never taken for 119.88 Hz */
+-         const uint64_t period = videoout_vblank_period_ns(out->handle);
++         const uint64_t period = videoout_high_refresh_period_ns(out->handle);
+          if (period == 0 || period > VIDEOOUT_HIGH_REFRESH_LIMIT_NS) {
+             sceVideoOutConfigureOutput(out->handle, PS5_VIDEO_OUT_MODE_RESTORE, NULL, NULL, NULL);
+             out->high_frame_rate = false;

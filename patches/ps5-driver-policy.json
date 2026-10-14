@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "source_revision": "47e9eb61ee7e1112194557e1e047178562827bc6",
+  "patch_sha256": "4dd5af7f530c094e653e1ef8fd5b342addc8e69468abba3ad93e685376e0c9cc",
+  "files": {
+    "src/amd/vulkan/winsys/ps5/radv_ps5_cs.c": {
+      "original_sha256": "8a108b5f70b5339a9fe2cbf2466869ca81a7b4dc25d3eda44fe8345b15254e10",
+      "patched_sha256": "1b4d95e0dac521074178f7bcccb4e75cfa3a507653887c65974b48b5af5d1fc1"
+    },
+    "src/vulkan/wsi/wsi_common_videoout.c": {
+      "original_sha256": "a8347cdbd73959b7c5cccf4dd3047434933c44250964306c42f1b776f6dbcea3",
+      "patched_sha256": "7471e68dd33b5f8d1980a6f8b2f176bc3f10ef58ff1a43ae78df634b10f50db1"
+    }
+  }
+}
