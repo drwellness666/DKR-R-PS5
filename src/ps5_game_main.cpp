@@ -17,6 +17,7 @@
 #include "ps5_render_diagnostics.h"
 #include "ps5_shader_cache.h"
 #include "ps5_revision_selection.h"
+#include "ps5_display_options.h"
 
 int dkrr_game_main(int, char **);
 extern "C" unsigned dkrr_report_missing_imports(void (*)(const char *));
@@ -84,8 +85,11 @@ int main() {
     // The public SDL PS5 driver's default map omits Back. DKR-R uses that
     // logical button for its settings overlay, so map the touchpad click to it.
     setenv("SDL_GAMECONTROLLERCONFIG",dkrr_ps5_controller_mapping,1);
-    report("build=private-source-beta1; OFL + US single/dual + neutral audio");
+    report("build=optional-output-v1; OFL + US single/dual + neutral audio + optional controls");
     configure_render_diagnostics();
+    dkrr_ps5_initialize_display();
+    const auto output = dkrr_ps5_boot_display_choice();
+    report("display requested: %up / %u Hz; SDR; HDMI VRR/ALLM governed by system", output.resolution, output.refresh);
     const char*cache_option=getenv("DKR_PS5_SHADER_CACHE");
     if(cache_option && !strcmp(cache_option,"1")){
         const char*cache="/data/dkrr/renderer/radv-shader-cache";
