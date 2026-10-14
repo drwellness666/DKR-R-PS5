@@ -1,0 +1,30 @@
+name: ROM-free source checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: python3 tools/check_public_source.py .
+      - run: python3 tools/test_rom_checker.py
+      - run: python3 tools/test_ps5_realpath.py
+      - run: python3 tools/test_ps5_filesystem.py
+      - run: python3 tools/test_ps5_getcwd.py
+      - run: python3 tools/test_ps5_rdram.py
+      - run: bash tools/test_save_metadata.sh "$PWD/work/save-metadata-tests"
+      - run: python3 tools/test_upstream_title_art.py
+      - run: python3 tools/test_title_metadata_audit.py
+      - run: ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 python3 tools/test_title_poster_retirement.py
+      - run: python3 tools/test_performance_summary.py
+      - run: python3 tools/test_revision_selection.py
+      - run: ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 python3 tools/test_game_language_bridge.py
+      - run: ASAN_OPTIONS=detect_leaks=0 python3 tools/test_native_game_bundle_update.py
+      - run: ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 python3 tools/test_preview_update.py
+      - run: python3 tools/test_preview_receipt.py
+      - run: python3 tools/test_source_release_update.py
+      - run: clang++ -std=c++20 -O1 -fsanitize=address,undefined -Isrc tests/neutral_audio.cpp -o /tmp/neutral-audio && ASAN_OPTIONS=detect_leaks=0 /tmp/neutral-audio
+      - run: clang -std=c11 -Wall -Wextra -Werror -Isrc tests/shader_cache.c -o /tmp/shader-cache && /tmp/shader-cache
+      - run: clang -std=c11 -Wall -Wextra -Werror -Isrc tests/render_diagnostics.c -o /tmp/render-diagnostics && /tmp/render-diagnostics
+      - run: bash -n build.sh build_gpu.sh build_rt64.sh build_game.sh tools/*.sh
