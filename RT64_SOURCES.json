@@ -1,0 +1,138 @@
+{
+  "sources": [
+    {
+      "name": "RT64",
+      "path": "rt64",
+      "revision": "6f1c2d99a4ea571c139f449c326fd176ba8f3496",
+      "file": "RT64.tar.gz",
+      "sha256": "49fe8626ed4dc966d58ac9bd370fc1fdc4689c5a2f7000a5d15c8c6ab9bbe0e6",
+      "bundled": true,
+      "strip_components": 0
+    },
+    {
+      "name": "ddspp",
+      "path": "rt64/src/contrib/ddspp",
+      "repository": "https://github.com/redorav/ddspp",
+      "revision": "21ca0c4319dfd5a161c5f2a0c406e8f60194ea6c",
+      "url": "https://codeload.github.com/redorav/ddspp/tar.gz/21ca0c4319dfd5a161c5f2a0c406e8f60194ea6c",
+      "file": "ddspp-21ca0c4319dfd5a161c5f2a0c406e8f60194ea6c.tar.gz",
+      "sha256": "8a093b49f09cc0227f7cdcf4b9da1bde24ecb4c126acc414dbfc2269d007f695",
+      "strip_components": 1
+    },
+    {
+      "name": "hlslpp",
+      "path": "rt64/src/contrib/hlslpp",
+      "repository": "https://github.com/redorav/hlslpp",
+      "revision": "6f5274c66132e8f951c400103d897582b8f21491",
+      "url": "https://codeload.github.com/redorav/hlslpp/tar.gz/6f5274c66132e8f951c400103d897582b8f21491",
+      "file": "hlslpp-6f5274c66132e8f951c400103d897582b8f21491.tar.gz",
+      "sha256": "b6f42de9ff25f24bffe8722a5667d4cde59563887196381ab5e2be10c399a566",
+      "strip_components": 1
+    },
+    {
+      "name": "im3d",
+      "path": "rt64/src/contrib/im3d",
+      "repository": "https://github.com/john-chapman/im3d",
+      "revision": "d03941725fd0bd08c78c46e3e5b0265526e9d060",
+      "url": "https://codeload.github.com/john-chapman/im3d/tar.gz/d03941725fd0bd08c78c46e3e5b0265526e9d060",
+      "file": "im3d-d03941725fd0bd08c78c46e3e5b0265526e9d060.tar.gz",
+      "sha256": "0f4fb00cf422184329eb9c0cdaa832e7ab278435fb6c09cb3de9723111e8688f",
+      "strip_components": 1
+    },
+    {
+      "name": "imgui",
+      "path": "rt64/src/contrib/imgui",
+      "repository": "https://github.com/ocornut/imgui",
+      "revision": "277ae93c41314ba5f4c7444f37c4319cdf07e8cf",
+      "url": "https://codeload.github.com/ocornut/imgui/tar.gz/277ae93c41314ba5f4c7444f37c4319cdf07e8cf",
+      "file": "imgui-277ae93c41314ba5f4c7444f37c4319cdf07e8cf.tar.gz",
+      "sha256": "a368959e7af9cc24b5f445aa28d545cd13990ed4ffec14457978d814def71f58",
+      "strip_components": 1
+    },
+    {
+      "name": "implot",
+      "path": "rt64/src/contrib/implot",
+      "repository": "https://github.com/epezent/implot",
+      "revision": "f156599faefe316f7dd20fe6c783bf87c8bb6fd9",
+      "url": "https://codeload.github.com/epezent/implot/tar.gz/f156599faefe316f7dd20fe6c783bf87c8bb6fd9",
+      "file": "implot-f156599faefe316f7dd20fe6c783bf87c8bb6fd9.tar.gz",
+      "sha256": "d779ce33326343724d1e0fa23d4960cc9acaf4af584bc0134e504e7717ccc4bb",
+      "strip_components": 1
+    },
+    {
+      "name": "re-spirv",
+      "path": "rt64/src/contrib/re-spirv",
+      "repository": "https://github.com/rt64/re-spirv",
+      "revision": "5d6b756ee62760f71b65d37e41a0b5a3dab90507",
+      "url": "https://codeload.github.com/rt64/re-spirv/tar.gz/5d6b756ee62760f71b65d37e41a0b5a3dab90507",
+      "file": "re-spirv-5d6b756ee62760f71b65d37e41a0b5a3dab90507.tar.gz",
+      "sha256": "42abdac493443dac79e031299fbbc55168b833b8973a6281717243e0ab4b9246",
+      "strip_components": 1
+    },
+    {
+      "name": "stb",
+      "path": "rt64/src/contrib/stb",
+      "repository": "https://github.com/nothings/stb",
+      "revision": "ae721c50eaf761660b4f90cc590453cdb0c2acd0",
+      "url": "https://codeload.github.com/nothings/stb/tar.gz/ae721c50eaf761660b4f90cc590453cdb0c2acd0",
+      "file": "stb-ae721c50eaf761660b4f90cc590453cdb0c2acd0.tar.gz",
+      "sha256": "cd82be3ddc4146ef738f80a794a83f2ed45faab1c5b23278121788ef7b598e89",
+      "strip_components": 1
+    },
+    {
+      "name": "xxHash",
+      "path": "rt64/src/contrib/xxHash",
+      "repository": "https://github.com/Cyan4973/xxHash",
+      "revision": "1864a50c9b5cf8500d8e9e61ed92aa0dd3772750",
+      "url": "https://codeload.github.com/Cyan4973/xxHash/tar.gz/1864a50c9b5cf8500d8e9e61ed92aa0dd3772750",
+      "file": "xxHash-1864a50c9b5cf8500d8e9e61ed92aa0dd3772750.tar.gz",
+      "sha256": "d317fd97fa1320298f50b91e511a4663e2ca1ed9940b390342a00ade8a9ccc9e",
+      "strip_components": 1
+    },
+    {
+      "name": "zstd",
+      "path": "rt64/src/contrib/zstd",
+      "repository": "https://github.com/facebook/zstd",
+      "revision": "0ff651dd876823b99fa5c5f53292be28381aee9b",
+      "url": "https://codeload.github.com/facebook/zstd/tar.gz/0ff651dd876823b99fa5c5f53292be28381aee9b",
+      "file": "zstd-0ff651dd876823b99fa5c5f53292be28381aee9b.tar.gz",
+      "sha256": "4eb03c8a61d0b4f5b22f05128c3bb4ed03b937c9b33979371dc858add32e21c4",
+      "strip_components": 1
+    },
+    {
+      "name": "mupen64plus-core",
+      "path": "rt64/src/contrib/mupen64plus-core",
+      "revision": "860fac3fbae94194a392c1d9857e185eda6d083e",
+      "url": "https://codeload.github.com/mupen64plus/mupen64plus-core/tar.gz/860fac3fbae94194a392c1d9857e185eda6d083e",
+      "file": "mupen64plus-core-860fac3fbae94194a392c1d9857e185eda6d083e.tar.gz",
+      "sha256": "8e2a262457a60d3ea6b36197239f73556cba157b60b62fc0b595f7af4dc0225a",
+      "strip_components": 1
+    },
+    {
+      "name": "SPIRV-Headers",
+      "path": "rt64/src/contrib/re-spirv/external/SPIRV-Headers",
+      "revision": "f013f08e4455bcc1f0eed8e3dd5e2009682656d9",
+      "url": "https://codeload.github.com/KhronosGroup/SPIRV-Headers/tar.gz/f013f08e4455bcc1f0eed8e3dd5e2009682656d9",
+      "file": "SPIRV-Headers-f013f08e4455bcc1f0eed8e3dd5e2009682656d9.tar.gz",
+      "sha256": "452418924e8c281872e7a5ac34fdb977f2be5f880997d559e1e9062df13ae2cd",
+      "strip_components": 1
+    }
+  ],
+  "dxc": {
+    "revision": "cc15e715ee378a4f675b335bd1071ff105873fc8",
+    "files": [
+      {
+        "path": "bin/x64/dxc-linux",
+        "url": "https://raw.githubusercontent.com/rt64/dxc-bin/cc15e715ee378a4f675b335bd1071ff105873fc8/bin/x64/dxc-linux",
+        "sha256": "4e6f4e52989aca69739880b40b9f988357f15d10ca03284377b81f1502463ff5",
+        "bytes": 771496
+      },
+      {
+        "path": "lib/x64/libdxcompiler.so",
+        "url": "https://raw.githubusercontent.com/rt64/dxc-bin/cc15e715ee378a4f675b335bd1071ff105873fc8/lib/x64/libdxcompiler.so",
+        "sha256": "f875d0a52f4e69e9de999b7f749414bdc529aa04e9b1bc75802453f81fcd20df",
+        "bytes": 29324584
+      }
+    ]
+  }
+}

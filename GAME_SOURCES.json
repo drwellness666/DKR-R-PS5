@@ -1,0 +1,256 @@
+{
+  "sources": [
+    {
+      "name": "DKR-R",
+      "revision": "c3eda4d368afbc729ed4a71312cce38d27f87c37",
+      "file": "DKR-R-1.0.6.tar.gz",
+      "path": "DKR-R",
+      "sha256": "62c54fe3842653b536375d585c790f62a8a6638a8c7736e2006741811d9ec222",
+      "bundled": false,
+      "strip_components": 1,
+      "url": "https://codeload.github.com/ThatGuyMcd/DKR-R/tar.gz/c3eda4d368afbc729ed4a71312cce38d27f87c37"
+    },
+    {
+      "name": "N64Recomp",
+      "revision": "81213c1831fab2521a6a5459c67b63437d67e253",
+      "file": "N64Recomp.tar.gz",
+      "path": "N64Recomp",
+      "sha256": "7256099c1129da8a007ae20867333c172badee29449050f5b41a41287ca5c0f9",
+      "bundled": true,
+      "strip_components": 0
+    },
+    {
+      "name": "N64ModernRuntime",
+      "revision": "ae1ffbb909d9f93c88c41830deb539f7feef5ed2",
+      "file": "N64ModernRuntime.tar.gz",
+      "path": "N64ModernRuntime",
+      "sha256": "755cd6ca8c10335959bffc48dfaa76cba09b496b66112f5c3d926445a794e2af",
+      "bundled": true,
+      "strip_components": 0
+    },
+    {
+      "name": "Plume",
+      "revision": "d890ac899e505fb30040e037a4037cdeca68f033",
+      "file": "Plume.tar.gz",
+      "path": "rt64-game/src/contrib/plume",
+      "sha256": "6e61e0e55fb0a6a3f55aefc1d1f95f4716604876917071f0ee44bc9844ada308",
+      "bundled": true,
+      "strip_components": 0
+    },
+    {
+      "name": "dkr-decomp",
+      "path": "dkr-decomp",
+      "revision": "06cf09bab2e0a5f210d2a14a25cdf22c3c5b18c6",
+      "url": "https://codeload.github.com/DavidSM64/Diddy-Kong-Racing/tar.gz/06cf09bab2e0a5f210d2a14a25cdf22c3c5b18c6",
+      "sha256": "6702094a7e9f7ae084993bf09396fd7526c65c002c8070eb689d37367bfcf508",
+      "file": "dkr-decomp-06cf09bab2e0a5f210d2a14a25cdf22c3c5b18c6.tar.gz",
+      "strip_components": 1
+    },
+    {
+      "name": "ELFIO",
+      "path": "N64Recomp/lib/ELFIO",
+      "revision": "ad8b641f9682b6091ba8b9f7c8152255c1a2c803",
+      "url": "https://codeload.github.com/serge1/ELFIO/tar.gz/ad8b641f9682b6091ba8b9f7c8152255c1a2c803",
+      "sha256": "7ac1348e9bc9fc2c983c6ce318ee0398626f2dbdafe3a3382f7cd56a3caa09b4",
+      "file": "ELFIO-ad8b641f9682b6091ba8b9f7c8152255c1a2c803.tar.gz",
+      "strip_components": 1
+    },
+    {
+      "name": "fmt",
+      "path": "N64Recomp/lib/fmt",
+      "revision": "407c905e45ad75fc29bf0f9bb7c5c2fd3475976f",
+      "url": "https://codeload.github.com/fmtlib/fmt/tar.gz/407c905e45ad75fc29bf0f9bb7c5c2fd3475976f",
+      "sha256": "2bc1fe4a5b6d5d6a614239b4ca1d520e66e152a02d3d262684d26dfd6ab3438a",
+      "file": "fmt-407c905e45ad75fc29bf0f9bb7c5c2fd3475976f.tar.gz",
+      "strip_components": 1
+    },
+    {
+      "name": "rabbitizer",
+      "path": "N64Recomp/lib/rabbitizer",
+      "revision": "e0d8003047938e2ec3697eaf8d61a84d11d17b43",
+      "url": "https://codeload.github.com/Decompollaborate/rabbitizer/tar.gz/e0d8003047938e2ec3697eaf8d61a84d11d17b43",
+      "sha256": "088635b06542c6b0a237c85dadb53444aa4269b350e637cddaf86dee83d6a9e0",
+      "file": "rabbitizer-e0d8003047938e2ec3697eaf8d61a84d11d17b43.tar.gz",
+      "strip_components": 1
+    },
+    {
+      "name": "sljit",
+      "path": "N64Recomp/lib/sljit",
+      "revision": "f6326087b3404efb07c6d3deed97b3c3b8098c0c",
+      "url": "https://codeload.github.com/zherczeg/sljit/tar.gz/f6326087b3404efb07c6d3deed97b3c3b8098c0c",
+      "sha256": "3a8752f14e4c1c347a95155cc9f879e58be495a41e196e4e655f76c8cd1714ea",
+      "file": "sljit-f6326087b3404efb07c6d3deed97b3c3b8098c0c.tar.gz",
+      "strip_components": 1
+    },
+    {
+      "name": "tomlplusplus",
+      "path": "N64Recomp/lib/tomlplusplus",
+      "revision": "1f7884e59165e517462f922e7b6de131bd9844f3",
+      "url": "https://codeload.github.com/marzer/tomlplusplus/tar.gz/1f7884e59165e517462f922e7b6de131bd9844f3",
+      "sha256": "e2af055f0ababf8ed4d6294df1f2616494f5f01d8f3df5100400597672841c4c",
+      "file": "tomlplusplus-1f7884e59165e517462f922e7b6de131bd9844f3.tar.gz",
+      "strip_components": 1
+    },
+    {
+      "name": "miniz",
+      "revision": "8573fd7cd6f49b262a0ccc447f3c6acfc415e556",
+      "url": "https://codeload.github.com/richgel999/miniz/tar.gz/8573fd7cd6f49b262a0ccc447f3c6acfc415e556",
+      "sha256": "1fab8fc88f8329bdfd38d6ab620566c54d33fd635dd41e1506240362bb32059b",
+      "file": "miniz-8573fd7cd6f49b262a0ccc447f3c6acfc415e556.tar.gz",
+      "path": "N64ModernRuntime/thirdparty/miniz",
+      "strip_components": 1
+    },
+    {
+      "name": "o1heap",
+      "revision": "a124b850791db2a33f7354d2b0aa7da821cef6f5",
+      "url": "https://codeload.github.com/N64Recomp/o1heap/tar.gz/a124b850791db2a33f7354d2b0aa7da821cef6f5",
+      "sha256": "e4aaeda57d490c60bc29866ec09a8645bda66b6c7aaec5879d166b664b3e858c",
+      "file": "o1heap-a124b850791db2a33f7354d2b0aa7da821cef6f5.tar.gz",
+      "path": "N64ModernRuntime/thirdparty/o1heap",
+      "strip_components": 1
+    },
+    {
+      "name": "xxHash",
+      "revision": "ac3a25da3d957d9ef3e4114d9f8332d34ce83a46",
+      "url": "https://codeload.github.com/Cyan4973/xxHash/tar.gz/ac3a25da3d957d9ef3e4114d9f8332d34ce83a46",
+      "sha256": "3445ef17172eccc423fec8d741a82371cb020a6e8ce4b0450f926eba90a7fcec",
+      "file": "xxHash-ac3a25da3d957d9ef3e4114d9f8332d34ce83a46.tar.gz",
+      "path": "N64ModernRuntime/thirdparty/xxHash",
+      "strip_components": 1
+    },
+    {
+      "path": "dkr-decomp/tools/Flips",
+      "url": "https://codeload.github.com/Alcaro/Flips/tar.gz/6caac470f7fc096b0c5fdc374b65954f8bac5b16",
+      "revision": "6caac470f7fc096b0c5fdc374b65954f8bac5b16",
+      "sha256": "9ecc97ef0088bf1691aa9768fd06a17238fc14ca9d925c017b8c562b53d38be6",
+      "file": "Flips-6caac470f7fc096b0c5fdc374b65954f8bac5b16.tar.gz",
+      "strip_components": 1
+    },
+    {
+      "path": "dkr-decomp/tools/asm-differ",
+      "url": "https://codeload.github.com/simonlindholm/asm-differ/tar.gz/093360aa31f90e67216ed1971c4087516cc7b940",
+      "revision": "093360aa31f90e67216ed1971c4087516cc7b940",
+      "sha256": "d740ce860fffb08c55bbdb135f0a34a13f703433407a0a8384763b3286f69eed",
+      "file": "asm-differ-093360aa31f90e67216ed1971c4087516cc7b940.tar.gz",
+      "strip_components": 1
+    },
+    {
+      "path": "dkr-decomp/tools/asm-processor",
+      "url": "https://codeload.github.com/simonlindholm/asm-processor/tar.gz/52d6454e9d2ac8ed30fe523c0b58647d65d6199a",
+      "revision": "52d6454e9d2ac8ed30fe523c0b58647d65d6199a",
+      "sha256": "fd24e16d450e9128ba55cb262d270a8c3078f16e647260033603f06378a4bd8b",
+      "file": "asm-processor-52d6454e9d2ac8ed30fe523c0b58647d65d6199a.tar.gz",
+      "strip_components": 1
+    },
+    {
+      "path": "dkr-decomp/tools/m2c",
+      "url": "https://codeload.github.com/matt-kempster/m2c/tar.gz/507659bc6d4158df6920399848f650e17c78a1cd",
+      "revision": "507659bc6d4158df6920399848f650e17c78a1cd",
+      "sha256": "c4b60374ced1448b162c9aef3644ae93495b35f3b75e9d97dd17f7f3b2f0b6a7",
+      "file": "m2c-507659bc6d4158df6920399848f650e17c78a1cd.tar.gz",
+      "strip_components": 1
+    },
+    {
+      "name": "gekkonet",
+      "repository": "https://github.com/HeatXD/GekkoNet.git",
+      "commit": "5924b5c7abb5b1156c3c5609c9c36e9bede58c1c",
+      "destination": "extern/gekkonet",
+      "recursive": false,
+      "purpose": "BSD-licensed rollback input prediction, synchronization, replay and desync coordination",
+      "url": "https://codeload.github.com/HeatXD/GekkoNet/tar.gz/5924b5c7abb5b1156c3c5609c9c36e9bede58c1c",
+      "sha256": "1704d86dab246073785d841b835c03f88f302112f11489f2de57abf230fc7d07",
+      "file": "gekkonet-5924b5c7abb5b1156c3c5609c9c36e9bede58c1c.tar.gz",
+      "path": "DKR-R/extern/gekkonet",
+      "strip_components": 1
+    },
+    {
+      "name": "monocypher",
+      "repository": "https://github.com/LoupVaillant/Monocypher.git",
+      "commit": "0d85f98c9d9b0227e42cf795cb527dff372b40a4",
+      "destination": "extern/monocypher",
+      "recursive": false,
+      "purpose": "BSD-licensed authenticated encryption for private netplay datagrams",
+      "url": "https://codeload.github.com/LoupVaillant/Monocypher/tar.gz/0d85f98c9d9b0227e42cf795cb527dff372b40a4",
+      "sha256": "7339f8a4729d5339ad6df61ba11937f8d5d163ba5a49edf5fdf3d8717b73d1a9",
+      "file": "monocypher-0d85f98c9d9b0227e42cf795cb527dff372b40a4.tar.gz",
+      "path": "DKR-R/extern/monocypher",
+      "strip_components": 1
+    },
+    {
+      "name": "mbedtls",
+      "repository": "https://github.com/Mbed-TLS/mbedtls.git",
+      "commit": "c765c831e5c2a0971410692f92f7a81d6ec65ec2",
+      "destination": "extern/mbedtls",
+      "recursive": true,
+      "purpose": "Apache-2.0 static TLS and DTLS provider for the cross-platform Quick Join transport",
+      "url": "https://codeload.github.com/Mbed-TLS/mbedtls/tar.gz/c765c831e5c2a0971410692f92f7a81d6ec65ec2",
+      "sha256": "0f050462eabf814c7e3b37825efc4d8dd1caf6a3b3eeb350705ad818d6ca770a",
+      "file": "mbedtls-c765c831e5c2a0971410692f92f7a81d6ec65ec2.tar.gz",
+      "path": "DKR-R/extern/mbedtls",
+      "strip_components": 1
+    },
+    {
+      "revision": "17b6e8ce219c0677f94b63636abb9296b28841ca",
+      "url": "https://codeload.github.com/btzy/nativefiledialog-extended/tar.gz/17b6e8ce219c0677f94b63636abb9296b28841ca",
+      "sha256": "eba0c27a7d20ea6632a7e9788f1eb7d1ba757459709ade4b567c29b7eb78ec55",
+      "file": "nativefiledialog-17b6e8ce219c0677f94b63636abb9296b28841ca.tar.gz",
+      "path": "rt64-game/src/contrib/nativefiledialog-extended",
+      "strip_components": 1
+    },
+    {
+      "name": "xz",
+      "path": "xz",
+      "file": "xz-v5.8.1.tar.gz",
+      "url": "https://codeload.github.com/tukaani-project/xz/tar.gz/refs/tags/v5.8.1",
+      "sha256": "bdbc23fbf9098843357e71e49685724fda2c320c29cb1b25fd90505f14bb0b3d",
+      "strip_components": 1
+    },
+    {
+      "url": "https://github.com/decompals/ido-static-recomp/releases/download/v1.2/ido-5.3-recomp-linux.tar.gz",
+      "sha256": "ab5c741561f80913d58c8b074771f23941a3edd312505a8ebed6d1dfeb65e506",
+      "bytes": 4811055,
+      "version": "v1.2",
+      "name": "ido",
+      "path": "dkr-decomp/tools/ido-recomp/linux",
+      "file": "ido-5.3-recomp-linux-v1.2.tar.gz",
+      "strip_components": 0
+    },
+    {
+      "name": "GNU binutils",
+      "path": "binutils-2.46.0",
+      "file": "binutils-2.46.0.tar.xz",
+      "url": "https://ftp.gnu.org/gnu/binutils/binutils-2.46.0.tar.xz",
+      "sha256": "d75a94f4d73e7a4086f7513e67e439e8fcdcbb726ffe63f4661744e6256b2cf2",
+      "strip_components": 1
+    },
+    {
+      "name": "volk",
+      "revision": "be3dbd49bf77052665e96b6c7484af855e7e5f67",
+      "file": "volk-be3dbd49bf77052665e96b6c7484af855e7e5f67.tar.gz",
+      "url": "https://codeload.github.com/zeux/volk/tar.gz/be3dbd49bf77052665e96b6c7484af855e7e5f67",
+      "sha256": "295d6de2bccb4e46f77d4173ba42c9513a66623071e80ceb597e9d95de73cc32",
+      "strip_components": 1,
+      "path": "rt64-game/src/contrib/plume/contrib/volk"
+    },
+    {
+      "name": "VulkanMemoryAllocator",
+      "revision": "29b35ea4232688c0f42cdff0c10848290760a417",
+      "file": "VulkanMemoryAllocator-29b35ea4232688c0f42cdff0c10848290760a417.tar.gz",
+      "url": "https://codeload.github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/tar.gz/29b35ea4232688c0f42cdff0c10848290760a417",
+      "sha256": "c33da36cbb9328129e8c7e482107c2620b19c9a585c861e749884c4c575bf9bd",
+      "strip_components": 1,
+      "path": "rt64-game/src/contrib/plume/contrib/VulkanMemoryAllocator"
+    },
+    {
+      "name": "Vulkan-Headers",
+      "revision": "2fa203425eb4af9dfc6b03f97ef72b0b5bcb8350",
+      "file": "Vulkan-Headers-2fa203425eb4af9dfc6b03f97ef72b0b5bcb8350.tar.gz",
+      "url": "https://codeload.github.com/KhronosGroup/Vulkan-Headers/tar.gz/2fa203425eb4af9dfc6b03f97ef72b0b5bcb8350",
+      "sha256": "66e0dc7932203def85d94bf65a4fa3a3b29e61366713404f0465cdeb02e6ffd3",
+      "strip_components": 1,
+      "path": "rt64-game/src/contrib/plume/contrib/Vulkan-Headers"
+    }
+  ],
+  "upstream_version": "1.0.6",
+  "release_url": "https://github.com/ThatGuyMcd/DKR-R/releases/tag/Version1.0.6"
+}

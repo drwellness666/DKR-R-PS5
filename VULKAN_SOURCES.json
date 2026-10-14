@@ -1,0 +1,58 @@
+{
+  "sources": [
+    {
+      "name": "Plume",
+      "file": "Plume.tar.gz",
+      "bundled": true,
+      "sha256": "6e61e0e55fb0a6a3f55aefc1d1f95f4716604876917071f0ee44bc9844ada308",
+      "strip_components": 0
+    },
+    {
+      "name": "PS5_Mesa",
+      "revision": "47e9eb61ee7e1112194557e1e047178562827bc6",
+      "file": "PS5_Mesa-47e9eb61ee7e1112194557e1e047178562827bc6.tar.gz",
+      "url": "https://codeload.github.com/mihawk-99/PS5_Mesa/tar.gz/47e9eb61ee7e1112194557e1e047178562827bc6",
+      "sha256": "950e4a753036622a96cc2caa3cfc864d248e5685e955c466ed7ca9fa4b199881",
+      "strip_components": 1
+    },
+    {
+      "name": "PS5_PayloadSDK",
+      "revision": "b83202be73e930050e00de0f1b4d9ec46c0391bf",
+      "file": "PS5_PayloadSDK-b83202be73e930050e00de0f1b4d9ec46c0391bf.tar.gz",
+      "url": "https://codeload.github.com/mihawk-99/PS5_PayloadSDK/tar.gz/b83202be73e930050e00de0f1b4d9ec46c0391bf",
+      "sha256": "bacc1da38a413ad19039ca666362e134076d5e9e0275a83557568d684979fbe2",
+      "strip_components": 1
+    },
+    {
+      "name": "PS5_Vulkan",
+      "file": "PS5_Vulkan-build-support.tar.gz",
+      "bundled": true,
+      "sha256": "3d0e7bdd16dd71b4713a0e7cb36f9497501429f4144d36286a4cf501185a0596",
+      "strip_components": 0
+    },
+    {
+      "name": "volk",
+      "revision": "be3dbd49bf77052665e96b6c7484af855e7e5f67",
+      "file": "volk-be3dbd49bf77052665e96b6c7484af855e7e5f67.tar.gz",
+      "url": "https://codeload.github.com/zeux/volk/tar.gz/be3dbd49bf77052665e96b6c7484af855e7e5f67",
+      "sha256": "295d6de2bccb4e46f77d4173ba42c9513a66623071e80ceb597e9d95de73cc32",
+      "strip_components": 1
+    },
+    {
+      "name": "VulkanMemoryAllocator",
+      "revision": "29b35ea4232688c0f42cdff0c10848290760a417",
+      "file": "VulkanMemoryAllocator-29b35ea4232688c0f42cdff0c10848290760a417.tar.gz",
+      "url": "https://codeload.github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/tar.gz/29b35ea4232688c0f42cdff0c10848290760a417",
+      "sha256": "c33da36cbb9328129e8c7e482107c2620b19c9a585c861e749884c4c575bf9bd",
+      "strip_components": 1
+    },
+    {
+      "name": "Vulkan-Headers",
+      "revision": "2fa203425eb4af9dfc6b03f97ef72b0b5bcb8350",
+      "file": "Vulkan-Headers-2fa203425eb4af9dfc6b03f97ef72b0b5bcb8350.tar.gz",
+      "url": "https://codeload.github.com/KhronosGroup/Vulkan-Headers/tar.gz/2fa203425eb4af9dfc6b03f97ef72b0b5bcb8350",
+      "sha256": "66e0dc7932203def85d94bf65a4fa3a3b29e61366713404f0465cdeb02e6ffd3",
+      "strip_components": 1
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "tag": "ps5-beta.1",
+  "upstream_version": "1.0.6",
+  "source_only": true,
+  "qualification": "Experimental source beta; current native candidate awaits PS5 acceptance"
+}

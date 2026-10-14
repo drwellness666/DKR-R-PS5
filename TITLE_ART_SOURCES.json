@@ -1,0 +1,14 @@
+{
+  "upstream_commit": "c3eda4d368afbc729ed4a71312cce38d27f87c37",
+  "icon": {
+    "path": "assets/ui/Icons/DKR-R-Spinning-Icon.png",
+    "sha256": "fde98b48a6590cf999fab9eec3d254a9d4298aad07e7f999c843ab7777d805fd",
+    "credit": "DKR-R project; application icon credited to POOTERMAN in upstream README"
+  },
+  "background": {
+    "url": "https://github.com/user-attachments/assets/c913bee2-029c-4e29-9921-0f6abe7a3bf1",
+    "sha256": "213f02e7aba5a751fc6883a79c6f61312fce6f92954317bbe68197571affb7bd",
+    "credit": "Unmodified header image linked by the pinned DKR-R README"
+  },
+  "distribution": "Build-time public upstream inputs; project/artist terms retained. No character model or ROM extraction is used or exported by this title-art recipe."
+}
