@@ -44,6 +44,15 @@ snapshot += function(controls, 'RestoreControlsSnapshot(')
 saved_start = ui.index('        const auto controller_assignments =')
 saved_end = ui.index('        // This must be the final record.', saved_start)
 sdl = shlex.split(subprocess.check_output(['pkg-config', '--cflags', '--libs', 'sdl2'], text=True))
+# Clang renamed diagnostics in later releases. Probe only the known ImGui
+# compatibility suppressions; keep -Werror for all other diagnostics.
+imgui_warnings = []
+for warning in ['-Wno-nontrivial-memcall', '-Wno-nontrivial-memaccess',
+                '-Wno-uninitialized-const-pointer', '-Wno-uninitialized-const-reference']:
+    probe = subprocess.run(['clang++', '-x', 'c++', '-fsyntax-only', '-Werror', warning, '-'],
+                           input='', text=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if probe.returncode == 0:
+        imgui_warnings.append(warning)
 env = dict(os.environ, SDL_VIDEODRIVER='dummy', SDL_AUDIODRIVER='dummy',
            ASAN_OPTIONS='detect_leaks=0', UBSAN_OPTIONS='halt_on_error=1')
 with tempfile.TemporaryDirectory(prefix='dkrr-controller-presets-') as temp:
@@ -66,13 +75,14 @@ with tempfile.TemporaryDirectory(prefix='dkrr-controller-presets-') as temp:
     subprocess.run([str(out)], env=env, check=True)
     (temp / 'controls_state.inc').write_text(
         controls[controls.index('struct ControlsSnapshot {'):controls.index('// SDL\'s binding names')])
+    (temp / 'controller_capture_begin.inc').write_text(function(controls, 'BeginControllerCapture('))
     (temp / 'friendly_binding.inc').write_text(function(controls, 'FriendlyBinding('))
     (temp / 'controls_preset.inc').write_text(function(controls, 'DrawControlsPreset('))
     (temp / 'controls_bindings.inc').write_text(function(controls, 'DrawControlsBindings('))
     imgui = source / 'rt64-game/src/contrib/imgui'
     out = temp / 'controller-navigation'
     subprocess.run(['clang++', '-std=c++20', '-O1', '-g', '-Wall', '-Wextra', '-Werror',
-                    '-Wno-nontrivial-memcall', '-Wno-uninitialized-const-pointer',
+                    *imgui_warnings,
                     '-fsanitize=address,undefined', '-DDKR_RUNTIME_HAS_RT64=1',
                     '-I', str(game), '-I', str(temp), '-I', str(imgui),
                     str(root / 'tests/controller_controls_navigation.cpp'), str(game / 'runtime_input.cpp'),
