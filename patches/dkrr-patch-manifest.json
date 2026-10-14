@@ -88,8 +88,8 @@
     },
     "runtime-recomp/src/game/runtime_controls_ui.inl": {
       "original_sha256": "7ade1bd5e7b165cd1cb561507bf5ddfa87c46e8188480a66ad222e4d6a340d7e",
-      "patched_sha256": "f617a521cc478bd1cbc45f83c9b3a7ff210dd1fe21fd44a25fd446815552bbb3"
+      "patched_sha256": "4ec51dc37ee74a6c5ed21a9fdd052a75e90377154257011a3d84a5e44baf9b0b"
     }
   },
-  "patch_sha256": "cbb6ef3c2b98ce119cad110246a0a68d396a89eba8a79396bac2a95c61c7a3bc"
+  "patch_sha256": "fd8742eb1be13815d61391ffc6303ba24e1532a666089bf971091864cca8ee4b"
 }

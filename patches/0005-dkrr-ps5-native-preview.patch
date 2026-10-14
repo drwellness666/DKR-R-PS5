@@ -1059,7 +1059,19 @@
  }
 --- a/runtime-recomp/src/game/runtime_controls_ui.inl
 +++ b/runtime-recomp/src/game/runtime_controls_ui.inl
-@@ -90,6 +90,18 @@
+@@ -38,6 +38,11 @@
+ };
+ ControlsPageState g_controls_page;
+ 
++void SelectControlsPlayer(ControlsPageState& state, std::size_t player) {
++    if (player != g_selected_player) state.undo.reset();
++    g_selected_player = player;
++}
++
+ ControlsSnapshot TakeControlsSnapshot() {
+     namespace input = dkr::runtime::input;
+     ControlsSnapshot snapshot;
+@@ -90,6 +95,18 @@
  
  // SDL's binding names, in the words a player knows (controls.js friendly()).
  std::string FriendlyBinding(const std::string& value) {
@@ -1078,7 +1090,17 @@
      static const std::map<std::string, std::string> kNames{
          {"Unbound", "Not assigned"}, {"a", "A"}, {"b", "B"}, {"x", "X"}, {"y", "Y"},
          {"start", "Menu / Start"}, {"back", "View / Select"}, {"guide", "Guide"},
-@@ -427,20 +439,56 @@
+@@ -203,6 +220,9 @@
+ }
+ 
+ void BeginControllerCapture(int action, CaptureDevice device, bool secondary = false) {
++    // A new mapping operation ends the preceding restore/preset undo, even if
++    // the user later cancels it. Never roll back mappings edited afterwards.
++    g_controls_page.undo.reset();
+     g_capture_action = action;
+     g_capture_device = device;
+     g_capture_secondary_controller = secondary;
+@@ -427,20 +447,56 @@
  
  // ------------------------------------------------------------ bindings
  
@@ -1139,7 +1161,7 @@
      const float column = std::floor(width / static_cast<float>(columns));
      ImDrawList* draw = ImGui::GetWindowDrawList();
      const PaddockType head = PaddockReading(13.0F, true, 1.45F);
-@@ -527,13 +575,14 @@
+@@ -527,13 +583,14 @@
                              width - 8.0F);
                  ImGui::Unindent(4.0F);
                  PaddockGap(6.0F);
@@ -1156,7 +1178,7 @@
                      ImGui::BeginGroup();
                      PaddockText(PaddockReading(12.0F, false, 1.45F), PaddockRgb(kSetMuted),
                                  kHeads[static_cast<std::size_t>(device_column + 1)], cell - 8.0F);
-@@ -541,6 +590,7 @@
+@@ -541,6 +598,7 @@
                      binding_button(device_column, cell - 8.0F);
                      ImGui::EndGroup();
                      bottom = std::max(bottom, ImGui::GetItemRectMax().y);
@@ -1164,7 +1186,7 @@
                      ++slot;
                  }
                  ImGui::SetCursorScreenPos({row_at.x, bottom + 8.0F});
-@@ -907,6 +957,7 @@
+@@ -907,6 +965,7 @@
                    dkr::runtime::input::action_label(static_cast<Action>(g_capture_action));
          help = g_capture_device == CaptureDevice::Keyboard
              ? "Press a keyboard key. Escape cancels."
@@ -1172,3 +1194,12 @@
              : "Press a gamepad button or move an axis firmly. Escape cancels.";
      } else if (g_capture_action == kShortcutCaptureAction) {
          heading = ShortcutActionLabel(g_capture_shortcut_action);
+@@ -1033,7 +1092,7 @@
+             ImGui::SetCursorScreenPos({chips_x + (chip_width + 10.0F) * static_cast<float>(player), chips_y});
+             const std::string label = "Player " + std::to_string(player + 1U);
+             if (DrawSoundChip(label.c_str(), player == g_selected_player, chip_width)) {
+-                g_selected_player = player;
++                SelectControlsPlayer(state, player);
+             }
+         }
+         ImGui::SetCursorScreenPos({at.x, chips_y + chip_height});
