@@ -13,6 +13,11 @@ jobs:
       - run: python3 tools/test_controller_presets.py
       - run: python3 tools/test_ps5_display.py
       - run: python3 tools/test_ps5_diagnostics.py
+      - run: python3 tools/test_native_game_installer.py
+      - run: python3 tools/test_ps5_ui_framebuffer.py
+      - run: python3 tools/test_journal_reader.py
+      - run: python3 tools/test_ps5_driver_policy.py
+      - run: python3 tools/test_texture_pack_copy.py
       - run: python3 tools/test_dependency_patch.py
       - run: python3 tools/test_game_dependency_preparation.py
       - run: python3 tools/test_update_baseline.py
