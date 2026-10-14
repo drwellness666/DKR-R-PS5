@@ -85,3 +85,15 @@ or storage safety than the reported test demonstrates.
 ## Optional output comparison
 
 Follow [DISPLAY_FEATURES.md](DISPLAY_FEATURES.md). First retain the accepted 1080p/60 baseline; then apply 4K/60 for the next start while keeping the same game rendering/detail and scene. Record picture, UI, sound, hitch timing and actual TV HDMI information. Restore 1080p/60 before comparing higher internal render detail. The capable 120-Hz metadata bundle is a separate later experiment and is not eligible for the ordinary metadata-preserving update. Compare VRR/ALLM as system settings only after stable picture/audio. Native HDR is unavailable; record system SDR conversion separately.
+
+
+## One refined candidate after the owner's accepted session
+
+The preceding integrated candidate was physically accepted for US 1.0/1.1,
+picture/audio, save labels, original icon, cloud home background, paired launch
+image, normal close and repeated start. The new refinement is offline-qualified
+only. See [INTEGRATED_TEST.md](INTEGRATED_TEST.md) for one shared session, including
+full-size 4K UI, optional driving preset in each profile, same-track cold/warm
+hitch capture, exact own-pack copy for US 1.1 and measured 120-Hz fallback checks.
+A known fallback or a measured rendering defect is investigated within that
+same candidate; the preserved predecessor is an emergency archive.

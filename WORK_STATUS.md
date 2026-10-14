@@ -1,62 +1,69 @@
-# Aktueller gemeinsamer Teststand — 2026-10-14
+# Gemeinsamer PS5-Teststand — 2026-10-15
 
-Es gibt jetzt eine gemeinsame Kandidatenlinie. [INTEGRATED_TEST.md](INTEGRATED_TEST.md)
-führt sämtliche besprochenen Bereiche und die noch nötigen Abschlussnachweise
-in einer Tabelle auf. Historische Einzelstände sind nur erhaltene Rückfallarchive,
-keine vorgeschriebene Folge von zwanzig Tests. Die PS5 wird in dieser Offlinephase
-weder kontaktiert noch verändert.
+Am 14. Oktober hat der Nutzer beide US-Versionen im selben integrierten DKR-R
+1.0.6-Titel gestartet und gespielt. Bild und Ton waren normal. Das originale
+Icon, der Wolkenhintergrund im Hauptmenü und dasselbe Motiv beim Start wurden
+bestätigt. Der Startschirm verschwindet nach der ersten fertigen Präsentation.
+Ein reguläres Schließen und erneuter Start desselben Builds funktionierten.
+Diese Abnahme gehört zu `integrated-ad598d532cbc05e1da8b2623`.
 
-Enthalten sind DKR-R 1.0.6, beide eigenen US-Revisionspayloads, EN/FR/DE im
-Originalmenü, Versionswahl für den nächsten Start, bestehende getrennte Profile,
-OFL-Schriften und Save-Namen, gefüllte Play-Seite, einspaltige Controllerfelder,
-reparierter Seitenleistenmarker, optionales R2/L2-Profil mit Rückgängig,
-vorhandenes Rumble/Memory Pak, ursprüngliches Icon und identisches Hintergrund-/
-Startmotiv mit bestätigtem Ausblendeaufruf. Der neutrale Audiopfad bleibt bitgenau.
-PAL ist nach Nutzerentscheidung zurückgestellt.
+Der neue, ausschließlich offline gebaute Kandidat heißt
+`integrated-a28af6c874bac873eec0645f`. Er enthält alle bisherigen Funktionen und
+die unten beschriebenen Korrekturen. Er wurde nach dem ausdrücklichen
+Ausschalten der PS5 nicht übertragen oder dort getestet. Es gibt genau einen
+aktuellen neuen Testkandidaten; der bestätigte Vorgänger bleibt als Vergleich
+und für eine bewusst angeforderte Notfallwiederherstellung erhalten.
 
-Im selben Build sind 1080p/1440p/4K und 60/120 Hz optional für den nächsten Start
-wählbar; ohne gespeicherte Vorgabe bleibt 1080p/60. VRR/ALLM werden weiterhin vom
-PS5-/TV-System gesteuert. Native HDR-Ausgabe und erweiterte DualSense-Effekte
-haben noch keinen qualifizierten Backend-Vertrag und erhalten keine Scheinoption.
+- Die Recompiled-Oberfläche behält bei 1440p/4K ihre logische Größe und erhält
+  den tatsächlichen Framebuffer-Skalierungsfaktor. Der bisher zu kleine
+  Menübereich war ein Skalierungsfehler. Echte ImGui-Frames und Clip-/Viewport-
+  Verträge sind lokal geprüft; die TV-Abnahme der Änderung steht aus.
+- Die Grafiktreiberstatistik schreibt im normalen Betrieb nicht mehr alle zehn
+  Sekunden unter der Submit-Sperre ins Dateiprotokoll. Bei explizitem
+  `power_profile=1` bleibt sie verfügbar. Fehlerausgaben bleiben erhalten.
+- Die 120-Hz-Prüfung wiederholt ihre Messung bei zunächst langsamer Ausgabe
+  höchstens viermal. Fehlgeschlagene Aufrufe und der bisherige 12,5-ms-Grenzwert
+  bleiben erhalten. Der letzte Konsolenlauf nahm den Modus zunächst an, maß
+  jedoch 20,872 ms und stellte 59,94 Hz wieder her. Ein Übergangs- oder
+  VRR-Leerlaufeinfluss ist unbestätigt; 120 Hz wird nicht als gelöst behauptet.
+- Die Controllerseite erklärt die ausdrückliche Aktivierung von **R2 / L2
+  driving** mit Kreuz. Die zuletzt gespeicherten Profile waren **Classic**:
+  L2 war dort Z/Hupe. Eigene Belegungen werden nicht automatisch überschrieben.
+  Jede US-Version behält ihre eigene Auswahl und Rückgängig-Funktion.
+- Ein separat vorbereiteter kleiner Helfer kopiert das exakt geprüfte, bereits
+  vorhandene eigene SR.GU-Paket vom US-1.0-Profil ins bestehende US-1.1-Profil.
+  Er enthält keine Texturen. Einstellungen und Spielstände bleiben erhalten;
+  abweichende Ziele, Symlinks und fremde temporäre Dateien werden abgelehnt.
+  Die Konsolenkopie und Auswahl in Textures stehen noch aus.
+- Der normale Installer provisioniert das eigene Diagnoseverzeichnis. Ein
+  begrenzter Leser kann ein konkret benanntes Journal desselben Builds lesen,
+  auch wenn der Webserver die privaten Dateien mit Modus 0600 nicht öffnen
+  kann. Er wechselt nur seine eigene Benutzeridentität und schreibt nichts.
 
-Die neue [Diagnose](DIAGNOSTICS.md) verbindet eine Build-Kennung mit dem exakten
-privaten eboot/ELF-Hash, einem kleinen Absturzjournal und einer ausdrücklich
-aktivierbaren, auf 60 Sekunden begrenzten Messung erfolgreicher Present-Rückgaben.
-Der vorhandene FPS-Overlay bleibt zuständig für Live-Anzeigen. Optional kann ein
-separater Hintergrund-Logger die tatsächlich ausgegebenen Systemmeldungen an den
-PC weiterreichen; keine FPS-Hooks oder fremden Prozessbeendigungen.
+Die beiden bisherigen Minutenanzeigen meldeten jeweils sechs Pausen über
+50 ms bei ungefähr 59,5 Present-Rückgaben/s. Menüzeit, Strecke und Kalt-/Warmlauf
+waren nicht kontrolliert. Die Zehn-Sekunden-Protokollierung ist ein konkreter
+Verdacht, keine bewiesene Ursache. Ein ruckelfreier Lauf oder ein gemessener
+Leistungsgewinn wird erst nach einem passenden Vergleich behauptet.
 
-Native UI-/Plume-Kompilierung und gemeinsamer Link/FSELF bestehen lokal.
-Signal-/Journal-/Messungs-/UI-Tests, lokaler tatsächlicher Relay-Transport und
-exakte ELF-Zuordnung sind geprüft. Der Metadaten-Updater erlaubt nur den expliziten
-attribute3-Übergang 0 -> 0x40040 bei unveränderten sonstigen Feldern, prüft alle
-drei eigenen Kopien vor Änderungen und erhält ROMs/Profile/Spielstände. Keine
-app.db-Schreibzugriffe oder unqualifizierten System-IPC-Aufrufe.
+Der vollständige native DKRPortGame-Build mit -O3, privaten Zeilentabellen,
+Link und gültigem FSELF ist bestanden. Beide tatsächlichen Treiberobjekte
+wurden aus den exakt geprüften gepinnten Quellen neu kompiliert. SDK/SDL und
+die bereits validierte eigene CPU-Pipeline wurden ausdrücklich wiederverwendet.
+Alle 54 Abhängigkeitspatches werden nach dem Anwenden zurückgeprüft; zwei neue
+Treiberänderungen besitzen zusätzliche Vorher-/Nachher-Prüfsummen. Details und
+aktuelle Prüfresultate stehen in [CHECKS.json](CHECKS.json).
 
-Weiter offen sind die physische Abnahme dieses kombinierten Stands, der
-Hauptmenühintergrund trotz korrekt vorhandener Dateien, der kurze Wasserflash
-beim Tracks-Vorschaueinstieg, gemeldete Mikroruckler, Adventure-Intro-Bedingungen,
-Save/Pak-Schreiben und Wiederladen sowie native Ausgabe-/Controllerwirkung.
-Es wird weder fehlerfreie Konsolenfunktion noch eine gemessene Rucklerkorrektur
-behauptet. Ein Loaderfehler vor einer neuen Spielsession wird zuerst als
-Start-/Registrierungsfrage untersucht, nicht automatisch durch Build-Rücknahme.
+Noch offen: TV-Abnahme der neuen Skalierung und Leistungsänderung, tatsächliche
+120-Hz-/VRR-/ALLM-Wirkung, der kurze Wasserflash beim Tracks-Vorschaueinstieg,
+kontrollierter Adventure-Intro-Vergleich, Sprache/Umlaute sowie vollständiges
+Save/Pak-Schreiben und Wiederladen. Native HDR-Ausgabe und erweiterte
+DualSense-Effekte haben keinen qualifizierten Backend-Vertrag und erhalten
+keine Scheinoptionen. PAL bleibt nach Nutzerentscheidung zurückgestellt.
 
-Die private Quell-Beta und ihr main-Stand bleiben erhalten. Neue Quellen bleiben
-im privaten Entwurfs-PR; Eigenbau erfolgt mit eigenen Dumps, ohne Veröffentlichung
-von ROMs, generierten CPU-Spieldaten, Texturpaketen oder Spiel-Binaries. Der
-Quellrelease-Prüfer kann Updates herunterladen; Eigenbau und inkrementelle eigene
-Installation bleiben ausdrücklich ausgelöst. Kein automatischer Binärinstaller
-im laufenden Spiel. [UPDATE_GUIDE.md](UPDATE_GUIDE.md).
-
-Historischer Konsolenstand: Nutzer spielte US 1.0 mit Bild/Ton/HUD, Save-Schriften
-und Icon. Zuletzt akzeptierter Bildfix-eboot:
-`a878f66d9dd1d851d5bd974e8e8185f6c2c5b87e8af5a2c4c8df641bf55cfdad`.
-Später verweigerte der Loader sowohl einen neueren Doppelbuild als auch diesen
-identischen Rückfallstand vor einem neuen Spielprotokoll. Ursache unbestätigt.
-Der frühere unqualifizierte Systemstatus-Payload bleibt gesperrt.
-
-## Echter Eigenbau und Update-Erhalt
-
-Ein zusätzlicher kompletter Neuaufbau hat eine zuvor ungetestete Lücke gezeigt: Abhängigkeitspatches konnten unter einem äußeren Git-Repository still übersprungen werden. Die korrigierte Vorbereitung prüft/wendet alle 54 ausgewählten Upstream-Patches in isolierten Arbeitskopien an, liest die Änderungen zurück und erhält das äußere Repository. Der tatsächliche gesamte native DKRPortGame-Build einschließlich Link/FSELF ist anschließend bestanden. SDK/GPU/SDL und die schon geprüfte CPU-Pipeline wurden dabei ausdrücklich wiederverwendet.
-
-Der lokale Updatebuild prüft seinen exakten Vorgänger jetzt vor der teuren Arbeit und behält dessen qualifizierte normale/120-Hz-fähige Deklaration bei. Ein widersprechender expliziter Buildflag wird abgelehnt. Der integrierte Releasebuild erzeugt private Quellzeilentabellen bei unverändertem -O3. Es gibt weiterhin nur einen aktuellen Konsolen-Testkandidaten; frühere eingefrorene Artefakte bleiben Archive.
+Quellen und Eigenbauanleitung bleiben im privaten Entwurfs-PR. Main und die
+veröffentlichte Quell-Beta werden nicht ersetzt. ROMs, generierte Spielquellen,
+Texturpakete, Spiel-Binaries und Konsolenprotokolle bleiben privat. Ein
+Quellupdate ist möglich; Eigenbau und eigene inkrementelle Installation werden
+ausdrücklich ausgelöst. [INTEGRATED_TEST.md](INTEGRATED_TEST.md),
+[DIAGNOSTICS.md](DIAGNOSTICS.md), [UPDATE_GUIDE.md](UPDATE_GUIDE.md).

@@ -1,9 +1,11 @@
 # Optional native PS5 display features
 
-Reviewed 2026-10-14 against the pinned public homebrew sources, not a licensed Sony SDK.
+Reviewed 2026-10-15 against the pinned public homebrew sources, not a licensed Sony SDK.
 The owner's TV is an LG C1. This document distinguishes the title's buffers,
 rendered game detail, presentation rate and the HDMI signal reported by the TV.
-None of the new output choices is yet physically accepted on the owner's PS5.
+The owner confirmed 4K buffers with normal gameplay. Requested 120 Hz
+fell back to 59.94 Hz. The latest UI-scale and transition refinements remain
+untested on the TV.
 
 ## Existing settings and PS5 integration
 
@@ -143,3 +145,21 @@ preference references. The game CMake target alone enables the display choice.
 - [Pinned native VideoOut WSI](https://github.com/mihawk-99/PS5_Mesa/blob/47e9eb61ee7e1112194557e1e047178562827bc6/src/vulkan/wsi/wsi_common_videoout.c).
 - [Pinned qualified public VideoOut declarations](https://github.com/mihawk-99/PS5_PayloadSDK/blob/b83202be73e930050e00de0f1b4d9ec46c0391bf/platform/include/ps5platform/videoout.h).
 - [Upstream measured mode/driver findings](https://github.com/mihawk-99/PS5_Vulkan/blob/main/docs/HARDWARE_FINDINGS.md).
+
+## Full-size menus and conservative high-refresh refinement
+
+The SDL window remains logical 1920×1080; the Vulkan surface can be 2560×1440
+or 3840×2160. ImGui now receives actual output pixels divided by that logical
+size through `DisplayFramebufferScale`, after the inspector's NewFrame step.
+Its existing Vulkan backend scales both viewport and scissors from that value.
+This fills the same screen area without enlarging logical navigation coordinates
+or rebuilding the font atlas. Actual pinned ImGui frame/draw-data tests pass at
+all three output sizes; TV acceptance is pending.
+
+The pinned WSI initially samples six vblank intervals. The refined driver
+allows at most four such windows after a positive high-refresh configuration,
+so a slow first transition does not immediately reject the mode. Failure still
+falls back immediately and the 12.5 ms validity gate is unchanged. The accepted
+prior PS5 run measured 20.872 ms after a 119.88-Hz request and restored 59.94 Hz.
+Whether a transition or VRR idle cadence explains that reading is unconfirmed.
+This is a bounded initialization refinement, not proof of 120-Hz output.

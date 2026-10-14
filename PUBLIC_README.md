@@ -20,22 +20,23 @@ private. Tester access is granted separately; no private game build is uploaded.
 
 ## Current status
 
-Actual gameplay, audible sound, DualSense controls and the gameplay HUD were
-confirmed by one tester. On the reported setup, the later native save-metadata
-fix also passed the existing-file startup gate and reached successful game
-presentation. Complete save/reload acceptance is still pending.
+The owner confirmed both US revisions in the same integrated app, normal image
+and audio, readable save-slot labels, the original icon, the selected-title cloud
+background and matched launch artwork. A normal close and second launch passed.
+4K buffers ran at 59.94 Hz; requested 120 Hz fell back after the WSI cadence
+check. Complete save/Pak reload and the optional driving preset remain pending.
 
-Known issues include the brief Tracks-preview water flash, the missing selected-title
-background, unqualified Adventure intro behavior and occasional stutters. The current US 1.0/OFL-font build has console acceptance for picture, sound,
-Play/Online text and save-slot labels. The launch-overlay correction is confirmed.
-Dual revision selection, other UI pages and durable save/load still need
-console acceptance. Use this as an **experimental source preview**, not a stable
-release or a guarantee that every feature works.
+The new offline refinement adds full-size 4K menu scaling, default queue-statistic
+log suppression, a bounded high-refresh transition retry and qualified journal
+provision/read-back. An exact own-pack copier is prepared for the US 1.1 profile;
+no texture bytes are embedded or distributed. The full native build passes,
+while physical acceptance of these latest changes is still pending.
 
-The reported console is firmware **13.60**, Relapse, WebKit Autoloader **0.6.1**,
-kstuff-lite and ShadowMount-Plus, without etaHEN. Exact kstuff/ShadowMount versions
-were not verified. Other firmware, loader combinations and multi-console setups
-have not been qualified. This repository does not install a jailbreak.
+Known issues include the brief Tracks-preview water flash, unqualified
+Adventure intro behavior and occasional stutters. Use this as an experimental
+source preview. [WORK_STATUS.md](WORK_STATUS.md) separates physical observations
+from new host-tested refinements. Advanced DualSense effects and native HDR
+remain documented backend work; no nonfunctional enable controls are added.
 
 ## Supported ROMs
 

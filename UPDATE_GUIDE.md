@@ -99,3 +99,44 @@ The current test track combines both US revisions/languages, controller/menu cha
 ## Preserve the installed output declaration before rebuilding
 
 The local update helper now checks the exact predecessor manifest before creating the new build directory or starting toolchain work. It accepts only the own title and qualified attribute3 values 0 / 0x40040, and carries that declaration into the rebuild. An explicitly conflicting DKR_PS5_HIGH_REFRESH_BUILD is refused; upgrading the declaration still requires the separate qualified metadata transition. Private line tables are enabled for the rebuild. ROMs, saved preferences and profiles stay outside the application update. This prevents a later update of an integrated capable title from reverting its declaration to ordinary mode merely because a child shell's environment ended.
+
+
+## Share an existing own pack between the US profiles
+
+DKR-R keeps `profile-us-v77` (US 1.0) and `profile-us-v80` (US 1.1 / Rev A)
+separate. Texture choices and controller bindings are intentionally per profile.
+Keep that upstream-compatible structure. Build the small helper from your
+existing upstream-imported, canonical RT64 ZIP; it embeds only its name, size
+and hash. The SDK SHA1 input is the pinned public `PS5_PayloadSDK/crt/nid.c`:
+
+```bash
+python3 tools/build_texture_pack_copy.py   "$DKR_GPU_WORK/PS5_Vulkan/.deps/native/ps5-payload-sdk"   /ABSOLUTE/PRIVATE/srgu-remastered-v0.2.7.zip   "$DKR_GAME_WORK/private/copy-own-pack-to-us11.elf"   --sha-source "$DKR_GPU_WORK/PS5_PayloadSDK/crt/nid.c"
+```
+
+Start US 1.1 once to create its own profile, then close the title normally.
+The source pack must already exist in
+`/data/dkrr/profile-us-v77/texture-packs/` with that exact basename and identity.
+Send the prepared helper through your existing ELF loader. Wait for
+`DKRR PACK COPY PASS` before starting the same game again. Open **Textures**
+in US 1.1 and enable that pack if it is not already selected. The copy consumes
+one additional pack's worth of storage; no full texture upload is needed.
+
+The helper drops only its own effective identity to the known game UID, validates
+ordinary directories and the entire source hash, copies to a new temporary
+file, syncs and reads it back before publishing. A repeat of the same copy
+is harmless; different existing destinations, symlinks or old partial files
+stop for inspection. It never edits controller settings, saves, Pak files,
+ROMs, shell registration or another process. Keep the title closed to avoid
+concurrent profile writes. Hash-checked own copies are private; this mechanism
+does not grant distribution rights for someone else's texture artwork.
+
+## Refined candidate, 2026-10-15
+
+The preceding integrated build is physically accepted for both US revisions,
+normal image/audio, original icon, home background and matched launch artwork.
+The next offline candidate adds full-size 4K UI, normal-operation queue-log
+suppression, bounded 120-Hz transition retries and qualified journal support.
+An update from that exact accepted manifest changes the executable only;
+registered metadata and paired artwork remain identical. A hash-backed
+rollback is retained for deliberate emergency use. No automatic game restart,
+rollback, console update or GitHub main/release replacement takes place.

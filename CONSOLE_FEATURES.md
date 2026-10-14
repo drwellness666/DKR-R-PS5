@@ -147,3 +147,15 @@ Der bestehende Bereich Graphics → Game display übernimmt die native Ausgabewa
 ## Integrated diagnostics
 
 [INTEGRATED_TEST.md](INTEGRATED_TEST.md) is the current single-candidate track. [DIAGNOSTICS.md](DIAGNOSTICS.md) describes the own crash journal, existing FPS overlay, explicit bounded frame-time capture and optional PC log relay. No kernel/FPS hook, unqualified status payload or in-game automatic binary installation is added.
+
+
+### Explicit activation in each US revision
+
+The accepted session's stored bindings were Classic in both profiles. With
+Classic, L2 is Z (horn) and R2 is not the N64 A accelerator. To use the optional
+layout, open **Controls → Bindings**, select **R2 / L2 driving** and confirm
+with Cross. It adds R2 to accelerate and L2 to brake, moves Z to L1 and retains
+Cross/Square as alternatives. Switch US version and apply the preset there too
+if wanted; own bindings are preserved until explicit selection. Undo restores
+the prior layout. Trigger behavior and ordinary rumble still need a deliberate
+physical test of the selected preset.

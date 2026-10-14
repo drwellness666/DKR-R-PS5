@@ -1,7 +1,7 @@
 {
   "upstream_version": "1.0.6",
   "upstream_commit": "c3eda4d368afbc729ed4a71312cce38d27f87c37",
-  "ps5_gameplay": "USER CONFIRMED: actual US v77 gameplay, sound, DualSense and HUD. Track menu, save labels, Adventure intro, settings text and stutters reported; later report adds transient water flicker at Tracks preview entry. Latest candidates not console-tested.",
+  "ps5_gameplay": "USER CONFIRMED both US 1.0/1.1 in preceding integrated build, normal image/audio, original icon/cloud home background/paired start art, normal close and second start. New offline refinement not console-tested.",
   "native_fself_integrity": "PASS",
   "host_tests": {
     "total": 121,
@@ -46,13 +46,13 @@
     "generated_cpu_files_identical_to_candidate": "Historical pre-language baseline equivalence; current US77/US80 pipeline adds reviewed language hooks and delay-slot patches.",
     "python_venv_reused": true
   },
-  "hardware_baseline": "Actual game user-played; later metadata launch16 reached game presentation with existing Pak files. Complete save/write/reload and newest source candidates remain pending.",
+  "hardware_baseline": "2026-10-14 fresh 34-file install and eight registered metadata hashes matched; user accepted both US revisions, normal picture/audio/art and repeated start. Complete save/Pak reload remains pending.",
   "first_ps5_graphics": "Accurate profile budget applied at UI and renderer: Vulkan, 2x original resolution, no MSAA, framebuffer precision off; hardware untested.",
   "console_menu_host_navigation": "PASS actual SettingsColumns and SavesGrid with real ImGui: field order, disabled items, scrolling, activation, reverse; TV pending.",
   "save_metadata_host_model": "PASS current stat wrapper model, native UID0/backing UID1 identity, mismatch/race/refusal and alias-count preservation; launch16 existing-file startup passed, full persistence pending. New helper idle-expiry removed locally; not console-tested. Own save-backups/save-history paths included and traversal rejected in current model.",
   "remastered_textures": "USER-SUPPLIED PRIVATE ONLY: 1832 replacements converted with actual 1.0.6 importer; full archive checksum verified on own PS5; visible output/performance pending",
-  "date": "2026-10-14",
-  "last_console_eboot_sha256": "a878f66d9dd1d851d5bd974e8e8185f6c2c5b87e8af5a2c4c8df641bf55cfdad",
+  "date": "2026-10-15",
+  "last_console_eboot_sha256": "0871ddfed218b1a006eddb8a6577a29a4fe5abe0d98c4bc153f66b6005beddf0",
   "local_native_candidates": [
     {
       "kind": "v77",
@@ -291,7 +291,7 @@
     "whole_bundle_atomic": false,
     "power_loss_tested": false
   },
-  "private_beta": "Source-only private beta; latest native candidate unqualified on console; no tester invitations or public release yet.",
+  "private_beta": "Private source-only draft PR, main/beta.1 preserved; no invitations or new public/native release. Latest refinement host/native qualified, not console-tested.",
   "preceding_selection_only_candidate": {
     "title": "PPSA94678",
     "upstream": "1.0.6",
@@ -316,27 +316,18 @@
     "app_file_count": 33
   },
   "current_private_beta_candidate": {
-    "title_id": "PPSA94678",
-    "upstream": "1.0.6",
+    "kind": "one combined offline refinement",
+    "build_id": "integrated-a28af6c874bac873eec0645f",
     "revisions": [
       77,
       80
     ],
-    "languages": [
-      "English",
-      "French",
-      "German"
-    ],
-    "eboot_sha256": "11c2d3b4ae3eee8d4735cbaf6c4d1acd822ed37c5866efad7f0e77f8117dfcca",
-    "app_manifest_sha256": "94065b89468ee18e9e7048b2aaf47ddeeb85beda29882f17d549c4b00f2d2e51",
-    "native_integrity": "PASS",
-    "paired_artwork_identical": true,
-    "sidebar_stripe_removed": true,
-    "neutral_audio_fast_path": true,
-    "shader_cache_default": false,
+    "files": 34,
+    "eboot_sha256": "c656c10ab4fe26b320e7bc29be200850469355f64075c6a801b5bcdde4ee4f1d",
+    "app_manifest_sha256": "aa754f610656e953120e3f27cedd2b01db1ff59b5e931e73f9cc9114474aa812",
+    "native_fself_integrity": "PASS",
     "console_deployed": false,
-    "console_tested": false,
-    "app_file_count": 34
+    "console_tested": false
   },
   "neutral_audio_optimization": {
     "actual_upstream_mixer_parity_all_int16": "PASS",
@@ -387,15 +378,15 @@
     "undo_ownership_guard": "PASS actual player selection and binding capture entry"
   },
   "optional_display": {
-    "date": "2026-10-14",
+    "date": "2026-10-15",
     "actual_preference_surface_gate_ui_models": "PASS ASan/UBSan, ordinary and capable builds",
     "native_ui_plume_compile": "PASS",
     "existing_graphics_controls_reused": true,
     "default": "1080p / 60 Hz SDR",
     "high_refresh": "Separate opt-in metadata-capable build; native support + measured WSI check + explicit user choice",
     "hdr": "Not supported by pinned VideoOut WSI",
-    "vrr_allm": "System/TV controlled, actual HDMI operation untested",
-    "physical_console": "NOT TESTED"
+    "vrr_allm": "System/TV controlled; exact active state unconfirmed",
+    "physical_console": "Preceding actual4K59.94 fallback, TV user-confirmed picture; new scaling and transition code pending"
   },
   "integrated_candidate": {
     "source_track": "one combined US dual candidate",
@@ -408,14 +399,12 @@
     "qualified_metadata_update": "PASS actual all-copy preflight/update/resume/refusal",
     "console_tested": false,
     "microstutter_fix_claimed": false,
-    "home_menu_background_accepted": false,
+    "home_menu_background_accepted": "Preceding art accepted; exact bytes retained in refinement",
     "advanced_dualsense_or_native_hdr_implemented": false,
     "exported_workflow_checks": {
-      "passed": 30,
-      "total": 30,
-      "package_install_step": "existing host package reused; GitHub provisions it",
-      "new_artifact_eboot_sha256": "0871ddfed218b1a006eddb8a6577a29a4fe5abe0d98c4bc153f66b6005beddf0",
-      "build_id": "integrated-ad598d532cbc05e1da8b2623"
+      "passed": 35,
+      "total": 35,
+      "scope": "Actual exported commands; existing host SDL package and exact public archive caches reused; clean-source scan before local caches, loopback fixture with socket permission; GitHub new-head CI pending"
     },
     "fresh_game_build": {
       "full_cmake_DKRPortGame_target": "PASS",
@@ -425,6 +414,49 @@
       "qualified_toolchain_and_cpu_pipeline_reused": true,
       "previous_27_check_suite_did_not_cover_clean_build": true,
       "private_whole_game_line_tables": true
+    },
+    "build_id": "integrated-a28af6c874bac873eec0645f",
+    "eboot_sha256": "c656c10ab4fe26b320e7bc29be200850469355f64075c6a801b5bcdde4ee4f1d",
+    "app_manifest_sha256": "aa754f610656e953120e3f27cedd2b01db1ff59b5e931e73f9cc9114474aa812",
+    "preceding_home_menu_background_accepted": true,
+    "refinements": {
+      "actual_imgui_1080p_1440p_2160p_frame_extent": "PASS ASan/UBSan",
+      "driver_native_objects": "PASS both actual patched native objects rebuilt; exact archive and source hashes",
+      "queue_statistics": "Off by default; explicit DKR_POWER_PROFILE retains detailed tracing; no measured console gain yet",
+      "high_refresh_transition": "PASS actual bounded four-window code fixtures; original failure/12.5ms/fallback guards preserved; no120 hardware proof",
+      "own_journal": "PASS host provisioning/refusal; preceding console provision and qualified UID read-back",
+      "own_pack_copy": "PASS actual SDK SHA1/chunk/copy/readback/idempotency/refusals; native helper compiled, not sent",
+      "controls": "Explicit per-revision preset activation hint; no user-binding overwrite"
     }
+  },
+  "historical_records_note": "Older dated candidate/test entries below are preserved historical evidence. Current integrated_candidate and console_acceptance_20261014 are authoritative for the latest scope.",
+  "console_acceptance_20261014": {
+    "build_id": "integrated-ad598d532cbc05e1da8b2623",
+    "user_played_revisions": [
+      77,
+      80
+    ],
+    "image_audio": "normal",
+    "icon_home_background_paired_launch_image": "confirmed",
+    "normal_close_second_launch": "confirmed",
+    "requested_output": "2160p/120",
+    "actual_output_buffer": "3840x2160 / 59.94 Hz fallback",
+    "high_refresh_vblank_ms": 20.872,
+    "minute_capture_observations": [
+      {
+        "present_returns_s": 59.56,
+        "largest_gap_ms": 104.13,
+        "over50ms": 6
+      },
+      {
+        "present_returns_s": 59.54,
+        "largest_gap_ms": 98.78,
+        "over50ms": 6
+      }
+    ],
+    "capture_limit": "Uncontrolled menu/route/settings; no HDMI FPS or measured gain conclusion",
+    "controller_preset": "Classic remained saved; optional R2/L2 not applied",
+    "pack": "own imported ZIP enabled in US77; US80 copy not yet performed",
+    "shutdown": "explicit user shutdown; no panic inferred"
   }
 }

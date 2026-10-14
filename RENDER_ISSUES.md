@@ -1,6 +1,6 @@
 # Rendering investigations for the PS5 preview
 
-These are reported defects, not confirmed fixes. Latest report: 13 October 2026.
+These are reported defects, not confirmed fixes. Latest session: 14 October 2026; offline follow-up: 15 October.
 
 | Case | User observation | Current local work / next discriminating test |
 |---|---|---|
@@ -175,3 +175,20 @@ Primary implementation evidence: the pinned public RADV platform history,
 [cache on PS5 and exclusive mode](https://github.com/mihawk-99/PS5_Vulkan/blob/main/docs/RADV_PHASE.md),
 and [Mesa environment variables](https://docs.mesa3d.org/envvars.html).
 These are other projects' evidence, not a test of DKR-R on firmware 13.60.
+
+
+## Measured observations and offline refinement
+
+Two uncontrolled minute captures showed about 59.5 present returns/s and six
+gaps over 50 ms each. The pinned RADV queue-statistic write occurred every ten
+seconds under its submit lock. That cadence fits the observation but does not
+establish causality. The new driver defaults this detailed statistic off, while
+retaining it for explicit `power_profile=1`. A same-track/settings cold/warm
+comparison with that option off is still needed. The native object was rebuilt
+from the exact pinned driver source; all other error logging remains intact.
+
+The 4K menu was too small because SDL logical size and actual Vulkan pixels
+differ. The new ImGui framebuffer scale fills the output while preserving
+logical layout. Actual ImGui draw-data checks pass for 1080p/1440p/2160p;
+TV acceptance is pending. The existing water-interpolation options are retained
+for a controlled entry-only comparison; no unmeasured water fix is claimed.

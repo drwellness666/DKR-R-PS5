@@ -63,7 +63,7 @@ In the later console session, identify the installed loader/version and inspect
 the own registration fields and correlated log before choosing its documented
 own-title refresh route. Do not patch app.db blindly, clear global caches,
 guess IPC signatures or rerun the quarantined status probe. A supported own-title
-reinstall may be needed for cached metadata; that has not been performed here.
+reinstall may be needed for cached metadata; a fresh ordinary own-title registration was subsequently performed and accepted.
 
 ## Physical acceptance
 
@@ -73,5 +73,8 @@ reinstall may be needed for cached metadata; that has not been performed here.
 4. Picture/audio, Touchpad UI, normal return and second launch pass.
 5. Existing profiles and normal save/Pak reload remain intact.
 
-Items 2–5 need the actual console; a local compile or file update is not their
-acceptance evidence.
+On 14 October the owner confirmed items 1–4 after a fresh installation through
+the ordinary ShadowMount registration path. The icon, selected-title background,
+matched launch image and its dismissal now work. Save/Pak persistence in item 5
+remains pending. The refined executable-only update retains these artwork and
+metadata bytes exactly; it does not repeat registration or change the images.

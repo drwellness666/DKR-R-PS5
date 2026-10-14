@@ -1,5 +1,29 @@
 # Matched session, crash and frame-time diagnostics
 
+Fresh installation must provision `/data/dkrr/diagnostics` before the native
+game starts: the ELF installer and native game use different filesystem
+identities. New installer-created journal directories request mode `01777`;
+the tested PS5 filesystem reported `0777`, so sticky-bit enforcement is not
+claimed on that filesystem. This lets the native game create its own files;
+the game still creates each exclusive journal with mode `0600`. Existing
+directories, profiles and journal files retain their permissions and contents.
+For an already installed matching title, `build_native_game_installer.py SDK
+GAME_WORK --diagnostics-only` builds a small, identity-guarded directory helper.
+It embeds no executable, art, ROM or save. The game initializes its journal at
+process entry, so a missing-directory correction takes effect at its next
+normal start. Live in-memory measurements remain available in the current run.
+
+The web launcher may list a mode-0600 journal but fail to open it: its effective
+identity is different from the native game's uid 1. Do not broaden file modes.
+`tools/build_journal_reader.py SDK CANDIDATE_JSON EXACT_RUN_BASENAME NEW_PRIVATE_ELF`
+prepares a reader for that one journal and exact build. It drops only its own
+effective identity to uid 1, verifies an ordinary owned file and build header,
+and sends at most 64 KiB plus the crash suffix through the existing ELF-loader
+output. It changes no files or other processes. This read-back succeeded on the
+console. Run it explicitly with `send_elf.py` only during a console session;
+the builder never connects. Retain the text between COPY BEGIN and COPY PASS
+locally and use the matching private symbol ELF for analysis.
+
 The game keeps a small own-session journal under `/data/dkrr/diagnostics` and
 shows its input fingerprint in **Graphics → Renderer & performance**. The private
 candidate manifest pairs this build ID with SHA256 of the final eboot and its
