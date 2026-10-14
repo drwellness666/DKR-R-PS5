@@ -1,0 +1,42 @@
+name: Console bug
+description: Report an observable problem with a locally built native PS5 title.
+body:
+  - type: checkboxes
+    attributes:
+      label: Private data
+      options:
+        - label: I will not attach ROMs, generated game code, binaries/installers, saves, packs or full console dumps.
+          required: true
+  - type: input
+    attributes:
+      label: Integration commit and upstream version
+      description: Exact integration Git commit; upstream version is currently 1.0.6.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: ROM revision and canonical SHA-1
+      description: Supported US v1.0/v77 or Rev A/v1.1/v80; hash only, no file.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Firmware and loader environment
+      description: Firmware plus exact loader, kstuff and ShadowMount versions when known. Mark unknown versions unknown.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reproduction and visible result
+      description: Smallest sequence, expected result, actual picture/sound/input, exact error, and whether the console menu stays usable.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Settings and comparison
+      description: Accurate/Modern, resolution/aspect/frame rate, texture pack on/off, cold/warm, and whether this happens without the pack.
+  - type: textarea
+    attributes:
+      label: Relevant diagnostic excerpt
+      description: Short DKR-R-only excerpt with private addresses removed; not a full console log. State which diagnostic flags were enabled.
+      render: text

@@ -1,0 +1,27 @@
+name: Local build failure
+description: Report a failure in the public source recipe without sharing private build inputs.
+body:
+  - type: checkboxes
+    attributes:
+      label: Private inputs
+      options:
+        - label: I will share only source/build diagnostics and no ROM or ROM-derived output.
+          required: true
+  - type: input
+    attributes:
+      label: Integration commit, OS and tool versions
+      description: Include compiler/LLD, CMake and Python versions.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Selected revision
+      description: v77, v80 or optional dual build; only supported own US dumps.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Failed stage and exact diagnostic
+      description: Source preparation, matching decomp, CPU generation, library build, native link or installer. Include a short relevant error and command with private paths removed.
+    validations:
+      required: true
