@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Link a private ROM-derived game build. Never deploy or include its ROMs.
+set -euo pipefail
+[[ $# == 2 ]] || { echo 'Usage: link_native_game.sh ABSOLUTE_GPU_WORK ABSOLUTE_GAME_WORK' >&2; exit 2; }
+gpu=$1
+game=$2
+[[ $gpu == /* && $game == /* ]] || exit 2
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+sdl=${DKR_SDL_WORK:-$root/work/lowmem}
+[[ $sdl == /* ]] || { echo 'DKR_SDL_WORK must be absolute' >&2; exit 2; }
+support="$gpu/PS5_Vulkan"
+# The public RADV recipe regenerates a shared map via a fixed .tmp name.
+# Serialize game links sharing this GPU workspace, even across revisions.
+mkdir -p "$support/build"
+exec 9>"$support/build/.dkrr-native-link.lock"
+flock 9
+sdk="$support/.deps/native/ps5-payload-sdk"
+native="$support/tooling/native"
+build="$game/native-link"
+target="$game/private/native/PPSA94678"
+mkdir -p "$build/obj" "$build/gen" "$build/stubs" "$target/sce_sys" "$target/sce_module"
+cc() { PS5_PAYLOAD_SDK="$sdk" sh "$support/tooling/prospero-clang18" "$@"; }
+profile="$game/game-ps5/dkr-ps5-profile.json"
+[[ -f $profile ]] || { echo 'Missing selected-revision CMake profile' >&2; exit 2; }
+mapfile -t revisions < <(python3 -c 'import json,sys;p=json.load(open(sys.argv[1]));print(p["v77"]);print(p["v80"])' "$profile")
+cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revisions[1]}" -std=c++20 -O2 -fexceptions -fcxx-exceptions -D_LIBCPP_ENABLE_EXPERIMENTAL -Wall -Wextra -Werror \
+    -fvisibility=hidden -ffunction-sections -fdata-sections \
+    -I "$root/src" -c "$root/src/ps5_game_main.cpp" -o "$build/obj/game_main.o"
+cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revisions[1]}" -std=c++20 -O2 -Wall -Wextra -Werror \
+    -fvisibility=hidden -ffunction-sections -fdata-sections \
+    -I "$root/src" -c "$root/src/ps5_revision_selection.cpp" -o "$build/obj/revision_selection.o"
+for file in app_crt app_cpp_runtime; do
+    input="$native/$file.cpp"
+    [[ $file != app_crt ]] || input="$root/src/ps5_game_crt.cpp"
+    cc -std=c++20 -O2 -Wall -Wextra -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections \
+        -c "$input" -o "$build/obj/$file.o"
+done
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_timegm.c" -o "$build/obj/timegm.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_posix_madvise.c" -o "$build/obj/madvise.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_realpath.c" -o "$build/obj/realpath.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_lstat.c" -o "$build/obj/lstat.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_getcwd.c" -o "$build/obj/getcwd.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_pathconf.c" -o "$build/obj/pathconf.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_rdram.c" -o "$build/obj/rdram.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_save_stat.c" -o "$build/obj/save_stat.o"
+python3 "$root/tools/prepare_emutls.py" "$gpu/PS5_PayloadSDK/libc/emutls.c" "$build/gen/emutls.c"
+cc -std=c11 -O2 -fvisibility=hidden -c "$build/gen/emutls.c" -o "$build/obj/emutls.o"
+for lib in libSceAgc libSceAgcDriver; do
+    if [[ $lib == libSceAgc ]]; then file=agc_canary_link_stub.c; else file=agc_driver_canary_link_stub.c; fi
+    cc -O2 -fPIC -c "$support/vendor/ps5/sdk/stubs/$file" -o "$build/stubs/$lib.o"
+    "$sdk/bin/prospero-lld" --shared -soname "$lib.prx" -o "$build/stubs/$lib.so" "$build/stubs/$lib.o"
+done
+mapfile -d '' libs < <(find "$game/game-ps5" -type f -name '*.a' -print0 | sort -z)
+filtered_libs=()
+for lib in "${libs[@]}"; do
+    [[ ${revisions[0]} != 0 || $lib != */libDKRRecompiledFuncsV77.a ]] || continue
+    [[ ${revisions[1]} != 0 || $lib != */libDKRRecompiledFuncsV80.a ]] || continue
+    filtered_libs+=("$lib")
+done
+libs=("${filtered_libs[@]}")
+[[ -f $game/game-ps5/libDKR-R.a && -f $game/game-ps5/rt64/rt64.a ]] || { echo 'Game and renderer libraries missing' >&2; exit 2; }
+source "$support/tools/radv-link.sh"
+radv_link_recipe "$support" "$sdk" "$gpu/radv-build/src/amd/vulkan/libvulkan_radeon.a"
+radv_link_flags+=(--wrap=stat --wrap=mmap --wrap=mprotect --wrap=munmap --wrap=_ZN11ultramodern14error_handling11message_boxEPKc)
+printf '{ local: _Zn*; _Zd*; getargv; realpath; lstat; getcwd; pathconf; __wrap_stat; __wrap_mmap; __wrap_mprotect; __wrap_munmap; };\n' > "$build/gen/game-symbols.map"
+link_game() {
+"$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
+    --version-script "$build/gen/game-symbols.map" --exclude-libs=ALL -e _start -o "$build/llvm-pie.elf" \
+    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/save_stat.o" "$build/obj/import_check.o" \
+    "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
+    --start-group "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
+    "${radv_link_inputs[@]}" --as-needed "$sdk"/target/lib/*.so
+}
+# First pass obtains imports without introducing new library dependencies.
+printf 'unsigned dkrr_report_missing_imports(void (*emit)(const char *)){(void)emit;return 0;}\n' > "$build/gen/import_check.c"
+cc -std=c11 -O2 -fvisibility=hidden -c "$build/gen/import_check.c" -o "$build/obj/import_check.o"
+link_game
+python3 "$root/tools/generate_native_import_check.py" "$build/llvm-pie.elf" "$build/gen/import_check.c"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden -c "$build/gen/import_check.c" -o "$build/obj/import_check.o"
+link_game
+tool="$gpu/native-title/ps5-native-tool"
+[[ -x $tool ]] || { echo 'Build the native renderer first to obtain the public converter' >&2; exit 2; }
+"$tool" link --in "$build/llvm-pie.elf" --out "$build/eboot.elf" \
+    --stub-dir "$sdk/target/lib" --stub "$build/stubs/libSceAgc.so" --stub "$build/stubs/libSceAgcDriver.so" \
+    --module-sdk 0x02000009 --companion-sdk 0x08050001 --file-name eboot.elf
+"$tool" self --sign --in "$build/eboot.elf" --out "$target/eboot.bin" --magic 0x1D3D154F
+cp "$gpu/native-title/libc.prx" "$target/sce_module/libc.prx"
+bash "$root/tools/prepare_title_art.sh" "$gpu" "$game"
+for image in icon0.png pic0.dds pic1.dds; do
+    cp "$game/private/title-art-paired/$image" "$target/sce_sys/$image"
+done
+chmod 0755 "$target/eboot.bin" "$target/sce_module/libc.prx"
+[[ -d $game/game-ps5/assets/filters && -f $game/game-ps5/assets/controllers/gamecontrollerdb.txt ]] || {
+    echo 'CMake-staged game assets missing' >&2; exit 2;
+}
+cp -a "$game/game-ps5/assets" "$target/"
+mkdir -p "$target/assets/licenses"
+cp "$root/licenses/DKR-R-LICENSE.md" "$target/assets/licenses/DKR-R-MIT.md"
+cp "$root/licenses/DKR-R-Selawik-OFL.txt" "$target/assets/licenses/Selawik-OFL.txt"
+cp "$root/LICENSE" "$target/assets/licenses/GPL-3.0.txt"
+cp "$root/THIRD_PARTY.md" "$target/assets/licenses/THIRD_PARTY.md"
+cp "$root/licenses/LLVM-libcxx.txt" "$target/assets/licenses/LLVM-libcxx.txt"
+cp "$root/licenses/SDL2.txt" "$target/assets/licenses/SDL2.txt"
+cp "$root/licenses/libsamplerate.txt" "$target/assets/licenses/libsamplerate.txt"
+cp "$root/homebrew/DKR-R-Game/ARTWORK.md" "$target/assets/licenses/Title-Artwork.md"
+cp "$root/TITLE_ART_SOURCES.json" "$target/assets/licenses/Title-Artwork-Sources.json"
+# A reused early preview may contain the notice for the rejected generic art.
+# Preserve that known old notice outside the app; it does not cover upstream art.
+python3 - "$target/assets/licenses/Title-Artwork-CC0.txt" "$root/licenses/CC0-1.0.txt" "$build/obsolete-generic-art-CC0.txt" <<'PY'
+from pathlib import Path
+import sys
+old, reference, backup = map(Path, sys.argv[1:])
+if old.exists() or old.is_symlink():
+    if old.is_symlink() or not old.is_file() or old.read_bytes() != reference.read_bytes():
+        raise SystemExit('Unexpected old artwork notice; preserve and inspect the private output')
+    if backup.exists():
+        if backup.is_symlink() or not backup.is_file() or backup.read_bytes() != old.read_bytes():
+            raise SystemExit('Old artwork notice backup collision')
+        old.unlink()
+    else:
+        old.rename(backup)
+PY
+
+python3 - "$support/sce_sys/param-radv.json" "$target/sce_sys/param.json" "$game/game-ps5/dkr-release.json" <<'PY'
+import json,pathlib,sys
+p=json.loads(pathlib.Path(sys.argv[1]).read_text())
+p.update(titleId='PPSA94678',conceptId='94678',contentId='UP9000-PPSA94678_00-DKRRNATIVE000001',contentVersion='01.000.001')
+version=json.loads(pathlib.Path(sys.argv[3]).read_text())['version']
+p['localizedParameters']['en-US']['titleName']='DKR-R '+version+' PS5 Preview'
+pathlib.Path(sys.argv[2]).write_text(json.dumps(p,indent=2)+'\n')
+PY
+"$tool" self --inspect --file "$target/eboot.bin"
+echo "Built private native game candidate: $target (hardware gameplay untested)"
