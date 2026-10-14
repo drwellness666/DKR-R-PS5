@@ -32,19 +32,22 @@ Only Vulkan-enumerated modes with compatible planes are selected. An unavailable
 120 Hz mode falls back to the same size at 60 Hz. An unavailable resolution or
 refused optional surface can fall back to the original 1080p mode. Device loss
 is an error; it is not retried. A later swapchain/allocation failure is not
-covered by the surface fallback and still requires the recorded rollback.
+covered by the surface fallback. Diagnose it in this same build and restore the
+recognized display preference to 1080p/60 before the next launch; it does not
+require replacing the entire application.
 
-## 120 Hz: separate optional build, then explicit runtime choice
+## 120 Hz in the integrated candidate, then explicit runtime choice
 
-The normal source build keeps the existing title metadata and 60 Hz default.
-The experimental build must be requested explicitly before `build_game.sh`:
+The ordinary single-ROM source recipe keeps its 60 Hz declaration. The one
+integrated US-dual candidate uses `build_integrated.sh`, which sets the capable
+build flag and exposes 60/120 Hz in that same app. The lower-level explicit flag is:
 
 ```bash
 export DKR_PS5_HIGH_REFRESH_BUILD=1
 bash build_game.sh
 ```
 
-Use a **fresh game work directory** for the experiment. The optional build
+Use a **fresh game work directory** for the integrated candidate. The capable build
 adds the **TV refresh rate: 60 / 120 Hz** field in the same Game display card.
 It still starts at 1080p / 60 Hz without a saved choice. A previous display
 preference is honored; inspect it before comparing an existing installation.
@@ -61,11 +64,15 @@ WSI's description of the VRR-compatible high-refresh declaration. These are
 community source/evidence, not a published Sony ABI guarantee for firmware 13.60.
 The older 0x80000 declaration is not used. This metadata difference needs the
 loader's normal title registration to agree with the app; an executable-only
-update is insufficient. The existing metadata-preserving update helper deliberately
-refuses this capable build. Do not bypass its refusal or edit system databases.
-The capable bundle is held separately until the ordinary title/registration
-path has been checked on the console. The ordinary 60 Hz candidate is the first
-test for tonight; all three output resolutions are available there.
+update is insufficient. The combined updater now has an explicit, narrowly
+qualified `--allow-high-refresh-metadata` transition: only attribute3 0 ->
+0x40040, all other fields/identity unchanged, exact byte preflight for all
+three own metadata copies. Ordinary updates still reject changed metadata.
+No database or private IPC operation is added. Normal own-title shell/loader
+registration remains necessary if its cached declaration differs. It is not
+proven by a local file update. The integrated candidate remains at 1080p/60
+unless a saved user choice asks for another mode. Historical ordinary/HFR
+outputs are retained only as archives; tonight uses one integrated application.
 
 No 120 FPS gameplay guarantee follows from a 120 Hz HDMI mode. Select Modern and
 the existing Match display control when comparing interpolated presentation;

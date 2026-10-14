@@ -51,7 +51,7 @@
   "console_menu_host_navigation": "PASS actual SettingsColumns and SavesGrid with real ImGui: field order, disabled items, scrolling, activation, reverse; TV pending.",
   "save_metadata_host_model": "PASS current stat wrapper model, native UID0/backing UID1 identity, mismatch/race/refusal and alias-count preservation; launch16 existing-file startup passed, full persistence pending. New helper idle-expiry removed locally; not console-tested. Own save-backups/save-history paths included and traversal rejected in current model.",
   "remastered_textures": "USER-SUPPLIED PRIVATE ONLY: 1832 replacements converted with actual 1.0.6 importer; full archive checksum verified on own PS5; visible output/performance pending",
-  "date": "2026-10-13",
+  "date": "2026-10-14",
   "last_console_eboot_sha256": "a878f66d9dd1d851d5bd974e8e8185f6c2c5b87e8af5a2c4c8df641bf55cfdad",
   "local_native_candidates": [
     {
@@ -396,5 +396,26 @@
     "hdr": "Not supported by pinned VideoOut WSI",
     "vrr_allm": "System/TV controlled, actual HDMI operation untested",
     "physical_console": "NOT TESTED"
+  },
+  "integrated_candidate": {
+    "source_track": "one combined US dual candidate",
+    "native_ui_and_plume_compile": "PASS, private line tables retained",
+    "native_link_fself_integrity": "PASS",
+    "controls_and_navigation": "PASS actual SDL/settings/capture/ImGui",
+    "display_options": "PASS actual persistence/gate/surface with modeled APIs",
+    "diagnostics": "PASS actual journal, contained faults and UI actions",
+    "session_transport": "PASS actual local loopback relay/capture and exact-ELF attribution",
+    "qualified_metadata_update": "PASS actual all-copy preflight/update/resume/refusal",
+    "console_tested": false,
+    "microstutter_fix_claimed": false,
+    "home_menu_background_accepted": false,
+    "advanced_dualsense_or_native_hdr_implemented": false,
+    "exported_workflow_checks": {
+      "passed": 27,
+      "total": 27,
+      "package_install_step": "not repeated; existing host SDL development package used",
+      "new_artifact_eboot_sha256": "3caab02e86d33d4f624c66f4bb040b2dd3e7ac00247114a7e3cb0719698dbeab",
+      "build_id": "integrated-a647ea738fa240511a531bbc"
+    }
   }
 }

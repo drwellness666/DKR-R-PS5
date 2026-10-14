@@ -91,3 +91,7 @@ This beta does not make a legal guarantee about every user's local use.
 The current beta adds an exact neutral-audio fast path and an opt-in guarded
 RADV shader-cache comparison. Performance changes need a matched physical A/B
 test before any stutter-reduction claim. See [UPDATE_GUIDE.md](UPDATE_GUIDE.md).
+
+## Integrated candidate, 2026-10-14
+
+The current test track combines both US revisions/languages, controller/menu changes, optional output and diagnostics in one app. See [INTEGRATED_TEST.md](INTEGRATED_TEST.md). Local native integrity and host tests are separate from pending hardware acceptance. [DIAGNOSTICS.md](DIAGNOSTICS.md) records the exact private ELF attribution policy and optional PC capture. The combined updater permits only an explicitly requested attribute3 0 -> 0x40040 transition with all other fields preserved and all three own metadata copies preflighted. It does not refresh shell registration or modify app.db. Prior separate candidates remain historical archives, not a routine rollback sequence.

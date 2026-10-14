@@ -91,3 +91,7 @@ avoids full title reinstallation for compatible updates while retaining a manual
 apply boundary and exact rollback. A fully automatic on-console updater requires
 an independently redistributable native component/layout and documented native
 registration/lifecycle handling; it is later work, not advertised as finished here.
+
+## Integrated candidate, 2026-10-14
+
+The current test track combines both US revisions/languages, controller/menu changes, optional output and diagnostics in one app. See [INTEGRATED_TEST.md](INTEGRATED_TEST.md). Local native integrity and host tests are separate from pending hardware acceptance. [DIAGNOSTICS.md](DIAGNOSTICS.md) records the exact private ELF attribution policy and optional PC capture. The combined updater permits only an explicitly requested attribute3 0 -> 0x40040 transition with all other fields preserved and all three own metadata copies preflighted. It does not refresh shell registration or modify app.db. Prior separate candidates remain historical archives, not a routine rollback sequence.

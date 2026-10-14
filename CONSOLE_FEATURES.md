@@ -56,7 +56,7 @@ renaming a PAL file or allowing its hash alone does not provide that support.
 
 ## Optional DualSense driving layout
 
-The next controls candidate adds **Controls → Button mapping → Driving layout**.
+The integrated candidate adds **Controls → Button mapping → Driving layout**.
 It starts with the existing bindings; no update silently selects a new preset.
 Choose **R2 / L2 driving** for the selected player, or **Classic DKR controls** to
 restore the original controller layout. A preset replaces that player's controller
@@ -96,7 +96,7 @@ plus actual preset/binding rows with real ImGui gamepad navigation. The capture
 handler is tested with modeled device ownership. Native compilation/link/FSELF
 inspection passes. Physical trigger feel, controller menu navigation and native
 settings persistence still require the next PS5 session. The published beta.1
-snapshot is preserved while this separate controls candidate is qualified.
+snapshot is preserved while this integrated candidate is qualified.
 
 ## Controller Pak and Rumble Pak
 
@@ -118,7 +118,7 @@ policy/storage tests do not prove those physical outcomes.
 
 The native game uses DKR-R's actual launcher icon and the unmodified header from
 its pinned README. The converter scales/encodes them as a 512x512 PNG icon and
-a 3840x2160 BC7 DDS selection background. Custom launch artwork is excluded. It does not repaint figures,
+a 3840x2160 BC7 DDS selection background. The same original picture is paired for launch and hidden after the first completed present. Custom repainted artwork is excluded. It does not repaint figures,
 balloons, hats or logos. The output is under `$DKR_GAME_WORK/private/title-art`;
 `TITLE_ART_SOURCES.json` records original hashes, source paths and credits.
 
@@ -132,7 +132,7 @@ Local format validation passes. On 13 October the registered copies under
 `/user/app/PPSA94678/sce_sys` and `/user/appmeta/PPSA94678` were updated and
 verified. The user now confirms the original icon is visible. The background
 remains invisible, despite correct file formats and copies; shell acceptance is
-still open for pic0; pic1 is now intentionally absent in the candidate. The full app title stays in `param.json`.
+still open for pic0; pic1 is now byte-identical to pic0 in the integrated candidate. The full app title stays in `param.json`.
 The optional `tools/build_native_title_art_installers.py` builds exact-recorded
 art-only payloads for these own metadata directories. It does not update the
 application database or force a shell refresh.
@@ -142,4 +142,8 @@ registration investigation are documented in [TITLE_PRESENTATION.md](TITLE_PRESE
 
 ## Native TV-Ausgabe, Stand 2026-10-14
 
-Der bestehende Bereich Graphics → Game display übernimmt die native Ausgabewahl. Ausgabeauflösung und Spiel-Rendering bleiben getrennt; Presentation rate → Match display verwendet die gemeldete PS5-Rate. Optional 1080p/1440p/4K, separater 120-Hz-Testbuild, SDR und systemgesteuertes VRR/ALLM: [DISPLAY_FEATURES.md](DISPLAY_FEATURES.md). Alle neuen Ausgabearten brauchen Hardwareabnahme.
+Der bestehende Bereich Graphics → Game display übernimmt die native Ausgabewahl. Ausgabeauflösung und Spiel-Rendering bleiben getrennt; Presentation rate → Match display verwendet die gemeldete PS5-Rate. Optional 1080p/1440p/4K, 60/120 Hz im gemeinsamen Testbuild, SDR und systemgesteuertes VRR/ALLM: [DISPLAY_FEATURES.md](DISPLAY_FEATURES.md). Alle neuen Ausgabearten brauchen Hardwareabnahme.
+
+## Integrated diagnostics
+
+[INTEGRATED_TEST.md](INTEGRATED_TEST.md) is the current single-candidate track. [DIAGNOSTICS.md](DIAGNOSTICS.md) describes the own crash journal, existing FPS overlay, explicit bounded frame-time capture and optional PC log relay. No kernel/FPS hook, unqualified status payload or in-game automatic binary installation is added.

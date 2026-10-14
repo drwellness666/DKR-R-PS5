@@ -1,11 +1,11 @@
 # DualSense features for DKR-R: proposal and verified backend boundaries
 
-Advanced effects below remain a concept/source audit. The separate next controls
+Advanced effects below remain a concept/source audit. The integrated controls/output/diagnostics
 candidate implements an **optional conventional R2/L2 driving preset**, per-player
 selection/undo and PlayStation binding labels; see [the controls guide](CONSOLE_FEATURES.md#optional-dualsense-driving-layout).
 Its actual input/settings/UI tests and native build pass locally; physical PS5
 acceptance is pending. The published beta.1 snapshot remains unchanged. No new
-controller-effect API is called by either candidate. The public homebrew
+controller-effect API is called by the integrated candidate. The public homebrew
 SDK and pinned SDL source are available here; the licensed official Sony console
 SDK is not part of this repository or this assessment.
 
@@ -19,7 +19,7 @@ this port's native backend supports every feature. [Sony feature overview](https
 
 | Feature | Evidence in this port/toolchain | Useful DKR-R proposal |
 | --- | --- | --- |
-| Buttons, sticks, analog L2/R2 | Actual native SDL axes/buttons; ordinary controls user-confirmed | Optional R2 accelerate/L2 brake preset implemented in the next local candidate; original layout retained |
+| Buttons, sticks, analog L2/R2 | Actual native SDL axes/buttons; ordinary controls user-confirmed | Optional R2 accelerate/L2 brake preset implemented in the integrated local candidate; original layout retained |
 | Ordinary vibration | SDL Rumble → scePadSetVibration; actual driver transport tested locally; physical qualification pending | Original Rumble Pak first, adjustable strength and immediate stop |
 | Detailed DualSense haptics | Current driver exposes ordinary vibration, not waveform haptics | Distinct road bumps, water impacts and propeller/turbulence once a qualified actuator backend exists |
 | Adaptive triggers | scePadSetTriggerEffect/Strength names exist in SDK link stubs; native SDL effect/trigger functions return unsupported | Gentle throttle resistance; brief boost pulse; braking/drift feedback |

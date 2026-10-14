@@ -329,7 +329,7 @@ Hauptmenü. `pic1.dds` wird gemäß aktueller Nutzerentscheidung wieder byteglei
 keine ältere Datei auf der Konsole. Der dafür vorbereitete Helfer prüft die
 exakten eigenen Titel-/Bilddateien und bewahrt die früheren Launch-Bilder als
 Rückfallkopien. Ablauf und Registrierungsgrenzen: [TITLE_PRESENTATION.md](TITLE_PRESENTATION.md).
-Die sichtbare Hauptmenüdarstellung und das Verhalten ohne eigenes Launch-Bild
+Die sichtbare Hauptmenüdarstellung und das korrekt ausgeblendete gepaarte Launch-Bild
 sind erst nach einem echten Konsolentest als bestanden zu bewerten.
 
 ## Private Quell-Beta und Updates
@@ -341,4 +341,4 @@ Spielstände müssen dafür nicht erneut installiert werden.
 
 ## Optionale TV-Ausgabe
 
-Die PS5-Optionen sind in den vorhandenen Grafikbereich eingebunden. 1080p/1440p/4K-Ausgabepuffer und Renderingauflösung sind getrennt. Der normale Build bleibt bei 60 Hz und unveränderten Metadaten. `DKR_PS5_HIGH_REFRESH_BUILD=1` erstellt ausdrücklich einen separaten 120-Hz-Teststand; normale Aktualisierungshelfer lehnen dessen geänderte Titelmetadaten ab. Voraussetzungen, belegte Schnittstellen und Abnahme: [DISPLAY_FEATURES.md](DISPLAY_FEATURES.md).
+Die PS5-Optionen sind in den vorhandenen Grafikbereich eingebunden. Für den gemeinsamen US-Doppelbuild bei gesetzten eigenen `DKR_ROM_V77` und `DKR_ROM_V80` den letzten Build-Schritt mit `bash build_integrated.sh` ausführen. Damit sind 1080p/1440p/4K und 60/120 Hz in derselben App enthalten; ohne gespeicherte Auswahl startet sie bei 1080p/60. Renderingauflösung bleibt getrennt. Normale Updatehelfer lehnen geänderte Titelmetadaten weiterhin ab; der kombinierte Helfer erlaubt nur mit expliziter Option den geprüften attribute3-Übergang für alle drei eigenen Kopien. Details: [gemeinsamer Teststand](INTEGRATED_TEST.md), [Ausgabebelege](DISPLAY_FEATURES.md), [Diagnose](DIAGNOSTICS.md).
