@@ -8,6 +8,9 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - run: python3 tools/check_public_source.py .
+      - run: sha256sum --quiet -c SHA256SUMS
+      - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libsdl2-dev
+      - run: python3 tools/test_controller_presets.py
       - run: python3 tools/test_rom_checker.py
       - run: python3 tools/test_ps5_realpath.py
       - run: python3 tools/test_ps5_filesystem.py
