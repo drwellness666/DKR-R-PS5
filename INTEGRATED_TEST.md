@@ -75,3 +75,7 @@ working archive is retained for a deliberately requested emergency recovery,
 not automatically substituted after every failure.
 
 Diagnostics and their limits: [DIAGNOSTICS.md](DIAGNOSTICS.md).
+
+## Fresh-source build qualification
+
+The complete native game CMake build now passes from newly unpacked pinned dependencies. Fifty-four selected upstream dependency patches have explicit changed-byte receipts and are checked/applied in isolated scratch repositories; they cannot silently inherit an outer Git worktree prefix. A ROM-free CI test repeats actual public source preparation below an outer Git root. The old successful unit/CI checks did not cover this full preparation/configure path. Existing SDK/GPU/SDL and the validated authored CPU pipeline are reused explicitly; fresh CPU generation/toolchain download is not newly claimed. The integrated release game retains -O3 and enables private line tables for fault attribution.

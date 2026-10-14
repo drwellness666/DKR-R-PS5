@@ -95,3 +95,7 @@ registration/lifecycle handling; it is later work, not advertised as finished he
 ## Integrated candidate, 2026-10-14
 
 The current test track combines both US revisions/languages, controller/menu changes, optional output and diagnostics in one app. See [INTEGRATED_TEST.md](INTEGRATED_TEST.md). Local native integrity and host tests are separate from pending hardware acceptance. [DIAGNOSTICS.md](DIAGNOSTICS.md) records the exact private ELF attribution policy and optional PC capture. The combined updater permits only an explicitly requested attribute3 0 -> 0x40040 transition with all other fields preserved and all three own metadata copies preflighted. It does not refresh shell registration or modify app.db. Prior separate candidates remain historical archives, not a routine rollback sequence.
+
+## Preserve the installed output declaration before rebuilding
+
+The local update helper now checks the exact predecessor manifest before creating the new build directory or starting toolchain work. It accepts only the own title and qualified attribute3 values 0 / 0x40040, and carries that declaration into the rebuild. An explicitly conflicting DKR_PS5_HIGH_REFRESH_BUILD is refused; upgrading the declaration still requires the separate qualified metadata transition. Private line tables are enabled for the rebuild. ROMs, saved preferences and profiles stay outside the application update. This prevents a later update of an integrated capable title from reverting its declaration to ordinary mode merely because a child shell's environment ended.

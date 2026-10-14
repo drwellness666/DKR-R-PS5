@@ -342,3 +342,9 @@ Spielstände müssen dafür nicht erneut installiert werden.
 ## Optionale TV-Ausgabe
 
 Die PS5-Optionen sind in den vorhandenen Grafikbereich eingebunden. Für den gemeinsamen US-Doppelbuild bei gesetzten eigenen `DKR_ROM_V77` und `DKR_ROM_V80` den letzten Build-Schritt mit `bash build_integrated.sh` ausführen. Damit sind 1080p/1440p/4K und 60/120 Hz in derselben App enthalten; ohne gespeicherte Auswahl startet sie bei 1080p/60. Renderingauflösung bleibt getrennt. Normale Updatehelfer lehnen geänderte Titelmetadaten weiterhin ab; der kombinierte Helfer erlaubt nur mit expliziter Option den geprüften attribute3-Übergang für alle drei eigenen Kopien. Details: [gemeinsamer Teststand](INTEGRATED_TEST.md), [Ausgabebelege](DISPLAY_FEATURES.md), [Diagnose](DIAGNOSTICS.md).
+
+## Clean-build correction, 2026-10-14
+
+A full fresh native game build exposed Git's silent patch-path filtering when dependencies are prepared below an unrelated outer repository. Each selected upstream patch is now checked/applied in an isolated temporary Git repository, copied back only after all original bytes still match, and read back afterward. The recipe records 54 selected dependency patches, including the upstream lowercase plume/NFD entries. Existing prepared directories made by the older recipe are rejected by the changed helper fingerprint; use a new game work directory. No repair of an old source checkout is attempted.
+
+The actual complete DKRPortGame CMake build and native link/FSELF pass with both validated US payloads after this correction. The GPU/SDL/RT64 toolchain and authored language CPU pipeline are the existing verified local inputs; this is a fresh game-source/compilation proof, not a claim that every toolchain download or CPU generation was repeated. build_integrated.sh enables private -gline-tables-only throughout the release game build without lowering -O3; matching ELF/line tables stay private.

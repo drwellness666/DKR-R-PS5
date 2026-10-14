@@ -54,3 +54,9 @@ und Icon. Zuletzt akzeptierter Bildfix-eboot:
 Später verweigerte der Loader sowohl einen neueren Doppelbuild als auch diesen
 identischen Rückfallstand vor einem neuen Spielprotokoll. Ursache unbestätigt.
 Der frühere unqualifizierte Systemstatus-Payload bleibt gesperrt.
+
+## Echter Eigenbau und Update-Erhalt
+
+Ein zusätzlicher kompletter Neuaufbau hat eine zuvor ungetestete Lücke gezeigt: Abhängigkeitspatches konnten unter einem äußeren Git-Repository still übersprungen werden. Die korrigierte Vorbereitung prüft/wendet alle 54 ausgewählten Upstream-Patches in isolierten Arbeitskopien an, liest die Änderungen zurück und erhält das äußere Repository. Der tatsächliche gesamte native DKRPortGame-Build einschließlich Link/FSELF ist anschließend bestanden. SDK/GPU/SDL und die schon geprüfte CPU-Pipeline wurden dabei ausdrücklich wiederverwendet.
+
+Der lokale Updatebuild prüft seinen exakten Vorgänger jetzt vor der teuren Arbeit und behält dessen qualifizierte normale/120-Hz-fähige Deklaration bei. Ein widersprechender expliziter Buildflag wird abgelehnt. Der integrierte Releasebuild erzeugt private Quellzeilentabellen bei unverändertem -O3. Es gibt weiterhin nur einen aktuellen Konsolen-Testkandidaten; frühere eingefrorene Artefakte bleiben Archive.

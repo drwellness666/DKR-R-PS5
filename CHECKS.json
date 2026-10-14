@@ -411,11 +411,20 @@
     "home_menu_background_accepted": false,
     "advanced_dualsense_or_native_hdr_implemented": false,
     "exported_workflow_checks": {
-      "passed": 27,
-      "total": 27,
-      "package_install_step": "not repeated; existing host SDL development package used",
-      "new_artifact_eboot_sha256": "3caab02e86d33d4f624c66f4bb040b2dd3e7ac00247114a7e3cb0719698dbeab",
-      "build_id": "integrated-a647ea738fa240511a531bbc"
+      "passed": 30,
+      "total": 30,
+      "package_install_step": "existing host package reused; GitHub provisions it",
+      "new_artifact_eboot_sha256": "0871ddfed218b1a006eddb8a6577a29a4fe5abe0d98c4bc153f66b6005beddf0",
+      "build_id": "integrated-ad598d532cbc05e1da8b2623"
+    },
+    "fresh_game_build": {
+      "full_cmake_DKRPortGame_target": "PASS",
+      "native_link_and_fself": "PASS",
+      "upstream_dependency_patches_verified": 54,
+      "outer_git_metadata_preserved": true,
+      "qualified_toolchain_and_cpu_pipeline_reused": true,
+      "previous_27_check_suite_did_not_cover_clean_build": true,
+      "private_whole_game_line_tables": true
     }
   }
 }

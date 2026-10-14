@@ -74,8 +74,9 @@ entry; it is never guessed as 0x400000. Different-build or out-of-segment addres
 are retained as unattributed, without misleading source lines. Local addr2line
 resolves eligible RIPs and inline locations only. Function names remain useful
 where an older archive has no line tables; source-line availability is reported
-by addr2line rather than invented. This candidate includes private line tables
-for the changed UI, Vulkan adapter and authored native startup/adapters. Raw OS error lines are retained
+by addr2line rather than invented. The documented integrated build now enables private line tables throughout the
+release game compilation as well as the authored native startup/adapters, retaining
+-O3. Previously frozen archives may contain only partial line information. Raw OS error lines are retained
 separately; they are not assigned to this build without evidence. No external
 service receives logs, game code or ROM-derived artifacts.
 
