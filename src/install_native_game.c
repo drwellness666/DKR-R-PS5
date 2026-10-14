@@ -10,16 +10,25 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "native_game_files.h"
+#ifndef DKR_DIAGNOSTICS_DIRECTORY
+#define DKR_DIAGNOSTICS_DIRECTORY "/data/dkrr/diagnostics"
+#endif
 
 static int directory(const char *path) {
     struct stat st;
-    unsigned mode=!strcmp(path,"/data/dkrr/profile-us-v77") || !strcmp(path,"/data/dkrr/profile-us-v80") || !strcmp(path,"/data/dkrr/renderer") || !strcmp(path,"/data/dkrr/preferences")?0777:0755;
+    // The payload creates directories as a different identity from the native
+    // game (uid 1). Provision its journal leaf too; sticky mode protects files
+    // owned by another identity, and individual journals are still mode 0600.
+    unsigned mode=!strcmp(path,DKR_DIAGNOSTICS_DIRECTORY)?01777:
+        (!strcmp(path,"/data/dkrr/profile-us-v77") || !strcmp(path,"/data/dkrr/profile-us-v80") || !strcmp(path,"/data/dkrr/renderer") || !strcmp(path,"/data/dkrr/preferences")?0777:0755);
     int created=mkdir(path,(mode_t)mode)==0;
     if (!created && errno!=EEXIST) return -1;
     // Existing directories retain their permissions. Fresh native profiles
     // need write access despite the payload's different filesystem identity.
     if (created && chmod(path,(mode_t)mode)<0) return -1;
     if (lstat(path,&st)<0 || !S_ISDIR(st.st_mode)) { errno=ENOTDIR;return -1; }
+    if (!strcmp(path,DKR_DIAGNOSTICS_DIRECTORY))
+        printf("native-install: own journal directory mode=%o uid=%u gid=%u %s\n",(unsigned)(st.st_mode&07777),(unsigned)st.st_uid,(unsigned)st.st_gid,path);
     return 0;
 }
 static int same(const char *path,const unsigned char *bytes,size_t count) {
