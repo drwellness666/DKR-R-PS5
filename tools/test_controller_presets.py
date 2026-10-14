@@ -66,6 +66,10 @@ with tempfile.TemporaryDirectory(prefix='dkrr-controller-presets-') as temp:
                     '-I', str(game), '-I', str(temp), str(root / 'tests/controller_presets.cpp'),
                     str(game / 'runtime_input.cpp'), *sdl, '-pthread', '-o', str(out)], check=True)
     subprocess.run([str(out)], env=env, check=True)
+    # Same pinned authored UI source, including Play selector/sidebar and the
+    # one-column Settings/Save grids. No additional preparation or ROM needed.
+    for name in ('test_console_play_navigation.py','test_console_menu_navigation.py'):
+        subprocess.run(['python3',str(root/'tools'/name),str(args.game_work)],env=env,check=True)
     (temp / 'controller_capture.inc').write_text(function(ui, 'bool HandleInputCaptureEvent(SDL_Event* event) {'))
     out = temp / 'controller-capture'
     subprocess.run(['clang++', '-std=c++20', '-O1', '-g', '-Wall', '-Wextra', '-Werror',

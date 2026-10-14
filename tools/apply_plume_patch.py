@@ -31,7 +31,7 @@ def main():
         subprocess.run(command, check=True)
         if not all(digest(source / name) == checks["patched_sha256"] for name, checks in files.items()):
             raise SystemExit("Patched Plume checksum mismatch")
-    for name in ("plume_ps5_display.h", "ps5_display_options.h"):
+    for name in ("plume_ps5_display.h", "ps5_display_options.h", "ps5_diagnostics.h"):
         helper, expected = source / name, root / "src" / name
         if helper.exists() and helper.read_bytes() != expected.read_bytes():
             raise SystemExit("Existing display adapter differs; refusing to overwrite edits")

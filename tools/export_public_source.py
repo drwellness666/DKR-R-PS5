@@ -16,7 +16,7 @@ if not output.is_absolute() or output.exists():
     raise SystemExit('Use a new absolute export directory')
 output.mkdir(parents=True)
 files = ['.gitattributes', 'LICENSE', 'CMakeLists.txt', 'build.sh', 'build_gpu.sh', 'build_rt64.sh', 'build_game.sh',
-         'PORT_RELEASE.json', 'GAME_SOURCES.json', 'RT64_SOURCES.json', 'VULKAN_SOURCES.json', 'TITLE_ART_SOURCES.json', 'TITLE_PRESENTATION.md',
+         'build_integrated.sh', 'INTEGRATED_TEST.md', 'DIAGNOSTICS.md', 'PORT_RELEASE.json', 'GAME_SOURCES.json', 'RT64_SOURCES.json', 'VULKAN_SOURCES.json', 'TITLE_ART_SOURCES.json', 'TITLE_PRESENTATION.md',
          'GAME_BUILD.md', 'PUBLICATION.md', 'LICENSE_REVIEW.md', 'BETA_TESTING.md', 'PRIVATE_BETA.md', 'UPDATE_GUIDE.md', 'DUALSENSE_CONCEPT.md', 'DISPLAY_FEATURES.md', 'VERIFICATION.md', 'WORK_STATUS.md', 'CONSOLE_FEATURES.md', 'RENDER_ISSUES.md', 'PAL_PORT.md', 'CONTRIBUTING.md', 'PUBLIC_README.md', 'GPU_BUILD.md', 'RT64_BUILD.md', 'THIRD_PARTY.md', 'CHECKS.json']
 for name in files:
     shutil.copy2(root / name, output / name)
@@ -58,6 +58,9 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libsdl2-dev
       - run: python3 tools/test_controller_presets.py
       - run: python3 tools/test_ps5_display.py
+      - run: python3 tools/test_ps5_diagnostics.py
+      - run: python3 tools/test_session_tools.py
+      - run: python3 tools/test_display_metadata_update.py
       - run: python3 tools/test_rom_checker.py
       - run: python3 tools/test_ps5_realpath.py
       - run: python3 tools/test_ps5_filesystem.py
@@ -77,7 +80,7 @@ jobs:
       - run: clang++ -std=c++20 -O1 -fsanitize=address,undefined -Isrc tests/neutral_audio.cpp -o /tmp/neutral-audio && ASAN_OPTIONS=detect_leaks=0 /tmp/neutral-audio
       - run: clang -std=c11 -Wall -Wextra -Werror -Isrc tests/shader_cache.c -o /tmp/shader-cache && /tmp/shader-cache
       - run: clang -std=c11 -Wall -Wextra -Werror -Isrc tests/render_diagnostics.c -o /tmp/render-diagnostics && /tmp/render-diagnostics
-      - run: bash -n build.sh build_gpu.sh build_rt64.sh build_game.sh tools/*.sh
+      - run: bash -n build.sh build_gpu.sh build_rt64.sh build_game.sh build_integrated.sh tools/*.sh
 ''')
 subprocess.run([sys.executable, str(output / 'tools/check_public_source.py'), str(output)], check=True)
 for folder in (output / 'vendor', output):

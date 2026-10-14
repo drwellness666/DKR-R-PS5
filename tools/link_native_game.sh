@@ -22,7 +22,8 @@ native="$support/tooling/native"
 build="$game/native-link"
 target="$game/private/native/PPSA94678"
 mkdir -p "$build/obj" "$build/gen" "$build/stubs" "$target/sce_sys" "$target/sce_module"
-cc() { PS5_PAYLOAD_SDK="$sdk" sh "$support/tooling/prospero-clang18" "$@"; }
+cc() { PS5_PAYLOAD_SDK="$sdk" sh "$support/tooling/prospero-clang18" -gline-tables-only "$@"; }
+build_id=$(python3 "$root/tools/native_build_identity.py" "$root" "$game" "$sdl" "$support" "$build/native-inputs.json" --high-refresh "$high_refresh")
 profile="$game/game-ps5/dkr-ps5-profile.json"
 [[ -f $profile ]] || { echo 'Missing selected-revision CMake profile' >&2; exit 2; }
 mapfile -t revisions < <(python3 -c 'import json,sys;p=json.load(open(sys.argv[1]));print(p["v77"]);print(p["v80"])' "$profile")
@@ -40,9 +41,11 @@ cc -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden -ffunction-sections 
 for file in app_crt app_cpp_runtime; do
     input="$native/$file.cpp"
     [[ $file != app_crt ]] || input="$root/src/ps5_game_crt.cpp"
-    cc -std=c++20 -O2 -Wall -Wextra -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections \
+    cc -DDKR_BUILD_ID=\""$build_id"\" -I "$root/src" -std=c++20 -O2 -Wall -Wextra -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections \
         -c "$input" -o "$build/obj/$file.o"
 done
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden -ffunction-sections -fdata-sections \
+    -I "$root/src" -c "$root/src/ps5_diagnostics.c" -o "$build/obj/diagnostics.o"
 cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_timegm.c" -o "$build/obj/timegm.o"
 cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
@@ -83,7 +86,7 @@ printf '{ local: _Zn*; _Zd*; getargv; realpath; lstat; getcwd; pathconf; __wrap_
 link_game() {
 "$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
     --version-script "$build/gen/game-symbols.map" --exclude-libs=ALL -e _start -o "$build/llvm-pie.elf" \
-    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/save_stat.o" "$build/obj/import_check.o" \
+    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/save_stat.o" "$build/obj/import_check.o" \
     "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
     --start-group "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
     "${radv_link_inputs[@]}" --as-needed "$sdk"/target/lib/*.so
