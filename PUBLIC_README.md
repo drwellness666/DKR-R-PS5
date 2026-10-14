@@ -200,28 +200,31 @@ The native game now releases the PS5 launch overlay once after its first
 completed presentation, using the same API as the accepted renderer probes.
 The corrective US 1.0 build was tested on the console: the user confirms picture
 and normal audio. This avoids a launch poster remaining over a running game.
-The desired home-menu background is separate and is still under investigation.
+The owner subsequently confirmed the separate home-menu cloud background and
+matched launch image after a fresh ordinary ShadowMount title registration.
 
 In a dual-ROM build, **Touchpad → Play → Game version** offers **US 1.0** and
 **US 1.1 – Rev A** for the next title launch. Each keeps its existing separate
 profile. A one-ROM build stays on its included revision. The adapter has host
-acceptance tests and the corrected dual native build compiles/links; its physical
-controller selection and Rev A gameplay still need console acceptance.
+acceptance tests and the corrected dual native build compiles/links; the owner subsequently selected Rev A, closed/restarted the same app and
+confirmed gameplay. The optional trigger preset still needs explicit activation
+and its own physical test.
 Microstutters and the short Tracks-preview water flash remain reported defects.
 The normal build does not enable extra timing capture.
 
 ## Current offline scope
 
-The current development candidate contains both US revisions and the checked
-three-language original Options cycle. PAL 1.0/1.1 integration is deferred; it
-adds no required language for this scope. The latest console attempts failed
-before a fresh game log, including the restored previously accepted single
-US build. This does not isolate the dual code as their cause. The console is
-powered off and the new language candidate has not been deployed or tested on it.
+The candidate keeps both US revisions and the checked three-language original
+Options cycle. PAL integration is deferred by the owner's choice. The preceding
+integrated candidate was accepted for both revisions, normal picture/audio,
+paired artwork and repeated start. The console is now explicitly powered off.
+The new full-size 4K UI, quiet driver statistics, bounded high-refresh retry
+and own-profile support helpers are offline-qualified and not deployed.
 
-[TITLE_PRESENTATION.md](TITLE_PRESENTATION.md) records the paired selection/launch image policy and unresolved Shell background registration. The
-latest candidate also removes the extra narrow native sidebar stripe; actual
-Play-page gamepad navigation and absence of marker geometry pass local tests.
+[TITLE_PRESENTATION.md](TITLE_PRESENTATION.md) records the paired image policy
+and accepted ordinary fresh registration. Actual Play-page navigation and
+absence of the extra sidebar marker geometry pass local tests. Remaining
+physical checks are listed in [INTEGRATED_TEST.md](INTEGRATED_TEST.md).
 
 ## Performance and compatible updates
 
@@ -241,7 +244,7 @@ ROMs and saved progress stay in place. The beta has no in-game automatic install
 and proposes optional gyro, light, adaptive-trigger and haptic improvements.
 These are future features, not active promises of this beta.
 
-The next optional controls candidate adds a per-player **R2 / L2 driving** preset,
+The integrated candidate contains a per-player **R2 / L2 driving** preset,
 classic layout/undo, PlayStation button names and vertically navigated binding fields.
 [Mapping and local test boundaries](CONSOLE_FEATURES.md#optional-dualsense-driving-layout).
 Physical PS5 acceptance is pending; this does not advertise adaptive resistance or

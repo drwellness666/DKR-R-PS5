@@ -44,7 +44,7 @@ See [UPDATE_GUIDE.md](UPDATE_GUIDE.md) for explicit local source/build/update
 steps and completion markers. Helpers refuse unknown files and collisions.
 Per-file replacement is atomic; the whole bundle is not one transaction.
 
-## Why the missing home-menu background remains open
+## Historical background investigation before fresh registration
 
 The icon and both DDS files were already verified in all three own locations,
 yet the user reported no selected-title background. Another identical copy or
