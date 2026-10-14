@@ -12,6 +12,16 @@ expected=$3
 [[ -n ${DKR_ROM:-} || -n ${DKR_ROM_V77:-} || -n ${DKR_ROM_V80:-} ]] || { echo 'Supply your own supported US ROM paths through the documented environment' >&2; exit 2; }
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 python3 "$root/tools/check_public_source.py" "$root"
+# Preserve the recorded title's declaration. An integrated 120-Hz-capable title
+# must not become an ordinary declaration simply because a child build script's
+# environment ended. Refuse a mismatching explicit flag before expensive work.
+recorded_output=$(python3 "$root/tools/check_update_baseline.py" "$previous" "$expected")
+if [[ -n ${DKR_PS5_HIGH_REFRESH_BUILD+x} && $DKR_PS5_HIGH_REFRESH_BUILD != "$recorded_output" ]]; then
+ echo 'Explicit output build flag differs from the exact predecessor; use the separate qualified migration recipe' >&2
+ exit 2
+fi
+export DKR_PS5_HIGH_REFRESH_BUILD="$recorded_output"
+export DKR_PS5_LINE_TABLES=1
 # No old build tree is overwritten and no ROM/profile on the console is touched.
 mkdir -p "$build_root"
 export DKR_PS5_WORK="$build_root/lowmem"

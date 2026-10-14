@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import tarfile
 import urllib.request
+from apply_dependency_patch import apply_dependency_patch
 
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description=__doc__)
@@ -39,7 +40,7 @@ def inventory():
               'patches/0003-plume-ps5-radv-display.patch',
               'patches/0004-rt64-ps5-build-platform.patch',
               'patches/0005-dkrr-ps5-native-preview.patch',
-              'patches/dkrr-patch-manifest.json', 'src/plume_ps5_display.h', 'src/ps5_display_options.h', 'src/ps5_diagnostics.h']
+              'patches/dkrr-patch-manifest.json', 'src/plume_ps5_display.h', 'src/ps5_display_options.h', 'src/ps5_diagnostics.h', 'tools/apply_dependency_patch.py']
     return {'files': files, 'links': links, 'inputs': {name:digest(root/name) for name in inputs}}
 
 if stamp.exists():
@@ -106,10 +107,9 @@ targets = {'N64ModernRuntime': source / 'N64ModernRuntime',
            'N64Recomp': source / 'N64Recomp', 'sljit': source / 'N64Recomp/lib/sljit',
            'RT64': source / 'rt64-game', 'Plume': source / 'rt64-game/src/contrib/plume',
            'hlslpp': source / 'rt64-game/src/contrib/hlslpp'}
-def apply(target, patch):
-    cmd = ['git', '-C', str(target), 'apply', '--recount', '--whitespace=nowarn', '--ignore-space-change']
-    subprocess.run(cmd + ['--check', str(patch)], check=True)
-    subprocess.run(cmd + [str(patch)], check=True)
+targets['plume']=targets['Plume'] # Upstream manifest uses the lowercase name.
+targets['nativefiledialog-extended']=source/'rt64-game/src/contrib/nativefiledialog-extended'
+receipts=[]
 
 for dependency in json.loads((dk / 'patches/manifest.json').read_text())['dependencies']:
     if dependency['name'] not in targets:
@@ -118,7 +118,10 @@ for dependency in json.loads((dk / 'patches/manifest.json').read_text())['depend
         patch = dk / row['path']
         if digest(patch) != row['sha256']:
             raise SystemExit('Authored dependency patch checksum mismatch')
-        apply(targets[dependency['name']], patch)
+        receipt=apply_dependency_patch(targets[dependency['name']],patch)
+        receipt.update(dependency=dependency['name'],patch=row['path']);receipts.append(receipt)
+(source/'dependency-patch-receipts.json').write_text(json.dumps(receipts,indent=2)+'\n')
+print('Applied and re-read',len(receipts),'upstream dependency patches in isolated scratch repositories')
 for name, target in [('0001-ultramodern-ps5-platform.patch', source / 'N64ModernRuntime'),
                      ('0003-plume-ps5-radv-display.patch', targets['Plume']),
                      ('0004-rt64-ps5-build-platform.patch', targets['RT64'])]:
