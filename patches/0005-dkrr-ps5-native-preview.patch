@@ -545,18 +545,19 @@
             protocol::kMaximumQuickJoinDatagramBytes);
 --- a/runtime-recomp/src/game/runtime_ui.cpp
 +++ b/runtime-recomp/src/game/runtime_ui.cpp
-@@ -19,6 +19,10 @@
+@@ -19,6 +19,11 @@
  #include "generated/jumpman_font.h"
  #include "generated/racing_banana_font.h"
  #include "generated/selawik_font.h"
 +#if defined(__PROSPERO__)
 +#include "ps5_revision_selection.h"
 +#include "ps5_display_options.h"
++#include "ps5_diagnostics.h"
 +#endif
  #include "countdown_tone_policy.hpp"
  #include "custom_tracks.hpp"
  #include "launcher_render_policy.hpp"
-@@ -479,17 +483,21 @@
+@@ -479,17 +484,21 @@
  bool g_online_guide_reopen_requested = false;
  #if defined(DKR_IOS)
  RefreshRate g_modern_refresh_mode = RefreshRate::Display;
@@ -580,7 +581,7 @@
  Resolution g_modern_resolution = Resolution::Original2x;
  #else
  Resolution g_modern_resolution = Resolution::Auto;
-@@ -498,7 +506,7 @@
+@@ -498,7 +507,7 @@
  Antialiasing g_modern_antialiasing = Antialiasing::None;
  #if defined(DKR_IOS)
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
@@ -589,7 +590,7 @@
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::Off;
  #else
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
-@@ -1206,6 +1214,9 @@
+@@ -1206,6 +1215,9 @@
  }
  
  void LoadLauncherFonts() {
@@ -599,7 +600,7 @@
      ++g_font_generation;
      ImGuiIO& io = ImGui::GetIO();
      static constexpr ImWchar kLauncherGlyphRanges[] = {
-@@ -1336,9 +1347,22 @@
+@@ -1336,9 +1348,22 @@
          g_font_fps = g_font_controls != nullptr ? g_font_controls : body_font;
      }
      LoadBrandLogoIntoAtlas();
@@ -622,7 +623,7 @@
  }
  
  class ControlFontScope {
-@@ -1533,6 +1557,10 @@
+@@ -1533,6 +1558,10 @@
  #if defined(__ANDROID__)
      // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
      dkr::runtime::mobile_graphics::apply_accurate_budget(config);
@@ -633,7 +634,7 @@
  #endif
  }
  
-@@ -4307,6 +4335,11 @@
+@@ -4307,6 +4336,11 @@
  }
  
  void DrawSidebarCurrentStripe() {
@@ -645,7 +646,7 @@
      const ImVec2 minimum = ImGui::GetItemRectMin();
      const ImVec2 maximum = ImGui::GetItemRectMax();
      ImDrawList* draw = ImGui::GetWindowDrawList();
-@@ -4322,6 +4355,7 @@
+@@ -4322,6 +4356,7 @@
      draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
                          std::max(rounding - 1.0F, 0.0F));
      draw->PopClipRect();
@@ -653,7 +654,7 @@
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -8053,6 +8087,15 @@
+@@ -8053,6 +8088,15 @@
      if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
          return false;
      }
@@ -669,7 +670,7 @@
      if (g_capture_action == kShortcutCaptureAction) {
          if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
              event->key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-@@ -8179,6 +8222,12 @@
+@@ -8179,6 +8223,12 @@
              g_overlay_visible.store(false, std::memory_order_release);
          }
          ImGui::PopStyleColor(2);
@@ -682,7 +683,7 @@
      } else if (g_overlay_page == kPageGraphics) {
          DrawGraphicsPage(content_width, true);
      } else if (g_overlay_page == kPageSound) {
-@@ -9461,7 +9510,8 @@
+@@ -9461,7 +9511,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -692,7 +693,7 @@
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9574,6 +9624,11 @@
+@@ -9574,6 +9625,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -704,7 +705,7 @@
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9756,6 +9811,18 @@
+@@ -9756,6 +9812,18 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -774,18 +775,19 @@
      return type;
 --- a/runtime-recomp/src/game/runtime_graphics_ui.inl
 +++ b/runtime-recomp/src/game/runtime_graphics_ui.inl
-@@ -8,6 +8,10 @@
+@@ -8,6 +8,11 @@
  // restores the defaults. The study has fewer settings than the runtime; the
  // extra ones sit in the card they belong to, the rarely used ones behind
  // disclosures. Accurate keeps only what it always offered.
 +
 +#if defined(__PROSPERO__)
 +#include "ps5_display_ui.inl"
++#include "ps5_diagnostics_ui.inl"
 +#endif
  
  struct GraphicsPageState {
      ImGuiContext* context = nullptr;
-@@ -82,7 +86,9 @@
+@@ -82,7 +87,9 @@
      const bool owned_camera_settings_deferred =
          dkr::runtime::netplay::experimental::owned_runtime_active();
      int profile = static_cast<int>(enh::presentation_profile());
@@ -795,7 +797,7 @@
      int resolution = static_cast<int>(config.res_option);
      int aspect = static_cast<int>(config.ar_option);
      int aa = static_cast<int>(config.msaa_option);
-@@ -92,8 +98,8 @@
+@@ -92,8 +99,8 @@
      // Both menu surfaces use the same full-width responsive cards.
      const float width = std::max(available_width, 1.0F);
      // Container queries on the content panel.
@@ -806,7 +808,7 @@
      ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.0F, 0.0F});
  
      DrawPageHeading("GRAPHICS");
-@@ -182,15 +188,27 @@
+@@ -182,15 +189,27 @@
          fields.End();
          modern = enh::modern_options_visible(enh::presentation_profile());
  
@@ -835,7 +837,7 @@
                                          {"Original (240p)", "Original 2x", "Automatic integer scale"},
                                          fields.column, false,
                                          "Higher resolutions draw more pixels and can increase graphics load.");
-@@ -206,7 +224,7 @@
+@@ -206,7 +225,7 @@
              fields.Begin();
              if (SettingsDropdown("presentation-rate", "Presentation rate", &refresh_mode,
                                   {"Match display", "Manual target"}, fields.column, false,
@@ -844,6 +846,17 @@
                  g_modern_refresh_mode = refresh_mode == 0 ? RefreshRate::Display : RefreshRate::Manual;
                  config.rr_option = g_modern_refresh_mode;
                  changed = true;
+@@ -370,6 +389,10 @@
+             ImGui::Unindent(36.0F);
+         }
+ 
++#if defined(__PROSPERO__)
++        PaddockGap(16.0F);
++        DrawPs5Diagnostics(inner);
++#endif
+         PaddockGap(16.0F);
+         bool fps_overlay = g_fps_overlay_enabled;
+         if (SettingsCheck("##fps-overlay", "Show performance overlay", &fps_overlay, inner,
 --- a/runtime-recomp/src/game/runtime_saves_ui.inl
 +++ b/runtime-recomp/src/game/runtime_saves_ui.inl
 @@ -174,7 +174,7 @@

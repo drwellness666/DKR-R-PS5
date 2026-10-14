@@ -24,18 +24,21 @@
  #endif
 --- a/plume_vulkan.cpp
 +++ b/plume_vulkan.cpp
-@@ -9,6 +9,10 @@
+@@ -9,6 +9,13 @@
  #define VOLK_IMPLEMENTATION 
  
  #include "plume_vulkan.h"
 +#if defined(__PROSPERO__)
 +#include "plume_ps5_display.h"
++#if defined(DKR_PS5_GAME_DISPLAY)
++#include "ps5_diagnostics.h"
++#endif
 +extern "C" VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstanceProcAddr(VkInstance, const char *);
 +#endif
  
  #include <algorithm>
  #include <cmath>
-@@ -50,6 +54,8 @@
+@@ -50,6 +57,8 @@
  #   endif
  #   if defined(_WIN64)
          VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
@@ -44,7 +47,7 @@
  #   elif defined(__ANDROID__)
          VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
  #   elif defined(__linux__)
-@@ -2095,6 +2101,14 @@
+@@ -2095,6 +2104,14 @@
              fprintf(stderr, "vkCreateWin32SurfaceKHR failed with error code 0x%X.\n", res);
              return;
          }
@@ -59,7 +62,7 @@
  #   elif defined(PLUME_SDL_VULKAN_ENABLED)
          VulkanInterface *renderInterface = commandQueue->device->renderInterface;
          SDL_bool sdlRes = SDL_Vulkan_CreateSurface(desc.renderWindow, renderInterface->instance, &surface);
-@@ -2174,8 +2188,9 @@
+@@ -2174,8 +2191,9 @@
              return;
          }
  
@@ -71,7 +74,17 @@
  
          // Clamp the requested buffer count between the bounds of the surface capabilities.
          this->desc.textureCount = std::clamp(desc.textureCount, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
-@@ -2332,13 +2347,19 @@
+@@ -2297,6 +2315,9 @@
+             return false;
+         }
+ 
++#if defined(__PROSPERO__) && defined(DKR_PS5_GAME_DISPLAY)
++        dkrr_diag_present();
++#endif
+         return true;
+     }
+ 
+@@ -2332,13 +2353,19 @@
  
          createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
          createInfo.surface = surface;
@@ -92,7 +105,7 @@
          createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
          createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
          createInfo.compositeAlpha = pickedAlphaFlag;
-@@ -2447,6 +2468,9 @@
+@@ -2447,6 +2474,9 @@
      }
  
      uint32_t VulkanSwapChain::getRefreshRate() const {
@@ -102,7 +115,7 @@
          VkRefreshCycleDurationGOOGLE refreshCycle = {};
          VkResult res = vkGetRefreshCycleDurationGOOGLE(commandQueue->device->vk, vk, &refreshCycle);
          if (res != VK_SUCCESS) {
-@@ -2455,6 +2479,7 @@
+@@ -2455,6 +2485,7 @@
          }
  
          return std::lround(1000000000.0 / refreshCycle.refreshDuration);
@@ -110,7 +123,7 @@
      }
  
      void VulkanSwapChain::getWindowSize(uint32_t &dstWidth, uint32_t &dstHeight) const {
-@@ -2463,6 +2488,9 @@
+@@ -2463,6 +2494,9 @@
          GetClientRect(desc.renderWindow, &rect);
          dstWidth = rect.right - rect.left;
          dstHeight = rect.bottom - rect.top;
@@ -120,7 +133,7 @@
  #   elif defined(PLUME_SDL_VULKAN_ENABLED)
          SDL_GetWindowSizeInPixels(desc.renderWindow, (int *)(&dstWidth), (int *)(&dstHeight));
  #   elif defined(__ANDROID__)
-@@ -3885,7 +3913,11 @@
+@@ -3885,7 +3919,11 @@
  
          VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures = {};
          VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures = {};
@@ -132,7 +145,7 @@
          if (rayTracingFound) {
              rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
              rayTracingPipelineFeatures.pNext = featuresChain;
-@@ -4464,7 +4496,12 @@
+@@ -4464,7 +4502,12 @@
  #else
      VulkanInterface::VulkanInterface() {
  #endif

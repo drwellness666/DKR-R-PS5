@@ -48,7 +48,7 @@
     },
     "runtime-recomp/src/game/runtime_ui.cpp": {
       "original_sha256": "efa6e5618e46e379c5787f51b67d138d999f99a13ceab02f81cb955e0fa0c86d",
-      "patched_sha256": "fec07a175fe3a0e77e54e6be0d54bf1d3f20db5163f643110cb805d4228fa962"
+      "patched_sha256": "10876e3e5332ba19ca259152078781557db601536134522af09520df12f1cdd6"
     },
     "runtime-recomp/src/game/runtime_settings_ui.inl": {
       "original_sha256": "a893efbc665131ba5b5815da3c44f3c8225b0d72bc677bbc10d9c09ae1d33c14",
@@ -60,7 +60,7 @@
     },
     "runtime-recomp/src/game/runtime_graphics_ui.inl": {
       "original_sha256": "8e390734c03ab654311f3c4532018da081879e4244e03c9c9f9a0b33915c24fd",
-      "patched_sha256": "4df969cbdaddc8083044db3fcc664a21c1624a428bedf16f4213664bd5c187a2"
+      "patched_sha256": "7987145cf574f9ee63d13352e17bd8ebe1974f065550869d9ee23907ed3214b0"
     },
     "runtime-recomp/src/game/runtime_saves_ui.inl": {
       "original_sha256": "ead7773e9b083162688fdaf41efd794404545043b777975e3daa5d7f75d93ea2",
@@ -91,5 +91,5 @@
       "patched_sha256": "4ec51dc37ee74a6c5ed21a9fdd052a75e90377154257011a3d84a5e44baf9b0b"
     }
   },
-  "patch_sha256": "f67fb4999f0012f5fff3b6e2a591d5e095955c3968f5dc26f3fba1e8686cd130"
+  "patch_sha256": "18b9f3c356545789b61030226b76ec2d0b26aeaa6c4af880d089377d53020f00"
 }

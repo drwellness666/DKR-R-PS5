@@ -11,8 +11,8 @@
     },
     "plume_vulkan.cpp": {
       "original_sha256": "70ecc88658c7231497836d15ea9f98d80861a6e991cc6128d40c7ac980193038",
-      "patched_sha256": "dd399685d800804d116a1283e6d392c5f72037855ff8db8353b5252eb4eec78f"
+      "patched_sha256": "0b4cc63f14ee7bb12b5339cc7297a2ffa00a8a996cb4bbe8fd413d3ac4eb9545"
     }
   },
-  "patch_sha256": "d2288b2051193e56a5c802a4135aa754fbb100aa06e641cc48f0aa24e9fb2272"
+  "patch_sha256": "2306b783d5726f14e22ea86a9c5ebd20dfe9d70690991ef7446abeb3eef80349"
 }
