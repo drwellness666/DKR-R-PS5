@@ -17,7 +17,7 @@ if not output.is_absolute() or output.exists():
 output.mkdir(parents=True)
 files = ['.gitattributes', 'LICENSE', 'CMakeLists.txt', 'build.sh', 'build_gpu.sh', 'build_rt64.sh', 'build_game.sh',
          'PORT_RELEASE.json', 'GAME_SOURCES.json', 'RT64_SOURCES.json', 'VULKAN_SOURCES.json', 'TITLE_ART_SOURCES.json', 'TITLE_PRESENTATION.md',
-         'GAME_BUILD.md', 'PUBLICATION.md', 'LICENSE_REVIEW.md', 'BETA_TESTING.md', 'PRIVATE_BETA.md', 'UPDATE_GUIDE.md', 'VERIFICATION.md', 'WORK_STATUS.md', 'CONSOLE_FEATURES.md', 'RENDER_ISSUES.md', 'PAL_PORT.md', 'CONTRIBUTING.md', 'PUBLIC_README.md', 'GPU_BUILD.md', 'RT64_BUILD.md', 'THIRD_PARTY.md', 'CHECKS.json']
+         'GAME_BUILD.md', 'PUBLICATION.md', 'LICENSE_REVIEW.md', 'BETA_TESTING.md', 'PRIVATE_BETA.md', 'UPDATE_GUIDE.md', 'DUALSENSE_CONCEPT.md', 'VERIFICATION.md', 'WORK_STATUS.md', 'CONSOLE_FEATURES.md', 'RENDER_ISSUES.md', 'PAL_PORT.md', 'CONTRIBUTING.md', 'PUBLIC_README.md', 'GPU_BUILD.md', 'RT64_BUILD.md', 'THIRD_PARTY.md', 'CHECKS.json']
 for name in files:
     shutil.copy2(root / name, output / name)
 shutil.copy2(root / 'PUBLIC_README.md', output / 'README.md')
