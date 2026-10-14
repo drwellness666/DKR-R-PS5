@@ -36,7 +36,7 @@
     }
   ],
   "source_patch": {
-    "files": 19,
+    "files": 22,
     "pristine_application_and_hashes": "PASS",
     "evidence": "Exact archive/pre/post hashes and zero-fuzz apply; save_storage.hpp retains upstream strict policy."
   },
@@ -385,5 +385,16 @@
     "frame_input_path_unchanged": true,
     "actual_runtime_settings_navigation_and_capture": "Locally tested; hardware acceptance pending",
     "undo_ownership_guard": "PASS actual player selection and binding capture entry"
+  },
+  "optional_display": {
+    "date": "2026-10-14",
+    "actual_preference_surface_gate_ui_models": "PASS ASan/UBSan, ordinary and capable builds",
+    "native_ui_plume_compile": "PASS",
+    "existing_graphics_controls_reused": true,
+    "default": "1080p / 60 Hz SDR",
+    "high_refresh": "Separate opt-in metadata-capable build; native support + measured WSI check + explicit user choice",
+    "hdr": "Not supported by pinned VideoOut WSI",
+    "vrr_allm": "System/TV controlled, actual HDMI operation untested",
+    "physical_console": "NOT TESTED"
   }
 }

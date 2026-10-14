@@ -96,3 +96,7 @@ gefrorene Beta.1-Kandidat und seine Rückfallartefakte bleiben erhalten. Keine
 Konsolenverbindung/Installation; physische Eingaben und Speichern/Wiederladen auf
 PS5 stehen noch aus. Adaptive Trigger, detaillierte Haptik und native Gyro-Samples
 sind weiterhin Vorhaben mit den dokumentierten Backend-Grenzen.
+
+## Optionale PS5-Ausgabe, 2026-10-14
+
+Vorhandene Menüpunkte wurden geprüft: Renderingauflösung und Präsentationsrate werden weiterbenutzt. Auf PS5 ersetzt die TV-Ausgabe den Fenstermodus. 1080p/1440p/4K sind für den nächsten Start wählbar; Standard bleibt 1080p/60 Hz. Ein gesonderter, ausdrücklich gewählter Build ergänzt 120 Hz. VRR/ALLM steuert vorerst die Konsole; HDR fehlt im nativen SDR-Backend. Präferenz-, Gate-, Surface- und UI-Verhalten bestehen lokale Sanitizer-Tests, UI/Plume kompilieren nativ. Neueste physische Bild-, Ton-, TV- und Leistungsabnahme bleibt offen. Der geänderte 120-Hz-Metadatenstand erhält bewusst kein automatisch ausführbares Updatepaket. Details: [DISPLAY_FEATURES.md](DISPLAY_FEATURES.md).

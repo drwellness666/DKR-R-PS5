@@ -338,3 +338,7 @@ sind erst nach einem echten Konsolentest als bestanden zu bewerten.
 [UPDATE_GUIDE.md](UPDATE_GUIDE.md) bündelt Quellupdate, lokalen Eigenbau und den
 inkrementellen eigenen Dateiaustausch mit exaktem Rückfallstand; ROMs und
 Spielstände müssen dafür nicht erneut installiert werden.
+
+## Optionale TV-Ausgabe
+
+Die PS5-Optionen sind in den vorhandenen Grafikbereich eingebunden. 1080p/1440p/4K-Ausgabepuffer und Renderingauflösung sind getrennt. Der normale Build bleibt bei 60 Hz und unveränderten Metadaten. `DKR_PS5_HIGH_REFRESH_BUILD=1` erstellt ausdrücklich einen separaten 120-Hz-Teststand; normale Aktualisierungshelfer lehnen dessen geänderte Titelmetadaten ab. Voraussetzungen, belegte Schnittstellen und Abnahme: [DISPLAY_FEATURES.md](DISPLAY_FEATURES.md).

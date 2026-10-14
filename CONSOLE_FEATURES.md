@@ -139,3 +139,7 @@ application database or force a shell refresh.
 
 The requested home-menu-only presentation, exact old-poster retirement and
 registration investigation are documented in [TITLE_PRESENTATION.md](TITLE_PRESENTATION.md).
+
+## Native TV-Ausgabe, Stand 2026-10-14
+
+Der bestehende Bereich Graphics → Game display übernimmt die native Ausgabewahl. Ausgabeauflösung und Spiel-Rendering bleiben getrennt; Presentation rate → Match display verwendet die gemeldete PS5-Rate. Optional 1080p/1440p/4K, separater 120-Hz-Testbuild, SDR und systemgesteuertes VRR/ALLM: [DISPLAY_FEATURES.md](DISPLAY_FEATURES.md). Alle neuen Ausgabearten brauchen Hardwareabnahme.

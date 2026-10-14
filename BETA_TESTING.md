@@ -81,3 +81,7 @@ full console dumps, credentials and unrelated Sony-module data.
 
 An issue report must not claim broader firmware compatibility, stable frame rate
 or storage safety than the reported test demonstrates.
+
+## Optional output comparison
+
+Follow [DISPLAY_FEATURES.md](DISPLAY_FEATURES.md). First retain the accepted 1080p/60 baseline; then apply 4K/60 for the next start while keeping the same game rendering/detail and scene. Record picture, UI, sound, hitch timing and actual TV HDMI information. Restore 1080p/60 before comparing higher internal render detail. The capable 120-Hz metadata bundle is a separate later experiment and is not eligible for the ordinary metadata-preserving update. Compare VRR/ALLM as system settings only after stable picture/audio. Native HDR is unavailable; record system SDR conversion separately.

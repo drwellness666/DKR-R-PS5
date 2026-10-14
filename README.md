@@ -245,3 +245,5 @@ classic layout/undo, PlayStation button names and vertically navigated binding f
 [Mapping and local test boundaries](CONSOLE_FEATURES.md#optional-dualsense-driving-layout).
 Physical PS5 acceptance is pending; this does not advertise adaptive resistance or
 native gyro. The published beta.1 snapshot remains available unchanged.
+
+Optional native output choices reuse **Graphics → Game display**: 1080p / 1440p / 4K, applied on the next start. Existing render-resolution and presentation-rate settings remain independent. The ordinary build keeps 60 Hz; a separate opt-in build enables an experimental 120 Hz choice and changes title metadata. VRR/ALLM follow system/TV controls; native HDR is not available. See [DISPLAY_FEATURES.md](DISPLAY_FEATURES.md) for the SDK evidence, build flag, boundaries and evening test order.

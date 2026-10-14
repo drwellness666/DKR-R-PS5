@@ -257,3 +257,7 @@ Reproduce the ROM-free controls tests after source preparation:
 Alternatively, omit the work path to fetch/hash-check only the pinned public DKR-R
 and ImGui inputs. `--cache ABSOLUTE_DOWNLOAD_CACHE` can avoid those downloads.
 SDL2 development headers/library and Clang are required. ASan/UBSan are enabled.
+
+## Optional output candidate, offline 2026-10-14
+
+Actual preference adapter, VideoOut gate and Vulkan display-surface code pass ASan/UBSan for ordinary and capable builds: all 1080p/1440p/4K and permitted 60/120 choices; reordered enumeration; missing modes and refused optional surfaces; device loss; missing functions/planes; malformed/oversized/NUL/duplicate inputs; symlinks, FIFO and temporary collisions; save preservation. Actual output UI fields pass a drawing-helper model for explicit Apply/Reset, pending versus active choice and ordinary-build 120-Hz refusal. Console visuals/navigation/timing/VRR/ALLM remain pending. Native UI/Plume compile, standalone probe compile without game references and complete fresh upstream patch/hash verification are included in the candidate evidence. Reproduce with `python3 tools/test_ps5_display.py [--cache ABSOLUTE_DOWNLOAD_CACHE]`.
