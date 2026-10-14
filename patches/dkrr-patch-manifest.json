@@ -4,7 +4,7 @@
   "files": {
     "runtime-recomp/CMakeLists.txt": {
       "original_sha256": "c7a186e2b13f8a3d66ef3f98cba82548c503d24f7448077ccd5765d25103f3b7",
-      "patched_sha256": "af3e0e2b1800e4ec45861dcbafbc3a98d184914a12a7cd22aea246c0f5426e3b"
+      "patched_sha256": "b681439f94ad00c5e7c5aebd16f57f389cc96a6635017ff61bad1e528fae6c84"
     },
     "runtime-recomp/src/game/mods/legacy_mod_process.cpp": {
       "original_sha256": "f292959811c56f17c22a35b214263af3678a2906d4e8bbd4360197b1a4e51b31",
@@ -48,7 +48,7 @@
     },
     "runtime-recomp/src/game/runtime_ui.cpp": {
       "original_sha256": "efa6e5618e46e379c5787f51b67d138d999f99a13ceab02f81cb955e0fa0c86d",
-      "patched_sha256": "211758a0b782fb4c06b7a7ed6174e4e702a0f62f6363acb98064f1d5e1ca50bd"
+      "patched_sha256": "fec07a175fe3a0e77e54e6be0d54bf1d3f20db5163f643110cb805d4228fa962"
     },
     "runtime-recomp/src/game/runtime_settings_ui.inl": {
       "original_sha256": "a893efbc665131ba5b5815da3c44f3c8225b0d72bc677bbc10d9c09ae1d33c14",
@@ -60,7 +60,7 @@
     },
     "runtime-recomp/src/game/runtime_graphics_ui.inl": {
       "original_sha256": "8e390734c03ab654311f3c4532018da081879e4244e03c9c9f9a0b33915c24fd",
-      "patched_sha256": "00b34c8638ea778675b7b3327d8ba40687850909974a7ac5fc30d8ea983dc29a"
+      "patched_sha256": "4df969cbdaddc8083044db3fcc664a21c1624a428bedf16f4213664bd5c187a2"
     },
     "runtime-recomp/src/game/runtime_saves_ui.inl": {
       "original_sha256": "ead7773e9b083162688fdaf41efd794404545043b777975e3daa5d7f75d93ea2",
@@ -91,5 +91,5 @@
       "patched_sha256": "4ec51dc37ee74a6c5ed21a9fdd052a75e90377154257011a3d84a5e44baf9b0b"
     }
   },
-  "patch_sha256": "fd8742eb1be13815d61391ffc6303ba24e1532a666089bf971091864cca8ee4b"
+  "patch_sha256": "f67fb4999f0012f5fff3b6e2a591d5e095955c3968f5dc26f3fba1e8686cd130"
 }
