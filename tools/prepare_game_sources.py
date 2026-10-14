@@ -39,7 +39,7 @@ def inventory():
               'patches/0003-plume-ps5-radv-display.patch',
               'patches/0004-rt64-ps5-build-platform.patch',
               'patches/0005-dkrr-ps5-native-preview.patch',
-              'patches/dkrr-patch-manifest.json', 'src/plume_ps5_display.h']
+              'patches/dkrr-patch-manifest.json', 'src/plume_ps5_display.h', 'src/ps5_display_options.h']
     return {'files': files, 'links': links, 'inputs': {name:digest(root/name) for name in inputs}}
 
 if stamp.exists():
@@ -126,6 +126,7 @@ for name, target in [('0001-ultramodern-ps5-platform.patch', source / 'N64Modern
     subprocess.run(cmd + ['--dry-run'], check=True)
     subprocess.run(cmd, check=True)
 shutil.copy2(root / 'src/plume_ps5_display.h', targets['Plume'] / 'plume_ps5_display.h')
+shutil.copy2(root / 'src/ps5_display_options.h', targets['Plume'] / 'ps5_display_options.h')
 manifest = json.loads((root / 'patches/dkrr-patch-manifest.json').read_text())
 patch = root / 'patches/0005-dkrr-ps5-native-preview.patch'
 if digest(patch) != manifest['patch_sha256']:
