@@ -18,6 +18,7 @@
 #include "ps5_shader_cache.h"
 #include "ps5_revision_selection.h"
 #include "ps5_display_options.h"
+#include "ps5_diagnostics.h"
 
 int dkrr_game_main(int, char **);
 extern "C" unsigned dkrr_report_missing_imports(void (*)(const char *));
@@ -39,6 +40,7 @@ static void report(const char *format, ...) {
     std::vsnprintf(text,sizeof(text),format,args);va_end(args);
     std::snprintf(line,sizeof(line),"[DKR-R] native-game: %s\n",text);
     sceKernelDebugOutText(0,line);
+    dkrr_diag_note(line);
 }
 static void missing_import(const char *name) {
     report("unresolved function import: %s",name);
@@ -85,7 +87,7 @@ int main() {
     // The public SDL PS5 driver's default map omits Back. DKR-R uses that
     // logical button for its settings overlay, so map the touchpad click to it.
     setenv("SDL_GAMECONTROLLERCONFIG",dkrr_ps5_controller_mapping,1);
-    report("build=optional-output-v1; OFL + US single/dual + neutral audio + optional controls");
+    report("build=integrated-v1 source=%s; US dual + languages + optional controls/output + diagnostics",dkrr_diag_build());
     configure_render_diagnostics();
     dkrr_ps5_initialize_display();
     const auto output = dkrr_ps5_boot_display_choice();
@@ -147,12 +149,14 @@ int main() {
         // The game performs its own full revision/content validation before boot.
         char name[]="/app0/eboot.bin",rom_flag[]="--rom",config_flag[]="--config";
         char *args[]={name,rom_flag,const_cast<char *>(rom),config_flag,const_cast<char *>(profile),nullptr};
+        dkrr_diag_stage(DKR_DIAG_GAME);
         try { status=dkrr_game_main(5,args); }
         catch(const std::exception &e) { report("runtime exception: %s",e.what());status=2; }
         if(status==0 && runtime_error_reported.load(std::memory_order_relaxed))status=5;
     }
     struct ps5_heap_stats stats={};ps5_heap_stats(&stats);
     report("completed status=%d revision=%u heap-peak=%zu heap-libc-fallbacks=%llu",status,revision,stats.peak_bytes,stats.libc_fallbacks);
+    dkrr_diag_shutdown();
     usleep(200000);
     report("self-close returned rc=0x%08x",unsigned(dkrr_close_this_title()));
     for(;;)usleep(100000);

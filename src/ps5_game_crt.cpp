@@ -12,6 +12,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "ps5_diagnostics.h"
+#ifndef DKR_BUILD_ID
+#define DKR_BUILD_ID "unversioned"
+#endif
 
 using Destructor = void (*)();
 using Initializer = void (*)();
@@ -89,12 +93,15 @@ _start(void *process_parameters, Destructor loader_teardown)
     sceKernelDebugOutText(0,"[DKR-R] startup: initialize environment\n");
     _init_env(process_parameters);
     sceKernelDebugOutText(0,"[DKR-R] startup: environment initialized\n");
+    (void)dkrr_diag_initialize(DKR_BUILD_ID,reinterpret_cast<std::uintptr_t>(&_start));
     if (loader_teardown != nullptr)
         (void)atexit(loader_teardown);
     (void)atexit(_fini);
     sceKernelDebugOutText(0,"[DKR-R] startup: constructors begin\n");
+    dkrr_diag_stage(DKR_DIAG_CTORS);
     _init();
     sceKernelDebugOutText(0,"[DKR-R] startup: constructors complete; main\n");
+    dkrr_diag_stage(DKR_DIAG_MAIN);
     const int status = application_main(argc, argv, nullptr);
     catchReturnFromMain(status);
     exit(status);
