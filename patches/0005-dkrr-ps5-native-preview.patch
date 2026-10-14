@@ -643,7 +643,23 @@
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -8179,6 +8212,12 @@
+@@ -8053,6 +8086,15 @@
+     if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
+         return false;
+     }
++    if (kConsoleMenuLayout && event->type == SDL_CONTROLLERBUTTONDOWN &&
++        event->cbutton.button == SDL_CONTROLLER_BUTTON_BACK &&
++        event->cbutton.which == dkr::runtime::platform::controller_instance_for_player(
++            g_capture_action == kShortcutCaptureAction ? 0U : g_selected_player)) {
++        // Keep Circle available as a bindable gameplay button. The dedicated
++        // overlay toggle cancels capture without assigning or closing the menu.
++        g_capture_finished = true;
++        return true;
++    }
+     if (g_capture_action == kShortcutCaptureAction) {
+         if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
+             event->key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+@@ -8179,6 +8221,12 @@
              g_overlay_visible.store(false, std::memory_order_release);
          }
          ImGui::PopStyleColor(2);
@@ -656,7 +672,7 @@
      } else if (g_overlay_page == kPageGraphics) {
          DrawGraphicsPage(content_width, true);
      } else if (g_overlay_page == kPageSound) {
-@@ -9461,7 +9500,8 @@
+@@ -9461,7 +9509,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -666,7 +682,7 @@
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9574,6 +9614,11 @@
+@@ -9574,6 +9623,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -678,7 +694,7 @@
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9756,6 +9801,18 @@
+@@ -9756,6 +9810,18 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -933,3 +949,226 @@
  
      manual = ", ".join(
          "{ name = %s, section = %s, vram = %s, size = %s }"
+--- a/runtime-recomp/src/game/runtime_input.hpp
++++ b/runtime-recomp/src/game/runtime_input.hpp
+@@ -38,6 +38,14 @@
+     LookBack,
+     Accelerate,
+     Count,
++};
++
++// Presets change only controller bindings for one player. Serialized bindings
++// remain the source of truth, so older settings files need no migration.
++enum class ControllerPreset : std::uint8_t {
++    Custom,
++    Classic,
++    TriggerDriving,
+ };
+ 
+ enum class GyroAxis : std::uint8_t {
+@@ -96,6 +104,8 @@
+ void reset_defaults();
+ void reset_defaults(std::size_t player);
+ void copy_bindings(std::size_t source_player, std::size_t target_player);
++ControllerPreset controller_preset(std::size_t player);
++bool apply_controller_preset(std::size_t player, ControllerPreset preset);
+ int keyboard_player();
+ void set_keyboard_player(int player);
+ bool background_input_enabled(std::size_t player);
+--- a/runtime-recomp/src/game/runtime_input.cpp
++++ b/runtime-recomp/src/game/runtime_input.cpp
+@@ -70,6 +70,27 @@
+ 
+ using PlayerBindings =
+     std::array<BindingPair, static_cast<std::size_t>(Action::Count)>;
++#if DKR_RUNTIME_HAS_RT64
++PlayerBindings PresetBindings(dkr::runtime::input::ControllerPreset preset) {
++    PlayerBindings result = kDefaults;
++    if (preset == dkr::runtime::input::ControllerPreset::TriggerDriving) {
++        const auto index = [](Action action) { return static_cast<std::size_t>(action); };
++        result[index(Action::A)].controller_secondary =
++            kAxisSourceBase + SDL_CONTROLLER_AXIS_TRIGGERRIGHT * 2 + 1;
++        result[index(Action::B)].controller_secondary =
++            kAxisSourceBase + SDL_CONTROLLER_AXIS_TRIGGERLEFT * 2 + 1;
++        // L2 used to fire items. Move Z to L1, and retain the N64 L action
++        // on Triangle so no original action is dropped or fired with braking.
++        result[index(Action::Z)].controller = SDL_CONTROLLER_BUTTON_LEFTSHOULDER;
++        result[index(Action::L)].controller = SDL_CONTROLLER_BUTTON_Y;
++        // R2 already drives N64 A above in both presentation profiles. Avoid
++        // a second host-only action overriding the original release behavior.
++        result[index(Action::Accelerate)].controller = dkr::runtime::input::kUnbound;
++    }
++    return result;
++}
++#endif
++
+ std::array<PlayerBindings, dkr::runtime::input::kPlayerCount> g_bindings{
+     kDefaults, kDefaults, kDefaults, kDefaults};
+ std::mutex g_binding_mutex;
+@@ -609,6 +630,51 @@
+     g_bindings[PlayerIndex(target_player)] = g_bindings[PlayerIndex(source_player)];
+ }
+ 
++dkr::runtime::input::ControllerPreset dkr::runtime::input::controller_preset(
++    std::size_t player) {
++#if DKR_RUNTIME_HAS_RT64
++    if (player >= kPlayerCount) return ControllerPreset::Custom;
++    std::scoped_lock lock(g_binding_mutex);
++    const auto matches = [&](ControllerPreset preset) {
++        const auto expected = PresetBindings(preset);
++        for (std::size_t index = 0; index < expected.size(); ++index) {
++            if (g_bindings[player][index].controller != expected[index].controller ||
++                g_bindings[player][index].controller_secondary != expected[index].controller_secondary) {
++                return false;
++            }
++        }
++        return true;
++    };
++    if (matches(ControllerPreset::TriggerDriving)) return ControllerPreset::TriggerDriving;
++    if (matches(ControllerPreset::Classic)) return ControllerPreset::Classic;
++#else
++    (void)player;
++#endif
++    return ControllerPreset::Custom;
++}
++
++bool dkr::runtime::input::apply_controller_preset(std::size_t player,
++                                                ControllerPreset preset) {
++#if DKR_RUNTIME_HAS_RT64
++    if (player >= kPlayerCount ||
++        (preset != ControllerPreset::Classic && preset != ControllerPreset::TriggerDriving)) {
++        return false;
++    }
++    const auto expected = PresetBindings(preset);
++    std::scoped_lock lock(g_binding_mutex);
++    // One lock covers the entire change: polling cannot see a partial layout.
++    for (std::size_t index = 0; index < expected.size(); ++index) {
++        g_bindings[player][index].controller = expected[index].controller;
++        g_bindings[player][index].controller_secondary = expected[index].controller_secondary;
++    }
++    return true;
++#else
++    (void)player;
++    (void)preset;
++    return false;
++#endif
++}
++
+ int dkr::runtime::input::keyboard_player() {
+     return g_keyboard_player.load(std::memory_order_acquire);
+ }
+--- a/runtime-recomp/src/game/runtime_controls_ui.inl
++++ b/runtime-recomp/src/game/runtime_controls_ui.inl
+@@ -90,6 +90,18 @@
+ 
+ // SDL's binding names, in the words a player knows (controls.js friendly()).
+ std::string FriendlyBinding(const std::string& value) {
++    if (kConsoleMenuLayout) {
++        static const std::map<std::string, std::string> kPlayStationNames{
++            {"a", "Cross"}, {"b", "Circle"}, {"x", "Square"}, {"y", "Triangle"},
++            {"start", "Options"}, {"back", "Touchpad"},
++            {"leftshoulder", "L1"}, {"rightshoulder", "R1"},
++            {"leftstick", "L3"}, {"rightstick", "R3"},
++            {"lefttrigger +", "L2"}, {"righttrigger +", "R2"},
++        };
++        if (const auto found = kPlayStationNames.find(value); found != kPlayStationNames.end()) {
++            return found->second;
++        }
++    }
+     static const std::map<std::string, std::string> kNames{
+         {"Unbound", "Not assigned"}, {"a", "A"}, {"b", "B"}, {"x", "X"}, {"y", "Y"},
+         {"start", "Menu / Start"}, {"back", "View / Select"}, {"guide", "Guide"},
+@@ -427,20 +439,56 @@
+ 
+ // ------------------------------------------------------------ bindings
+ 
++void DrawControlsPreset(ControlsPageState& state, float width,
++                        const std::function<void()>& commit) {
++    namespace input = dkr::runtime::input;
++    const auto current = input::controller_preset(g_selected_player);
++    ControlsHeading("Driving layout", width);
++    ControlsNote(current == input::ControllerPreset::TriggerDriving ? "Current layout: R2 / L2 driving"
++        : current == input::ControllerPreset::Classic ? "Current layout: Classic DKR controls"
++        : "Current layout: Custom", width);
++    const auto apply = [&](input::ControllerPreset preset, const char* message) {
++        ControlsSnapshot before = TakeControlsSnapshot();
++        if (input::apply_controller_preset(g_selected_player, preset)) {
++            commit();
++            state.undo = before;
++            state.undo_message = "Player " + std::to_string(g_selected_player + 1U) + message;
++        }
++    };
++    if (SettingsButton("R2 / L2 driving", width, false, SettingsButtonTone::Plain,
++                       current == input::ControllerPreset::TriggerDriving)) {
++        apply(input::ControllerPreset::TriggerDriving, " uses R2 / L2 driving.");
++    }
++    PaddockGap(10.0F);
++    if (SettingsButton("Classic DKR controls", width, false, SettingsButtonTone::Plain,
++                       current == input::ControllerPreset::Classic)) {
++        apply(input::ControllerPreset::Classic, " uses classic DKR controls.");
++    }
++    ControlsNote("R2 / L2: R2 or Cross accelerates, L2 or Square brakes; L1 fires items, "
++                 "R1 drifts, Triangle keeps the original N64 L action. Options pauses; "
++                 "Touchpad opens the menu. Gas and brake keep the original digital input response.", width);
++    ControlsNote("Presets replace this player's controller mappings. Keyboard and other players "
++                 "are unchanged. Undo restores your previous mappings.", width);
++    PaddockGap(20.0F);
++}
++
+ void DrawControlsBindings(ControlsPageState& state, float width, const std::function<void()>& commit) {
+     namespace input = dkr::runtime::input;
+-    const bool keyboard = input::keyboard_player() == static_cast<int>(g_selected_player);
++    const bool keyboard = !kConsoleMenuLayout && input::keyboard_player() == static_cast<int>(g_selected_player);
+     ControlsScope(false, width);
++    if (kConsoleMenuLayout) DrawControlsPreset(state, width, commit);
+     ControlsHeading("Button mapping", width);
+-    ControlsNote("Select a binding, then press a key or controller button. Escape cancels.", width);
+-    ControlsNote(keyboard ? std::string("Controller names use the standard gamepad layout.")
++    ControlsNote(kConsoleMenuLayout
++        ? "Select a binding, then press a button or pull a trigger. Touchpad cancels."
++        : "Select a binding, then press a key or controller button. Escape cancels.", width);
++    if (!kConsoleMenuLayout) ControlsNote(keyboard ? std::string("Controller names use the standard gamepad layout.")
+                           : "Keyboard input belongs to Player " + std::to_string(input::keyboard_player() + 1) +
+                                 ". Change it in Device \xE2\x86\x92 Shared settings.",
+                  width);
+ 
+     // The table: N64 control | (Keyboard) | Controller | Alternate.
+     const int columns = keyboard ? 4 : 3;
+-    const bool cards = width <= 580.0F;
++    const bool cards = kConsoleMenuLayout || width <= 580.0F;
+     const float column = std::floor(width / static_cast<float>(columns));
+     ImDrawList* draw = ImGui::GetWindowDrawList();
+     const PaddockType head = PaddockReading(13.0F, true, 1.45F);
+@@ -527,13 +575,14 @@
+                             width - 8.0F);
+                 ImGui::Unindent(4.0F);
+                 PaddockGap(6.0F);
+-                const float cell = std::floor(width / static_cast<float>(columns - 1));
++                const float cell = kConsoleMenuLayout ? width : std::floor(width / static_cast<float>(columns - 1));
+                 const ImVec2 row_at = ImGui::GetCursorScreenPos();
+                 int slot = 0;
+                 float bottom = row_at.y;
+                 for (int device_column = 0; device_column < 3; ++device_column) {
+                     if (device_column == 0 && !keyboard) continue;
+-                    ImGui::SetCursorScreenPos({row_at.x + cell * static_cast<float>(slot) + 4.0F, row_at.y});
++                    ImGui::SetCursorScreenPos(kConsoleMenuLayout ? ImVec2{row_at.x + 4.0F, bottom}
++                        : ImVec2{row_at.x + cell * static_cast<float>(slot) + 4.0F, row_at.y});
+                     ImGui::BeginGroup();
+                     PaddockText(PaddockReading(12.0F, false, 1.45F), PaddockRgb(kSetMuted),
+                                 kHeads[static_cast<std::size_t>(device_column + 1)], cell - 8.0F);
+@@ -541,6 +590,7 @@
+                     binding_button(device_column, cell - 8.0F);
+                     ImGui::EndGroup();
+                     bottom = std::max(bottom, ImGui::GetItemRectMax().y);
++                    if (kConsoleMenuLayout) bottom += 8.0F;
+                     ++slot;
+                 }
+                 ImGui::SetCursorScreenPos({row_at.x, bottom + 8.0F});
+@@ -907,6 +957,7 @@
+                   dkr::runtime::input::action_label(static_cast<Action>(g_capture_action));
+         help = g_capture_device == CaptureDevice::Keyboard
+             ? "Press a keyboard key. Escape cancels."
++            : kConsoleMenuLayout ? "Press a button or pull a trigger. Touchpad cancels."
+             : "Press a gamepad button or move an axis firmly. Escape cancels.";
+     } else if (g_capture_action == kShortcutCaptureAction) {
+         heading = ShortcutActionLabel(g_capture_shortcut_action);
