@@ -43,14 +43,15 @@ static bool SettingsButton(const char* text,float width=700,bool disabled=false,
 }
 static bool ControlsDisclosure(const char*,const char*,bool&,float) { return false; }
 enum class CaptureDevice { Keyboard, Controller };
-static int capture=-1;
-static bool alternate=false;
-static void BeginControllerCapture(int action,CaptureDevice,bool second=false) { capture=action;alternate=second; }
+static int g_capture_action=-1;
+static bool g_capture_secondary_controller=false,g_capture_popup_pending=false,g_capture_finished=false;
+static CaptureDevice g_capture_device=CaptureDevice::Controller;
 #include "controls_state.inc"
+#include "controller_capture_begin.inc"
 #include "friendly_binding.inc"
 #include "controls_preset.inc"
 #include "controls_bindings.inc"
-static ControlsPageState page;
+static ControlsPageState& page=g_controls_page;
 static int saved=0;
 static void frame(bool focus=false) {
     ImGui::NewFrame();
@@ -68,6 +69,12 @@ static void press(ImGuiKey key) {
 int main() {
     using namespace dkr::runtime::input;
     reset_defaults();
+    page.undo=TakeControlsSnapshot();
+    SelectControlsPlayer(page,0);
+    assert(page.undo); // reselecting the same player retains the undo
+    SelectControlsPlayer(page,1);
+    assert(!page.undo && g_selected_player==1);
+    SelectControlsPlayer(page,0);
     ImGui::CreateContext();auto&io=ImGui::GetIO();io.DisplaySize={1200,900};io.DeltaTime=1.0F/60;
     io.IniFilename=nullptr;io.ConfigFlags|=ImGuiConfigFlags_NavEnableGamepad;
     io.BackendFlags|=ImGuiBackendFlags_HasGamepad;
@@ -96,12 +103,15 @@ int main() {
         press(ImGuiKey_GamepadDpadDown);
         assert(GImGui->NavId==fields[n].id);
         if(n==2) {
+            page.undo=TakeControlsSnapshot();
             press(ImGuiKey_GamepadFaceDown);
-            assert(capture==static_cast<int>(Action::StickUp) && !alternate);
+            assert(g_capture_action==static_cast<int>(Action::StickUp) && !g_capture_secondary_controller);
+            assert(!page.undo && g_capture_popup_pending && !g_capture_finished);
+            assert(g_capture_device==CaptureDevice::Controller);
         }
         if(n==3) {
             press(ImGuiKey_GamepadFaceDown);
-            assert(capture==static_cast<int>(Action::StickUp) && alternate);
+            assert(g_capture_action==static_cast<int>(Action::StickUp) && g_capture_secondary_controller);
         }
     }
     assert(saved==1); // navigation and capture alone do not change mappings
