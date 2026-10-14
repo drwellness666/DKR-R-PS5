@@ -12,6 +12,9 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libsdl2-dev
       - run: python3 tools/test_controller_presets.py
       - run: python3 tools/test_ps5_display.py
+      - run: python3 tools/test_ps5_diagnostics.py
+      - run: python3 tools/test_session_tools.py
+      - run: python3 tools/test_display_metadata_update.py
       - run: python3 tools/test_rom_checker.py
       - run: python3 tools/test_ps5_realpath.py
       - run: python3 tools/test_ps5_filesystem.py
@@ -31,4 +34,4 @@ jobs:
       - run: clang++ -std=c++20 -O1 -fsanitize=address,undefined -Isrc tests/neutral_audio.cpp -o /tmp/neutral-audio && ASAN_OPTIONS=detect_leaks=0 /tmp/neutral-audio
       - run: clang -std=c11 -Wall -Wextra -Werror -Isrc tests/shader_cache.c -o /tmp/shader-cache && /tmp/shader-cache
       - run: clang -std=c11 -Wall -Wextra -Werror -Isrc tests/render_diagnostics.c -o /tmp/render-diagnostics && /tmp/render-diagnostics
-      - run: bash -n build.sh build_gpu.sh build_rt64.sh build_game.sh tools/*.sh
+      - run: bash -n build.sh build_gpu.sh build_rt64.sh build_game.sh build_integrated.sh tools/*.sh
