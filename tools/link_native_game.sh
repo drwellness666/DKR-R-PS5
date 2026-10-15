@@ -7,6 +7,8 @@ gpu=$1
 game=$2
 [[ $gpu == /* && $game == /* ]] || exit 2
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+high_refresh=${DKR_PS5_HIGH_REFRESH_BUILD:-0}
+[[ $high_refresh == 0 || $high_refresh == 1 ]] || { echo 'DKR_PS5_HIGH_REFRESH_BUILD must be 0 or 1' >&2; exit 2; }
 sdl=${DKR_SDL_WORK:-$root/work/lowmem}
 [[ $sdl == /* ]] || { echo 'DKR_SDL_WORK must be absolute' >&2; exit 2; }
 support="$gpu/PS5_Vulkan"
@@ -20,7 +22,8 @@ native="$support/tooling/native"
 build="$game/native-link"
 target="$game/private/native/PPSA94678"
 mkdir -p "$build/obj" "$build/gen" "$build/stubs" "$target/sce_sys" "$target/sce_module"
-cc() { PS5_PAYLOAD_SDK="$sdk" sh "$support/tooling/prospero-clang18" "$@"; }
+cc() { PS5_PAYLOAD_SDK="$sdk" sh "$support/tooling/prospero-clang18" -gline-tables-only "$@"; }
+build_id=$(python3 "$root/tools/native_build_identity.py" "$root" "$game" "$sdl" "$support" "$build/native-inputs.json" --high-refresh "$high_refresh")
 profile="$game/game-ps5/dkr-ps5-profile.json"
 [[ -f $profile ]] || { echo 'Missing selected-revision CMake profile' >&2; exit 2; }
 mapfile -t revisions < <(python3 -c 'import json,sys;p=json.load(open(sys.argv[1]));print(p["v77"]);print(p["v80"])' "$profile")
@@ -30,12 +33,19 @@ cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revi
 cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revisions[1]}" -std=c++20 -O2 -Wall -Wextra -Werror \
     -fvisibility=hidden -ffunction-sections -fdata-sections \
     -I "$root/src" -c "$root/src/ps5_revision_selection.cpp" -o "$build/obj/revision_selection.o"
+cc -DDKR_PS5_HIGH_REFRESH_BUILD="$high_refresh" -std=c++20 -O2 -Wall -Wextra -Werror \
+    -fvisibility=hidden -ffunction-sections -fdata-sections \
+    -I "$root/src" -c "$root/src/ps5_display_options.cpp" -o "$build/obj/display_options.o"
+cc -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden -ffunction-sections -fdata-sections \
+    -I "$root/src" -c "$root/src/ps5_display_videoout.cpp" -o "$build/obj/display_videoout.o"
 for file in app_crt app_cpp_runtime; do
     input="$native/$file.cpp"
     [[ $file != app_crt ]] || input="$root/src/ps5_game_crt.cpp"
-    cc -std=c++20 -O2 -Wall -Wextra -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections \
+    cc -DDKR_BUILD_ID=\""$build_id"\" -I "$root/src" -std=c++20 -O2 -Wall -Wextra -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections \
         -c "$input" -o "$build/obj/$file.o"
 done
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden -ffunction-sections -fdata-sections \
+    -I "$root/src" -c "$root/src/ps5_diagnostics.c" -o "$build/obj/diagnostics.o"
 cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_timegm.c" -o "$build/obj/timegm.o"
 cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
@@ -71,11 +81,12 @@ libs=("${filtered_libs[@]}")
 source "$support/tools/radv-link.sh"
 radv_link_recipe "$support" "$sdk" "$gpu/radv-build/src/amd/vulkan/libvulkan_radeon.a"
 radv_link_flags+=(--wrap=stat --wrap=mmap --wrap=mprotect --wrap=munmap --wrap=_ZN11ultramodern14error_handling11message_boxEPKc)
+radv_link_flags+=(--wrap=sceVideoOutOpen --wrap=sceVideoOutIsOutputSupported)
 printf '{ local: _Zn*; _Zd*; getargv; realpath; lstat; getcwd; pathconf; __wrap_stat; __wrap_mmap; __wrap_mprotect; __wrap_munmap; };\n' > "$build/gen/game-symbols.map"
 link_game() {
 "$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
     --version-script "$build/gen/game-symbols.map" --exclude-libs=ALL -e _start -o "$build/llvm-pie.elf" \
-    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/save_stat.o" "$build/obj/import_check.o" \
+    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/save_stat.o" "$build/obj/import_check.o" \
     "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
     --start-group "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
     "${radv_link_inputs[@]}" --as-needed "$sdk"/target/lib/*.so
@@ -130,12 +141,18 @@ if old.exists() or old.is_symlink():
         old.rename(backup)
 PY
 
-python3 - "$support/sce_sys/param-radv.json" "$target/sce_sys/param.json" "$game/game-ps5/dkr-release.json" <<'PY'
+python3 - "$support/sce_sys/param-radv.json" "$target/sce_sys/param.json" "$game/game-ps5/dkr-release.json" "$high_refresh" <<'PY'
 import json,pathlib,sys
 p=json.loads(pathlib.Path(sys.argv[1]).read_text())
 p.update(titleId='PPSA94678',conceptId='94678',contentId='UP9000-PPSA94678_00-DKRRNATIVE000001',contentVersion='01.000.001')
 version=json.loads(pathlib.Path(sys.argv[3]).read_text())['version']
 p['localizedParameters']['en-US']['titleName']='DKR-R '+version+' PS5 Preview'
+# Explicit experimental build only. The pinned VideoOut WSI reads 0x40;
+# its public source describes 0x40000 as the VRR-compatible declaration.
+# Runtime activation still requires a saved 120 Hz choice, positive native
+# support and the WSI's measured vblank check. No legacy 0x80000 flag.
+if sys.argv[4] == '1':
+    p['attribute3'] = p.get('attribute3', 0) | 0x40040
 pathlib.Path(sys.argv[2]).write_text(json.dumps(p,indent=2)+'\n')
 PY
 "$tool" self --inspect --file "$target/eboot.bin"

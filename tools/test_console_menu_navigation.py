@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Exercise real ImGui controller navigation through the prepared console field layout."""
 import argparse, pathlib, subprocess, tempfile
+from compiler_flags import imgui_warnings
 root=pathlib.Path(__file__).resolve().parent.parent
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('game_work',type=pathlib.Path)
@@ -26,6 +27,6 @@ for name,definition in [('settings',layout),('save-editor',saves_fixture)]:
  with tempfile.TemporaryDirectory(prefix='dkrr-ui-nav-') as tmp:
   tmp=pathlib.Path(tmp);(tmp/'settings_columns.inc').write_text('constexpr bool kConsoleMenuLayout=true;\n'+definition)
   out=tmp/'navigation'
-  subprocess.run(['clang++','-std=c++20','-O1','-Wall','-Wextra','-Werror','-Wno-nontrivial-memcall','-Wno-uninitialized-const-pointer','-I',str(tmp),'-I',str(imgui),str(root/'tests/console_menu_navigation.cpp'),*[str(imgui/file) for file in ['imgui.cpp','imgui_draw.cpp','imgui_widgets.cpp','imgui_tables.cpp']],'-o',str(out)],check=True)
+  subprocess.run(['clang++','-std=c++20','-O1','-Wall','-Wextra','-Werror',*imgui_warnings(),'-I',str(tmp),'-I',str(imgui),str(root/'tests/console_menu_navigation.cpp'),*[str(imgui/file) for file in ['imgui.cpp','imgui_draw.cpp','imgui_widgets.cpp','imgui_tables.cpp']],'-o',str(out)],check=True)
   subprocess.run([str(out)],check=True)
   print('Checked actual console layout:',name)
