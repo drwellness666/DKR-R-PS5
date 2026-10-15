@@ -8,6 +8,29 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - run: python3 tools/check_public_source.py .
+      - run: sha256sum --quiet -c SHA256SUMS
+      - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libsdl2-dev
+      - run: python3 tools/test_controller_presets.py
+      - run: python3 tools/test_ps5_controller_lights.py
+      - run: python3 tools/test_ps5_shared_profiles.py
+      - run: python3 tools/test_native_build_identity.py
+      - run: python3 tools/test_record_native_build.py
+      - run: python3 tools/test_ps5_display.py
+      - run: python3 tools/test_native_display_rate.py
+      - run: python3 tools/test_console_play_navigation.py
+      - run: python3 tests/test_build_assistant.py
+      - run: python3 tools/test_ps5_diagnostics.py
+      - run: python3 tools/test_native_game_installer.py
+      - run: python3 tools/test_ps5_ui_framebuffer.py
+      - run: python3 tools/test_journal_reader.py
+      - run: python3 tools/test_ps5_driver_policy.py
+      - run: python3 tools/test_texture_pack_copy.py
+      - run: python3 tools/test_dependency_patch.py
+      - run: python3 tools/test_game_dependency_preparation.py
+      - run: python3 tools/test_update_baseline.py
+      - run: python3 tools/test_session_tools.py
+      - run: python3 tools/test_diagnostic_session_report.py
+      - run: python3 tools/test_display_metadata_update.py
       - run: python3 tools/test_rom_checker.py
       - run: python3 tools/test_ps5_realpath.py
       - run: python3 tools/test_ps5_filesystem.py
@@ -27,4 +50,4 @@ jobs:
       - run: clang++ -std=c++20 -O1 -fsanitize=address,undefined -Isrc tests/neutral_audio.cpp -o /tmp/neutral-audio && ASAN_OPTIONS=detect_leaks=0 /tmp/neutral-audio
       - run: clang -std=c11 -Wall -Wextra -Werror -Isrc tests/shader_cache.c -o /tmp/shader-cache && /tmp/shader-cache
       - run: clang -std=c11 -Wall -Wextra -Werror -Isrc tests/render_diagnostics.c -o /tmp/render-diagnostics && /tmp/render-diagnostics
-      - run: bash -n build.sh build_gpu.sh build_rt64.sh build_game.sh tools/*.sh
+      - run: bash -n build.sh build_gpu.sh build_rt64.sh build_game.sh build_integrated.sh tools/*.sh
