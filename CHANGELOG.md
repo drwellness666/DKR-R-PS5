@@ -1,29 +1,18 @@
 # Changelog
 
-## ps5-beta.2 — integrated source beta
+## ps5-beta.2
 
-- Both US revisions in one native app; original English/French/German choices.
-- Share controls, graphics/audio, UI/HUD, mod settings and texture selection
-  directly through the established US 1.0 configuration root.
-- Preserve separate original revision progress, Controller Paks and immutable
-  native save ownership, including modded/online route guards.
-- Discover old US1.1 texture library entries read-only; avoid a second pack copy.
-- Correct 4K UI framebuffer scaling and keep HDMI output separate from render scale.
-- Reduce default driver logging and retain bounded high-refresh fallback.
-- Keep original title icon and paired selection/launch artwork; release launch
-  overlay after first presentation.
-- Keep classic face-button gas tapping; remove the optional R2/L2 driving preset.
-  Migrate only exact legacy preset matches, preserve custom bindings and Undo.
-- Replace the native revision radio list with full-width US 1.0 / US 1.1 cards,
-  distinct active/next-launch badges and unchanged save ownership.
-- Optional dim held-balloon light colors through existing native SDL LED support;
-  default off, shared setting, changed-color sends and bounded failure/cleanup.
-- Private own journal, exact-build symbols, raw Klog/receive index and local report.
-- Fresh-source dependency patch tests, actual shared config/texture/save-route
-  checks and contained real-fault-to-source-line diagnostic acceptance.
+- Build US 1.0 and US 1.1 individually or together; choose the next version on Play.
+- Original English, French and German game-language choices.
+- Shared controller, graphics/audio, UI and texture-pack settings; separate revision progress and Controller Paks.
+- Correct menu scaling at 4K and experimental 120-Hz output with VRR.
+- Classic controls with face-button gas tapping; optional held-balloon DualSense light colors and return to system lighting.
+- Aligned version cards, readable save names, original title icon and matching home-menu/launch artwork.
+- Local browser build assistant: choose owned ROMs, check prerequisites, build and install on the PS5 over the LAN.
+- Bounded game diagnostics, frame-time capture, source checks and guarded local updates.
 
-Current physical results and experimental limits are in WORK_STATUS.md. This is
-source only; native game outputs and ROMs are built privately by each user.
+Brief water flicker in Tracks previews and occasional microstutters remain known issues.
+See [known issues](docs/KNOWN_ISSUES.md), [validation scope](docs/VALIDATION.md)
+and the [roadmap](docs/ROADMAP.md).
 
-- Keep accepted high-refresh output for VRR-declared titles when idle vblank cadence varies; display the nominal mode honestly. Native RT64 Match display now follows PS5 output, not the SDL dummy display.
-- Restore system light-bar ownership when no item is held, and remove the empty central widget from version cards.
+This release contains source only. Each user builds privately with their own legally usable dump.

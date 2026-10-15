@@ -2,5 +2,5 @@
   "tag": "ps5-beta.2",
   "upstream_version": "1.0.6",
   "source_only": true,
-  "qualification": "Experimental native source beta; explicit tested scope and known issues in WORK_STATUS.md"
+  "qualification": "Experimental native source beta; tested scope in docs/VALIDATION.md and known issues in docs/KNOWN_ISSUES.md"
 }
