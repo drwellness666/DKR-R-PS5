@@ -44,12 +44,17 @@ for revision in "${revisions[@]}"; do
     revision_list+="${revision_list:+;}$revision"
 done
 cmake_bin=${CMAKE_BIN:-cmake}
+line_tables=${DKR_PS5_LINE_TABLES:-0}
+[[ $line_tables == 0 || $line_tables == 1 ]] || { echo 'DKR_PS5_LINE_TABLES must be 0 or 1' >&2; exit 2; }
+release_flags='-O3 -DNDEBUG'
+[[ $line_tables != 1 ]] || release_flags+=' -gline-tables-only'
 source="$DKR_GAME_WORK/source"
 sdk="$DKR_GPU_WORK/PS5_Vulkan/.deps/native/ps5-payload-sdk"
 mkdir -p "$DKR_GAME_WORK/private"
 chmod 0700 "$DKR_GAME_WORK/private"
 "$cmake_bin" -S "$source/DKR-R/runtime-recomp" -B "$DKR_GAME_WORK/game-ps5" \
     -DCMAKE_TOOLCHAIN_FILE="$sdk/toolchain/prospero.cmake" -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_FLAGS_RELEASE="$release_flags" -DCMAKE_CXX_FLAGS_RELEASE="$release_flags" \
     -DDKR_PS5_REVISIONS="$revision_list" \
     -DBUILD_TESTING=OFF -DDKR_RUNTIME_BUILD_RT64=ON -DDKR_RUNTIME_BUILD_SDL3_INPUT_HOST=OFF \
     -DDKR_NETPLAY_WEBRTC=OFF -DDKR_ENHANCED_WATER=OFF \

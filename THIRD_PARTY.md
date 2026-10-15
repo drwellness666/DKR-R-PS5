@@ -144,3 +144,5 @@ die frühere CC0-Notiz für eigene generische Entwürfe gilt nicht für sie. Sie
 als öffentliche lokale Build-Eingaben bezogen, nicht als Titelbilder im Source-ZIP
 mitgegeben. Frühere generierte Bilder und extrahierte Modellversuche sind vom
 aktuellen Export ausgeschlossen.
+
+Bundled N64ModernRuntime and RT64 source archives omit upstream contributor-instruction documents. Build source and original copyright/licence files are retained unchanged; archive hashes record the repack.

@@ -19,6 +19,7 @@ fi
 export PATH="$work/clc-bin:$work/host-tools/bin:$PATH"
 python3 "$root/tools/fetch_vulkan_sources.py" "$work"
 mesa="$work/PS5_Mesa"
+python3 "$root/tools/apply_ps5_driver_policy.py" "$mesa"
 support="$work/PS5_Vulkan"
 sdk="$support/.deps/native/ps5-payload-sdk"
 bash "$work/PS5_PayloadSDK/platform/tools/setup-sdk.sh" "$sdk" b83202be73e930050e00de0f1b4d9ec46c0391bf "$work/downloads"

@@ -24,7 +24,7 @@
       "revision": "ae1ffbb909d9f93c88c41830deb539f7feef5ed2",
       "file": "N64ModernRuntime.tar.gz",
       "path": "N64ModernRuntime",
-      "sha256": "755cd6ca8c10335959bffc48dfaa76cba09b496b66112f5c3d926445a794e2af",
+      "sha256": "7585b642acf1107b5323b1c258296da6cbb8b346c4db72c576b07e8406c0b29c",
       "bundled": true,
       "strip_components": 0
     },

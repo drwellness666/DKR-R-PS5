@@ -5,7 +5,7 @@
       "path": "rt64",
       "revision": "6f1c2d99a4ea571c139f449c326fd176ba8f3496",
       "file": "RT64.tar.gz",
-      "sha256": "49fe8626ed4dc966d58ac9bd370fc1fdc4689c5a2f7000a5d15c8c6ab9bbe0e6",
+      "sha256": "acea991ab20a9bd6b5e9fa7e642fe6f8411675255b119f3a1c20888025c9c93a",
       "bundled": true,
       "strip_components": 0
     },
