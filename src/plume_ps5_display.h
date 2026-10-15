@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // PS5 display surface adapter for the pinned Plume Vulkan backend.
-// Uses enumerated modes and planes, with a preference for 1080p at <=60 Hz.
+// Uses only enumerated modes and planes. Default: 1080p at <=60 Hz.
 #pragma once
 #include <algorithm>
 #include <cstdio>
 #include <cstdint>
 #include <vector>
+#include "ps5_display_options.h"
 
 namespace plume {
 static VkResult ps5CreateDisplaySurface(VkInstance instance, VkPhysicalDevice physical,
@@ -41,14 +42,17 @@ static VkResult ps5CreateDisplaySurface(VkInstance instance, VkPhysicalDevice ph
         result = vkGetDisplayModePropertiesKHR(physical, display.display, &count, modes.data());
         if (result != VK_SUCCESS) return result;
         modes.resize(count);
-        // Prefer 1080p, then the smallest advertised mode; prefer <=60 Hz.
-        std::stable_sort(modes.begin(), modes.end(), [](const auto &a, const auto &b) {
-            auto score = [](const auto &m) {
-                const auto size = m.parameters.visibleRegion;
-                const bool preferred = size.width == 1920 && size.height == 1080;
-                return uint64_t(!preferred) * (uint64_t(1) << 62) +
-                       uint64_t(m.parameters.refreshRate > 61000) * (uint64_t(1) << 61) +
-                       uint64_t(size.width) * size.height * 1000000 + m.parameters.refreshRate;
+#if defined(DKR_PS5_GAME_DISPLAY)
+        const auto choice = dkrr_ps5_boot_display_choice();
+#else
+        // Standalone GPU/RT64 probes retain their original fixed output and
+        // must not gain unresolved imports from the game's preference module.
+        const dkrr_ps5_display_choice choice{1080, 60};
+#endif
+        std::stable_sort(modes.begin(), modes.end(), [choice](const auto &a, const auto &b) {
+            const auto score = [choice](const auto &m) {
+                return dkrr_ps5_display_score(m.parameters.visibleRegion.width,
+                    m.parameters.visibleRegion.height, m.parameters.refreshRate, choice);
             };
             return score(a) < score(b);
         });
@@ -86,9 +90,18 @@ static VkResult ps5CreateDisplaySurface(VkInstance instance, VkPhysicalDevice ph
                 info.alphaMode = VK_DISPLAY_PLANE_ALPHA_OPAQUE_BIT_KHR;
                 info.imageExtent = size;
                 result = vkCreateDisplayPlaneSurfaceKHR(instance, &info, nullptr, surface);
-                if (result != VK_SUCCESS) return result;
+                if (result != VK_SUCCESS) {
+                    // A refused optional mode may fall back to another reported
+                    // mode. Do not continue after a lost device.
+                    if (result == VK_ERROR_DEVICE_LOST ||
+                        (choice.resolution == 1080 && choice.refresh == 60)) return result;
+                    continue;
+                }
                 *extent = size;
                 *refreshMilliHz = mode.parameters.refreshRate;
+#if defined(DKR_PS5_GAME_DISPLAY)
+                dkrr_ps5_report_display(size.width, size.height, *refreshMilliHz);
+#endif
                 std::printf("ps5-plume: display=%ux%u refresh-millihz=%u plane=%u\n",
                             size.width, size.height, *refreshMilliHz, plane);
                 std::fflush(stdout);
