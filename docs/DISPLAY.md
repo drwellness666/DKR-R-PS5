@@ -1,7 +1,7 @@
 > Current hardware result (15–16 October2026): 3840x2160, normal full-size settings,
 > HDMI119.88 Hz with VRR Automatic and unsupported-games override Off. PS5 reports
 > VRR48–120/ALLM; owner confirms normal picture/audio and active VRR on LG C1.
-> 120 Hz remains experimental across hardware/settings. WORK_STATUS.md records scope.
+> 120 Hz remains experimental across hardware/settings. [validation scope](VALIDATION.md) records scope.
 
 # Optional native PS5 display features
 

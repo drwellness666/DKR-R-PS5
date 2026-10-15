@@ -16,12 +16,12 @@ Der aktuelle Test vom 15.–16. Oktober 2026 bestätigt normalen Spielton/Bild u
 korrigierte Menügröße bei 4K. Klassische Steuerung, Vibration, Sprachwahl, Save/Reload auf
 beiden Versionen und übernommene Einstellungen nach Versionswechsel sind
 bestätigt. US 1.1 lädt das Remastered-Paket aus der gemeinsamen Bibliothek. Weitere aktuelle Ergebnisse und offene Fehler
-stehen in [WORK_STATUS.md](../docs/VALIDATION.md). **4K/119,88 Hz mit VRR Automatisch**
+stehen in [Testumfang](VALIDATION.md). **4K/119,88 Hz mit VRR Automatisch**
 und ausgeschalteter Zusatzoption für nicht unterstützte Spiele sind bestätigt:
 Die PS5 meldet VRR 48–120 und ALLM, am LG C1 wurden normales Bild/Ton und aktives
 VRR bestätigt. Ballonfarben, Rückkehr zur normalen Controllerbeleuchtung und
 bündige Versionskarten sind ebenfalls bestätigt. 120 Hz bleiben für andere
-Kombinationen und Einstellungen experimentell; das garantiert keine120 gerenderten
+Kombinationen und Einstellungen experimentell; das garantiert keine 120 gerenderten
 FPS in jeder Szene. Ein kurzes Wasserflackern in der Tracks-Vorschau und
 Mikroruckler bleiben gemeldete Fehler.
 

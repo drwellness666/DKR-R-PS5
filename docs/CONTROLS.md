@@ -1,6 +1,6 @@
 > Current shared configuration: both US revisions use the existing US 1.0 config
 > and texture library. Original save/Pak roots remain separate. Current physical
-> results are in WORK_STATUS.md. Native advanced DualSense/HDR are not implemented.
+> results are in [validation scope](VALIDATION.md). Native advanced DualSense/HDR are not implemented.
 
 # Console features and current limits
 
@@ -133,7 +133,7 @@ registration investigation are documented in [TITLE_PRESENTATION.md](../docs/DIS
 
 ## Native TV-Ausgabe, Stand 2026-10-14
 
-Der bestehende Bereich Graphics → Game display übernimmt die native Ausgabewahl. Ausgabeauflösung und Spiel-Rendering bleiben getrennt; Presentation rate → Match display verwendet die gemeldete PS5-Rate. Optional 1080p/1440p/4K, 60/120 Hz im gemeinsamen Testbuild, SDR und systemgesteuertes VRR/ALLM: [DISPLAY_FEATURES.md](../docs/DISPLAY.md). Alle neuen Ausgabearten brauchen Hardwareabnahme.
+Der bestehende Bereich Graphics → Game display übernimmt die native Ausgabewahl. Ausgabeauflösung und Spiel-Rendering bleiben getrennt; Presentation rate → Match display verwendet die gemeldete PS5-Rate. Optional 1080p/1440p/4K, 60/120 Hz im gemeinsamen Testbuild, SDR und systemgesteuertes VRR/ALLM: [[display details](DISPLAY.md)](../docs/DISPLAY.md). Alle neuen Ausgabearten brauchen Hardwareabnahme.
 
 ## Integrated diagnostics
 

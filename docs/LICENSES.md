@@ -83,7 +83,7 @@ SDK-/GPU-Quellen; vorhandene Sony-Bibliotheken werden importiert und nicht kopie
 
 ## Betatester und Kontakt zum Upstream-Entwickler
 
-Aktuelle Testergebnisse und verbleibende Grenzen stehen in WORK_STATUS.md.
+Aktuelle Testergebnisse und verbleibende Grenzen stehen in [validation scope](VALIDATION.md).
 Eine Quell-Beta kann mit eigenen lokal nutzbaren Dumps nachgebaut werden;
 private Spiel-Binaries und vollständige Konsolenprotokolle werden nicht geteilt.
 Ein Kontakt zum Upstream-Entwickler erfolgt nur auf ausdrücklichen Auftrag und

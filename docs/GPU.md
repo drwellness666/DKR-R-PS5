@@ -37,7 +37,7 @@ cadence guard. It does not prove a general performance improvement.
 
 Normal output is SDR/FIFO. Resolution and nominal refresh requests, measured
 fallback and the difference between output buffers and game rendering are
-explained in DISPLAY_FEATURES.md. Current console evidence is in WORK_STATUS.md.
+explained in [display details](DISPLAY.md). Current console evidence is in [validation scope](VALIDATION.md).
 
 The optional GPU probe recipes remain developer diagnostics. Their native title
 uses a different ID from the game. A successful probe is not game acceptance;

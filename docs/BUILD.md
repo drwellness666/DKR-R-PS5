@@ -27,9 +27,8 @@ unsupported-games override off: PS5 AV output reports VRR48–120 and ALLM, and
 the owner confirms normal picture/audio and active VRR on the LG C1. Optional
 balloon colors, return to normal system lighting and the aligned version cards
 are also owner-confirmed. **120-Hz output remains experimental** across other
-hardware and settings; it is not a guarantee of120 rendered FPS in every scene. See
-[WORK_STATUS.md](../docs/VALIDATION.md) for this session's remaining acceptance items and
-known issues. A brief water flash in the Tracks preview and occasional stutters
+hardware and settings; it is not a guarantee of 120 rendered FPS in every scene. See
+[Validation scope](VALIDATION.md) and [known issues](KNOWN_ISSUES.md) describe the tested scope. A brief water flash in the Tracks preview and occasional stutters
 remain reported; there is no claim of completely stutter-free operation.
 
 Tested setup: PS5 firmware 13.60, Relapse / WebKit Autoloader 0.6.1, kstuff-lite
