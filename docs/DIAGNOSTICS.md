@@ -1,0 +1,173 @@
+# Matched session, crash and frame-time diagnostics
+
+Fresh installation must provision `/data/dkrr/diagnostics` before the native
+game starts: the ELF installer and native game use different filesystem
+identities. New installer-created journal directories request mode `01777`;
+the tested PS5 filesystem reported `0777`, so sticky-bit enforcement is not
+claimed on that filesystem. This lets the native game create its own files;
+the game still creates each exclusive journal with mode `0600`. Existing
+directories, profiles and journal files retain their permissions and contents.
+For an already installed matching title, `build_native_game_installer.py SDK
+GAME_WORK --diagnostics-only` builds a small, identity-guarded directory helper.
+It embeds no executable, art, ROM or save. The game initializes its journal at
+process entry, so a missing-directory correction takes effect at its next
+normal start. Live in-memory measurements remain available in the current run.
+
+The web launcher may list a mode-0600 journal but fail to open it: its effective
+identity is different from the native game's uid 1. Do not broaden file modes.
+`tools/build_journal_reader.py SDK CANDIDATE_JSON EXACT_RUN_BASENAME NEW_PRIVATE_ELF`
+prepares a reader for that one journal and exact build. It drops only its own
+effective identity to uid 1, verifies an ordinary owned file and build header,
+and sends at most 64 KiB plus the crash suffix through the existing ELF-loader
+output. It changes no files or other processes. This read-back succeeded on the
+console. Run it explicitly with `send_elf.py` only during a console session;
+the builder never connects. Retain the text between COPY BEGIN and COPY PASS
+locally and use the matching private symbol ELF for analysis.
+
+The game keeps a small own-session journal under `/data/dkrr/diagnostics` and
+shows its input fingerprint in **Graphics → Renderer & performance**. The private
+candidate manifest pairs this build ID with SHA256 of the final eboot and its
+matching private symbol ELF. The fingerprint includes patched source and game
+archives; the final ELF hash is authoritative for address resolution.
+
+## Crash recording
+
+Initialization runs after the public SDK environment is ready and before C++
+constructors. It uses the pinned PS5 SDK's `ps5platform/context.h`; its compile
+assertion requires the verified PS5 ucontext layout. No guessed register offsets
+or raw kernel/process structures are used. Existing nondefault framework signal
+handlers are preserved. Optional signal imports are checked before use.
+
+For SIGSEGV/BUS/ILL/FPE/ABRT, a fixed buffer records signal/code, fault address,
+RIP/RSP, trap/error, runtime entry address and last startup/presentation stage.
+The handler performs one best-effort write to an already open own journal and
+queues the same signal under the restored default disposition. It does not
+allocate, unwind, printf, lock, fsync, rewrite RIP or attempt recovery. The OS
+remains responsible for termination. Signal delivery on an exhausted stack,
+kernel/GPU failures that bypass user handlers, loader rejection before entry
+and a complete power loss cannot be guaranteed by a user-space recorder.
+
+Journals are exclusive ordinary files with bounded normal notes, not ROM/save
+files. A bad/missing own directory disables journal creation without blocking
+game startup. Logs may contain local paths or game state; keep raw logs and
+symbol ELFs private and share only a reviewed summary. Files are not silently
+deleted or uploaded. Tiny journals accumulate across sessions; cleanup is manual.
+
+## Optional background ELF and PC capture
+
+The public [klogsrv](https://github.com/ps5-payload-dev/klogsrv) transport exposes
+`/dev/klog` over TCP 3232. Use an existing service when available. The optional
+`build_session_relay.sh` builds a small equivalent read-only transport: it binds
+before opening klog, refuses an occupied port without terminating another process,
+accepts one PC client, buffers at most one 4096-byte chunk, and disconnects a
+blocked client after two seconds. It uses ordinary socket/file calls, no process
+enumeration, app.db edits, title launches or GPU/FPS hooks. Native compilation and
+actual host-loopback transport tests pass; console streaming was captured during the owner sessions on 14 and15 October 2026.
+
+The relay is an optional support payload, not another test game/build. Start it
+only in the resumed authorized test session. A different klog reader can consume
+the shared stream, so do not run multiple services; occupied-port refusal preserves
+an already running logger. The PC collector does not launch/install anything:
+
+```bash
+python3 tools/collect_session.py
+# Offline instructions only. When testing, explicitly capture:
+python3 tools/collect_session.py --capture --host YOUR_PS5_LAN_IP \
+  --output /ABSOLUTE/private/NEW_SESSION --build-id BUILD_ID --seconds 900
+```
+
+Capture flushes received chunks to the PC and preserves the raw OS/loader stream
+even if the title exits. Duration is bounded (maximum one hour) and capture stops
+at 64 MiB. Connection loss is labelled as connection loss, never itself a kernel
+panic diagnosis. Only messages emitted before disconnection/power loss can be
+saved. The structured game crash record lives in the game's journal; the relay
+captures whatever the OS actually emits to klog, not arbitrary crash memory.
+
+Copy only the own session journal through the existing normal file-management
+route after a fault; the PC collector does not add a hidden file-download service.
+Analyze it with the frozen private manifest and symbol file:
+
+```bash
+python3 tools/analyze_session.py /ABSOLUTE/private/run.log \
+  /ABSOLUTE/private/CANDIDATE.json /ABSOLUTE/private/symbols.elf
+```
+
+The analyzer verifies the exact ELF SHA256, x86-64 ELF structure, executable
+entry/segments and build ID. Load base comes from runtime entry minus that ELF's
+entry; it is never guessed as 0x400000. Different-build or out-of-segment addresses
+are retained as unattributed, without misleading source lines. Local addr2line
+resolves eligible RIPs and inline locations only. Function names remain useful
+where an older archive has no line tables; source-line availability is reported
+by addr2line rather than invented. The documented integrated build now enables private line tables throughout the
+release game compilation as well as the authored native startup/adapters, retaining
+-O3. Previously frozen archives may contain only partial line information. Raw OS error lines are retained
+separately; they are not assigned to this build without evidence. No external
+service receives logs, game code or ROM-derived artifacts.
+
+## FPS and microstutter measurements
+
+The upstream FPS/performance overlay is already available. This candidate adds
+**Start 60-second frame-time capture / Stop and save** in that existing Graphics
+section. The hook runs only after a successful/suboptimal Vulkan present return,
+outside the queue lock. Failed presents are not counted. Normal play does not
+read the capture clock; while enabled, the hook updates lock-free counters with
+no allocations, file writes, network sends or extra GPU waits.
+
+The bounded result reports present-return rate, maximum gap and counts over
+33.33/50/100 ms, plus dropped-sample count. Interval elapsed starts at the first
+actual present. A live snapshot can lag across fields by one frame; the stopped
+snapshot is used for analysis. No per-frame log is generated. This measures
+successful presentation calls, not HDMI scanout, GPU completion or simulation
+FPS; it does not require a kstuff FPS implementation. Time in menus is included.
+Open the existing graphics disclosure again and press Stop and save to journal
+the result after the automatic limit; automatic expiry itself does no disk I/O.
+
+An optional upstream `power_profile=1` comparison records more detailed existing
+regions, including pipeline creation, through the existing stderr logging path.
+It is off by default. Use `summarize_performance.py` for those original traces;
+use `analyze_session.py` for the new summary/journal. Neither host timings nor
+an average FPS establishes that PS5 microstutters have been fixed.
+
+## Local verification
+
+`test_ps5_diagnostics.py`: actual C formatting/recording, 60s boundaries,
+disabled capture, UI actions, missing/symlink directory refusal, repeated init,
+existing-handler preservation and contained SIGSEGV/SIGABRT default termination.
+`test_session_tools.py`: matching ELF/entry/segment checks, wrong-build/hash refusal,
+chunked PC capture, actual relay transfer and occupied-port refusal over loopback.
+`test_display_metadata_update.py`: qualified metadata restriction and actual combined
+three-copy update/resume/repeat/restore, refusal before writes for foreign/symlink/temp
+contents. Sanitizer tests use synthetic data, never a ROM or console connection.
+
+SDK source: [qualified context header](https://github.com/mihawk-99/PS5_PayloadSDK/blob/b83202be73e930050e00de0f1b4d9ec46c0391bf/platform/include/ps5platform/context.h).
+
+## Saved-session report and receive timing
+
+The PC collector preserves kernel.log byte-for-byte and creates an independently
+hashed RECEIVE.jsonl index of byte ranges and monotonic PC arrival times. Files
+are mode 0600 in a new private directory. The index is bounded separately from the
+64 MiB raw capture; a capped index is marked explicitly. Network arrival times are
+not PS5 execution times or per-frame HDMI measurements.
+
+`report_diagnostic_session.py SESSION_DIRECTORY CANDIDATE_JSON SYMBOL_ELF`
+verifies the capture receipt and timing index, then combines matching crash and
+frame records with numerical performance reports. Add `--journal OWN_JOURNAL`,
+`--runtime-log OWN_RUNTIME_LOG` and `--shadowmount-log SAVED_SM_LOG` for explicit
+local sources. No network/attach/launch occurs in this reporter. Older captures
+without a timing index remain readable; missing timing is not invented.
+
+The local regression executes the actual signal recorder in an isolated Linux
+PIE process, records a real SIGSEGV and resolves its RIP to the matching source
+line. It also checks tamper/malformed/foreign-build refusal, private permissions,
+partial bytes and loopback capture. This does not qualify every PS5 crash path.
+
+## Record your own build before installation
+
+After build_game.sh/build_integrated.sh, run
+`python3 tools/record_native_build.py "$DKR_GAME_WORK"`. It records the actual
+native-input fingerprint, full app inventory/manifest, eboot hash and matching
+native-link/llvm-pie.elf hash in `$DKR_GAME_WORK/private/CANDIDATE.json`. It does
+not copy or rebuild the game and never contacts a console. Keep that receipt,
+the application and its private symbol ELF together. A differing existing receipt
+is preserved and refused; build later versions in their own GAME_WORK directory.
+Use that generated receipt for the journal reader and saved-session report.
