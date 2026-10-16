@@ -884,19 +884,23 @@
      }
 --- a/runtime-recomp/src/game/runtime_graphics_ui.inl
 +++ b/runtime-recomp/src/game/runtime_graphics_ui.inl
-@@ -8,6 +8,11 @@
- // restores the defaults. The study has fewer settings than the runtime; the
+@@ -9,9 +9,15 @@
  // extra ones sit in the card they belong to, the rarely used ones behind
  // disclosures. Accurate keeps only what it always offered.
-+
+ 
 +#if defined(__PROSPERO__)
 +#include "ps5_display_ui.inl"
 +#include "ps5_diagnostics_ui.inl"
 +#endif
- 
++
  struct GraphicsPageState {
      ImGuiContext* context = nullptr;
-@@ -82,7 +87,9 @@
+     int last_frame = -100;
++    int section = 0;
+     bool renderer_open = false;
+     bool distances_open = false;
+     // Restoring the defaults can be undone until the next graphics change or
+@@ -82,7 +88,9 @@
      const bool owned_camera_settings_deferred =
          dkr::runtime::netplay::experimental::owned_runtime_active();
      int profile = static_cast<int>(enh::presentation_profile());
@@ -906,7 +910,7 @@
      int resolution = static_cast<int>(config.res_option);
      int aspect = static_cast<int>(config.ar_option);
      int aa = static_cast<int>(config.msaa_option);
-@@ -92,8 +99,8 @@
+@@ -92,8 +100,8 @@
      // Both menu surfaces use the same full-width responsive cards.
      const float width = std::max(available_width, 1.0F);
      // Container queries on the content panel.
@@ -917,7 +921,32 @@
      ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.0F, 0.0F});
  
      DrawPageHeading("GRAPHICS");
-@@ -182,15 +189,27 @@
+@@ -108,7 +116,24 @@
+     PaddockGap(18.0F);
+ 
+     // ------------------------------------------------------------ game display
++    if (kConsoleMenuLayout) {
++#ifdef DKR_ENHANCED_WATER
++        const std::vector<const char*> sections = {"Display", "HUD & Detail", "Water"};
++#else
++        const std::vector<const char*> sections = {"Display", "HUD & Detail"};
++#endif
++        state.section = std::clamp(state.section, 0, static_cast<int>(sections.size()) - 1);
++        const int picked = SettingsSecondaryNav("graphics-sections", sections, state.section, width);
++        if (picked >= 0 && picked != state.section) { state.section = picked; ImGui::SetScrollY(0.0F); }
++        PaddockGap(18.0F);
++    }
++    const bool show_display = !kConsoleMenuLayout || state.section == 0;
++    const bool show_detail = !kConsoleMenuLayout || state.section == 1;
++#ifdef DKR_ENHANCED_WATER
++    const bool show_water = !kConsoleMenuLayout || state.section == 2;
++#endif
+     bool modern = enh::modern_options_visible(enh::presentation_profile());
++    if (show_display) {
+     SettingsCard(width, [&](float inner) {
+         SettingsCardHead("Performance presets (optional)", "Nothing changes until you press Apply.", inner);
+         static int preset = 1;
+@@ -182,15 +207,27 @@
          fields.End();
          modern = enh::modern_options_visible(enh::presentation_profile());
  
@@ -946,7 +975,7 @@
                                          {"Original (240p)", "Original 2x", "Automatic integer scale"},
                                          fields.column, false,
                                          "Higher resolutions draw more pixels and can increase graphics load.");
-@@ -204,9 +223,10 @@
+@@ -204,9 +241,10 @@
          if (enh::modern_presentation_enabled()) {
              int refresh_mode = g_modern_refresh_mode == RefreshRate::Manual ? 1 : 0;
              fields.Begin();
@@ -960,7 +989,7 @@
                  g_modern_refresh_mode = refresh_mode == 0 ? RefreshRate::Display : RefreshRate::Manual;
                  config.rr_option = g_modern_refresh_mode;
                  changed = true;
-@@ -370,6 +390,10 @@
+@@ -370,6 +408,10 @@
              ImGui::Unindent(36.0F);
          }
  
@@ -971,6 +1000,54 @@
          PaddockGap(16.0F);
          bool fps_overlay = g_fps_overlay_enabled;
          if (SettingsCheck("##fps-overlay", "Show performance overlay", &fps_overlay, inner,
+@@ -448,6 +490,8 @@
+         config.ds_option = downsample;
+     });
+ 
++    } // Display section
++
+     if (changed) {
+         if (modern) RememberModernGraphics(config);
+         ultramodern::renderer::set_graphics_config(config);
+@@ -457,7 +501,10 @@
+     }
+ 
+     // ------------------------------------------------------------ hud, scenery
+-    if (modern) {
++    if (show_detail && !modern && kConsoleMenuLayout) {
++        SettingsHelp("HUD and detail options require Modern presentation. Choose Modern in the Display section.", width);
++    }
++    if (modern && show_detail) {
+         PaddockGap(18.0F);
+         SettingsCardPair("graphics", width, stacked, 18.0F, [&](float inner) {
+             SettingsCardHead("HUD & effects", "Readability and the look of the game image.", inner);
+@@ -627,6 +674,7 @@
+ #if defined(DKR_ENHANCED_WATER)
+     // Shared by launcher and in-game overlay; these are local renderer
+     // preferences, not synchronized water physics or guest settings.
++    if (show_water) {
+     PaddockGap(18.0F);
+     SettingsCard(width, [&](float inner) {
+         namespace water = dkr::runtime::water::enhanced;
+@@ -777,9 +825,11 @@
+             "Hot Top Volcano's lava uses an emissive molten material with the same quality and reflection settings, without water wakes or refraction. "
+             "These settings do not change collisions, buoyancy or online simulation.", inner);
+     });
++    } // Water section
+ #endif
+ 
+     // ------------------------------------------------------------ footer
++    if (show_display) {
+     PaddockGap(18.0F);
+     {
+         const ImVec2 at = ImGui::GetCursorScreenPos();
+@@ -818,5 +868,6 @@
+             SettingsHelp(state.status, width, kSetWarm);
+         }
+     }
++    } // Display-only reset/undo
+     ImGui::PopStyleVar();
+ }
 --- a/runtime-recomp/src/game/runtime_hud_layout.cpp
 +++ b/runtime-recomp/src/game/runtime_hud_layout.cpp
 @@ -738,6 +738,9 @@
@@ -1551,6 +1628,30 @@
          column = single ? total : std::floor((total - gap) * 0.5F);
          row_top = origin.y;
          row_bottom = origin.y;
+@@ -622,8 +622,15 @@
+ 
+ // Sections within a page (.secondary-nav): a dark track of quiet tabs; the
+ // current one is lifted and underlined in amber. Returns the picked index.
++#if defined(__PROSPERO__)
++#include "ps5_menu_sections.inl"
++#endif
++
+ int SettingsSecondaryNav(const char* id, const std::vector<const char*>& labels, int current,
+                          float max_width) {
++#if defined(__PROSPERO__)
++    return DrawPs5SectionSelector(id, labels, current, max_width);
++#else
+     const PaddockType type = PaddockReading(14.0F, true, 1.35F);
+     float total = 8.0F + 4.0F * static_cast<float>(labels.size() - 1U);
+     std::vector<float> widths;
+@@ -681,6 +688,7 @@
+     ImGui::SetCursorScreenPos(at);
+     ImGui::Dummy({total, 44.0F + 8.0F});
+     return picked;
++#endif
+ }
+ 
+ // ------------------------------------------------------------ section signs
 --- a/runtime-recomp/src/game/runtime_support.cpp
 +++ b/runtime-recomp/src/game/runtime_support.cpp
 @@ -23,9 +23,11 @@
@@ -1620,19 +1721,20 @@
              const bool is_directory = entry.is_directory(error);
 --- a/runtime-recomp/src/game/runtime_ui.cpp
 +++ b/runtime-recomp/src/game/runtime_ui.cpp
-@@ -19,6 +19,11 @@
+@@ -19,6 +19,12 @@
  #include "generated/jumpman_font.h"
  #include "generated/racing_banana_font.h"
  #include "generated/selawik_font.h"
 +#if defined(__PROSPERO__)
 +#include "ps5_revision_selection.h"
++#include "ps5_menu_layout.hpp"
 +#include "ps5_display_options.h"
 +#include "ps5_diagnostics.h"
 +#endif
  #include "countdown_tone_policy.hpp"
  #include "custom_tracks.hpp"
  #include "launcher_render_policy.hpp"
-@@ -64,6 +69,9 @@
+@@ -64,6 +70,9 @@
  #include "startup_performance.hpp"
  #include "runtime_telemetry.hpp"
  #include "runtime_texture_packs.hpp"
@@ -1642,7 +1744,7 @@
  #include "save_manager.hpp"
  #include "runtime_save_routing.hpp"
  #include "texture_pack_browser_policy.hpp"
-@@ -477,7 +485,7 @@
+@@ -477,7 +486,7 @@
  }
  bool g_online_guide_do_not_show_again = true;
  bool g_online_guide_reopen_requested = false;
@@ -1651,7 +1753,7 @@
  RefreshRate g_modern_refresh_mode = RefreshRate::Display;
  #elif defined(__ANDROID__)
  // Conservative first-use defaults only. The settings loader restores all
-@@ -489,7 +497,7 @@
+@@ -489,7 +498,7 @@
  int g_modern_refresh_target = 60;
  #if defined(DKR_IOS)
  Resolution g_modern_resolution = Resolution::Original2x;
@@ -1660,7 +1762,7 @@
  Resolution g_modern_resolution = Resolution::Original2x;
  #else
  Resolution g_modern_resolution = Resolution::Auto;
-@@ -498,7 +506,7 @@
+@@ -498,7 +507,7 @@
  Antialiasing g_modern_antialiasing = Antialiasing::None;
  #if defined(DKR_IOS)
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
@@ -1669,7 +1771,7 @@
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::Off;
  #else
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
-@@ -551,6 +559,7 @@
+@@ -551,6 +560,7 @@
  std::string g_texture_pack_manage_id;
  std::string g_texture_pack_remove_id;
  std::string g_texture_pack_remove_name;
@@ -1677,7 +1779,19 @@
  // Set when an action in Track Lab (import, arm, play) switched the presentation
  // profile to Modern on the player's behalf. Shown in Track Lab and Graphics,
  // cleared when the player changes the profile there by hand.
-@@ -1206,6 +1215,9 @@
+@@ -680,7 +690,11 @@
+ constexpr int kPageTextures = 8;
+ constexpr int kMenuPageCount = 9;
+ // Stable page IDs, explicit visual order for both pointer and controller use.
++#if defined(__PROSPERO__)
++constexpr auto kSidebarOrder = dkrr::ps5_menu::selection_order;
++#else
+ constexpr std::array<int,kMenuPageCount+2> kSidebarOrder{0,5,6,1,2,3,4,8,7,9,10};
++#endif
+ int StepSidebarSelection(int current,int direction) {
+     const auto found=std::find(kSidebarOrder.begin(),kSidebarOrder.end(),current);
+     const int index=found==kSidebarOrder.end()?0:static_cast<int>(found-kSidebarOrder.begin());
+@@ -1206,6 +1220,9 @@
  }
  
  void LoadLauncherFonts() {
@@ -1687,7 +1801,7 @@
      ++g_font_generation;
      ImGuiIO& io = ImGui::GetIO();
      static constexpr ImWchar kLauncherGlyphRanges[] = {
-@@ -1336,9 +1348,22 @@
+@@ -1336,9 +1353,22 @@
          g_font_fps = g_font_controls != nullptr ? g_font_controls : body_font;
      }
      LoadBrandLogoIntoAtlas();
@@ -1710,7 +1824,7 @@
  }
  
  class ControlFontScope {
-@@ -1533,6 +1558,10 @@
+@@ -1533,6 +1563,10 @@
  #if defined(__ANDROID__)
      // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
      dkr::runtime::mobile_graphics::apply_accurate_budget(config);
@@ -1721,7 +1835,7 @@
  #endif
  }
  
-@@ -1752,6 +1781,12 @@
+@@ -1752,6 +1786,12 @@
          output << "memory_pak=" << (dkr::runtime::pak::enabled() ? 1 : 0) << '\n';
          output << "rumble=" << (dkr::runtime::platform::rumble_enabled() ? 1 : 0) << '\n';
          output << "rumble_strength=" << dkr::runtime::platform::rumble_strength() << '\n';
@@ -1734,7 +1848,7 @@
          output << "stick_deadzone=" << dkr::runtime::input::stick_deadzone() << '\n';
          output << "stick_anti_deadzone=" << dkr::runtime::input::stick_anti_deadzone() << '\n';
          output << "stick_sensitivity=" << dkr::runtime::input::stick_sensitivity() << '\n';
-@@ -2424,6 +2459,14 @@
+@@ -2424,6 +2464,14 @@
                  dkr::runtime::pak::set_enabled(number != 0);
              } else if (key == "rumble") {
                  dkr::runtime::platform::set_rumble_enabled(number != 0);
@@ -1749,7 +1863,7 @@
              } else if (key == "rumble_strength") {
                  dkr::runtime::platform::set_rumble_strength(std::stof(value));
              } else if (key == "stick_deadzone") {
-@@ -2513,6 +2556,16 @@
+@@ -2513,6 +2561,16 @@
      // still owns an open handle. Migration may call SaveSettings below, so
      // release the read handle before attempting that replacement.
      input.close();
@@ -1766,7 +1880,7 @@
      g_online_automatic_backend = dkr::runtime::netplay::experimental::migrated_automatic_backend(
          has_automatic_backend_setting, g_online_automatic_backend, has_legacy_backend_setting);
      for (std::size_t channel = 0; channel < kSoundChannelCount; ++channel) {
-@@ -4307,6 +4360,11 @@
+@@ -4307,6 +4365,11 @@
  }
  
  void DrawSidebarCurrentStripe() {
@@ -1778,7 +1892,7 @@
      const ImVec2 minimum = ImGui::GetItemRectMin();
      const ImVec2 maximum = ImGui::GetItemRectMax();
      ImDrawList* draw = ImGui::GetWindowDrawList();
-@@ -4322,6 +4380,7 @@
+@@ -4322,6 +4385,7 @@
      draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
                          std::max(rounding - 1.0F, 0.0F));
      draw->PopClipRect();
@@ -1786,7 +1900,7 @@
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -6352,12 +6411,18 @@
+@@ -6352,12 +6416,18 @@
          "HIDE FROM LIST keeps DKR-R's managed copy on disk. Choose Hidden "
          "from the Visibility filter to restore it later.");
      ImGui::Dummy({0.0F, 8.0F});
@@ -1805,7 +1919,7 @@
      ImGui::Dummy({0.0F, 12.0F});
      const float available = std::max(ImGui::GetContentRegionAvail().x, 1.0F);
      const float gap = ImGui::GetStyle().ItemSpacing.x;
-@@ -6375,11 +6440,13 @@
+@@ -6375,11 +6445,13 @@
      }
      if (!compact) ImGui::SameLine();
      ImGui::PushStyleColor(ImGuiCol_Button, {0.45F, 0.09F, 0.10F, 1.0F});
@@ -1819,7 +1933,7 @@
      ImGui::PopStyleColor();
      ImGui::EndPopup();
  }
-@@ -6456,6 +6523,10 @@
+@@ -6456,6 +6528,10 @@
              ImGui::TextWrapped("%s", value.c_str());
          };
          detail_row("TYPE", dkr::runtime::texture_packs::format_name(pack.format));
@@ -1830,7 +1944,7 @@
          detail_row("PRIORITY", std::to_string(pack.priority) +
                     (pack.priority == 1U ? " (highest)" : " (lower number wins)"));
          detail_row("MANAGED SIZE",
-@@ -6519,6 +6590,11 @@
+@@ -6519,6 +6595,11 @@
      if (ImGui::Button("REMOVE PACK...", {action_width, 42.0F})) {
          g_texture_pack_remove_id = pack.id;
          g_texture_pack_remove_name = pack.name;
@@ -1842,7 +1956,7 @@
          request_removal = true;
          ImGui::CloseCurrentPopup();
      }
-@@ -8053,6 +8129,15 @@
+@@ -8053,6 +8134,15 @@
      if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
          return false;
      }
@@ -1858,7 +1972,26 @@
      if (g_capture_action == kShortcutCaptureAction) {
          if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
              event->key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-@@ -8179,6 +8264,12 @@
+@@ -8166,6 +8256,11 @@
+ 
+ void DrawOverlayContent(float content_width) {
+     if (g_overlay_page == kPagePlay) {
++#if defined(__PROSPERO__)
++        DrawPageHeading("RACE PAUSED");
++        ImGui::TextWrapped("Resume below, or use L1 / R1 to open your settings.");
++        ImGui::Dummy({0.0F, 18.0F});
++#else
+         DrawPageHeading("PLAY");
+         ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
+         ImGui::TextWrapped("Taj has paused the race. The island is waiting whenever you are ready.");
+@@ -8173,12 +8268,19 @@
+         ImGui::Dummy({0.0F, 18.0F});
+         DrawStartingLights(true);
+         ImGui::Dummy({0.0F, 12.0F});
++#endif
+         ImGui::PushStyleColor(ImGuiCol_Button, kAccent);
+         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kWarm);
+         if (ImGui::Button("RETURN TO THE RACE", {content_width, 64.0F})) {
              g_overlay_visible.store(false, std::memory_order_release);
          }
          ImGui::PopStyleColor(2);
@@ -1871,7 +2004,27 @@
      } else if (g_overlay_page == kPageGraphics) {
          DrawGraphicsPage(content_width, true);
      } else if (g_overlay_page == kPageSound) {
-@@ -9408,6 +9499,9 @@
+@@ -8991,6 +9093,11 @@
+         }
+         ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
+         ++g_race_button_sidebar;
++#if defined(__PROSPERO__)
++        for (const auto& entry : dkrr::ps5_menu::pages)
++            LauncherSidebarButton(entry.label, entry.id, page, sidebar_selection, nav_inner_width,
++                          sidebar_layout.button_height);
++#else
+         LauncherSidebarButton("PLAY", 0, page, sidebar_selection,
+                               nav_inner_width, sidebar_layout.button_height);
+         LauncherSidebarButton("DKR-R ONLINE", kPageOnlineMp, page, sidebar_selection,
+@@ -9009,6 +9116,7 @@
+                               nav_inner_width, sidebar_layout.button_height);
+         LauncherSidebarButton("ABOUT DKR-R", kPageAbout, page, sidebar_selection,
+                               nav_inner_width, sidebar_layout.button_height);
++#endif
+         SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
+         ImGui::PushStyleColor(
+             ImGuiCol_Button,
+@@ -9408,6 +9516,9 @@
      }
  #endif
      inspector->newFrame(application.framebufferGraphicsWorker.get());
@@ -1881,7 +2034,7 @@
      if (auto* hud_window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window())) {
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
-@@ -9461,7 +9555,8 @@
+@@ -9461,7 +9572,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -1891,7 +2044,27 @@
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9574,6 +9669,11 @@
+@@ -9494,6 +9606,11 @@
+         }
+         ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
+         ++g_race_button_sidebar;
++#if defined(__PROSPERO__)
++        for (const auto& entry : dkrr::ps5_menu::pages)
++            SidebarButton(entry.label, entry.id, sidebar_selection, nav_inner_width,
++                          sidebar_layout.button_height);
++#else
+         SidebarButton("PLAY", 0, sidebar_selection, nav_inner_width,
+                       sidebar_layout.button_height);
+         SidebarButton("DKR-R ONLINE", kPageOnlineMp, sidebar_selection, nav_inner_width,
+@@ -9512,6 +9629,7 @@
+                       sidebar_layout.button_height);
+         SidebarButton("ABOUT DKR-R", kPageAbout, sidebar_selection, nav_inner_width,
+                       sidebar_layout.button_height);
++#endif
+         SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
+         ImGui::PushStyleColor(
+             ImGuiCol_Button,
+@@ -9574,6 +9692,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -1903,7 +2076,7 @@
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9756,6 +9856,18 @@
+@@ -9756,6 +9879,18 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -1951,6 +2124,88 @@
      type.line = px * line_height;
      type.tracking = px * tracking_em;
      return type;
+--- a/runtime-recomp/tests/quick_join_transport_tests.cpp
++++ b/runtime-recomp/tests/quick_join_transport_tests.cpp
+@@ -134,6 +134,12 @@
+            protocol::kMaximumDatagramBytes);
+     auto quick_join_transport = make_quick_join_session_transport(
+         true, "ABCDE", transport_error);
++#if !DKR_NETPLAY_WEBRTC
++    // Optional-transport builds must refuse cleanly, preserving UDP support.
++    assert(!quick_join_transport);
++    assert(transport_error == "This build does not include the optional Quick Join transport.");
++    return 0;
++#endif
+     assert(quick_join_transport);
+     assert(quick_join_transport->maximum_plaintext_datagram_bytes() ==
+            protocol::kMaximumQuickJoinDatagramBytes);
+--- a/scripts/generate_legacy_menu_qualification.py
++++ b/scripts/generate_legacy_menu_qualification.py
+@@ -15,9 +15,11 @@
+ def main(argv=None):
+     parser=argparse.ArgumentParser(description=__doc__)
+     parser.add_argument("--output",type=Path,required=True)
+-    parser.add_argument("--v77-build",type=Path,required=True)
+-    parser.add_argument("--v80-build",type=Path,required=True)
++    parser.add_argument("--v77-build",type=Path)
++    parser.add_argument("--v80-build",type=Path)
++    parser.add_argument("--revisions",type=int,nargs="+",choices=(77,80),default=(77,80),help="Generate only selected owned revisions; default preserves the unified build")
+     parser.add_argument("--recompiler",type=Path,required=True)
++    parser.add_argument("--european-languages-policy", type=Path, help="Explicit checked native US language adapter")
+     parser.add_argument("--characters",action="store_true",help="Include the checked character resource adapter")
+     parser.add_argument("--character-menu",action="store_true",help="Include the checked additive character selector")
+     parser.add_argument("--refresh-presentation",action="store_true",help="Refresh the reviewed presentation layer in an already-composed committed policy")
+@@ -38,6 +40,8 @@
+         parser.error(f"Recompiler must be an existing executable: {args.recompiler}")
+     # Validate both revisions before any subprocess or output mutation.
+     for revision, source, explicit in ((77,args.v77_build,args.v77_policy), (80,args.v80_build,args.v80_policy)):
++        if revision not in args.revisions: continue
++        if source is None: parser.error(f"Missing --v{revision}-build for selected revision")
+         required = [source/f"dkr.us.v{revision}.elf", source/f"dkr.us.v{revision}.z64"]
+         policies = [explicit or root/f"runtime-recomp/dkr.us.v{revision}.recomp-policy.json",
+                     root/f"runtime-recomp/legacy-mods.v{revision}.recomp-fragment.json",
+@@ -71,6 +75,7 @@
+ 
+ def generate(args, root, output):
+     for revision,source,entry in ((77,args.v77_build,"0x80065D40"),(80,args.v80_build,"0x80065F80")):
++        if revision not in args.revisions: continue
+         elf=source/f"dkr.us.v{revision}.elf"
+         rom=source/f"dkr.us.v{revision}.z64"
+         policy=output/f"menu-v{revision}.policy.json"
+@@ -99,6 +104,7 @@
+             config=output/f"menu-{'pipeline-' if isolated else ''}v{revision}.toml"
+             command=[sys.executable,str(root/"scripts/generate_recomp_config.py"),"--policy",str(policy),
+                 "--elf",str(elf),"--rom",str(rom),"--output-functions",str(functions),"--entrypoint",entry,"--output",str(config)]
++            if args.european_languages_policy is not None:command += ["--european-languages-policy", str(args.european_languages_policy)]
+             if isolated:command += ["--functions-per-output-file","1"]
+             run_stage(command, f"v{revision} config generation")
+             run_stage([str(args.recompiler.resolve()),str(config)], f"v{revision} recompilation ({config.name})")
+--- a/scripts/generate_recomp_config.py
++++ b/scripts/generate_recomp_config.py
+@@ -27,6 +27,7 @@
+     parser.add_argument("--entrypoint", required=True)
+     parser.add_argument("--output", required=True, type=Path)
+     parser.add_argument("--use-mdebug", action="store_true")
++    parser.add_argument("--european-languages-policy", type=Path, help="Explicit checked native US language adapter")
+     parser.add_argument("--water-profile", action="store_true", help="Compose checked water timing hooks")
+     parser.add_argument("--functions-per-output-file", type=int,
+                         help="Optional source granularity for isolated Patch Pipeline qualification")
+@@ -63,6 +64,15 @@
+     if arguments.water_profile:
+         from water_profile_policy import compose_water_profile
+         policy = compose_water_profile(policy, arguments.elf)
++
++    if arguments.european_languages_policy is not None:
++        import importlib.util
++        module = importlib.util.spec_from_file_location("dkrr_native_languages", arguments.european_languages_policy)
++        if module is None or module.loader is None:
++            raise ValueError("Missing native language policy module")
++        language_policy = importlib.util.module_from_spec(module)
++        module.loader.exec_module(language_policy)
++        policy = language_policy.compose(policy, arguments.elf, revision)
+ 
+     manual = ", ".join(
+         "{ name = %s, section = %s, vram = %s, size = %s }"
 --- a/runtime-recomp/src/game/save_storage.hpp
 +++ b/runtime-recomp/src/game/save_storage.hpp
 @@ -28,6 +28,10 @@
@@ -2037,85 +2292,3 @@
          }
          if (entries.size() > 8) {
              std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
---- a/runtime-recomp/tests/quick_join_transport_tests.cpp
-+++ b/runtime-recomp/tests/quick_join_transport_tests.cpp
-@@ -134,6 +134,12 @@
-            protocol::kMaximumDatagramBytes);
-     auto quick_join_transport = make_quick_join_session_transport(
-         true, "ABCDE", transport_error);
-+#if !DKR_NETPLAY_WEBRTC
-+    // Optional-transport builds must refuse cleanly, preserving UDP support.
-+    assert(!quick_join_transport);
-+    assert(transport_error == "This build does not include the optional Quick Join transport.");
-+    return 0;
-+#endif
-     assert(quick_join_transport);
-     assert(quick_join_transport->maximum_plaintext_datagram_bytes() ==
-            protocol::kMaximumQuickJoinDatagramBytes);
---- a/scripts/generate_legacy_menu_qualification.py
-+++ b/scripts/generate_legacy_menu_qualification.py
-@@ -15,9 +15,11 @@
- def main(argv=None):
-     parser=argparse.ArgumentParser(description=__doc__)
-     parser.add_argument("--output",type=Path,required=True)
--    parser.add_argument("--v77-build",type=Path,required=True)
--    parser.add_argument("--v80-build",type=Path,required=True)
-+    parser.add_argument("--v77-build",type=Path)
-+    parser.add_argument("--v80-build",type=Path)
-+    parser.add_argument("--revisions",type=int,nargs="+",choices=(77,80),default=(77,80),help="Generate only selected owned revisions; default preserves the unified build")
-     parser.add_argument("--recompiler",type=Path,required=True)
-+    parser.add_argument("--european-languages-policy", type=Path, help="Explicit checked native US language adapter")
-     parser.add_argument("--characters",action="store_true",help="Include the checked character resource adapter")
-     parser.add_argument("--character-menu",action="store_true",help="Include the checked additive character selector")
-     parser.add_argument("--refresh-presentation",action="store_true",help="Refresh the reviewed presentation layer in an already-composed committed policy")
-@@ -38,6 +40,8 @@
-         parser.error(f"Recompiler must be an existing executable: {args.recompiler}")
-     # Validate both revisions before any subprocess or output mutation.
-     for revision, source, explicit in ((77,args.v77_build,args.v77_policy), (80,args.v80_build,args.v80_policy)):
-+        if revision not in args.revisions: continue
-+        if source is None: parser.error(f"Missing --v{revision}-build for selected revision")
-         required = [source/f"dkr.us.v{revision}.elf", source/f"dkr.us.v{revision}.z64"]
-         policies = [explicit or root/f"runtime-recomp/dkr.us.v{revision}.recomp-policy.json",
-                     root/f"runtime-recomp/legacy-mods.v{revision}.recomp-fragment.json",
-@@ -71,6 +75,7 @@
- 
- def generate(args, root, output):
-     for revision,source,entry in ((77,args.v77_build,"0x80065D40"),(80,args.v80_build,"0x80065F80")):
-+        if revision not in args.revisions: continue
-         elf=source/f"dkr.us.v{revision}.elf"
-         rom=source/f"dkr.us.v{revision}.z64"
-         policy=output/f"menu-v{revision}.policy.json"
-@@ -99,6 +104,7 @@
-             config=output/f"menu-{'pipeline-' if isolated else ''}v{revision}.toml"
-             command=[sys.executable,str(root/"scripts/generate_recomp_config.py"),"--policy",str(policy),
-                 "--elf",str(elf),"--rom",str(rom),"--output-functions",str(functions),"--entrypoint",entry,"--output",str(config)]
-+            if args.european_languages_policy is not None:command += ["--european-languages-policy", str(args.european_languages_policy)]
-             if isolated:command += ["--functions-per-output-file","1"]
-             run_stage(command, f"v{revision} config generation")
-             run_stage([str(args.recompiler.resolve()),str(config)], f"v{revision} recompilation ({config.name})")
---- a/scripts/generate_recomp_config.py
-+++ b/scripts/generate_recomp_config.py
-@@ -27,6 +27,7 @@
-     parser.add_argument("--entrypoint", required=True)
-     parser.add_argument("--output", required=True, type=Path)
-     parser.add_argument("--use-mdebug", action="store_true")
-+    parser.add_argument("--european-languages-policy", type=Path, help="Explicit checked native US language adapter")
-     parser.add_argument("--water-profile", action="store_true", help="Compose checked water timing hooks")
-     parser.add_argument("--functions-per-output-file", type=int,
-                         help="Optional source granularity for isolated Patch Pipeline qualification")
-@@ -63,6 +64,15 @@
-     if arguments.water_profile:
-         from water_profile_policy import compose_water_profile
-         policy = compose_water_profile(policy, arguments.elf)
-+
-+    if arguments.european_languages_policy is not None:
-+        import importlib.util
-+        module = importlib.util.spec_from_file_location("dkrr_native_languages", arguments.european_languages_policy)
-+        if module is None or module.loader is None:
-+            raise ValueError("Missing native language policy module")
-+        language_policy = importlib.util.module_from_spec(module)
-+        module.loader.exec_module(language_policy)
-+        policy = language_policy.compose(policy, arguments.elf, revision)
- 
-     manual = ", ".join(
-         "{ name = %s, section = %s, vram = %s, size = %s }"
