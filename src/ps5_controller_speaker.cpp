@@ -23,6 +23,8 @@ struct Speaker::Worker {
     float volume=0.25F;std::atomic<int> result{0};
     Loader loader;
     int output_handle=-1;
+    unsigned cached_revision=0;
+    std::array<std::vector<std::int16_t>,9> cached_cues;
     std::thread thread;
     explicit Worker(Loader load):loader(load),thread([this]{
         try { run(); } catch(const std::exception& e) {
@@ -44,6 +46,23 @@ struct Speaker::Worker {
         }
         return data;
     }
+    const std::vector<std::int16_t>& cue(unsigned rev,unsigned index) {
+        // Only the audio worker owns this bounded cache. Repeated item use
+        // performs no filesystem reads, sample copies or missile mixing.
+        if(cached_revision!=rev){cached_cues={};cached_revision=rev;}
+        auto& data=cached_cues[index];
+        if(!data.empty())return data;
+        data=load(rev,index);
+        if(index==1&&!data.empty()) {
+            const auto& follow=cue(rev,2);
+            if(!follow.empty()) {
+                data.resize(std::max<std::size_t>(data.size(),48000+follow.size()),0);
+                for(std::size_t i=0;i<follow.size();++i)
+                    data[48000+i]=static_cast<std::int16_t>(std::clamp<int>(int(data[48000+i])+follow[i],-32768,32767));
+            }
+        }
+        return data;
+    }
     void run() {
         int& handle=output_handle;int open_user=-1;unsigned seen=0;std::unique_lock lock(mutex);
         while(!quit) {
@@ -53,13 +72,7 @@ struct Speaker::Worker {
             // A failure stays local to this optional output until it is toggled.
             if(result.load()<0)continue;
             lock.unlock();
-            auto data=load(rev,static_cast<unsigned>(requested));
-            if(requested==1) {
-                auto follow=load(rev,2);if(!data.empty()&&!follow.empty()) {
-                    data.resize(std::max<std::size_t>(data.size(),48000+follow.size()),0);
-                    for(std::size_t i=0;i<follow.size();++i)data[48000+i]=static_cast<std::int16_t>(std::clamp<int>(int(data[48000+i])+follow[i],-32768,32767));
-                }
-            }
+            const auto& data=cue(rev,static_cast<unsigned>(requested));
             if(data.empty()){result.store(-2);std::fprintf(stderr,"[input][speaker] private PCM unavailable\n");lock.lock();continue;}
             if(handle>=0&&open_user!=id){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}
             if(handle<0) {
