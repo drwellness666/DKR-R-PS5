@@ -1,101 +1,46 @@
-# Veröffentlichungsprüfung: PS5-Integration für DKR-R 1.0.6
+# Distribution and licences
 
-Stand: 15. Oktober 2026. Dies ist eine technische Lizenz- und Inhaltsprüfung,
-keine verbindliche juristische Freigabe des Originalspiels.
+This repository distributes PS5 integration source, patches, build recipes,
+pinned public source archives, tests and notices. Each user supplies a legally
+usable supported ROM and builds privately. The repository and releases exclude
+ROMs, extracted game data, generated game CPU code, playable binaries, saves,
+Controller Paks and third-party texture packs.
 
-## Sinnvoller erster Veröffentlichungsumfang
+## Code and dependencies
 
-Ein eigenständiges Integrationsrepository mit unseren PS5-Adaptern, Patch-Dateien,
-Build-Anleitung, Tests, exakten Quellenrevisionen und Lizenzhinweisen. Der Export
-bezieht DKR-R aus seinem gepinnten öffentlichen Quellstand. Er enthält dessen
-Schriftdateien und generierte Spielprogramme nicht. Jeder Nutzer erzeugt den
-Spielbuild lokal mit einem eigenen, rechtmäßig nutzbaren Dump einer unterstützten US-Revision.
-Die Bezeichnung lautet zunächst „experimental PS5 source preview“.
+The port's adapters are GPL-3.0-or-later. DKR-R's original project code is MIT;
+N64ModernRuntime and the public PS5 platform contain GPL components. Dependencies
+retain their own licences and copyrights. The detailed inventory is
+[THIRD_PARTY.md](../THIRD_PARTY.md), with additional notices under `licenses/` and
+in the pinned sources. A root LICENSE does not replace these notices.
 
-Originaler DKR-R-Projektcode ist MIT-lizenziert. N64ModernRuntime und Teile der
-öffentlichen PS5-Laufzeit sind GPL-3.0; eigene Adapter sind GPL-3.0-or-later.
-Die Lizenzen sind komponentenbezogen. Ein globaler LICENSE-Text ersetzt fremde
-Copyright-Hinweise nicht. Für verteilte kombinierte ausführbare Programme gelten
-zusätzlich die Anforderungen an korrespondierende Quellen des tatsächlich
-verteilten Stands. Unser Source-Export ist kein Nachweis, dass ein beliebiges
-ROM-abgeleitetes Spiel-Binary frei verteilt werden darf.
+The build uses public homebrew SDK sources and imports libraries already on the
+console. It does not distribute licensed Sony SDK files or Sony system modules.
+A source-only release is not a blanket permission to redistribute a locally
+compiled game executable or ROM installer.
 
-## Bereinigter PS5-Interface-Stand
+## Fonts and title artwork
 
-Die PS5-Konfiguration linkt jetzt ausschließlich Selawik unter SIL OFL 1.1.
-Racing Banana und Jumpman wurden aus dem PS5-Linkziel und dem nativen Font-Loader
-entfernt. Beide einzelnen Revisionen wurden damit vollständig gebaut; eine
-Symbolprüfung bestätigt das Fehlen beider Font-Payloads. Originale OFL- und
-Copyright-Hinweise werden dem privaten App-Build beigelegt. Unser Repository
-enthält keine DKR-R-Fontbytes; der Builder bezieht den gepinnten Upstream-Stand.
+The PS5 interface uses Microsoft Selawik Regular/Semibold under SIL OFL 1.1.
+The build retains its OFL and copyright notice. Racing Banana and Jumpman are
+excluded from this PS5 target; this is a distribution choice, not evidence that
+those fonts caused earlier rendering bugs or that all other uses are prohibited.
 
-Die folgenden Upstream-Bedingungen bleiben für andere Varianten, einen
-vollständigen DKR-R-Fork oder einen anders gebauten Binary-Download relevant.
-Sie sind kein verbliebener Font-Blocker dieses Selawik-PS5-Linkziels.
+Title graphics are fetched from the pinned DKR-R project through the documented
+recipe. The launcher icon is credited upstream to POOTERMAN. Artwork retains
+upstream/artist terms; it is not relicensed as CC0 by this port. See
+[artwork provenance](../homebrew/DKR-R-Game/ARTWORK.md).
 
-## Grenzen eines späteren fertigen Spiel-Downloads
+Texture packs must be obtained separately under their authors' terms. The tested
+Remastered pack is not included or licensed for redistribution by this project.
+Nintendo, Rare, Microsoft and Sony do not endorse the port.
 
-- **Racing Banana:** Upstream nennt eine vom Projektinhaber bereitgestellte
-  Interface-Schrift und fordert öffentliche Verteiler ausdrücklich auf, die
-  Weitergaberechte zu bestätigen. Die vorhandene Dokumentation liefert dafür
-  keine allgemeine ausdrückliche Freigabe.
-- **Jumpman:** Die beigefügte Pixel-Sagas-Lizenz unterscheidet persönlichen,
-  nichtkommerziellen Gebrauch, direkte Font-Downloads und Einbettung in Software.
-  Die Lizenz erlaubt ausdrücklich die Einbettung in Software; ein kostenloser
-  PS5-Port ist damit nicht pauschal ausgeschlossen. Diese Bedingungen dürfen
-  nicht als uneingeschränkte MIT/GPL-Freigabe ausgegeben werden. Ein öffentlicher
-  Font-/Binary-Umfang muss diese Regeln gesondert erfüllen. Der vollständige
-  Selawik-Wechsel war eine vorsorgliche Projektentscheidung, keine technische
-  PS5-Notwendigkeit und kein Nachweis, dass die bisherigen Schriftfehler von
-  Jumpman oder Racing Banana verursacht wurden.
-- **Selawik:** Regular und Semibold sind mit SIL OFL 1.1 dokumentiert. Ein
-  öffentlich weitergebbarer PS5-Interface-Stand kann diese Schrift verwenden,
-  unter Beibehaltung der OFL und ihrer Namensbedingungen.
-- **Aus ROMs erzeugter Code:** Die jetzige native eboot.bin und deren Installer
-  enthalten lokal erzeugte Spiel-CPU-Funktionen. Sie bleiben im privaten
-  Buildbereich. Ein fehlender ROM-Anhang ist keine automatische Freigabe dieser
-  abgeleiteten Programme.
-- **SR.GU-Paket:** Das vom Nutzer bereitgestellte Remastered-Paket wurde nur für
-  seine eigene PS5 importiert. Im ZIP ist keine allgemeine Weitergabelizenz
-  enthalten. Es gehört weder in dieses Repository noch in dessen Releases;
-  andere Tester beziehen es selbst beim Autor nach dessen Bedingungen.
-- **Interface-Bilder:** Bei einem späteren vollständigen DKR-R-Fork oder
-  Spiel-Download müssen auch die Upstream-Interface-Bilder und ihre Provenienz
-  geprüft werden. Die Titelgrafik-Rezeptur bezieht jetzt das ursprüngliche
-  DKR-R-Launcher-Icon und die README-Grafik als gehashte öffentliche Build-Eingaben.
-  Der Source-Export enthält Rezeptur und Provenienz, keine dieser Titelgrafikdateien
-  und keine extrahierten Figurenmodelle. Upstream-/Künstlerrechte bleiben bestehen;
-  es wird keine CC0-Freigabe für diese Bilder behauptet. 
+## Primary notices
 
-## Inhalts- und Quellenprüfungen
-
-Der öffentliche Export benutzt eine Positivliste, untersucht mitgelieferte
-Quellarchive zusätzlich und vermeidet die private Arbeits- und Konsolenhistorie.
-Ausgeschlossen sind ROMs, extrahierte Spieldaten, generierte CPU-Payloads,
-Spiel-Binaries, Installer, Profile, Saves, Controller-Paks, das Remastered-Paket,
-Übertragungstoken und Sony-Systemmodule. Ein solcher Scan beweist die geprüften
-Dateieigenschaften; er beweist keine Herkunft oder Rechte für jeden denkbaren
-Quellbestandteil.
-
-Originalhinweise bleiben in den Quellarchiven erhalten. Zusätzlich werden die
-lesbaren Lizenzdateien unter `licenses/` exportiert. Die Builds laden öffentliche
-SDK-/GPU-Quellen; vorhandene Sony-Bibliotheken werden importiert und nicht kopiert.
-
-## Betatester und Kontakt zum Upstream-Entwickler
-
-Aktuelle Testergebnisse und verbleibende Grenzen stehen in [validation scope](VALIDATION.md).
-Eine Quell-Beta kann mit eigenen lokal nutzbaren Dumps nachgebaut werden;
-private Spiel-Binaries und vollständige Konsolenprotokolle werden nicht geteilt.
-Ein Kontakt zum Upstream-Entwickler erfolgt nur auf ausdrücklichen Auftrag und
-enthält keine ROMs, Saves oder fremden Texturpakete. Der technische Quell-Export
-ist keine pauschale juristische Freigabe des Originalspiels.
-
-## Primäre Grundlagen
-
-- [DKR-R Runtime licensing notice](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/runtime-recomp/COPYING-NOTICE.md)
-- [DKR-R Asset policy](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/docs/ASSET_POLICY.md)
-- [DKR-R Third party notices](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/THIRD_PARTY.md)
+- [DKR-R runtime notice](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/runtime-recomp/COPYING-NOTICE.md)
+- [DKR-R asset policy](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/docs/ASSET_POLICY.md)
+- [DKR-R third-party notices](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/THIRD_PARTY.md)
 - [SIL Open Font License](https://openfontlicense.org/open-font-license-official-text/)
-- [§ 69e UrhG](https://www.gesetze-im-internet.de/urhg/__69e.html): Die dortige
-  Interoperabilitätsausnahme hat konkrete Bedingungen und ist keine pauschale
-  Erlaubnis zur Veröffentlichung rekonstruierter Spiele.
+
+These notes describe the distributed files and recorded licence terms; they do
+not grant rights to the original game or replace legal advice.

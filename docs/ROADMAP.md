@@ -1,17 +1,24 @@
 # Roadmap
 
-## Next controller features
+## Installation and startup
 
-- **Optional gyro steering:** calibrated motion steering, recenter, adjustable sensitivity and immediate stick fallback. First implement and verify native PS5 sensor transport; upstream gyro settings alone are insufficient.
-- **Optional adaptive L2 weapon effect:** a small resistance point and a short impulse tied to the actual item/shot event. Reset on release, empty inventory, pause, disconnect and when disabled. Keep Classic Cross acceleration and gas tapping.
+- One ROM-free installer ELF, ROM selection/import on the PS5 and normal icon launch.
+- Console-managed save support with no PC or separate per-boot helper action.
+- Cold-boot/save tests with the PC disconnected.
 
-**Deutsch:** Als Nächstes sind optionale **Gyrosteuerung** und ein **adaptiver L2-Schusseffekt** vorgesehen. Beide müssen abschaltbar bleiben und dürfen die klassische Steuerung nicht beeinträchtigen.
+[Installer design and current limits](INSTALLER.md). The existing source-build
+route remains available; these installer changes are not yet released features.
 
-## Stability and usability
+## Controller features
 
-- Isolate the brief Tracks-preview water flash.
-- Investigate reproducible frame-time spikes and texture/graphics combinations.
-- Expand testing across controllers, displays, firmware/loaders, Controller Paks and longer sessions.
-- Improve the local build assistant and incremental updates from tester feedback.
+- **Optional gyro steering:** calibration, recenter, sensitivity and stick fallback.
+- **Optional adaptive L2 shot feedback:** resistance and impulse on actual item use;
+  reset on release, pause, disconnect and when disabled. Keep Classic gas tapping.
 
-There are no promised dates. The beta already includes optional balloon light colors, system-light reset and experimental 4K/120-Hz output with VRR. [Current limitations](KNOWN_ISSUES.md).
+## Stability
+
+- Isolate the brief Tracks-preview water flash and reproducible frame-time spikes.
+- Test more displays/loaders, texture packs, online/mod use and Controller Paks.
+- Simplify compatible updates after the standalone installation flow is proven.
+
+No dates are promised. [Known issues](KNOWN_ISSUES.md) · [Validation](VALIDATION.md)

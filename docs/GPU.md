@@ -1,44 +1,27 @@
-# PS5 GPU build details
+# Graphics build notes
 
-For the normal game build, follow README.md or README.de.md. This document
-explains the GPU dependency; no separate probe installation is required.
+For normal use, follow the [build guide](BUILD.md) or run `python3 setup.py`.
+The graphics build is a dependency of the game; no separate probe installation
+is required.
 
-## Toolchain and pinned inputs
-
-`VULKAN_SOURCES.json` pins the PS5 Vulkan/RADV, Mesa, public SDK source and host
-build dependencies by revision and hash. The PS5-native GPU build uses the
-project's qualified public SDK basis; SDL/transfer payloads use SDK v0.44.
-These are separate build inputs. No licensed Sony SDK or copied Sony module is
-included. Native imports resolve the console's existing libraries at runtime.
-
-The checked Linux host uses Clang/LLD 23.1.1 and CMake 3.31.6. Development
-requirements include Python with venv/pip, Make, pkg-config, PCRE2, glslang,
-LLVM/libclc development files, LLVM-SPIRV and SPIR-V Tools. `build_gpu.sh` creates
-its Meson/Ninja Python environment locally and installs no system packages.
+`VULKAN_SOURCES.json` pins the public PS5 Vulkan/RADV, Mesa, SDK and host tools.
+The game links RADV statically and uses a native VideoOut surface through Plume.
+It does not create a desktop SDL/X11 Vulkan window. Console libraries are imported
+at runtime; Sony SDKs and system modules are not distributed.
 
 ```bash
 export DKR_GPU_WORK="$PWD/work/vulkan"
 bash build_gpu.sh
 ```
 
-Use a dedicated absolute work directory. Downloads are checked before use;
-modified or incomplete prepared sources are refused. `DKR_GPU_JOBS` limits
-parallel compilation; `CMAKE_BIN` selects an installed CMake when required.
-The build contacts public source servers, not the PS5.
+Use an absolute work path. `DKR_GPU_JOBS` limits parallel compilation and
+`CMAKE_BIN` can select an installed CMake. Prepared sources and downloads are
+checked against their manifests. Build environments are local; scripts do not
+install OS packages or contact the PS5.
 
-## Integration
+The driver policy disables recurring diagnostic writes during normal play.
+That alone is not evidence that all stutters are fixed. Output modes, VRR and
+render scale are explained in [Display](DISPLAY.md).
 
-The game statically links the native RADV path. Plume selects a compatible
-Vulkan display/plane and creates a native VideoOut surface. Desktop SDL/X11
-Vulkan-window creation is not used. Import checks reject unresolved desktop
-symbols. The driver source patch in `patches/0006-ps5-driver-policy.patch`
-disables periodic diagnostic writes by default and retains the bounded refresh
-cadence guard. It does not prove a general performance improvement.
-
-Normal output is SDR/FIFO. Resolution and nominal refresh requests, measured
-fallback and the difference between output buffers and game rendering are
-explained in [display details](DISPLAY.md). Current console evidence is in [validation scope](VALIDATION.md).
-
-The optional GPU probe recipes remain developer diagnostics. Their native title
-uses a different ID from the game. A successful probe is not game acceptance;
-do not install it as an extra step in the normal user workflow.
+Current source tests and hardware results are in [Validation](VALIDATION.md).
+Synthetic GPU probes are developer tools and do not establish game correctness.

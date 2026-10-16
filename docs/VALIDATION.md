@@ -23,7 +23,8 @@ and installer recipes.
 The accepted native game build is `integrated-8f7c534368169906167740cc`.
 Its installed executable was read back with matching SHA-256:
 `4b0990c72a40742b4324182907631a13cdac3526489653b41efde47b6a055fb3`.
-The user confirmed:
+The user confirmed the following in sessions with the console-side save-metadata
+service already running:
 
 - Normal gameplay image and audio, readable save names and full-size menus at 4K.
 - US 1.0 and US 1.1 selection, save/reload and shared settings/texture selection.
@@ -49,3 +50,8 @@ Use `.github/workflows/source-check.yml` for the ROM-free host gate. Hardware
 acceptance remains separate: source tests, a successful link or an installer
 receipt alone cannot establish visible output, physical controller behavior or
 sustained performance. Raw console logs and ROM-derived debug symbols stay private.
+
+A fresh boot without that service has not been accepted. It is not a PC service,
+but the current release still needs it in the console session. Standalone
+installer/ROM-import and fully managed startup are [planned work](INSTALLER.md).
+WSL2 has not received a complete build/install acceptance run.

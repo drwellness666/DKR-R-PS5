@@ -1,13 +1,30 @@
 # Development
 
-The runtime currently targets DKR-R 1.0.6 at the revision in `GAME_SOURCES.json`. Public dependencies are pinned by revision and SHA-256. Keep platform changes in `src/` and reviewed patches; never edit generated game functions to conceal a bug.
+DKR-R 1.0.6 and all build inputs are pinned in `GAME_SOURCES.json`,
+`RT64_SOURCES.json`, `VULKAN_SOURCES.json` and `TITLE_ART_SOURCES.json`.
+Keep platform changes in `src/` and reproducible patches. Regenerate selected
+CPU payloads through the normal pipeline; do not hand-edit generated functions.
 
-- [Manual build](BUILD.md), [GPU components](GPU.md), [RT64](RT64.md).
-- [Native controllers](CONTROLS.md), [display](DISPLAY.md), [diagnostics](../docs/DIAGNOSTICS.md).
-- [Updates](UPDATES.md), [licences](LICENSES.md), [validation scope](VALIDATION.md).
+| Topic | Document |
+|---|---|
+| Build / Windows | [Build](BUILD.md), [Windows](WINDOWS.md) |
+| Native installer target | [Installer](INSTALLER.md) |
+| Saves and startup | [Saves](SAVES.md) |
+| Renderer | [Graphics](GPU.md), [RT64](RT64.md) |
+| Debugging / updates | [Diagnostics](DIAGNOSTICS.md), [Updates](UPDATES.md) |
+| Distribution / tests | [Licences](LICENSES.md), [Validation](VALIDATION.md) |
 
-The local assistant is `setup.py` with `tools/setup_ui.html`. It binds only to loopback, uses a per-run token, checks ROM contents and calls the same build/install tools as the manual route. It never invokes a cloud build. It keeps game build attempts separate and requires authoritative install markers before sending the next installer.
+The local build assistant is `setup.py` and `tools/setup_ui.html`. It binds to
+loopback, uses a per-run token, validates input ROMs and invokes the manual build
+recipes. It keeps build attempts separate and checks installer completion markers.
+It is not a runtime service required on the PC while playing.
 
-ROM-free checks run through `.github/workflows/source-check.yml`. The assistant tests cover HTTP access, upload bounds, the actual ROM rejection path, build ordering, work-directory isolation and installation success gates. Network fixtures use only loopback. Native output and controller behavior require console testing in addition to host tests.
+The source gate is `.github/workflows/source-check.yml`. Host tests cover adapters,
+source preparation, menu geometry, diagnostics and update refusal/recovery cases.
+They do not replace native display, controller or cold-boot save tests.
 
-Do not commit ROMs, extracted assets, generated CPU payloads, game binaries/installers, saves/Paks or raw console logs. Preserve original licences and copyrights. Include a reproduction and targeted validation with contributions.
+The export is a positive allowlist from `tools/export_public_source.py`.
+`check_public_source.py` scans files and bundled archive members; `SHA256SUMS`
+records the complete export. Keep ROMs, extracted game assets, generated CPU
+payloads, game binaries, saves and raw console logs out of commits and issues.
+Imported licences and copyright notices must be retained.

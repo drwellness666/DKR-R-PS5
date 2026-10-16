@@ -12,6 +12,13 @@ Occasional short stutters have been reported. One 60-second measurement at 60 FP
 
 **Deutsch:** Gelegentliche Mikroruckler sind gemeldet. Eine unauffällige Messung ist keine Zusage für alle Strecken und Einstellungen.
 
+## Save support after a console reboot
+
+The accepted native setup uses a console-side save-metadata service. It is not
+a PC connection and does not recover deleted saves. Manual restarts of that
+service are still a limitation of the current installation flow; see
+[Saves](SAVES.md) and the [standalone installer target](INSTALLER.md).
+
 ## Features and test limits
 
 - 4K/119.88-Hz output with VRR Automatic was confirmed on one PS5/LG C1 setup. Leave “Apply to unsupported games” off. Other displays/loaders still need testing.
