@@ -9,14 +9,14 @@ body:
           required: true
   - type: input
     attributes:
-      label: Integration commit, OS and tool versions
-      description: Include compiler/LLD, CMake and Python versions.
+      label: Port version, build OS and tool versions
+      description: Include Linux distribution, whether WSL2 is used, and compiler/LLD, CMake and Python versions.
     validations:
       required: true
   - type: input
     attributes:
       label: Selected revision
-      description: v77, v80 or optional dual build; only supported own US dumps.
+      description: US 1.0, US 1.1 / Rev A, or both. Do not attach the ROM.
     validations:
       required: true
   - type: textarea
