@@ -16,7 +16,7 @@ body:
   - type: input
     attributes:
       label: Selected revision
-      description: US 1.0, US 1.1 / Rev A, or both. Do not attach the ROM.
+      description: Both US ROMs are used by the normal build. Note any custom single-revision build; do not attach ROMs.
     validations:
       required: true
   - type: textarea

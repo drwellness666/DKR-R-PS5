@@ -1,5 +1,5 @@
 name: Console bug
-description: Report an observable problem with a locally built native PS5 title.
+description: Report a problem with the PS5 beta.
 body:
   - type: checkboxes
     attributes:
@@ -9,20 +9,20 @@ body:
           required: true
   - type: input
     attributes:
-      label: Integration commit and upstream version
-      description: Exact integration Git commit; upstream version is currently 1.0.6.
+      label: Port version
+      description: The beta version from the download or the build ID in Graphics.
     validations:
       required: true
   - type: input
     attributes:
-      label: ROM revision and canonical SHA-1
-      description: US 1.0 / v77 or US 1.1 / Rev A / v80; hash only, no file.
+      label: Active game revision
+      description: US 1.0 or US 1.1 / Rev A, shown under Touchpad → Play. Do not attach the ROM.
     validations:
       required: true
   - type: input
     attributes:
-      label: Firmware and loader environment
-      description: Firmware, loader, kstuff and ShadowMount versions when known. For save issues, say whether this followed a console reboot and whether the local save service was running.
+      label: PS5 firmware and homebrew setup
+      description: Firmware, loader, kstuff and ShadowMount versions when known. For save issues, state whether this followed a full console reboot and which port build was used.
     validations:
       required: true
   - type: textarea
