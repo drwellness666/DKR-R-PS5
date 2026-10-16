@@ -54,6 +54,13 @@ hashing uses John Törnblom's public streaming SHA-1 implementation from
 
 ## Fonts and artwork
 
+`tools/vadpcm_decode.py` and the separate native `installer/vadpcm.c` adapt Dietrich Epp's VADPCM decoder
+(Copyright 2022) under MPL-2.0. Its notice and the full licence in
+`licenses/VADPCM-MPL-2.0.txt` are retained. The decoders run locally on owned ROM input. The native installer generates
+private item PCM on the console; ROMs and generated sounds are excluded from
+shared installer packages.
+Source: [VADPCM decode.c](https://github.com/depp/vadpcm/blob/main/codec/decode.c).
+
 The PS5 UI uses unmodified Microsoft Selawik Regular/Semibold under SIL OFL 1.1.
 The licence is `licenses/DKR-R-Selawik-OFL.txt`. Racing Banana and Jumpman are not
 linked by this PS5 target. Upstream UI assets retain their separate terms.
@@ -70,5 +77,8 @@ Patches are stored separately and applied to checked source work trees. The
 N64ModernRuntime and RT64 bundles omit upstream contributor-guidance documents;
 build source and original licence/copyright files remain unchanged. Recorded
 archive hashes describe these bundles. All other retained notices remain in
-their source components. This source package includes no ROM, generated game
-payload, playable binary, save or third-party texture pack.
+their source components. The source archive excludes ROMs, generated CPU source, game binaries, saves
+and third-party texture packs. Separate universal ELF release previews contain
+compiled program code and upstream interface/title artwork; original controller
+PCM is generated from user ROMs on the console. Matching source, notices and
+pinned build recipes accompany those previews.

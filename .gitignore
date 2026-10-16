@@ -19,3 +19,5 @@ __pycache__/
 *.sprx
 *.a
 *.o
+*.pcm
+*.wav

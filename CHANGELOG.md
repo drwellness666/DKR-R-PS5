@@ -1,26 +1,29 @@
 # Changelog
 
-## ps5-beta.2.1
+## Beta 3 — universal installation and native PS5 extras
 
-- Rewrite all project guides around the current build, install and runtime behavior.
-- Explain the console-side save service and its unresolved cold-boot startup dependency.
-- Clarify Windows/WSL2 requirements and keep untested WSL2 support explicit.
-- Document the single-ELF, on-console ROM-import target without advertising it as implemented.
-- Correct outdated display, vibration, title-art and acceptance statements. Native gameplay code is unchanged.
+- One ROM-free installer ELF: import both owned US ROMs from USB on PS5.
+- One update ELF: retain ROMs, settings, progress, Paks and texture packs; no previous PC build needed.
+- Verified staging, release-version checks, retained recovery copies and interrupted-update recovery.
+- Direct native saves; remove the old preview's separate save-metadata helper.
+- Controls → PS5: optional balloon light colors, gyro steering, adaptive L2 item feedback and controller sounds for all five balloon types.
+- Generate controller audio locally from the owner's ROMs; shared ELFs exclude those samples.
+- Match display as the default Modern rendering target, following native 60/120-Hz output.
+- English main README with German translation, shorter player guides and a clear PS5/upstream feature comparison.
 
-## ps5-beta.2
+The new install/save/controller paths are experimental. Native builds and 53
+host check commands pass; their full console verification remains open.
 
-- Build US 1.0 and US 1.1 individually or together; choose the next version on Play.
-- Original English, French and German game-language choices.
-- Shared controller, graphics/audio, UI and texture-pack settings; separate revision progress and Controller Paks.
-- Correct menu scaling at 4K and experimental 120-Hz output with VRR.
-- Classic controls with face-button gas tapping; optional held-balloon DualSense light colors and return to system lighting.
-- Aligned version cards, readable save names, original title icon and matching home-menu/launch artwork.
-- Local browser build assistant: choose owned ROMs, check prerequisites, build and install on the PS5 over the LAN.
-- Bounded game diagnostics, frame-time capture, source checks and guarded local updates.
+## Beta 2.1
 
-Brief water flicker in Tracks previews and occasional microstutters remain known issues.
-See [known issues](docs/KNOWN_ISSUES.md), [validation scope](docs/VALIDATION.md)
-and the [roadmap](docs/ROADMAP.md).
+Shorter documentation, Windows/WSL2 instructions and clarification of the old
+save-support startup dependency. Gameplay code unchanged from Beta 2.
 
-This release contains source only. Each user builds privately with their own legally usable dump.
+## Beta 2
+
+Dual-US selection, shared settings/textures with separate progress, original
+EN/FR/DE game text, classic controls, balloon lights, 4K menu scaling, experimental
+120-Hz/VRR output, PS5 title artwork and local diagnostics.
+
+Known issues remain: brief Tracks-preview water flicker and occasional
+microstutters. [Details](docs/KNOWN_ISSUES.md).

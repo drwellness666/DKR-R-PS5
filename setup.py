@@ -6,30 +6,43 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 ROOT=pathlib.Path(__file__).resolve().parent
 sys.path.insert(0,str(ROOT/'tools'))
 from check_rom import check as check_rom
+from host_requirements import inspect as inspect_host
+from assistant_builds import History, completed_entry, inspect as inspect_build, source_identity
+from build_native_game_deployer import ROM_HASHES
 SIZE=12*1024*1024
-TOOLS=('bash','make','git','curl','wget','tar','unzip','patch','pkg-config','clang','clang++','llvm-config','glslangValidator','flock','cmake','ld.lld','spirv-as','llvm-ar','llvm-ranlib','g++','bison','flex')
 class Assistant:
-    def __init__(self,root=ROOT,run=None,validate=check_rom):
+    def __init__(self,root=ROOT,run=None,validate=check_rom,history=None):
         self.root=pathlib.Path(root);self.work=self.root/'work/assistant';self.validate=validate
         self.game=self.work/'game';self.token=secrets.token_urlsafe(32);self.lock=threading.RLock();self.runner=run or self.run
-        self.state={'busy':False,'stage':'Ready','error':'','roms':{},'log':[],'built':False,'installed':False}
+        self.state={'busy':False,'stage':'Ready','error':'','roms':{},'log':[],'built':False,'installed':False,'previous_builds':[]}
+        self.inputs={};self.completed=None;self.previous={}
+        history_path=(pathlib.Path.home()/'.local/state/dkrr-ps5/assistant.json' if self.root==ROOT else self.work/'private/history.json')
+        self.history=History(history or history_path)
+        self.recover()
+    def recover(self):
+        try:
+            rows=self.history.read();source=source_identity(self.root)
+        except (OSError,ValueError,TypeError) as e:
+            self.note('Saved build history not reused: '+str(e));return
+        for row in rows:
+            try:verified=inspect_build(row)
+            except (OSError,ValueError,KeyError,TypeError):
+                self.note('A previous build is incomplete or changed; it remains preserved and is not reused.');continue
+            key=row['receipt_sha256']
+            if key in self.previous:continue
+            self.previous[key]=verified
+            self.state['previous_builds'].append({'id':key,'label':verified['spec']['build_id']+' · '+verified['game'].name})
+            if self.completed is None and row['source_sha256']==source:
+                self.completed=row;self.game=verified['game'];self.inputs=verified['roms']
+                self.state.update(built=True,roms={r:{'revision':'US 1.0' if r=='77' else 'US 1.1 / Rev A','sha1':ROM_HASHES[int(r)]} for r in self.inputs},stage='Verified completed build restored — ready to install')
+        # Recovered state does not claim that a console installation succeeded.
     def note(self,line):
         with self.lock:self.state['log']=(self.state['log']+[str(line).rstrip()])[-400:]
     def status(self):
         with self.lock:
-            result=json.loads(json.dumps(self.state));result['helper_available']=(self.root/'bin/dkrr-save-metadata.elf').is_file();return result
+            result=json.loads(json.dumps(self.state));return result
     def preflight(self):
-        missing=[x for x in TOOLS if not shutil.which(x)]
-        if not (shutil.which('magick') or shutil.which('convert')):missing.append('ImageMagick')
-        if platform.system()!='Linux' or platform.machine() not in ('x86_64','amd64'):missing.append('Linux x86-64 (native or WSL2)')
-        if sys.version_info<(3,12):missing.append('Python 3.12 or newer')
-        packages=''
-        if pathlib.Path('/etc/arch-release').exists():packages='sudo pacman -S --needed base-devel git python cmake clang llvm lld curl wget unzip patch pkgconf pcre2 glslang imagemagick spirv-tools spirv-headers bison flex'
-        elif pathlib.Path('/etc/debian_version').exists():packages='sudo apt install build-essential git python3 python3-venv cmake clang llvm-dev lld curl wget unzip patch pkg-config libpcre2-dev glslang-tools imagemagick spirv-tools spirv-headers bison flex'
-        pcre=subprocess.run(['pkg-config','--exists','libpcre2-8'],capture_output=True).returncode==0 if shutil.which('pkg-config') else False
-        if not pcre:missing.append('PCRE2 development files')
-        free=shutil.disk_usage(self.root).free
-        return {'missing':missing,'package_command':packages,'free_gib':round(free/2**30,1),'ok':not missing,'note':'First build downloads pinned public sources and needs several GB. Original ROM files stay unchanged.'}
+        return inspect_host(self.root)
     def accept(self,data):
         if len(data)!=SIZE:raise ValueError('Choose a clean 12 MiB US DKR dump.')
         with self.lock:
@@ -46,18 +59,17 @@ class Assistant:
                 if dest.exists() and dest.read_bytes()!=data:raise ValueError('A different byte-order copy of this revision is already selected. Restart with the same input or use the existing selection.')
                 if dest.exists():p.unlink()
                 else:p.rename(dest)
-                self.state['roms'][rev]={'revision':result['revision'],'sha1':result['canonical_sha1']};self.state['built']=False
+                self.inputs[rev]=dest
+                self.state['roms'][rev]={'revision':result['revision'],'sha1':result['canonical_sha1']};self.state['built']=False;self.completed=None
                 return result
             finally:
                 if p.exists():p.unlink()
     def environment(self,jobs):
         env={k:v for k,v in os.environ.items() if not k.startswith('DKR_')}
         env.update(DKR_PS5_WORK=str(self.work/'sdl'),DKR_SDL_WORK=str(self.work/'sdl'),DKR_GPU_WORK=str(self.work/'gpu'),DKR_RT64_WORK=str(self.work/'rt64'),DKR_GAME_WORK=str(self.game),DKR_PS5_JOBS=str(jobs),DKR_GPU_JOBS=str(jobs),DKR_PS5_HIGH_REFRESH_BUILD='1',DKR_PS5_LINE_TABLES='1')
-        revs=sorted(self.state['roms'])
-        if not revs:raise ValueError('Select at least one supported ROM first.')
-        if len(revs)==2:
-            env.update(DKR_ROM_V77=str(self.work/'private/inputs/owned-us77.rom'),DKR_ROM_V80=str(self.work/'private/inputs/owned-us80.rom'))
-        else:env['DKR_ROM']=str(self.work/('private/inputs/owned-us'+revs[0]+'.rom'))
+        if set(self.state['roms']) != {'77','80'}:
+            raise ValueError('Choose both owned US ROMs: 1.0 and 1.1 / Rev A.')
+        env.update(DKR_ROM_V77=str(self.inputs.get('77',self.work/'private/inputs/owned-us77.rom')),DKR_ROM_V80=str(self.inputs.get('80',self.work/'private/inputs/owned-us80.rom')))
         return env
     def run(self,argv,env):
         self.note('$ '+' '.join(pathlib.Path(str(x)).name if str(x).startswith(str(self.root)) else str(x) for x in argv))
@@ -75,27 +87,46 @@ class Assistant:
         # attempts separate and preserve previous outputs without overwriting.
         with self.lock:self.state['built']=False
         self.game=self.work/('game-'+time.strftime('%Y%m%d-%H%M%S')+'-'+secrets.token_hex(3))
+        source_before=source_identity(self.root)
         env=self.environment(jobs);game=self.game
         sdk=self.work/'sdl/sdk/ps5-payload-sdk'
-        steps=[('Build SDL / SDK',['bash','build.sh']),('Build graphics driver',['bash','build_gpu.sh']),('Build RT64',['bash','build_rt64.sh']),('Build DKR-R',['bash','build_integrated.sh' if len(self.state['roms'])==2 else 'build_game.sh']),('Record build',[sys.executable,'tools/record_native_build.py',str(game)]),('Create game installer',[sys.executable,'tools/build_native_game_installer.py',str(sdk),str(game)]),('Create ROM installer',[sys.executable,'tools/build_owned_rom_installer.py',str(sdk),str(game)]),('Create save helper',['bash','tools/build_save_metadata.sh',str(sdk)])]
+        steps=[('Build SDL / SDK',['bash','build.sh']),('Build graphics driver',['bash','build_gpu.sh']),('Build RT64',['bash','build_rt64.sh']),('Build DKR-R',['bash','build_integrated.sh']),('Record build',[sys.executable,'tools/record_native_build.py',str(game)]),('Create game installer',[sys.executable,'tools/build_native_game_installer.py',str(sdk),str(game),'--with-owned-roms'])]
         for label,argv in steps:
             with self.lock:self.state['stage']=label
             self.runner(argv,env)
-        required=[game/'private/dkrr-install-game-1.0.6-preview.elf',game/'private/dkrr-install-owned-rom.elf',self.root/'bin/dkrr-save-metadata.elf',game/'private/CANDIDATE.json']
+        required=[game/'private/dkrr-install.elf',game/'private/CANDIDATE.json']
         if not all(p.is_file() for p in required):raise RuntimeError('Build returned without all required outputs; installation stays disabled.')
-        with self.lock:self.state.update(built=True,stage='Build complete — ready to install',error='')
-    def install(self,host,closed):
+        entry=completed_entry(self.root,game)
+        if entry['source_sha256']!=source_before:raise RuntimeError('Source changed during compilation; outputs preserved but not enabled for installation.')
+        verified=inspect_build(entry)
+        self.history.remember(entry);self.completed=entry;self.previous[entry['receipt_sha256']]=verified
+        with self.lock:
+            self.state['previous_builds']=[{'id':key,'label':v['spec']['build_id']+' · '+v['game'].name} for key,v in self.previous.items()]
+            self.state.update(built=True,stage='Build complete — ready to install',error='')
+    def install(self,host,closed,previous_id=''):
         address=ipaddress.ip_address(host)
         if address.version!=4 or not address.is_private or address.is_loopback or address.is_unspecified or address.is_multicast:raise ValueError('Enter your PS5 private LAN IPv4 address.')
         if closed is not True:raise ValueError('Confirm DKR-R is completely closed before installing.')
-        if not self.state['built']:raise ValueError('Complete this session\'s build before installing. Existing differing installations require the documented update route.')
-        game=self.game/'private';env=self.environment(4)
-        for name,marker in (('dkrr-install-game-1.0.6-preview.elf','NATIVE INSTALL PASS.'),('dkrr-install-owned-rom.elf','OWN ROM INSTALL PASS.')):
-            with self.lock:self.state['stage']='Install '+('game' if name.startswith('dkrr-install-game') else 'owned ROM')
-            output=self.runner([sys.executable,'tools/send_elf.py',str(address),str(game/name)],env)
-            if marker not in output:raise RuntimeError('No authoritative installer success marker. Stop and inspect the console; do not retry blindly.')
-        self.runner([sys.executable,'tools/send_elf.py',str(address),str(self.root/'bin/dkrr-save-metadata.elf'),'--no-wait'],env)
-        with self.lock:self.state.update(installed=True,stage='Files installed. Scan /data/homebrew with ShadowMountPlus and launch DKR-R from its PS5 icon. Console save service sent for this session. The installed game itself needs no running PC; see docs/SAVES.md for the current console-reboot limitation.')
+        if not self.state['built'] or self.completed is None:raise ValueError('Build DKR-R or reopen a verified completed build before installing.')
+        # Recheck actual bytes just before deployment; a prior receipt or a UI
+        # boolean cannot authorize a changed native executable or installer.
+        current=inspect_build(self.completed)
+        env=self.environment(4);payload=self.game/'private/dkrr-install.elf';marker='DKR-R INSTALL PASS.'
+        if previous_id:
+            if previous_id not in self.previous:raise ValueError('Choose a verified previous local build.')
+            previous=inspect_build(self.previous[previous_id]['entry'])
+            env.update(DKR_GPU_WORK=str(current['game'].parent/'gpu'))
+            output=self.game/'private'/('update-'+secrets.token_hex(8))/'dkrr-update.elf'
+            with self.lock:self.state['stage']='Prepare one guarded app and asset update'
+            self.runner([sys.executable,'tools/build_native_game_deployer.py',str(current['game'].parent/'sdl/sdk/ps5-payload-sdk'),
+                         str(previous['game']/'private/native/PPSA94678'),str(current['game']),str(output),
+                         '--expected-previous-manifest-sha256',previous['spec']['app_manifest_sha256']],env)
+            if not output.is_file() or output.is_symlink():raise RuntimeError('Update builder returned without its private ELF; nothing sent.')
+            payload=output;marker='DKR-R UPDATE PASS.'
+        with self.lock:self.state.update(installed=False,stage='Update DKR-R' if previous_id else 'Install DKR-R and both ROMs')
+        output=self.runner([sys.executable,'tools/send_elf.py',str(address),str(payload)],env)
+        if marker not in output:raise RuntimeError('No authoritative installer success marker. Inspect the console log before trying again.')
+        with self.lock:self.state.update(installed=True,stage='Files verified. Scan /data/homebrew with ShadowMountPlus if needed and launch the PS5 icon. No PC or resident save service is required by this candidate.')
     def start(self,operation,args):
         with self.lock:
             if self.state['busy']:raise ValueError('An operation is already running.')
@@ -103,12 +134,7 @@ class Assistant:
         def task():
             try:
                 if operation=='build':self.build(int(args.get('jobs',4)))
-                elif operation=='install':self.install(args.get('host',''),args.get('closed'))
-                elif operation=='helper':
-                    a=ipaddress.ip_address(args.get('host',''))
-                    if a.version!=4 or not a.is_private or a.is_loopback or a.is_unspecified or a.is_multicast:raise ValueError('Enter a private LAN IPv4 address.')
-                    self.runner([sys.executable,'tools/send_elf.py',str(a),str(self.root/'bin/dkrr-save-metadata.elf'),'--no-wait'],os.environ.copy())
-                    self.note('Save helper sent; sending alone does not confirm execution.')
+                elif operation=='install':self.install(args.get('host',''),args.get('closed'),args.get('previous_build',''))
                 else:raise ValueError('Unknown operation.')
             except Exception as e:
                 with self.lock:self.state.update(error=str(e),stage='Stopped')
@@ -139,8 +165,10 @@ def make_server(app,port=0):
                     data=self.rfile.read(size)
                     self.respond(200,app.accept(data));return
                 if not 0<size<=4096:raise ValueError('Invalid request size.')
-                args=json.loads(self.rfile.read(size));operation=urllib.parse.urlsplit(self.path).path.lstrip('/')
-                if operation not in ('build','install','helper'):raise ValueError('Unknown action.')
+                args=json.loads(self.rfile.read(size))
+                if not isinstance(args,dict):raise ValueError('Expected an action object.')
+                operation=urllib.parse.urlsplit(self.path).path.lstrip('/')
+                if operation not in ('build','install'):raise ValueError('Unknown action.')
                 app.start(operation,args);self.respond(202,{'started':operation})
             except (ValueError,OSError) as e:self.respond(400,{'error':str(e)})
     return ThreadingHTTPServer(('127.0.0.1',port),Handler)

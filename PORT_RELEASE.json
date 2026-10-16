@@ -1,6 +1,8 @@
 {
-  "tag": "ps5-beta.2.1",
+  "tag": "ps5-beta.3",
   "upstream_version": "1.0.6",
-  "source_only": true,
-  "qualification": "Native gameplay accepted in sessions with console-side save support active. Cold-boot startup integration and standalone console installer remain open; see docs/SAVES.md and docs/INSTALLER.md."
+  "source_only": false,
+  "qualification": "Experimental preview: 53 host checks and native builds pass; universal installation/update, fresh-boot native saves and new controller effects await complete PS5 verification.",
+  "development_candidate": true,
+  "installer_sequence": 3
 }

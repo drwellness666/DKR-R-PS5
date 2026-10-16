@@ -46,7 +46,7 @@ done
 cmake_bin=${CMAKE_BIN:-cmake}
 line_tables=${DKR_PS5_LINE_TABLES:-0}
 [[ $line_tables == 0 || $line_tables == 1 ]] || { echo 'DKR_PS5_LINE_TABLES must be 0 or 1' >&2; exit 2; }
-release_flags='-O3 -DNDEBUG'
+release_flags="-O3 -DNDEBUG \"-ffile-prefix-map=$root=/src/dkrr-ps5\""
 [[ $line_tables != 1 ]] || release_flags+=' -gline-tables-only'
 source="$DKR_GAME_WORK/source"
 sdk="$DKR_GPU_WORK/PS5_Vulkan/.deps/native/ps5-payload-sdk"

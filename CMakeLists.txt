@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.24)
 project(DKRPS5PlatformProbe LANGUAGES C CXX)
+
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+  add_compile_options("-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=/src/dkrr-ps5")
+endif()
 if(NOT PS5)
   message(FATAL_ERROR "Use the public PS5 payload SDK toolchain; this is a native PS5 build.")
 endif()
