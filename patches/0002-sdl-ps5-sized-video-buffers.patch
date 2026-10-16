@@ -1,26 +1,163 @@
 --- a/src/joystick/ps5/SDL_ps5joystick.c
 +++ b/src/joystick/ps5/SDL_ps5joystick.c
-@@ -481,7 +481,19 @@
+@@ -50,6 +50,8 @@
+     SDL_JoystickGUID global_id;
+     SDL_JoystickID instance_id;
+     PS5_PadData pad;
++    SDL_bool sensors_enabled;
++    Uint64 sensor_timestamp;
+ } PS5_PadContext;
+ 
+ static PS5_PadContext pad_ctx[PS5_MAX_USERS];
+@@ -145,6 +147,12 @@
+     }
+ 
+     return 0;
++}
++
++/* App-private mapping, tied to the open joystick rather than login-list order. */
++int dkrr_ps5_pad_user_id(void *joystick) {
++    PS5_PadContext *ctx = PS5_JoystickGetPadContext((SDL_Joystick *)joystick);
++    return ctx && ctx->handle >= 0 && ctx->pad.connected ? ctx->user_id : -1;
+ }
+ 
+ static const char *PS5_JoystickGetDeviceName(int device_index)
+@@ -229,6 +237,31 @@
+         return;
+     }
+ 
++    if (!pad.connected) {
++        for (int axis = 0; axis < 6; ++axis)
++            SDL_PrivateJoystickAxis(joystick, axis, axis >= 4 ? -32768 : 0);
++        for (int button = 0; button < SDL_arraysize(btn_map); ++button)
++            SDL_PrivateJoystickButton(joystick, button, SDL_RELEASED);
++        SDL_PrivateJoystickHat(joystick, 0, 0);
++        SDL_zero(ctx->pad);
++        return;
++    }
++    // Native Pad angular velocity is already radians/second. Keep the device
++    // timestamp so faster presentation never integrates one reading twice.
++    if (ctx->sensors_enabled && pad.timestamp && pad.timestamp != ctx->sensor_timestamp) {
++        float gyro[3] = {pad.vel.x, pad.vel.y, pad.vel.z};
++        float accel[3] = {pad.acell.x * SDL_STANDARD_GRAVITY,
++                          pad.acell.y * SDL_STANDARD_GRAVITY,
++                          pad.acell.z * SDL_STANDARD_GRAVITY};
++        SDL_bool valid = SDL_TRUE;
++        for (int i = 0; i < 3; ++i)
++            if (!__builtin_isfinite(gyro[i]) || !__builtin_isfinite(accel[i])) valid = SDL_FALSE;
++        if (valid) {
++            SDL_PrivateJoystickSensor(joystick, SDL_SENSOR_GYRO, pad.timestamp, gyro, 3);
++            SDL_PrivateJoystickSensor(joystick, SDL_SENSOR_ACCEL, pad.timestamp, accel, 3);
++            ctx->sensor_timestamp = pad.timestamp;
++        }
++    }
+     // Axes
+     if (ctx->pad.leftStick.x != pad.leftStick.x) {
+         SDL_PrivateJoystickAxis(joystick, PS5_PAD_AXIS_LX,
+@@ -259,7 +292,7 @@
+     btn_change = ctx->pad.buttons ^ pad.buttons;
+     if (btn_change) {
+         for (int i = 0; i < SDL_arraysize(btn_map); i++) {
+-            if (btn_map[i] == -1) {
++            if (btn_map[i] == (unsigned int)-1) {
+                 continue;
+             }
+             if (btn_change & btn_map[i]) {
+@@ -369,6 +402,12 @@
+     joystick->naxes = 6;
+     joystick->nhats = 1;
+     joystick->instance_id = ctx->instance_id;
++    ctx->sensors_enabled = SDL_FALSE;
++    ctx->sensor_timestamp = 0;
++    if (scePadSetMotionSensorState) {
++        SDL_PrivateJoystickAddSensor(joystick, SDL_SENSOR_GYRO, 250.0f);
++        SDL_PrivateJoystickAddSensor(joystick, SDL_SENSOR_ACCEL, 250.0f);
++    }
+ 
+     return 0;
+ }
+@@ -382,6 +421,14 @@
+         return;
+     }
+ 
++    if (ctx->sensors_enabled && scePadSetMotionSensorState)
++        scePadSetMotionSensorState(ctx->handle, 0);
++    if (scePadSetTriggerEffect) {
++        struct { Uint8 mask, reserved[7]; Uint8 commands[112]; } off = {0};
++        off.mask = 1;
++        scePadSetTriggerEffect(ctx->handle, &off);
++    }
++    ctx->sensors_enabled = SDL_FALSE;
+     err = scePadClose(ctx->handle);
+     if (err != 0) {
+         SDL_SetError("scePadClose: 0x%08x", err);
+@@ -478,16 +525,64 @@
+     return SDL_Unsupported();
+ }
+ 
++typedef struct PS5_ItemEffect {
++    Uint32 magic;
++    Uint8 mode, strength, reserved[2];
++} PS5_ItemEffect;
++typedef struct PS5_TriggerParameters {
++    Uint8 mask, reserved[7];
++    struct { Uint32 mode; Uint8 reserved[4], data[48]; } command[2];
++} PS5_TriggerParameters;
++_Static_assert(sizeof(PS5_ItemEffect) == 8, "item effect protocol");
++_Static_assert(sizeof(PS5_TriggerParameters) == 120, "native trigger ABI size");
++_Static_assert(offsetof(PS5_PadData,vel) == 28 && offsetof(PS5_PadData,timestamp) == 80,
++               "native motion ABI fields");
++
  static int
  PS5_JoystickSendEffect(SDL_Joystick *joystick, const void *data, int size)
  {
 -    return SDL_Unsupported();
-+    /* Private, exact command; never interpret arbitrary data as a Pad packet. */
 +    static const char reset[] = "DKRR-RESET-LIGHTBAR-1";
-+    PS5_PadContext *ctx;
++    PS5_PadContext *ctx = PS5_JoystickGetPadContext(joystick);
 +    int err;
-+    if (!data || size != (int)sizeof(reset) || SDL_memcmp(data, reset, sizeof(reset)) != 0)
++    if (!ctx) return SDL_SetError("PS5_JoystickSendEffect: instance not connected");
++    if (data && size == (int)sizeof(reset) && !SDL_memcmp(data, reset, sizeof(reset))) {
++        err = scePadResetLightBar(ctx->handle);
++        return err ? SDL_SetError("scePadResetLightBar: 0x%08x", err) : 0;
++    }
++    if (!data || size != (int)sizeof(PS5_ItemEffect) || !scePadSetTriggerEffect)
 +        return SDL_Unsupported();
-+    ctx = PS5_JoystickGetPadContext(joystick);
-+    if (!ctx)
-+        return SDL_SetError("PS5_JoystickSendEffect: instance not connected");
-+    err = scePadResetLightBar(ctx->handle);
-+    if (err != 0)
-+        return SDL_SetError("scePadResetLightBar: 0x%08x", err);
-+    return 0;
++    PS5_ItemEffect effect;
++    SDL_memcpy(&effect, data, sizeof(effect));
++    if (effect.magic != 0x44545247 || effect.mode > 2 || effect.strength > 5 ||
++        effect.reserved[0] || effect.reserved[1]) return SDL_Unsupported();
++    PS5_TriggerParameters native;
++    SDL_zero(native);
++    native.mask = 1; /* L2 only. Do not change R2's owner or behavior. */
++    if (effect.mode == 1 && effect.strength) {
++        native.command[0].mode = 2; /* weapon resistance */
++        native.command[0].data[0] = 3;
++        native.command[0].data[1] = 6;
++        native.command[0].data[2] = effect.strength;
++    } else if (effect.mode == 2 && effect.strength) {
++        native.command[0].mode = 3; /* brief motor-arm vibration */
++        native.command[0].data[0] = 2;
++        native.command[0].data[1] = effect.strength;
++        native.command[0].data[2] = 50;
++    }
++    err = scePadSetTriggerEffect(ctx->handle, &native);
++    return err ? SDL_SetError("scePadSetTriggerEffect: 0x%08x", err) : 0;
  }
  
  static int
+ PS5_JoystickSetSensorsEnabled(SDL_Joystick *joystick, SDL_bool enabled)
+ {
+-    return SDL_Unsupported();
++    PS5_PadContext *ctx = PS5_JoystickGetPadContext(joystick);
++    if (!ctx || !scePadSetMotionSensorState) return SDL_Unsupported();
++    const int result = scePadSetMotionSensorState(ctx->handle, enabled ? 1 : 0);
++    if (result) return SDL_SetError("scePadSetMotionSensorState: 0x%08x", result);
++    ctx->sensors_enabled = enabled;
++    ctx->sensor_timestamp = 0;
++    return 0;
+ }
+ 
+ static const char *PS5_JoystickGetDevicePath(int index)
 --- a/src/joystick/ps5/SDL_ps5joystick.h
 +++ b/src/joystick/ps5/SDL_ps5joystick.h
 @@ -106,6 +106,8 @@
@@ -32,6 +169,14 @@
  int scePadSetVibrationMode(int handle, int mode);
  int scePadSetVibration(int handle, const PS5_PadVibration* vib);
  int scePadClose(int handle);
+@@ -113,3 +115,7 @@
+ int sceUserServiceInitialize(void *);
+ int sceUserServiceGetLoginUserIdList(int userId[4]);
+ int sceUserServiceGetUserName(int userId, char* name, size_t size);
++
++/* Optional native capabilities; absent imports must never be called. */
++int scePadSetMotionSensorState(int handle, int enabled) __attribute__((weak));
++int scePadSetTriggerEffect(int handle, const void *parameters) __attribute__((weak));
 --- a/src/video/ps5/SDL_ps5video.c
 +++ b/src/video/ps5/SDL_ps5video.c
 @@ -24,6 +24,11 @@

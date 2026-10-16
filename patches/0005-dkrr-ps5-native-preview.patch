@@ -526,7 +526,20 @@
  #include "render_power_policy.hpp"
  #include "performance_trace.hpp"
  #include "water_performance.hpp"
-@@ -217,6 +222,11 @@
+@@ -163,10 +168,8 @@
+ int g_requested_refresh_target = 30;
+ int g_effective_refresh_target = 30;
+ int g_detected_display_rate = 60;
+-// High-refresh matching remains isolated until it has passed full visual
+-// validation across menus, hubs, races and every vehicle type. The public
+-// Modern profile currently falls back to the proven native cadence; visible
+-// development checkpoints opt in explicitly.
++// Modern enables presentation interpolation at the selected output/manual
++// target. Accurate retains the original cadence and simulation timing.
+ bool ExperimentalInterpolationEnabled() {
+     // Accurate is the immutable 30 Hz baseline. Modern is the explicit user
+     // opt-in to RT64 presentation interpolation; its selected display/manual
+@@ -217,6 +220,11 @@
  }
  
  int DetectDisplayRate() {
@@ -538,7 +551,7 @@
      auto* window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window());
      if (window == nullptr) {
          return 60;
-@@ -228,6 +238,7 @@
+@@ -228,6 +236,7 @@
          return 60;
      }
      return dkr::runtime::enhancements::clamp_presentation_rate(mode.refresh_rate);
@@ -546,7 +559,16 @@
  }
  
  void ApplyConfig(RT64::Application& application,
-@@ -388,7 +399,7 @@
+@@ -272,7 +281,7 @@
+         // variable-refresh or newly-created Windows surfaces. That previously
+         // let "Match display" saturate the GPU and stall the original 30 Hz
+         // game producer. Resolve both Modern choices against SDL's active
+-        // desktop mode and send RT64 an explicit, bounded manual target.
++        // output mode and send RT64 an explicit, bounded manual target.
+         g_detected_display_rate = DetectDisplayRate();
+         g_requested_refresh_target = config.rr_option ==
+                 ultramodern::renderer::RefreshRate::Manual
+@@ -388,7 +397,7 @@
          return;
      }
      core.window = native_window.info.android.window;
@@ -555,7 +577,7 @@
      core.window = window_handle;
  #elif defined(__APPLE__)
      core.window.window = window_handle.window;
-@@ -429,6 +440,10 @@
+@@ -429,6 +438,10 @@
      application_config.appId = "dkr-port";
      application_config.useConfigurationFile = false;
      application_config.detectDataPath = true;
@@ -566,7 +588,7 @@
  #if defined(__ANDROID__)
      // Desktop path detection can select /data/.dkr-port on Android and throw
      // from RT64's constructor before its setup error handling is reached.
-@@ -465,10 +480,13 @@
+@@ -465,10 +478,13 @@
      }
  #endif
      auto config = ultramodern::renderer::get_graphics_config();
@@ -581,7 +603,7 @@
  #endif
      const auto effective_anisotropy =
          static_cast<std::uint32_t>(
-@@ -493,6 +511,9 @@
+@@ -493,6 +509,9 @@
          const auto application_started_at =
              dkr::runtime::startup_performance::Clock::now();
          application_ = std::make_unique<RT64::Application>(core, application_config);
@@ -591,7 +613,7 @@
          ApplyConfig(*application_, config);
          application_->userConfig.developerMode = developer_mode;
          // DKR renders a canonical 320x240 VI image. RT64's generic VI height
-@@ -571,6 +592,14 @@
+@@ -571,6 +590,14 @@
          application_.reset();
          return;
      }
@@ -606,7 +628,7 @@
      // setup/fallback creates a fresh texture cache. Reapply persisted enabled
      // packs on its first presentation, even if the retired renderer had already
      // consumed this library generation. Do not change users' enabled settings.
-@@ -846,6 +875,11 @@
+@@ -846,6 +873,11 @@
              dkr::runtime::graphics_health::first_presentation.store(true);
  #endif
              dkr::runtime::startup_performance::mark("first-successful-presentation");
@@ -661,26 +683,15 @@
      g_capture_action = action;
      g_capture_device = device;
      g_capture_secondary_controller = secondary;
-@@ -371,6 +391,18 @@
+@@ -371,6 +391,7 @@
              }
              PaddockGap(16.0F);
          }
-+        if (kConsoleMenuLayout) {
-+            PaddockGap(16.0F);
-+            ControlsHeading("DualSense light bar", width);
-+            bool lights = platform::controller_lights_enabled();
-+            if (SettingsCheck("##balloon-light", "Match held balloon color", &lights, width)) {
-+                platform::set_controller_lights_enabled(lights);
-+                commit();
-+            }
-+            ControlsNote("Optional dim item colors during local play. Blue: boost; red: missiles; "
-+                         "green: traps; yellow: shield; violet: magnet. No item or paused: your normal system light. "
-+                         "Off restores your normal light. Default off.", width);
-+        }
++
          ControlsNote("Memory Pak stores game data. Rumble Pak enables vibration on supported controllers. "
                       "Both can stay enabled: the virtual Memory Pak takes priority whenever the game asks "
                       "for storage.",
-@@ -427,20 +459,49 @@
+@@ -427,20 +448,49 @@
  
  // ------------------------------------------------------------ bindings
  
@@ -734,7 +745,7 @@
      const float column = std::floor(width / static_cast<float>(columns));
      ImDrawList* draw = ImGui::GetWindowDrawList();
      const PaddockType head = PaddockReading(13.0F, true, 1.45F);
-@@ -527,13 +588,14 @@
+@@ -527,13 +577,14 @@
                              width - 8.0F);
                  ImGui::Unindent(4.0F);
                  PaddockGap(6.0F);
@@ -751,7 +762,7 @@
                      ImGui::BeginGroup();
                      PaddockText(PaddockReading(12.0F, false, 1.45F), PaddockRgb(kSetMuted),
                                  kHeads[static_cast<std::size_t>(device_column + 1)], cell - 8.0F);
-@@ -541,6 +603,7 @@
+@@ -541,6 +592,7 @@
                      binding_button(device_column, cell - 8.0F);
                      ImGui::EndGroup();
                      bottom = std::max(bottom, ImGui::GetItemRectMax().y);
@@ -759,18 +770,74 @@
                      ++slot;
                  }
                  ImGui::SetCursorScreenPos({row_at.x, bottom + 8.0F});
-@@ -713,6 +776,10 @@
+@@ -713,6 +765,10 @@
      const std::size_t player = g_selected_player;
      ControlsScope(false, width);
      ControlsHeading("Motion steering", width);
 +    if (kConsoleMenuLayout && !dkr::runtime::platform::gyro_available(player)) {
-+        ControlsNote("Motion steering is not available in the current native PS5 controller driver.", width);
++        ControlsNote("No native motion sensor is available for the selected controller.", width);
 +        return;
 +    }
      bool gyro = input::gyro_enabled(player);
      if (SettingsCheck("##gyro", "Enable gyro steering", &gyro, width)) {
          input::set_gyro_enabled(gyro, player);
-@@ -907,6 +974,7 @@
+@@ -799,6 +855,55 @@
+         ControlsNote("Recenter and calibrate your controller from the in-game overlay.", width);
+     } else if (!available) {
+         ControlsNote("No SDL gyro sensor was reported by Controller " + std::to_string(player + 1U) + ".", width);
++    }
++}
++
++
++void DrawControlsPs5(float width, bool live, const std::function<void()>& commit) {
++    namespace platform = dkr::runtime::platform;
++    ControlsScope(true, width);
++        if (kConsoleMenuLayout) {
++            PaddockGap(16.0F);
++            ControlsHeading("Adaptive L2 feedback", width);
++            bool feedback = platform::item_feedback_enabled();
++            if (SettingsCheck("##item-feedback", "L2 missile and trap feedback", &feedback, width)) {
++                platform::set_item_feedback_enabled(feedback);
++                commit();
++            }
++            ControlsNote("Optional light resistance while pulling L2 with a missile or trap, "
++                         "then a short impulse when the item is consumed. Off by default.", width);
++            PaddockGap(16.0F);
++            ControlsHeading("DualSense light bar", width);
++            bool lights = platform::controller_lights_enabled();
++            if (SettingsCheck("##balloon-light", "Match held balloon color", &lights, width)) {
++                platform::set_controller_lights_enabled(lights);
++                commit();
++            }
++            ControlsNote("Optional dim item colors during local play. Blue: boost; red: missiles; "
++                         "green: traps; yellow: shield; violet: magnet. No item or paused: your normal system light. "
++                         "Off restores your normal light. Default off.", width);
++        }
++    PaddockGap(20.0F);
++    ControlsHeading("Controller speaker", width);
++    bool speaker=platform::controller_speaker_enabled();
++    if(SettingsCheck("##ps5-speaker", "Original balloon item sounds (experimental)", &speaker, width)) {
++        platform::set_controller_speaker_enabled(speaker);commit();
++    }
++    ControlsNote("Short boost, missile, trap, shield and magnet effects from your ROM. TV sound stays active. Off by default.",width);
++    if(speaker) {
++        int volume=static_cast<int>(std::lround(platform::controller_speaker_volume()*100.0F));
++        if(SettingsRange("##ps5-speaker-volume","Item speaker volume",&volume,0,100,width,
++            [](int v){return SettingsRangeValue{std::to_string(v),"%"};})) {
++            platform::set_controller_speaker_volume(float(volume)/100.0F);commit();
++        }
++        ControlsNote(platform::controller_speaker_status(g_selected_player),width);
++    }
++    PaddockGap(22.0F);
++    if(dkr::runtime::enhancements::modern_options_visible(dkr::runtime::enhancements::presentation_profile())) {
++        DrawControlsMotion(width,live,commit);
++    } else {
++        ControlsHeading("Motion steering",width);
++        ControlsNote("Gyro steering requires Modern presentation. Classic button controls remain unchanged.",width);
+     }
+ }
+ 
+@@ -907,6 +1012,7 @@
                    dkr::runtime::input::action_label(static_cast<Action>(g_capture_action));
          help = g_capture_device == CaptureDevice::Keyboard
              ? "Press a keyboard key. Escape cancels."
@@ -778,7 +845,7 @@
              : "Press a gamepad button or move an axis firmly. Escape cancels.";
      } else if (g_capture_action == kShortcutCaptureAction) {
          heading = ShortcutActionLabel(g_capture_shortcut_action);
-@@ -1033,7 +1101,7 @@
+@@ -1033,7 +1139,7 @@
              ImGui::SetCursorScreenPos({chips_x + (chip_width + 10.0F) * static_cast<float>(player), chips_y});
              const std::string label = "Player " + std::to_string(player + 1U);
              if (DrawSoundChip(label.c_str(), player == g_selected_player, chip_width)) {
@@ -787,6 +854,34 @@
              }
          }
          ImGui::SetCursorScreenPos({at.x, chips_y + chip_height});
+@@ -1041,7 +1147,7 @@
+     }
+     PaddockGap(20.0F);
+     const int picked = SettingsSecondaryNav("controls-sections",
+-                                            {"Device", "Button mapping", "Stick response", "Motion", "Shortcuts"},
++                                            {"Device", "Button mapping", "Stick response", kConsoleMenuLayout ? "PS5" : "Motion", "Shortcuts"},
+                                             g_controls_section, width);
+     if (picked >= 0) g_controls_section = picked;
+     PaddockGap(22.0F);
+@@ -1073,7 +1179,7 @@
+ 
+     const bool modern = dkr::runtime::enhancements::modern_options_visible(
+         dkr::runtime::enhancements::presentation_profile());
+-    if ((g_controls_section == 2 || g_controls_section == 3) && !modern) {
++    if ((g_controls_section == 2 || (g_controls_section == 3 && !kConsoleMenuLayout)) && !modern) {
+         ControlsScope(g_controls_section == 2, width);
+         ControlsHeading(g_controls_section == 2 ? "Stick response" : "Motion steering", width);
+         ControlsNote("These adjustments require Modern presentation. Accurate preserves the original control "
+@@ -1087,7 +1193,8 @@
+     } else if (g_controls_section == 2) {
+         DrawControlsDriving(state, width, commit);
+     } else if (g_controls_section == 3) {
+-        DrawControlsMotion(width, live, commit);
++        if(kConsoleMenuLayout) DrawControlsPs5(width, live, commit);
++        else DrawControlsMotion(width, live, commit);
+     } else {
+         DrawControlsShortcuts(width, commit);
+     }
 --- a/runtime-recomp/src/game/runtime_graphics_ui.inl
 +++ b/runtime-recomp/src/game/runtime_graphics_ui.inl
 @@ -8,6 +8,11 @@
@@ -851,16 +946,21 @@
                                          {"Original (240p)", "Original 2x", "Automatic integer scale"},
                                          fields.column, false,
                                          "Higher resolutions draw more pixels and can increase graphics load.");
-@@ -206,7 +225,7 @@
+@@ -204,9 +223,10 @@
+         if (enh::modern_presentation_enabled()) {
+             int refresh_mode = g_modern_refresh_mode == RefreshRate::Manual ? 1 : 0;
              fields.Begin();
-             if (SettingsDropdown("presentation-rate", "Presentation rate", &refresh_mode,
-                                  {"Match display", "Manual target"}, fields.column, false,
+-            if (SettingsDropdown("presentation-rate", "Presentation rate", &refresh_mode,
+-                                 {"Match display", "Manual target"}, fields.column, false,
 -                                 "Match display follows your monitor's refresh rate.")) {
-+                                 "Match display follows the output refresh rate reported by the renderer.")) {
++            if (SettingsDropdown("presentation-rate", "Render frame-rate target", &refresh_mode,
++                                 {"Match display (default)", "Manual target (advanced)"}, fields.column, false,
++                                 "Match display targets 60 or 120 FPS on PS5, following the active output. "
++                                 "Manual can reduce GPU load. The target is not a measured frame rate; game speed stays unchanged.")) {
                  g_modern_refresh_mode = refresh_mode == 0 ? RefreshRate::Display : RefreshRate::Manual;
                  config.rr_option = g_modern_refresh_mode;
                  changed = true;
-@@ -370,6 +389,10 @@
+@@ -370,6 +390,10 @@
              ImGui::Unindent(36.0F);
          }
  
@@ -893,10 +993,50 @@
  std::array<PlayerBindings, dkr::runtime::input::kPlayerCount> g_bindings{
      kDefaults, kDefaults, kDefaults, kDefaults};
  std::mutex g_binding_mutex;
-@@ -609,6 +610,83 @@
+@@ -124,6 +125,10 @@
+     std::chrono::steady_clock::time_point last_sample{};
+     std::uint64_t last_sensor_timestamp_us = 0U;
+     bool has_last_sample = false;
++#if defined(__PROSPERO__)
++    std::uint64_t last_received_sensor_timestamp_us = 0;
++    std::chrono::steady_clock::time_point last_sensor_change{};
++#endif
+ };
+ std::array<GyroState, dkr::runtime::input::kPlayerCount> g_gyro_states{};
+ constexpr int kGyroCalibrationSampleCount = 90;
+@@ -349,6 +354,26 @@
+         recenter_gyro(player);
+         return std::nullopt;
+     }
++#if defined(__PROSPERO__)
++    {
++        const auto sampled_at = std::chrono::steady_clock::now();
++        std::scoped_lock motion_lock(state.motion_mutex);
++        const bool finite = std::isfinite(sensor[0]) && std::isfinite(sensor[1]) && std::isfinite(sensor[2]);
++        const bool changed = sensor_timestamp_us != state.last_received_sensor_timestamp_us;
++        if (!sensor_timestamp_us || !finite || (!changed &&
++            sampled_at-state.last_sensor_change > std::chrono::milliseconds(250))) {
++            state.angle_radians = state.y_angle_radians = 0.0F;
++            state.has_last_sample = false;
++            return std::nullopt;
++        }
++        if (changed) {
++            state.last_received_sensor_timestamp_us = sensor_timestamp_us;
++            state.last_sensor_change = sampled_at;
++        } else if (state.calibration_remaining.load(std::memory_order_acquire)>0) {
++            return GyroSample{}; // Count distinct physical readings in calibration.
++        }
++    }
++#endif
+     const float raw_x = gyro_axis(player) == GyroAxis::Yaw ? sensor[1] : sensor[2];
+     const float raw_y = sensor[0];
+     const int remaining = state.calibration_remaining.load(
+@@ -607,6 +632,83 @@
+                                         std::size_t target_player) {
+     std::scoped_lock lock(g_binding_mutex);
      g_bindings[PlayerIndex(target_player)] = g_bindings[PlayerIndex(source_player)];
- }
- 
++}
++
 +dkr::runtime::input::ControllerPreset dkr::runtime::input::controller_preset(
 +    std::size_t player) {
 +#if DKR_RUNTIME_HAS_RT64
@@ -972,11 +1112,9 @@
 +    (void)player;
 +    return false;
 +#endif
-+}
-+
- int dkr::runtime::input::keyboard_player() {
-     return g_keyboard_player.load(std::memory_order_acquire);
  }
+ 
+ int dkr::runtime::input::keyboard_player() {
 --- a/runtime-recomp/src/game/runtime_input.hpp
 +++ b/runtime-recomp/src/game/runtime_input.hpp
 @@ -38,6 +38,14 @@
@@ -1006,24 +1144,33 @@
  bool background_input_enabled(std::size_t player);
 --- a/runtime-recomp/src/game/runtime_platform.cpp
 +++ b/runtime-recomp/src/game/runtime_platform.cpp
-@@ -1,5 +1,10 @@
+@@ -1,5 +1,15 @@
  #include "runtime_platform.hpp"
  #include "audio_equalizer.hpp"
 +#if defined(__PROSPERO__)
 +#include "ps5_neutral_audio.h"
 +#include "ps5_controller_lights.hpp"
++#include "ps5_item_feedback.hpp"
++#include "ps5_controller_speaker.hpp"
++#include "ps5_revision_selection.h"
++#include "runtime_audio_controls.hpp"
++extern "C" int dkrr_ps5_pad_user_id(void*);
 +#include "revision_addresses.hpp"
 +#endif
  #include "controller_snapshot.hpp"
  #include "controller_mapping_policy.hpp"
  #include "custom_music.hpp"
-@@ -82,6 +87,14 @@
+@@ -82,6 +92,18 @@
  std::atomic<std::uint32_t> g_ui_tone_duration_ms{0U};
  std::atomic<bool> g_rumble_enabled{true};
  std::atomic<float> g_rumble_strength{1.0F};
 +#if defined(__PROSPERO__)
 +std::atomic<bool> g_controller_lights_enabled{false};
 +dkrr::ps5_lights::Mailbox g_controller_lights;
++std::atomic<bool> g_item_feedback_enabled{false};
++dkrr::ps5_items::Mailbox g_controller_items;
++std::atomic<bool> g_speaker_enabled{false};
++std::atomic<float> g_speaker_volume{0.25F};
 +std::uint64_t ControllerLightTime() {
 +    return static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
 +        std::chrono::steady_clock::now().time_since_epoch()).count());
@@ -1032,22 +1179,28 @@
  std::atomic<dkr::runtime::platform::InputBackend> g_requested_input_backend{
      dkr::runtime::platform::InputBackend::Automatic};
  std::atomic<dkr::runtime::platform::InputBackend> g_active_input_backend{
-@@ -104,6 +117,10 @@
+@@ -104,6 +126,12 @@
      bool rumble = false;
      bool gyro = false;
      bool mapped = false;
 +#if defined(__PROSPERO__)
 +    bool led = false;
 +    dkrr::ps5_lights::Output light;
++    dkrr::ps5_items::Output item_effect;
++    dkrr::ps5_speaker::Speaker speaker;
 +#endif
      std::string mapping_source;
  };
  std::vector<ControllerRecord> g_controller_devices;
-@@ -494,6 +511,15 @@
+@@ -494,6 +522,19 @@
  
  void CloseControllerRecord(ControllerRecord& record) {
      if (record.controller != nullptr) {
 +#if defined(__PROSPERO__)
++        record.speaker = dkrr::ps5_speaker::Speaker{};
++        record.item_effect.update(false,{},0,false,[&](const dkrr::ps5_items::Command& command) {
++            return SDL_GameControllerSendEffect(record.controller,&command,sizeof(command));
++        });
 +        record.light.update(false, {}, [&](dkrr::ps5_lights::Color color) {
 +            if (color.system_default) {
 +                static constexpr char reset[]="DKRR-RESET-LIGHTBAR-1";
@@ -1059,7 +1212,7 @@
          SDL_GameControllerClose(record.controller);
          record.controller = nullptr;
          record.joystick = nullptr;
-@@ -661,6 +687,9 @@
+@@ -661,6 +702,9 @@
  #endif
              record.gyro = SDL_GameControllerHasSensor(
                  record.controller, SDL_SENSOR_GYRO) == SDL_TRUE;
@@ -1069,7 +1222,7 @@
              record.mapping_source = MappingSourceForGuid(guid);
          } else {
              record.joystick = SDL_JoystickOpen(index);
-@@ -1520,6 +1549,19 @@
+@@ -1520,6 +1564,19 @@
  
  #if DKR_RUNTIME_HAS_RT64
  ultramodern::renderer::WindowHandle dkr::runtime::platform::create_window() {
@@ -1089,7 +1242,7 @@
      if (g_window == nullptr) {
  #if defined(DKR_IOS)
          // Desktop fullscreen, as on the Mac. Real fullscreen makes SDL restore
-@@ -2194,6 +2236,17 @@
+@@ -2194,6 +2251,17 @@
              dkr::runtime::custom_music::render(g_custom_music_buffer.data(),
                                                 sample_count / 2U, g_audio_frequency);
          }
@@ -1107,7 +1260,7 @@
          for (std::size_t i = 0; i < sample_count; i += 2) {
              // RDRAM's 32-bit word swap leaves each native stereo pair in R,L
              // order. Restore conventional L,R order before sending it to SDL.
-@@ -2436,9 +2489,35 @@
+@@ -2436,9 +2504,58 @@
      }
      const bool blocked = dkr::runtime::ui::overlay_visible();
      const bool window_focused = g_window != nullptr &&
@@ -1140,10 +1293,33 @@
 +        }
 +    }
 +#endif
++#if defined(__PROSPERO__)
++    if (!sdl3_native) {
++        const bool effects = g_item_feedback_enabled.load(std::memory_order_acquire);
++        const bool speaker = g_speaker_enabled.load(std::memory_order_acquire);
++        const auto now = ControllerLightTime();
++        for (auto& record : g_controller_devices) {
++            if (!record.controller) continue;
++            const auto assigned = std::find(g_controllers.begin(),g_controllers.end(),record.controller);
++            const bool attached = assigned != g_controllers.end() && ControllerRecordAttached(record);
++            const bool enabled = effects && attached;
++            const auto port = static_cast<std::size_t>(assigned-g_controllers.begin());
++            const auto item = g_controller_items.read(port,now,blocked || !window_focused || online_routing);
++            const bool pressed = port<kControllerCount && (g_physical_buttons[port].load(std::memory_order_acquire)&0x2000U);
++            record.speaker.update(speaker && attached,dkrr_ps5_pad_user_id(record.joystick),item,now,pressed,
++                g_speaker_volume.load(std::memory_order_acquire)*g_master_volume.load(std::memory_order_acquire)*dkr::runtime::audio::sound_effects_volume(),dkrr_ps5_active_revision());
++            const bool pulled = SDL_GameControllerGetAxis(record.controller,SDL_CONTROLLER_AXIS_TRIGGERLEFT)>3276;
++            const int result = record.item_effect.update(enabled,item,now,pulled,[&](const dkrr::ps5_items::Command& command) {
++                return SDL_GameControllerSendEffect(record.controller,&command,sizeof(command));
++            });
++            if (result<0) std::fprintf(stderr,"[input][trigger] feedback disabled after native output failure: %s\n",SDL_GetError());
++        }
++    }
++#endif
      const int configured_keyboard_player =
          dkr::runtime::input::keyboard_player();
      const std::size_t online_profile = std::min(
-@@ -2687,6 +2766,37 @@
+@@ -2687,6 +2804,98 @@
  #endif
  }
  
@@ -1165,17 +1341,78 @@
 +
 +void dkr::runtime::platform::publish_controller_lights(const std::uint8_t* rdram) {
 +#if defined(__PROSPERO__)
-+    if (!rdram || !controller_lights_enabled() ||
++    if (!rdram || (!controller_lights_enabled() && !item_feedback_enabled() && !controller_speaker_enabled()) ||
 +        !dkr::runtime::netplay::external_side_effects_allowed()) return;
 +    namespace a = dkr::runtime::revision_addresses;
 +    const dkrr::ps5_lights::Addresses addresses{
 +        a::GameMode,a::IsPaused,a::IsInTracksMenu,a::LevelLoadTimer,
 +        a::NumberOfRacers,a::RacersByPort};
 +    const auto colors = dkrr::ps5_lights::sample({rdram,0x800000U},addresses);
-+    g_controller_lights.publish(colors,ControllerLightTime());
++    const auto now=ControllerLightTime();
++    g_controller_lights.publish(colors,now);
++    g_controller_items.publish(dkrr::ps5_items::sample({rdram,0x800000U},addresses),now);
 +#else
 +    (void)rdram;
 +#endif
++}
++
++bool dkr::runtime::platform::item_feedback_enabled() {
++#if defined(__PROSPERO__)
++    return g_item_feedback_enabled.load(std::memory_order_acquire);
++#else
++    return false;
++#endif
++}
++void dkr::runtime::platform::set_item_feedback_enabled(bool enabled) {
++#if defined(__PROSPERO__)
++    g_item_feedback_enabled.store(enabled,std::memory_order_release);
++#else
++    (void)enabled;
++#endif
++}
++
++bool dkr::runtime::platform::controller_speaker_enabled() {
++#if defined(__PROSPERO__)
++    return g_speaker_enabled.load(std::memory_order_acquire);
++#else
++    return false;
++#endif
++}
++void dkr::runtime::platform::set_controller_speaker_enabled(bool enabled) {
++#if defined(__PROSPERO__)
++    g_speaker_enabled.store(enabled,std::memory_order_release);
++#else
++    (void)enabled;
++#endif
++}
++float dkr::runtime::platform::controller_speaker_volume() {
++#if defined(__PROSPERO__)
++    return g_speaker_volume.load(std::memory_order_acquire);
++#else
++    return 0.25F;
++#endif
++}
++void dkr::runtime::platform::set_controller_speaker_volume(float volume) {
++#if defined(__PROSPERO__)
++    g_speaker_volume.store(std::isfinite(volume)?std::clamp(volume,0.0F,1.0F):0.0F,std::memory_order_release);
++#else
++    (void)volume;
++#endif
++}
++const char* dkr::runtime::platform::controller_speaker_status(std::size_t player) {
++#if defined(__PROSPERO__) && DKR_RUNTIME_HAS_RT64
++    std::scoped_lock lock(g_platform_mutex);
++    if(player<g_controllers.size())for(const auto& r:g_controller_devices)if(r.controller==g_controllers[player]) {
++        const int status=r.speaker.status();
++        if(status==-3)return "Controller speaker worker unavailable. Restart DKR-R to retry.";
++        if(status==-2)return "Original item audio is missing from this installation.";
++        if(status<0)return "Controller speaker unavailable. Toggle off/on to retry; TV sound remains active.";
++        if(status>0)return "Native speaker output accepted. Confirm the audible result on the controller.";
++    }
++#else
++    (void)player;
++#endif
++    return "Experimental: output opens on item use. PS5 controller-speaker volume also applies.";
 +}
 +
  bool dkr::runtime::platform::gyro_available(std::size_t player) {
@@ -1183,10 +1420,17 @@
      std::scoped_lock lock(g_platform_mutex);
 --- a/runtime-recomp/src/game/runtime_platform.hpp
 +++ b/runtime-recomp/src/game/runtime_platform.hpp
-@@ -76,6 +76,9 @@
+@@ -76,6 +76,16 @@
  float rumble_strength();
  void set_rumble_strength(float strength);
  bool gyro_available(std::size_t player = 0U);
++bool controller_speaker_enabled();
++void set_controller_speaker_enabled(bool enabled);
++float controller_speaker_volume();
++void set_controller_speaker_volume(float volume);
++const char* controller_speaker_status(std::size_t player);
++bool item_feedback_enabled();
++void set_item_feedback_enabled(bool enabled);
 +bool controller_lights_enabled();
 +void set_controller_lights_enabled(bool enabled);
 +void publish_controller_lights(const std::uint8_t* rdram);
@@ -1398,23 +1642,17 @@
  #include "save_manager.hpp"
  #include "runtime_save_routing.hpp"
  #include "texture_pack_browser_policy.hpp"
-@@ -479,17 +487,21 @@
+@@ -477,7 +485,7 @@
+ }
+ bool g_online_guide_do_not_show_again = true;
  bool g_online_guide_reopen_requested = false;
- #if defined(DKR_IOS)
+-#if defined(DKR_IOS)
++#if defined(DKR_IOS) || defined(__PROSPERO__)
  RefreshRate g_modern_refresh_mode = RefreshRate::Display;
--#elif defined(__ANDROID__)
-+#elif defined(__ANDROID__) || defined(__PROSPERO__)
+ #elif defined(__ANDROID__)
  // Conservative first-use defaults only. The settings loader restores all
- // existing choices, and explicit presets below disclose the quality tradeoff.
- RefreshRate g_modern_refresh_mode = RefreshRate::Manual;
- #else
- RefreshRate g_modern_refresh_mode = RefreshRate::Display;
- #endif
-+#if defined(__PROSPERO__)
-+int g_modern_refresh_target = 30;
-+#else
+@@ -489,7 +497,7 @@
  int g_modern_refresh_target = 60;
-+#endif
  #if defined(DKR_IOS)
  Resolution g_modern_resolution = Resolution::Original2x;
 -#elif defined(__ANDROID__)
@@ -1422,7 +1660,7 @@
  Resolution g_modern_resolution = Resolution::Original2x;
  #else
  Resolution g_modern_resolution = Resolution::Auto;
-@@ -498,7 +510,7 @@
+@@ -498,7 +506,7 @@
  Antialiasing g_modern_antialiasing = Antialiasing::None;
  #if defined(DKR_IOS)
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
@@ -1431,7 +1669,7 @@
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::Off;
  #else
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
-@@ -551,6 +563,7 @@
+@@ -551,6 +559,7 @@
  std::string g_texture_pack_manage_id;
  std::string g_texture_pack_remove_id;
  std::string g_texture_pack_remove_name;
@@ -1439,7 +1677,7 @@
  // Set when an action in Track Lab (import, arm, play) switched the presentation
  // profile to Modern on the player's behalf. Shown in Track Lab and Graphics,
  // cleared when the player changes the profile there by hand.
-@@ -1206,6 +1219,9 @@
+@@ -1206,6 +1215,9 @@
  }
  
  void LoadLauncherFonts() {
@@ -1449,7 +1687,7 @@
      ++g_font_generation;
      ImGuiIO& io = ImGui::GetIO();
      static constexpr ImWchar kLauncherGlyphRanges[] = {
-@@ -1336,9 +1352,22 @@
+@@ -1336,9 +1348,22 @@
          g_font_fps = g_font_controls != nullptr ? g_font_controls : body_font;
      }
      LoadBrandLogoIntoAtlas();
@@ -1472,7 +1710,7 @@
  }
  
  class ControlFontScope {
-@@ -1533,6 +1562,10 @@
+@@ -1533,6 +1558,10 @@
  #if defined(__ANDROID__)
      // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
      dkr::runtime::mobile_graphics::apply_accurate_budget(config);
@@ -1483,26 +1721,35 @@
  #endif
  }
  
-@@ -1752,6 +1785,9 @@
+@@ -1752,6 +1781,12 @@
          output << "memory_pak=" << (dkr::runtime::pak::enabled() ? 1 : 0) << '\n';
          output << "rumble=" << (dkr::runtime::platform::rumble_enabled() ? 1 : 0) << '\n';
          output << "rumble_strength=" << dkr::runtime::platform::rumble_strength() << '\n';
 +#if defined(__PROSPERO__)
++        output << "ps5_controller_speaker=" << (dkr::runtime::platform::controller_speaker_enabled() ? 1 : 0) << '\n';
++        output << "ps5_controller_speaker_volume=" << dkr::runtime::platform::controller_speaker_volume() << '\n';
++        output << "ps5_item_feedback=" << (dkr::runtime::platform::item_feedback_enabled() ? 1 : 0) << '\n';
 +        output << "ps5_balloon_light=" << (dkr::runtime::platform::controller_lights_enabled() ? 1 : 0) << '\n';
 +#endif
          output << "stick_deadzone=" << dkr::runtime::input::stick_deadzone() << '\n';
          output << "stick_anti_deadzone=" << dkr::runtime::input::stick_anti_deadzone() << '\n';
          output << "stick_sensitivity=" << dkr::runtime::input::stick_sensitivity() << '\n';
-@@ -2424,6 +2460,8 @@
+@@ -2424,6 +2459,14 @@
                  dkr::runtime::pak::set_enabled(number != 0);
              } else if (key == "rumble") {
                  dkr::runtime::platform::set_rumble_enabled(number != 0);
++            } else if (key == "ps5_controller_speaker") {
++                dkr::runtime::platform::set_controller_speaker_enabled(number != 0);
++            } else if (key == "ps5_controller_speaker_volume") {
++                dkr::runtime::platform::set_controller_speaker_volume(std::stof(value));
++            } else if (key == "ps5_item_feedback") {
++                dkr::runtime::platform::set_item_feedback_enabled(number != 0);
 +            } else if (key == "ps5_balloon_light") {
 +                dkr::runtime::platform::set_controller_lights_enabled(number != 0);
              } else if (key == "rumble_strength") {
                  dkr::runtime::platform::set_rumble_strength(std::stof(value));
              } else if (key == "stick_deadzone") {
-@@ -2513,6 +2551,16 @@
+@@ -2513,6 +2556,16 @@
      // still owns an open handle. Migration may call SaveSettings below, so
      // release the read handle before attempting that replacement.
      input.close();
@@ -1519,7 +1766,7 @@
      g_online_automatic_backend = dkr::runtime::netplay::experimental::migrated_automatic_backend(
          has_automatic_backend_setting, g_online_automatic_backend, has_legacy_backend_setting);
      for (std::size_t channel = 0; channel < kSoundChannelCount; ++channel) {
-@@ -4307,6 +4355,11 @@
+@@ -4307,6 +4360,11 @@
  }
  
  void DrawSidebarCurrentStripe() {
@@ -1531,7 +1778,7 @@
      const ImVec2 minimum = ImGui::GetItemRectMin();
      const ImVec2 maximum = ImGui::GetItemRectMax();
      ImDrawList* draw = ImGui::GetWindowDrawList();
-@@ -4322,6 +4375,7 @@
+@@ -4322,6 +4380,7 @@
      draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
                          std::max(rounding - 1.0F, 0.0F));
      draw->PopClipRect();
@@ -1539,7 +1786,7 @@
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -6352,12 +6406,18 @@
+@@ -6352,12 +6411,18 @@
          "HIDE FROM LIST keeps DKR-R's managed copy on disk. Choose Hidden "
          "from the Visibility filter to restore it later.");
      ImGui::Dummy({0.0F, 8.0F});
@@ -1558,7 +1805,7 @@
      ImGui::Dummy({0.0F, 12.0F});
      const float available = std::max(ImGui::GetContentRegionAvail().x, 1.0F);
      const float gap = ImGui::GetStyle().ItemSpacing.x;
-@@ -6375,11 +6435,13 @@
+@@ -6375,11 +6440,13 @@
      }
      if (!compact) ImGui::SameLine();
      ImGui::PushStyleColor(ImGuiCol_Button, {0.45F, 0.09F, 0.10F, 1.0F});
@@ -1572,7 +1819,7 @@
      ImGui::PopStyleColor();
      ImGui::EndPopup();
  }
-@@ -6456,6 +6518,10 @@
+@@ -6456,6 +6523,10 @@
              ImGui::TextWrapped("%s", value.c_str());
          };
          detail_row("TYPE", dkr::runtime::texture_packs::format_name(pack.format));
@@ -1583,7 +1830,7 @@
          detail_row("PRIORITY", std::to_string(pack.priority) +
                     (pack.priority == 1U ? " (highest)" : " (lower number wins)"));
          detail_row("MANAGED SIZE",
-@@ -6519,6 +6585,11 @@
+@@ -6519,6 +6590,11 @@
      if (ImGui::Button("REMOVE PACK...", {action_width, 42.0F})) {
          g_texture_pack_remove_id = pack.id;
          g_texture_pack_remove_name = pack.name;
@@ -1595,7 +1842,7 @@
          request_removal = true;
          ImGui::CloseCurrentPopup();
      }
-@@ -8053,6 +8124,15 @@
+@@ -8053,6 +8129,15 @@
      if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
          return false;
      }
@@ -1611,7 +1858,7 @@
      if (g_capture_action == kShortcutCaptureAction) {
          if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
              event->key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-@@ -8179,6 +8259,12 @@
+@@ -8179,6 +8264,12 @@
              g_overlay_visible.store(false, std::memory_order_release);
          }
          ImGui::PopStyleColor(2);
@@ -1624,7 +1871,7 @@
      } else if (g_overlay_page == kPageGraphics) {
          DrawGraphicsPage(content_width, true);
      } else if (g_overlay_page == kPageSound) {
-@@ -9408,6 +9494,9 @@
+@@ -9408,6 +9499,9 @@
      }
  #endif
      inspector->newFrame(application.framebufferGraphicsWorker.get());
@@ -1634,7 +1881,7 @@
      if (auto* hud_window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window())) {
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
-@@ -9461,7 +9550,8 @@
+@@ -9461,7 +9555,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -1644,7 +1891,7 @@
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9574,6 +9664,11 @@
+@@ -9574,6 +9669,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -1656,7 +1903,7 @@
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9756,6 +9851,18 @@
+@@ -9756,6 +9856,18 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -1704,6 +1951,92 @@
      type.line = px * line_height;
      type.tracking = px * tracking_em;
      return type;
+--- a/runtime-recomp/src/game/save_storage.hpp
++++ b/runtime-recomp/src/game/save_storage.hpp
+@@ -28,6 +28,10 @@
+ #include <unistd.h>
+ #endif
+ 
++#if defined(__PROSPERO__)
++#include "ps5_native_save_policy.hpp"
++#endif
++
+ namespace dkr::runtime::saves::storage {
+ using Bytes = std::vector<std::uint8_t>;
+ using Validator = bool (*)(const std::filesystem::path&, Bytes&);
+@@ -56,7 +60,9 @@
+     protected_canonical_root = resolved;
+     online_protection = enabled;
+ }
+-inline bool writable_path(const std::filesystem::path& path, std::string& error) {
++enum class FileAccess { Inspect, AtomicReplace, Lease, RemoveHistoryEntry };
++inline bool writable_path(const std::filesystem::path& path, std::string& error,
++                          FileAccess access = FileAccess::Inspect) {
+     std::error_code ec;
+     const auto target = storage::absolute(path);
+     const auto canonical_target = std::filesystem::weakly_canonical(target, ec);
+@@ -110,9 +116,22 @@
+         const auto parent = at.parent_path(); if (parent == at) break; at = parent;
+     }
+     if (std::filesystem::exists(target, ec)) {
+-        if (!std::filesystem::is_regular_file(target, ec) ||
+-            std::filesystem::hard_link_count(target, ec) != 1 || ec) {
+-            error = "A save must be an ordinary file with no hard-link aliases."; return false;
++        if (!std::filesystem::is_regular_file(target, ec) || ec) {
++            error = "A save must be an ordinary file."; return false;
++        }
++        const auto links = std::filesystem::hard_link_count(target, ec);
++        bool admitted = !ec && links == 1;
++#if defined(__PROSPERO__)
++        // Native PS5 metadata can omit nlink. Every admitted mutation below
++        // creates a new inode and atomically replaces an entry; it never opens
++        // an existing save for write/truncate. Known aliases remain refused.
++        admitted = admitted || (!ec && links == 0 &&
++            access != FileAccess::Inspect && dkrr::ps5_saves::transaction_path(target));
++#else
++        (void)access;
++#endif
++        if (!admitted) {
++            error = "Save storage metadata does not permit this operation."; return false;
+         }
+     }
+     return !ec;
+@@ -131,7 +150,7 @@
+ inline std::mutex leases_mutex;
+ inline std::map<std::filesystem::path, std::weak_ptr<Lease>> leases;
+ inline std::shared_ptr<Lease> acquire(const std::filesystem::path& path, std::string& error) {
+-    if (!writable_path(path, error)) return {};
++    if (!writable_path(path, error, FileAccess::AtomicReplace)) return {};
+     const auto target = storage::absolute(path);
+     std::scoped_lock lock(leases_mutex);
+     if (leases.size() > 256) {
+@@ -145,7 +164,7 @@
+     std::error_code ec; std::filesystem::create_directories(target.parent_path(), ec);
+     if (ec) { error = "Cannot create save storage: " + ec.message(); return {}; }
+     const auto lock_path = std::filesystem::path(target.native() + std::filesystem::path(".lock").native());
+-    if (!writable_path(lock_path, error)) return {};
++    if (!writable_path(lock_path, error, FileAccess::Lease)) return {};
+     auto lease = std::make_shared<Lease>();
+ #if defined(_WIN32)
+     lease->handle = CreateFileW(lock_path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
+@@ -173,7 +192,7 @@
+ }
+ inline bool durable_replace(const std::filesystem::path& path, std::span<const std::uint8_t> bytes,
+                             Validator validator, std::string& error) {
+-    if (!writable_path(path, error)) return false;
++    if (!writable_path(path, error, FileAccess::AtomicReplace)) return false;
+     const auto temporary = std::filesystem::path(path.native() + std::filesystem::path(
+         ".pending-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()) +
+         "-" + std::to_string(++serial)).native());
+@@ -253,7 +272,7 @@
+         for (std::filesystem::directory_iterator it(history, ec), end; !ec && it != end; it.increment(ec)) {
+             std::string checked;
+             if (it->is_regular_file(ec) && it->path().extension() == ".bin" &&
+-                writable_path(it->path(), checked)) entries.push_back(*it);
++                writable_path(it->path(), checked, FileAccess::RemoveHistoryEntry)) entries.push_back(*it);
+         }
+         if (entries.size() > 8) {
+             std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
 --- a/runtime-recomp/tests/quick_join_transport_tests.cpp
 +++ b/runtime-recomp/tests/quick_join_transport_tests.cpp
 @@ -134,6 +134,12 @@
