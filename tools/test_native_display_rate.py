@@ -12,12 +12,20 @@ if a.game_work is None:
     command=['python3',str(root/'tools/prepare_controller_test_sources.py'),str(a.game_work)]
     for cache in a.cache:command+=['--cache',str(cache)]
     subprocess.run(command,check=True)
-source=(a.game_work/'source/DKR-R/runtime-recomp/src/game/rt64_renderer.cpp').read_text()
+game=a.game_work/'source/DKR-R/runtime-recomp/src/game'
+source=(game/'rt64_renderer.cpp').read_text()
 start=source.index('int DetectDisplayRate() {');end=source.index('\nvoid ApplyConfig(',start)
 with tempfile.TemporaryDirectory(prefix='dkrr-native-display-rate-') as folder:
     folder=pathlib.Path(folder);(folder/'detect_display_rate.inc').write_text(source[start:end]);out=folder/'test'
+    ui=(game/'runtime_ui.cpp').read_text()
+    default_start=ui.index('#if defined(DKR_IOS) || defined(__PROSPERO__)\nRefreshRate g_modern_refresh_mode')
+    default_end=ui.index('#if defined(DKR_IOS)\nResolution g_modern_resolution',default_start)
+    (folder/'native_rate_defaults.inc').write_text(ui[default_start:default_end])
+    block_start=source.index('    if (dkr::runtime::enhancements::modern_presentation_enabled()) {',source.index('void ApplyConfig('))
+    block_end=source.index('    application.userConfig.displayBuffering',block_start)
+    (folder/'apply_native_rate.inc').write_text(source[block_start:block_end])
     subprocess.run(['clang++','-D__PROSPERO__','-std=c++20','-O1','-g','-Wall','-Wextra','-Werror',
                     '-fsanitize=address,undefined','-include','initializer_list','-I',str(root/'src'),
-                    '-I',str(folder),str(root/'tests/native_display_rate.cpp'),'-o',str(out)],check=True)
+                    '-I',str(folder),'-I',str(game),str(root/'tests/native_display_rate.cpp'),'-o',str(out)],check=True)
     subprocess.run([str(out)],env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'),check=True)
 if prepared is not None:prepared.cleanup()

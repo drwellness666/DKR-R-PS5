@@ -15,11 +15,11 @@ output = Path(sys.argv[1])
 if not output.is_absolute() or output.exists():
     raise SystemExit('Use a new absolute export directory')
 output.mkdir(parents=True)
-files = ['.gitattributes','LICENSE','CMakeLists.txt','build.sh','build_gpu.sh','build_rt64.sh','build_game.sh','build_integrated.sh','setup.py','README.md','README.de.md','CHANGELOG.md','PORT_RELEASE.json','GAME_SOURCES.json','RT64_SOURCES.json','VULKAN_SOURCES.json','TITLE_ART_SOURCES.json','CONTRIBUTING.md','THIRD_PARTY.md']
+files = ['.gitattributes','LICENSE','CMakeLists.txt','build.sh','build_gpu.sh','build_rt64.sh','build_game.sh','build_integrated.sh','setup.py','Start-Windows.cmd','Start-Linux.sh','README.md','README.de.md','CHANGELOG.md','PORT_RELEASE.json','GAME_SOURCES.json','RT64_SOURCES.json','VULKAN_SOURCES.json','TITLE_ART_SOURCES.json','CONTRIBUTING.md','THIRD_PARTY.md']
 for name in files:
     shutil.copy2(root / name, output / name)
 shutil.copytree(root / 'docs', output / 'docs')
-for folder in ('src', 'tools', 'patches', 'tests', 'licenses'):
+for folder in ('src', 'tools', 'patches', 'tests', 'licenses', 'installer'):
     shutil.copytree(root / folder, output / folder,
                     ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
 archives = ['N64ModernRuntime.tar.gz', 'N64Recomp.tar.gz', 'libsamplerate.tar.gz',
@@ -36,7 +36,7 @@ shutil.copytree(root / 'homebrew/DKR-R-Game', output / 'homebrew/DKR-R-Game',
                 ignore=shutil.ignore_patterns('background-source.png', 'launch-background-source.png'))
 shutil.copytree(root / '.github/ISSUE_TEMPLATE', output / '.github/ISSUE_TEMPLATE')
 shutil.copy2(root / '.github/pull_request_template.md', output / '.github/pull_request_template.md')
-(output / '.gitignore').write_text('/work/\n/private/\n/native/\n/bin/\n/evidence/\n__pycache__/\n*.pyc\n*.z64\n*.v64\n*.n64\n*.o2r\n*.mpk\n*.eep\n*.sra\n*.fla\n*.elf\n*.bin\n*.prx\n*.sprx\n*.a\n*.o\n')
+(output / '.gitignore').write_text('/work/\n/private/\n/native/\n/bin/\n/evidence/\n__pycache__/\n*.pyc\n*.z64\n*.v64\n*.n64\n*.o2r\n*.mpk\n*.eep\n*.sra\n*.fla\n*.elf\n*.bin\n*.prx\n*.sprx\n*.a\n*.o\n*.pcm\n*.wav\n')
 workflow = output / '.github/workflows/source-check.yml'
 workflow.parent.mkdir(parents=True)
 shutil.copy2(root / '.github/workflows/source-check.yml', workflow)

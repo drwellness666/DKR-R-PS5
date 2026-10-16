@@ -22,7 +22,7 @@ native="$support/tooling/native"
 build="$game/native-link"
 target="$game/private/native/PPSA94678"
 mkdir -p "$build/obj" "$build/gen" "$build/stubs" "$target/sce_sys" "$target/sce_module"
-cc() { PS5_PAYLOAD_SDK="$sdk" sh "$support/tooling/prospero-clang18" -gline-tables-only "$@"; }
+cc() { PS5_PAYLOAD_SDK="$sdk" sh "$support/tooling/prospero-clang18" -gline-tables-only "-ffile-prefix-map=$root=/src/dkrr-ps5" "$@"; }
 build_id=$(python3 "$root/tools/native_build_identity.py" "$root" "$game" "$sdl" "$support" "$build/native-inputs.json" --high-refresh "$high_refresh")
 profile="$game/game-ps5/dkr-ps5-profile.json"
 [[ -f $profile ]] || { echo 'Missing selected-revision CMake profile' >&2; exit 2; }
@@ -60,8 +60,8 @@ cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_pathconf.c" -o "$build/obj/pathconf.o"
 cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_rdram.c" -o "$build/obj/rdram.o"
-cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
-    -c "$root/src/ps5_save_stat.c" -o "$build/obj/save_stat.o"
+cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions \
+    -I "$root/src" -c "$root/src/ps5_controller_speaker.cpp" -o "$build/obj/controller_speaker.o"
 python3 "$root/tools/prepare_emutls.py" "$gpu/PS5_PayloadSDK/libc/emutls.c" "$build/gen/emutls.c"
 cc -std=c11 -O2 -fvisibility=hidden -c "$build/gen/emutls.c" -o "$build/obj/emutls.o"
 for lib in libSceAgc libSceAgcDriver; do
@@ -80,14 +80,14 @@ libs=("${filtered_libs[@]}")
 [[ -f $game/game-ps5/libDKR-R.a && -f $game/game-ps5/rt64/rt64.a ]] || { echo 'Game and renderer libraries missing' >&2; exit 2; }
 source "$support/tools/radv-link.sh"
 radv_link_recipe "$support" "$sdk" "$gpu/radv-build/src/amd/vulkan/libvulkan_radeon.a"
-radv_link_flags+=(--wrap=stat --wrap=mmap --wrap=mprotect --wrap=munmap --wrap=_ZN11ultramodern14error_handling11message_boxEPKc)
+radv_link_flags+=(--wrap=mmap --wrap=mprotect --wrap=munmap --wrap=_ZN11ultramodern14error_handling11message_boxEPKc)
 radv_link_flags+=(--wrap=sceVideoOutOpen --wrap=sceVideoOutIsOutputSupported)
-printf '{ local: _Zn*; _Zd*; getargv; realpath; lstat; getcwd; pathconf; __wrap_stat; __wrap_mmap; __wrap_mprotect; __wrap_munmap; };\n' > "$build/gen/game-symbols.map"
+printf '{ local: _Zn*; _Zd*; getargv; realpath; lstat; getcwd; pathconf; __wrap_mmap; __wrap_mprotect; __wrap_munmap; };\n' > "$build/gen/game-symbols.map"
 link_game() {
 "$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
     --version-script "$build/gen/game-symbols.map" --exclude-libs=ALL -e _start -o "$build/llvm-pie.elf" \
-    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/save_stat.o" "$build/obj/import_check.o" \
-    "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
+    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/import_check.o" \
+    "$build/obj/controller_speaker.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
     --start-group "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
     "${radv_link_inputs[@]}" --as-needed "$sdk"/target/lib/*.so
 }
@@ -114,12 +114,15 @@ chmod 0755 "$target/eboot.bin" "$target/sce_module/libc.prx"
     echo 'CMake-staged game assets missing' >&2; exit 2;
 }
 cp -a "$game/game-ps5/assets" "$target/"
+python3 "$root/tools/prepare_controller_audio.py" "$game/private/roms" "$target/assets/controller-audio" \
+    > "$build/controller-audio-receipt.txt"
 mkdir -p "$target/assets/licenses"
 cp "$root/licenses/DKR-R-LICENSE.md" "$target/assets/licenses/DKR-R-MIT.md"
 cp "$root/licenses/DKR-R-Selawik-OFL.txt" "$target/assets/licenses/Selawik-OFL.txt"
 cp "$root/LICENSE" "$target/assets/licenses/GPL-3.0.txt"
 cp "$root/THIRD_PARTY.md" "$target/assets/licenses/THIRD_PARTY.md"
 cp "$root/licenses/LLVM-libcxx.txt" "$target/assets/licenses/LLVM-libcxx.txt"
+cp "$root/licenses/VADPCM-MPL-2.0.txt" "$target/assets/licenses/VADPCM-MPL-2.0.txt"
 cp "$root/licenses/SDL2.txt" "$target/assets/licenses/SDL2.txt"
 cp "$root/licenses/libsamplerate.txt" "$target/assets/licenses/libsamplerate.txt"
 cp "$root/homebrew/DKR-R-Game/ARTWORK.md" "$target/assets/licenses/Title-Artwork.md"

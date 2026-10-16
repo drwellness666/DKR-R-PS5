@@ -33,7 +33,7 @@ if a.game_work is None:
 
 game=a.game_work/'source/DKR-R/runtime-recomp/src/game'
 text=(a.sdl_work/'src/ps5-SDL/src/joystick/ps5/SDL_ps5joystick.c').read_text()
-functions=[]
+functions=[text[text.index('typedef struct PS5_ItemEffect'):text.index('_Static_assert(sizeof(PS5_ItemEffect)')]]
 for name in ('PS5_JoystickSetLED','PS5_JoystickSendEffect'):
     start=text.index(name+'(');start=text.rfind('static int',0,start)
     begin=text.index('{',start);depth=1;end=begin+1

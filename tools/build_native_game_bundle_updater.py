@@ -29,7 +29,8 @@ def inventory(app, *, previous=False):
         name = path.relative_to(app).as_posix()
         if len(('/data/homebrew/' + TITLE + '/' + name + '.dkrr-v9999-update').encode()) >= 256:
             raise ValueError('Application path exceeds native updater limit')
-        if name not in CORE and not (previous and name in LEGACY_ART) and not (name.startswith('assets/') and path.suffix.lower() in ASSET_EXTENSIONS):
+        owned_audio = name in {f'assets/controller-audio/us-v{revision}/{i}.pcm' for revision in (77,80) for i in range(9)}
+        if name not in CORE and not owned_audio and not (previous and name in LEGACY_ART) and not (name.startswith('assets/') and path.suffix.lower() in ASSET_EXTENSIONS):
             raise ValueError('Unapproved application input: ' + name)
         if any(c in str(path) for c in '\n\r"\\'):
             raise ValueError('Unsupported input path')

@@ -8,7 +8,7 @@ import zipfile
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else '.').resolve()
 forbidden = {'.z64', '.v64', '.n64', '.o2r', '.mpk', '.eep', '.sra', '.fla',
-             '.elf', '.prx', '.sprx', '.bin', '.o', '.a'}
+             '.elf', '.prx', '.sprx', '.bin', '.o', '.a', '.pcm'}
 magic = {bytes.fromhex(value) for value in ('80371240', '37804012', '40123780')}
 failures = []
 def check(name, first):
