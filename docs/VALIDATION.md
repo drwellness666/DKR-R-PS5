@@ -2,10 +2,13 @@
 
 ## Automated checks
 
-The current implementation passed **53 host check commands**, including **13
+The current implementation passed **54 host check commands**, including **13
 installer/update cases** with injected write, synchronization and activation
 failures. Tests also cover shared settings, both language bridges, menu layout,
-controller adapters, direct save handling and diagnostics. All **18** native
+controller adapters, direct save handling and diagnostics. Menu tests exercise
+the real ImGui section selector at narrow and wide widths, D-pad traversal,
+Cross selection and Circle cancellation. Speaker tests check cue reuse and
+revision invalidation; payload tests verify duplicate-file aliases. All **18** native
 controller-sound outputs matched the previous extractor byte for byte.
 
 The native PS5 game and both universal payloads compile and link with the public

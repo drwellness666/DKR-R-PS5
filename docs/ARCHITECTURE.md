@@ -41,6 +41,16 @@ installer uses ShadowMountPlus' documented folder discovery and adds exactly its
 path to the watched manual.lst, preserving existing entries and comments. It does not edit app.db, patch the kernel, introduce HTTP API
 requirements or install extra save services. The manual entry also covers custom scan roots.
 
+Console menus retain upstream page IDs while deriving visual and shoulder-button
+order from one shared table. A single gamepad section selector replaces horizontal
+subsection rows; Graphics separates display controls from HUD/detail controls.
+Sections compiled out of the native build are omitted.
+
+Controller audio is loaded on the speaker worker and cached per revision. Its
+bounded nine-cue cache also retains the missile mix; disabling output still
+closes the native speaker port. Identical program assets share an embedded blob
+inside the payload; installation still writes and verifies every target file.
+
 Rendering, output rate and original game simulation remain separate. No global
 water/interpolation change or forced shader-cache policy is used to conceal
 unexplained stutters. Tracks-preview water and sustained frame pacing still
@@ -49,4 +59,5 @@ remain separate work.
 
 These are implemented candidate mechanisms, not physical-console acceptance.
 Shared binaries require the matching source/licence package and a component
-review. The currently published beta remains source-only. [Validation](VALIDATION.md).
+review. Beta 3 includes ROM-free installer/update ELFs with matching source.
+[Validation](VALIDATION.md).

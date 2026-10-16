@@ -15,7 +15,11 @@
 | Touchpad | Open or close Recompiled settings |
 
 In settings, L1/R1 change pages, D-pad/left stick move selection, Cross confirms
-and Circle goes back. **Controls → Button mapping** supports custom bindings.
+and Circle goes back. Common settings come first: **Play → Controls → Graphics
+→ Sound → Textures → Save Manager**, followed by Mods / Hacks, Online and About.
+Use the full-width **SECTION** selector to choose a page's subsection with Cross
+and D-pad; Circle cancels. **Graphics** separates Display from HUD & Detail.
+**Controls → Button mapping** supports custom bindings.
 The old trigger-driving preset was removed; custom mappings are preserved.
 
 Normal vibration is available under **Controls → Device**. PS5-specific options
@@ -51,6 +55,12 @@ and physical vibration were confirmed; dedicated ghost/Pak persistence needs
 more testing.
 
 ## Texture packs and mods
+
+**Optional recommendation: DKR REMASTERED by sr.gu.** Version **0.2.7** was
+confirmed on both US revisions during PS5 sessions. Upstream directs players to
+the [official DKR-R Discord](https://discord.com/invite/AMWfXdBjNP) for its
+community texture pack; follow the author's current download there. See also
+[upstream texture-pack help](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/docs/TEXTURE_PACKS.md).
 
 Obtain compatible packs separately under the author's terms. Use DKR-R's existing
 **Textures** page and importer. Replacements require the **Modern** presentation
