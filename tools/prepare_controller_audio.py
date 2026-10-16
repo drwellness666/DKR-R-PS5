@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Prepare private item PCM from verified owned ROMs. Never distribute its output."""
-import argparse,hashlib,json,math,pathlib,struct
+import argparse,hashlib,json,math,pathlib,struct,shutil,subprocess,tempfile
 from vadpcm_decode import decode
 KNOWN={77:('0cb115d8716dbbc2922fda38e533b9fe63bb9670',969568),80:('6d96743d46f8c0cd0edb0ec5600b003c89b93755',970976)}
 # Actual item-use effects from the pinned decomp racer/audio paths.
-SOUNDS=(0x21,0x232,0x233,0x135,0x134,0x151,0x0f,0x9f,0x13a)
+SOUNDS=(0x21,0x232,0x233,0x135,0x134,0x151,0x0f,0x9f,0x13a,*range(0x156,0x160),0xa0,0xa1,0xa2,0x23d,0x107)
 class Bank:
     def __init__(self,rom,base):
         self.data=rom
@@ -75,25 +75,38 @@ class Bank:
         gain=min(1.0,30000/peak) if peak else 1.0
         return [round(x*gain) for x in mixed]
 def prepare(roms,destination):
-    receipt={}
+    root=pathlib.Path(__file__).resolve().parents[1]
     selected=json.loads((roms/'selected-revisions.json').read_text())['revisions']
     if not selected or len(set(selected))!=len(selected) or any(rev not in KNOWN for rev in selected):raise ValueError('Invalid owned revision selection')
-    for revision in sorted(selected):
-        sha,base=KNOWN[revision]
-        p=roms/f'dkr.us.v{revision}.z64'
-        if p.is_symlink() or p.stat().st_size!=12*1024*1024:raise ValueError('Missing ordinary owned canonical ROM')
-        data=p.read_bytes()
-        if hashlib.sha1(data).hexdigest()!=sha:raise ValueError('Owned ROM checksum mismatch')
-        bank=Bank(data,base);folder=destination/f'us-v{revision}';folder.mkdir(parents=True,exist_ok=True)
-        rows=[]
-        for i,sound in enumerate(SOUNDS):
-            pcm=bank.sound(sound)
-            if not pcm or not any(pcm):raise ValueError('Empty effect PCM')
-            blob=struct.pack('<'+str(len(pcm))+'h',*pcm);target=folder/f'{i}.pcm'
-            if target.is_symlink() or (target.exists() and target.read_bytes()!=blob):raise ValueError('Different private effect output already exists')
-            if not target.exists():target.write_bytes(blob)
-            rows.append({'index':i,'sound_id':sound,'frames':len(pcm),'sha256':hashlib.sha256(blob).hexdigest()})
-        receipt[str(revision)]=rows
+    compiler=shutil.which('clang') or shutil.which('cc')
+    if not compiler:raise ValueError('The native audio preparer requires a host C compiler')
+    receipt={}
+    with tempfile.TemporaryDirectory(prefix='dkrr-owned-audio-') as temporary:
+        binary=pathlib.Path(temporary)/'decode'
+        subprocess.run([compiler,'-std=c11','-O2','-Wall','-Wextra','-Werror',str(root/'tools/controller_audio_host.c'),str(root/'installer/audio.c'),str(root/'installer/vadpcm.c'),'-lm','-o',str(binary)],check=True)
+        for revision in sorted(selected):
+            sha,_=KNOWN[revision];p=roms/f'dkr.us.v{revision}.z64'
+            if p.is_symlink() or p.stat().st_size!=12*1024*1024:raise ValueError('Missing ordinary owned canonical ROM')
+            if hashlib.sha1(p.read_bytes()).hexdigest()!=sha:raise ValueError('Owned ROM checksum mismatch')
+            result=subprocess.run([str(binary),str(p),str(revision)],check=True,stdout=subprocess.PIPE)
+            data=result.stdout
+            if len(data)>32*(384000+8):raise ValueError('Unbounded private PCM output')
+            files={};at=0
+            while at<len(data):
+                if len(data)-at<8:raise ValueError('Truncated cue record')
+                index,size=struct.unpack_from('<II',data,at);at+=8
+                if index>=32 or index in files or not size or size%2 or size>384000 or size>len(data)-at:raise ValueError('Invalid cue record')
+                files[index]=data[at:at+size];at+=size
+            if set(files)!=set(range(32)):raise ValueError('Incomplete private cue bank')
+            folder=destination/f'us-v{revision}'
+            if folder.is_symlink():raise ValueError('Private audio destination is a symlink')
+            folder.mkdir(parents=True,exist_ok=True);rows=[]
+            for index,blob in sorted(files.items()):
+                target=folder/f'{index}.pcm'
+                if target.is_symlink() or (target.exists() and target.read_bytes()!=blob):raise ValueError('Different private effect output already exists')
+                if not target.exists():target.write_bytes(blob)
+                rows.append(dict(index=index,**({'sound_id':SOUNDS[index]} if index<24 else {'sequence_id':43+index-24}),frames=len(blob)//2,sha256=hashlib.sha256(blob).hexdigest()))
+            receipt[str(revision)]=rows
     return receipt
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('roms',type=pathlib.Path);p.add_argument('destination',type=pathlib.Path);a=p.parse_args()

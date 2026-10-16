@@ -62,6 +62,8 @@ cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_rdram.c" -o "$build/obj/rdram.o"
 cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions \
     -I "$root/src" -c "$root/src/ps5_controller_speaker.cpp" -o "$build/obj/controller_speaker.o"
+cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revisions[1]}" -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden -ffunction-sections -fdata-sections \
+    -I "$root/src" -I "$game/source/N64Recomp/include" -c "$root/src/ps5_game_audio_hooks.cpp" -o "$build/obj/game_audio_hooks.o"
 python3 "$root/tools/prepare_emutls.py" "$gpu/PS5_PayloadSDK/libc/emutls.c" "$build/gen/emutls.c"
 cc -std=c11 -O2 -fvisibility=hidden -c "$build/gen/emutls.c" -o "$build/obj/emutls.o"
 for lib in libSceAgc libSceAgcDriver; do
@@ -82,12 +84,19 @@ source "$support/tools/radv-link.sh"
 radv_link_recipe "$support" "$sdk" "$gpu/radv-build/src/amd/vulkan/libvulkan_radeon.a"
 radv_link_flags+=(--wrap=mmap --wrap=mprotect --wrap=munmap --wrap=_ZN11ultramodern14error_handling11message_boxEPKc)
 radv_link_flags+=(--wrap=sceVideoOutOpen --wrap=sceVideoOutIsOutputSupported)
+for prefix in '' dkr_v80_; do
+    [[ $prefix != '' || ${revisions[0]} != 0 ]] || continue
+    [[ $prefix != dkr_v80_ || ${revisions[1]} != 0 ]] || continue
+    for symbol in obj_loop_weaponballoon obj_loop_silvercoin obj_loop_goldenballoon racer_play_sound sound_play audspat_play_sound_at_position music_jingle_play sound_play_spatial; do
+        radv_link_flags+=("--wrap=${prefix}${symbol}")
+    done
+done
 printf '{ local: _Zn*; _Zd*; getargv; realpath; lstat; getcwd; pathconf; __wrap_mmap; __wrap_mprotect; __wrap_munmap; };\n' > "$build/gen/game-symbols.map"
 link_game() {
 "$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
     --version-script "$build/gen/game-symbols.map" --exclude-libs=ALL -e _start -o "$build/llvm-pie.elf" \
     "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/import_check.o" \
-    "$build/obj/controller_speaker.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
+    "$build/obj/controller_speaker.o" "$build/obj/game_audio_hooks.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
     --start-group "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
     "${radv_link_inputs[@]}" --as-needed "$sdk"/target/lib/*.so
 }
