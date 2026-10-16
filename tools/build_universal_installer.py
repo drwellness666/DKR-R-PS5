@@ -37,12 +37,18 @@ def emit(app,build,work,migrations,sequence=3):
     files=release_files(app)
     h='#include "dkrr_install.h"\nstruct release_file {const char *path;const unsigned char *start,*end;unsigned mode;const char *sha1;};\n'
     h+='static const char release_build_id[]='+json.dumps(build)+';\nstatic const char release_stage_id[]='+json.dumps(build+'-r'+str(sequence))+';\nstatic const unsigned release_sequence='+str(sequence)+';\n'
-    assembly='.section .rodata\n';rows=[]
+    assembly='.section .rodata\n';rows=[];blobs={}
     for i,(name,meta) in enumerate(sorted(files.items())):
         source=app/name
         if any(c in str(source) for c in '\n\r"\\'):raise ValueError('Unsupported application path')
         h+=f'extern const unsigned char release_{i}_start[],release_{i}_end[];\n'
-        assembly+=f'.balign 16\n.global release_{i}_start,release_{i}_end\nrelease_{i}_start:\n.incbin "{source}"\nrelease_{i}_end:\n'
+        key=(meta['size'],meta['sha256'])
+        if key in blobs:
+            first=blobs[key]
+            assembly+=f'.global release_{i}_start,release_{i}_end\n.set release_{i}_start,release_{first}_start\n.set release_{i}_end,release_{first}_end\n'
+        else:
+            blobs[key]=i
+            assembly+=f'.balign 16\n.global release_{i}_start,release_{i}_end\nrelease_{i}_start:\n.incbin "{source}"\nrelease_{i}_end:\n'
         rows.append('{'+json.dumps(name)+f',release_{i}_start,release_{i}_end,0{meta["mode"]:o},'+json.dumps(meta['sha1'])+'}')
     h+='static const struct release_file release_files[]={'+','.join(rows)+'};\n'
     legacy=[]
@@ -95,7 +101,9 @@ def build(sdk,app,receipt,output,migrations=()):
         subprocess.run([str(sdk/'bin/prospero-strip'),'--strip-debug',str(target)],check=True);target.chmod(0o600)
         built[target.name]=dict(size=target.stat().st_size,sha256=hashlib.sha256(target.read_bytes()).hexdigest())
     source_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'installer').glob('*')) if p.is_file()}
+    unique={(f['size'],f['sha256']) for f in files.values()}
     metadata=dict(schema=1,build_id=record['build_id'],release_sequence=sequence,files=files,payloads=built,installer_sources=source_hashes,roms_embedded=False,original_pcm_embedded=False,
+                  unique_embedded_blobs=len(unique),deduplicated_bytes=sum(f['size'] for f in files.values())-sum(size for size,_ in unique),
                   legacy_builds=[json.loads(r.read_text())['build_id'] for _,r in migrations],console_executed=False,distribution_review_complete=False,
                   scope='ROM-free package candidates. Runtime has compiled game functions; full corresponding-source/artwork/component review is required before distribution.')
     (output/'CANDIDATE.json').write_text(json.dumps(metadata,indent=2)+'\n');(output/'CANDIDATE.json').chmod(0o600)
