@@ -46,10 +46,9 @@ abweichende vorhandene App-Dateien; bestehende Installationen brauchen die
 Der Save-Dienst läuft auf der PS5 und speichert selbst keine Spielstände. Er
 liefert Dateiinformationen, die im getesteten nativen Dateisystem fehlen.
 Er endet beim Ausschalten der Konsole. Die bisher erfolgreichen Save-Tests
-liefen mit diesem Dienst. Ein automatischer Start mit dem vorhandenen
-Autoloader ist ein möglicher einmaliger Workaround; er ist bei dir noch nicht
-als eingerichtet und kaltstartgeprüft bestätigt. Der fertige Installer soll
-diese Abhängigkeit selbst regeln. [Details](SAVES.md).
+liefen mit diesem Dienst. Den Dienst nur automatisch zu starten ist nicht das Ziel. Die Portierung soll
+direkten nativen Speicherzugriff ohne Zusatzdienst verwenden; dieser Umbau
+ist noch nicht abgeschlossen. [Details](SAVES.md).
 
 ## Im Spiel
 

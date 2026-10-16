@@ -26,8 +26,8 @@ launcher renders correctly on the native PS5 display path.
   selected ROM atomically to the owned destination. Reject corrupt/unsupported
   images and existing different files; never depend on the USB remaining inserted.
 - Persist the selected revision and reopen the normal game after installation.
-- Start required save support from the console workflow without a PC or separate
-  per-boot user command; preserve the existing file-ownership/alias checks.
+- Use a direct native save backend without a separate metadata service, PC
+  connection or per-boot helper command; preserve storage integrity and ownership.
 - Verify installation, cold boot, save/reload and launching with the PC disconnected.
 
 The installer can contain a precompiled native runtime. It does not need to run

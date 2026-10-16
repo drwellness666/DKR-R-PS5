@@ -3,7 +3,7 @@
 ## Installation and startup
 
 - One ROM-free installer ELF, ROM selection/import on the PS5 and normal icon launch.
-- Console-managed save support with no PC or separate per-boot helper action.
+- Direct native save storage; remove the metadata helper rather than automate it.
 - Cold-boot/save tests with the PC disconnected.
 
 [Installer design and current limits](INSTALLER.md). The existing source-build
