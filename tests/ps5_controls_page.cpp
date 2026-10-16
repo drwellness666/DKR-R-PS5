@@ -20,12 +20,12 @@ bool controller_speaker_enabled(){return speaker;}void set_controller_speaker_en
 float controller_speaker_volume(){return volume;}void set_controller_speaker_volume(float v){volume=v;}
 const char*controller_speaker_status(std::size_t){return "Experimental output";}
 }
-static constexpr bool kConsoleMenuLayout=true;static std::size_t g_selected_player=0;
+static std::size_t g_selected_player=0;
 static bool gyro=false;static unsigned motion_drawn=0,commits=0;
 struct Field{ImGuiID id;ImVec2 min,max;};static std::vector<Field> fields;
 static void add(){fields.push_back({ImGui::GetItemID(),ImGui::GetItemRectMin(),ImGui::GetItemRectMax()});}
 static void PaddockGap(float f){ImGui::Dummy({0,f});}
-static void ControlsScope(bool,float){}static void ControlsHeading(std::string_view s,float){ImGui::TextUnformatted(s.data(),s.data()+s.size());}
+static void ControlsScope(bool,float){}
 static void ControlsNote(std::string_view s,float){ImGui::TextWrapped("%.*s",int(s.size()),s.data());}
 static bool SettingsCheck(const char*id,const char*label,bool*v,float){ImGui::PushID(id);bool c=ImGui::Checkbox(label,v);add();ImGui::PopID();return c;}
 struct SettingsRangeValue{std::string text,unit;};
@@ -45,6 +45,6 @@ int main(){
  press(ImGuiKey_GamepadDpadDown);press(ImGuiKey_GamepadFaceDown);assert(dkr::runtime::platform::speaker&&commits==3&&fields.size()==5);
  press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[3].id);press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[4].id);press(ImGuiKey_GamepadFaceDown);assert(gyro&&commits==4);
  for(std::size_t i=1;i<fields.size();++i)assert(fields[i].min.y>=fields[i-1].max.y);
- assert(GImGui->NavWindow->Scroll.y>0);modern=false;motion_drawn=0;frame();assert(motion_drawn==0&&fields.size()==4);
- ImGui::DestroyContext();puts("PASS actual PS5 page: D-pad order, Cross toggles light/trigger/speaker and gyro dispatch, volume insertion without focus loss, scrolling and Accurate-only gyro restriction");
+ assert(fields.back().max.y-fields.front().min.y<220.0F);modern=false;motion_drawn=0;frame();assert(motion_drawn==0&&fields.size()==4);
+ ImGui::DestroyContext();puts("PASS actual PS5 page: D-pad order, Cross toggles light/trigger/speaker and gyro dispatch, volume insertion without focus loss, compact field height and Accurate-only gyro restriction");
 }

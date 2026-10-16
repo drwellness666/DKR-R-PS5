@@ -6,15 +6,15 @@ ROOT=pathlib.Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'too
 from build_universal_installer import emit,hash_source,release_files
 from build_native_game_bundle_updater import CORE,inventory,inventory_hash
 SIZE=12*1024*1024
-SOUNDS=(0x21,0x232,0x233,0x135,0x134,0x151,0x0f,0x9f,0x13a)
+SOUNDS=(0x21,0x232,0x233,0x135,0x134,0x151,0x0f,0x9f,0x13a,*range(0x156,0x160),0xa0,0xa1,0xa2,0x23d,0x107)
 def fixture_rom(revision):
     rom=bytearray(SIZE);rom[:4]=bytes.fromhex('80371240');base=969568 if revision==77 else 970976
     def u32(p,v):struct.pack_into('>I',rom,p,v)
     def u16(p,v):struct.pack_into('>H',rom,p,v)
     u32(base,50);start=base+208;table=start+0x100;audio=start+0x1000
     u32(base+39*4,0x100);u32(base+40*4,0x1000)
-    for p,v in ((4,0x100),(8,0x1000),(24,0x2000),(28,0x4000)):u32(table+p,v)
-    bank=audio+0x100;u16(bank,0x4231);u32(bank+4,0x20);u32(bank+0x24,32000);u32(bank+0x2c,0x40)
+    for p,v in ((0,0x1800),(4,0x800),(8,0x1000),(16,0x5000),(24,0x2000),(28,0x4000)):u32(table+p,v)
+    bank=audio+0x800;u16(bank,0x4231);u32(bank+4,0x20);u32(bank+0x24,32000);u32(bank+0x2c,0x40)
     u16(bank+0x4e,1);u32(bank+0x50,0x80)
     for off,v in ((0,0xa0),(4,0xc0),(8,0xe0)):u32(bank+0x80+off,v)
     rom[bank+0x8d]=127;u32(bank+0xa4,1000000);rom[bank+0xac:bank+0xae]=b'\x7f\x7f';rom[bank+0xc4]=60
@@ -22,6 +22,19 @@ def fixture_rom(revision):
     rom[audio+0x1000:audio+0x1009]=bytes.fromhex('60 12 34 56 78 9a bc de f0')
     for sound in SOUNDS:
         p=audio+0x2000+10*sound;u16(p,1);rom[p+2]=128;rom[p+4]=100
+    # Synthetic music bank and one-note CSeq, shared by eight fixture jingles.
+    u16(audio,0x4231);u32(audio+4,0x20);u16(audio+0x20,1);u32(audio+0x24,32000);u32(audio+0x2c,0x40)
+    rom[audio+0x40]=127;u16(audio+0x4e,1);u32(audio+0x50,0x80)
+    for off,v in ((0,0xa0),(4,0xc0),(8,0xe0)):u32(audio+0x80+off,v)
+    rom[audio+0x8d]=127;u32(audio+0xa4,1000000);u32(audio+0xa8,100000);rom[audio+0xac:audio+0xae]=b'\x7f\x7f'
+    rom[audio+0xc1]=127;rom[audio+0xc3]=127;rom[audio+0xc4]=60
+    u32(audio+0xe4,9);u32(audio+0xf0,0x120);u32(audio+0x120,2);u32(audio+0x124,1)
+    rom[audio+0x1800:audio+0x1809]=bytes.fromhex('60 12 34 56 78 9a bc de f0')
+    seq=bytearray(68);struct.pack_into('>I',seq,0,68);struct.pack_into('>I',seq,64,96)
+    seq+=bytes.fromhex('00 ff 51 07 a1 20 00 c0 00 00 90 3c 64 18 18 ff 2f')
+    sf=audio+0x5000;u16(sf,0x5331);u16(sf+2,51)
+    for i in range(43,51):u32(sf+4+8*i,0x200);u32(sf+8+8*i,len(seq))
+    rom[sf+0x200:sf+0x200+len(seq)]=seq
     return bytes(rom)
 class Universal(unittest.TestCase):
  @classmethod
@@ -127,7 +140,7 @@ ssize_t __wrap_write(int fd,const void*buf,size_t n){
     self.run_installer(0,False);self.assertIn(b'3'*24,(self.live/'eboot.bin').read_bytes())
     for rev in (77,80):
      self.assertEqual((self.data/f'dkrr/roms/dkr.us.v{rev}.z64').read_bytes(),self.roms[rev])
-     self.assertEqual(len(list((self.live/f'assets/controller-audio/us-v{rev}').glob('*.pcm'))),9)
+     self.assertEqual(len(list((self.live/f'assets/controller-audio/us-v{rev}').glob('*.pcm'))),32)
     # Updates use internal ROMs after USB has been removed.
     shutil.rmtree(self.mnt/'usb0');self.run_installer(2)
  def test_exact_legacy_migration_and_update_only_guard(self):

@@ -19,7 +19,7 @@ extern "C" int sceAudioOutOutput(int h,const void*p) {
     return 0;
 }
 extern "C" int sceAudioOutClose(int h){assert(h==17);++closes;--active;return 0;}
-static std::vector<std::int16_t> load(unsigned rev,unsigned clip){assert((rev==77||rev==80)&&clip<9);++load_calls;loaded_revision=rev;loaded=static_cast<int>(clip);return std::vector<std::int16_t>(24000,12000);}
+static std::vector<std::int16_t> load(unsigned rev,unsigned clip){assert((rev==77||rev==80)&&clip<ps5_sounds::count);++load_calls;loaded_revision=rev;loaded=static_cast<int>(clip);return std::vector<std::int16_t>(24000,12000);}
 template<class Test>static void wait(Test test){for(int i=0;i<1000&&!test();++i)std::this_thread::sleep_for(std::chrono::milliseconds(1));assert(test());}
 int main(){
     ps5_items::Item held{0x80401100,0,1,true,0},spent=held;spent.quantity=0;
@@ -34,7 +34,7 @@ int main(){
         speaker.update(true,42,held,2,true,0.25F,80);assert(opens==0);
         speaker.update(true,42,spent,20,false,0.25F,80);wait([]{return outputs.load()>0;});assert(loaded==3);
         const auto before=outputs.load();
-        speaker.update(true,42,{},25,false,0.25F,80);wait([]{return active.load()==0;});assert(outputs<=before+1&&closes==1);
+        speaker.update(false,42,{},25,false,0.25F,80);wait([]{return active.load()==0;});assert(outputs<=before+1&&closes==1);
         fail_open=1;
         speaker.update(true,42,held,30,true,0.25F,80);speaker.update(true,42,spent,40,false,0.25F,80);wait([&]{return speaker.status()<0;});const auto failures=opens.load();
         speaker.update(true,42,held,50,true,0.25F,80);speaker.update(true,42,spent,60,false,0.25F,80);std::this_thread::sleep_for(std::chrono::milliseconds(10));assert(opens==failures);
@@ -56,5 +56,17 @@ int main(){
             assert(loaded_revision==revision);
         }
     }
-    puts("PASS actual controller audio worker: all five item types/levels, release-use edge, no pickup/loss sound, no port while disabled/idle, correct native user/route/format, bounded gain, pause cancellation, failure isolation and shutdown close");
+    {
+        ps5_speaker::Speaker speaker(load);
+        const auto old=opens.load();
+        speaker.update(true,42,{},500,false,0.25F,77,ps5_sounds::horn+9);
+        wait([&]{return opens.load()>old;});assert(loaded==int(ps5_sounds::horn+9));
+        speaker.update(false,42,{},501,false,0.25F,77);wait([]{return active.load()==0;});
+        speaker.update(true,42,held,600,true,0.25F,77);
+        speaker.update(true,42,spent,620,false,0.25F,77);wait([]{return active.load()==1;});
+        const auto during=loaded.load();speaker.update(true,42,spent,621,false,0.25F,77,ps5_sounds::silver);
+        std::this_thread::sleep_for(std::chrono::milliseconds(8));assert(loaded==during);
+        speaker.update(false,42,{},630,false,0.25F,77);wait([]{return active.load()==0;});
+    }
+    puts("PASS actual controller audio worker: all five item types/levels, release-use edge, no invented pickup/loss event, real non-item cues and item priority, no port while disabled/idle, correct native user/route/format, bounded gain, pause cancellation, failure isolation and shutdown close");
 }
