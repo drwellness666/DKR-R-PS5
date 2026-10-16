@@ -3,6 +3,7 @@
  * patching, app.db edit, network download or resident helper on the console.
  */
 #include "dkrr_install.h"
+#include "../src/ps5_controller_audio_bank.h"
 #include <errno.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -131,8 +132,9 @@ static int prepare_stage(struct dkrr_manifest *m) {
  for(unsigned i=0;i<2;++i){unsigned revision=i?80:77;char name[80],rompath[DKRR_PATH];snprintf(name,sizeof(name),"dkr.us.v%u.z64",revision);if(join(rompath,owned,name)<0)return -1;
   unsigned char *rom;unsigned rev;if(dkrr_rom_identify(rompath,&rom,&rev)<0||rev!=revision)return -1;
   snprintf(name,sizeof(name),"us-v%u",revision);if(join(folder,audio,name)<0){free(rom);return -1;}
+  status(revision==77?"Preparing controller sounds for US 1.0...":"Preparing controller sounds for US 1.1...");
   int rc=dkrr_audio_prepare(rom,DKRR_ROM_SIZE,revision,folder);free(rom);if(rc<0)return -1;
-  for(unsigned j=0;j<9;++j){snprintf(name,sizeof(name),"assets/controller-audio/us-v%u/%u.pcm",revision,j);if(dkrr_manifest_add(m,stage,name,0644)<0)return -1;}
+  for(unsigned j=0;j<DKRR_CONTROLLER_CUE_COUNT;++j){snprintf(name,sizeof(name),"assets/controller-audio/us-v%u/%u.pcm",revision,j);if(dkrr_manifest_add(m,stage,name,0644)<0)return -1;}
  }
  char manifest[DKRR_PATH];if(join(manifest,stage,"dkrr-install.manifest")<0)return -1;
  int found=dkrr_regular(manifest,1);
@@ -165,7 +167,7 @@ int main(void) {
  if(!space_available(!(had_live&&!strcmp(old.build,release_build_id)&&old.sequence==release_sequence))){status("Not enough free internal space to stage the update and retain recovery data.");close(lock);return 4;}
  if(dkrr_rom_install(owned,inputs)<0){status("ROM import failed; existing game is preserved.");close(lock);return 4;}
  if(had_live&&!strcmp(old.build,release_build_id)&&old.sequence==release_sequence){
-  int matches=old.count==sizeof(release_files)/sizeof(release_files[0])+18;
+  int matches=old.count==sizeof(release_files)/sizeof(release_files[0])+2*DKRR_CONTROLLER_CUE_COUNT;
   for(size_t i=0;i<sizeof(release_files)/sizeof(release_files[0])&&matches;++i){char path[DKRR_PATH],hash[41];unsigned long long n;
    const struct release_file *f=&release_files[i];if(join(path,live,f->path)<0||dkrr_hash_file(path,hash,&n)<0||n!=(unsigned long long)(f->end-f->start)||strcmp(hash,f->sha1))matches=0;
   }

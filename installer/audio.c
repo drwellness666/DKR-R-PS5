@@ -8,7 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 struct reader { const unsigned char *p;size_t size;int ok; };
-static const unsigned sounds[9]={0x21,0x232,0x233,0x135,0x134,0x151,0x0f,0x9f,0x13a};
+#define DKRR_DECLARE_CONTROLLER_IDS
+#include "../src/ps5_controller_audio_bank.h"
 extern int dkrr_vadpcm(const unsigned char*,size_t,unsigned,unsigned,const int16_t*,int16_t*);
 static const unsigned char *read_at(struct reader *r,uint64_t p,size_t n){if(p>r->size||n>r->size-p){r->ok=0;return NULL;}return r->p+(size_t)p;}
 static unsigned byte(struct reader *r,uint64_t p){const unsigned char *b=read_at(r,p,1);return b?b[0]:0;}
@@ -53,13 +54,16 @@ static int cue(struct reader *r,uint64_t bank,uint64_t samples,uint64_t instrume
    mix[delay+i]+=(int64_t)nearbyint(sample*volume*envelope*fade);
   }free(pcm);index=kd[0]+(kd[2]&0xc0)*4;
  }
- if(!r->ok||!mixed)goto done;int64_t peak=0;for(size_t i=0;i<mixed;++i){int64_t n=mix[i]<0?-mix[i]:mix[i];if(n>peak)peak=n;}if(!peak)goto done;
+ if(!r->ok||!mixed)goto done;
+ if(slot>=9){size_t cap=slot<19?21600:slot<22?19200:slot==22?43200:28800;if(mixed>cap)mixed=cap;}
+ int64_t peak=0;for(size_t i=0;i<mixed;++i){int64_t n=mix[i]<0?-mix[i]:mix[i];if(n>peak)peak=n;}if(!peak)goto done;
  double scale=min(1,30000.0/(double)peak);int16_t *out=malloc(mixed*2);if(!out)goto done;
- for(size_t i=0;i<mixed;++i)out[i]=(int16_t)nearbyint((double)mix[i]*scale);
+ for(size_t i=0;i<mixed;++i)out[i]=(int16_t)nearbyint((double)mix[i]*scale*(slot<9?1:min(1,(double)(mixed-1-i)/240)));
  char path[DKRR_PATH];if(snprintf(path,sizeof(path),"%s/%u.pcm",dest,slot)>=(int)sizeof(path)){free(out);goto done;}
  result=dkrr_write_new(path,out,mixed*2,0644);free(out);
  done:free(mix);return result;
 }
+#include "controller_jingle.inl"
 int dkrr_audio_prepare(const unsigned char *rom,size_t size,unsigned revision,const char *dest){
  if(size!=DKRR_ROM_SIZE||(revision!=77&&revision!=80))return -1;
 #if defined(__x86_64__)
@@ -74,6 +78,7 @@ int dkrr_audio_prepare(const unsigned char *rom,size_t size,unsigned revision,co
  if(!r.ok||u16(&r,bank)!=0x4231||sfx>=end||end>size)return -1;
  uint64_t b=bank+u32(&r,bank+4);unsigned rate=u32(&r,b+4);uint64_t instrument=bank+u32(&r,b+12);
  if(!r.ok||dkrr_mkdir(dest,0755)<0)return -1;
- for(unsigned i=0;i<9;++i)if(cue(&r,bank,samples,instrument,sfx,end,rate,sounds[i],dest,i)<0)return -1;
+ for(unsigned i=0;i<DKRR_CONTROLLER_SFX_COUNT;++i)if(cue(&r,bank,samples,instrument,sfx,end,rate,dkrr_controller_sound_ids[i],dest,i)<0){fprintf(stderr,"[controller-audio] effect %u failed\n",i);return -1;}
+ for(unsigned i=0;i<8;++i)if(jingle(&r,audio,table,43+i,dest,DKRR_CONTROLLER_SFX_COUNT+i)<0){fprintf(stderr,"[controller-audio] jingle %u failed\n",i);return -1;}
  return 0;
 }
