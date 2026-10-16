@@ -28,6 +28,7 @@ jobs:
       - run: python3 tools/test_ps5_display.py
       - run: python3 tools/test_native_display_rate.py
       - run: python3 tools/test_console_play_navigation.py
+      - run: python3 tools/test_ps5_menu_sections.py
       - run: python3 tests/test_build_assistant.py
       - run: python3 tools/test_ps5_diagnostics.py
       - run: python3 tools/test_native_game_installer.py
