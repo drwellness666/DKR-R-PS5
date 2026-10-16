@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 #include "ps5_item_feedback.hpp"
+#include "ps5_controller_audio_events.hpp"
 #include <memory>
 #include <vector>
 namespace dkrr::ps5_speaker {
@@ -40,7 +41,7 @@ class Speaker {
 public:
     Speaker();explicit Speaker(Loader load);~Speaker();Speaker(Speaker&&) noexcept;Speaker&operator=(Speaker&&) noexcept;
     Speaker(const Speaker&)=delete;Speaker&operator=(const Speaker&)=delete;
-    void update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision);
+    void update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision,int game_clip=-1);
     int status() const;
 };
 }

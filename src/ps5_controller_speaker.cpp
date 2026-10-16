@@ -23,8 +23,9 @@ struct Speaker::Worker {
     float volume=0.25F;std::atomic<int> result{0};
     Loader loader;
     int output_handle=-1;
-    unsigned cached_revision=0;
-    std::array<std::vector<std::int16_t>,9> cached_cues;
+    unsigned cached_revision=0,active_priority=0;
+    bool playing=false,pending=false;
+    std::array<std::vector<std::int16_t>,ps5_sounds::count> cached_cues;
     std::thread thread;
     explicit Worker(Loader load):loader(load),thread([this]{
         try { run(); } catch(const std::exception& e) {
@@ -67,19 +68,20 @@ struct Speaker::Worker {
         int& handle=output_handle;int open_user=-1;unsigned seen=0;std::unique_lock lock(mutex);
         while(!quit) {
             wake.wait(lock,[&]{return quit||generation!=seen;});if(quit)break;
-            seen=generation;const bool play=enabled;const auto requested=clip;const auto id=user;const auto rev=revision;
-            if(!play||requested<0||requested>8){lock.unlock();if(handle>=0){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}lock.lock();continue;}
+            seen=generation;pending=false;const bool play=enabled;const auto requested=clip;const auto id=user;const auto rev=revision;
+            if(!play||requested<0||requested>=int(ps5_sounds::count)){lock.unlock();if(handle>=0){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}lock.lock();playing=false;continue;}
             // A failure stays local to this optional output until it is toggled.
             if(result.load()<0)continue;
+            playing=true;active_priority=ps5_sounds::priority(unsigned(requested));
             lock.unlock();
             const auto& data=cue(rev,static_cast<unsigned>(requested));
-            if(data.empty()){result.store(-2);std::fprintf(stderr,"[input][speaker] private PCM unavailable\n");lock.lock();continue;}
+            if(data.empty()){result.store(-2);std::fprintf(stderr,"[input][speaker] private PCM unavailable\n");lock.lock();playing=false;continue;}
             if(handle>=0&&open_user!=id){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}
             if(handle<0) {
                 // Public AudioOut ABI: PADSPK=4, S16 mono=0, 48 kHz. Route is
                 // experimental on native PS5 until audibly checked on hardware.
                 handle=sceAudioOutOpen(id,4,0,256,48000,0);open_user=id;
-                if(handle<0){result.store(-1);std::fprintf(stderr,"[input][speaker] native open failed rc=0x%08x\n",unsigned(handle));lock.lock();continue;}
+                if(handle<0){result.store(-1);std::fprintf(stderr,"[input][speaker] native open failed rc=0x%08x\n",unsigned(handle));lock.lock();playing=false;continue;}
             }
             result.store(1);std::array<std::int16_t,256> block{};
             for(std::size_t pos=0;pos<data.size();pos+=block.size()) {
@@ -92,7 +94,7 @@ struct Speaker::Worker {
             }
             // Drain/close after each short cue; never retain a silent speaker port.
             if(handle>=0){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}
-            lock.lock();
+            lock.lock();playing=false;
         }
         lock.unlock();if(handle>=0){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);}
     }
@@ -100,9 +102,10 @@ struct Speaker::Worker {
 Speaker::Speaker():Speaker(nullptr){};Speaker::Speaker(Loader load):loader(load){};Speaker::~Speaker()=default;
 Speaker::Speaker(Speaker&&) noexcept=default;Speaker&Speaker::operator=(Speaker&&) noexcept=default;
 int Speaker::status() const {return start_failed?-3:worker?worker->result.load():0;}
-void Speaker::update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision) {
-    enabled=enabled&&user>=0&&item.valid&&(revision==77||revision==80);
-    const int clip=event.update(enabled,item,ms,pressed);
+void Speaker::update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision,int game_clip) {
+    enabled=enabled&&user>=0&&(revision==77||revision==80);
+    int clip=event.update(enabled,item,ms,pressed);
+    if(clip<0&&game_clip>=9&&game_clip<int(ps5_sounds::count))clip=game_clip;
     if(!enabled)start_failed=false;
     if(!worker&&enabled&&!start_failed)try {worker=std::make_unique<Worker>(loader);}
     catch(const std::exception& e){start_failed=true;std::fprintf(stderr,"[input][speaker] unavailable: %s\n",e.what());}
@@ -110,11 +113,11 @@ void Speaker::update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms
     {std::lock_guard lock(worker->mutex);
         if(!enabled||worker->user!=user) {
             if(worker->enabled){++worker->generation;worker->wake.notify_one();}
-            worker->enabled=false;if(worker->result.load()!=-3)worker->result.store(0);
+            worker->enabled=false;worker->pending=false;if(worker->result.load()!=-3)worker->result.store(0);
         }
         worker->user=user;worker->revision=revision;worker->volume=std::isfinite(volume)?std::clamp(volume,0.0F,1.0F):0.0F;
         worker->enabled=enabled;
-        if(clip>=0){worker->clip=clip;++worker->generation;worker->wake.notify_one();}
+        if(clip>=0&&!((worker->playing||worker->pending)&&ps5_sounds::priority(unsigned(clip))<std::max(worker->playing?worker->active_priority:0U,worker->pending?ps5_sounds::priority(unsigned(worker->clip)):0U))){worker->clip=clip;worker->pending=true;++worker->generation;worker->wake.notify_one();}
     }
 }
 }
