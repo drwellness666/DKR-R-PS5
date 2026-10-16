@@ -2,6 +2,9 @@ name: ROM-free source checks
 on: [push, pull_request]
 permissions:
   contents: read
+concurrency:
+  group: source-check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   source:
     runs-on: ubuntu-24.04
@@ -12,6 +15,13 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libsdl2-dev
       - run: python3 tools/test_controller_presets.py
       - run: python3 tools/test_ps5_controller_lights.py
+      - run: python3 tools/test_ps5_motion.py
+      - run: python3 tools/test_ps5_item_feedback.py
+      - run: python3 tools/test_ps5_controller_speaker.py
+      - run: python3 tools/test_ps5_controls_page.py
+      - run: python3 tools/test_ps5_native_save_storage.py
+      - run: python3 tests/test_install_bootstrap.py
+      - run: python3 tests/test_controller_audio_decode.py
       - run: python3 tools/test_ps5_shared_profiles.py
       - run: python3 tools/test_native_build_identity.py
       - run: python3 tools/test_record_native_build.py
@@ -21,6 +31,9 @@ jobs:
       - run: python3 tests/test_build_assistant.py
       - run: python3 tools/test_ps5_diagnostics.py
       - run: python3 tools/test_native_game_installer.py
+      - run: python3 tools/test_native_game_deployer.py
+      - run: python3 tests/test_universal_installer.py
+      - run: python3 tools/test_installation_lease.py
       - run: python3 tools/test_ps5_ui_framebuffer.py
       - run: python3 tools/test_journal_reader.py
       - run: python3 tools/test_ps5_driver_policy.py
