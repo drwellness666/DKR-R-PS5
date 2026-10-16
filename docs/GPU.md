@@ -1,6 +1,7 @@
 # Graphics build notes
 
-For normal use, follow the [build guide](BUILD.md) or run `python3 setup.py`.
+Normal installation uses the [universal ELF route](INSTALLER.md). Developers can
+follow the [build guide](BUILD.md) or run `python3 setup.py` for a private build.
 The graphics build is a dependency of the game; no separate probe installation
 is required.
 

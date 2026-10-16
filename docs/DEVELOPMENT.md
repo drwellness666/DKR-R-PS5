@@ -8,8 +8,8 @@ CPU payloads through the normal pipeline; do not hand-edit generated functions.
 | Topic | Document |
 |---|---|
 | Build / Windows | [Build](BUILD.md), [Windows](WINDOWS.md) |
-| Native installer target | [Installer](INSTALLER.md) |
-| Saves and startup | [Saves](SAVES.md) |
+| Universal installer | [Installer](INSTALLER.md) |
+| Native saves | [Saves](SAVES.md) |
 | Renderer | [Graphics](GPU.md), [RT64](RT64.md) |
 | Debugging / updates | [Diagnostics](DIAGNOSTICS.md), [Updates](UPDATES.md) |
 | Distribution / tests | [Licences](LICENSES.md), [Validation](VALIDATION.md) |

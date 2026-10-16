@@ -1,46 +1,40 @@
-# Standalone PS5 installer: target and current status
+# Install DKR-R on PS5 📦
 
-The intended end-user flow is:
+The Beta 3 installer is implemented and builds for PS5. Its end-to-end console
+run is still pending; use it as an experimental preview.
 
-1. Send one ROM-free installer ELF to the homebrew-ready PS5.
-2. Select your own supported ROM from console/USB storage with the controller.
-3. Validate and import that ROM into DKR-R's own storage, then finish installation.
-4. Launch the installed game from its PS5 icon, without a running PC.
+## What you need
 
-This is a development target, **not the current downloadable installer**. The
-current release distributes source and builds on a Linux PC/WSL2. Its generated
-native game runs on the PS5; the PC is not emulating or streaming it.
+- A PS5 that already runs native homebrew, with an ELF receiver and ShadowMountPlus.
+- Both owned, clean **US 1.0 and US 1.1 / Rev A** ROM dumps.
+- A USB drive readable by the PS5. z64, n64 and v64 byte orders are supported; PAL is not.
 
-## What already exists
+## Four steps
 
-The project has a native game, a ROM-free application installer builder, separate
-owned-ROM validation/canonicalization, title files and an upstream controller ROM
-browser. The accepted game still expects its canonical ROM at startup. Its
-working in-game overlay does not by itself prove that the upstream pre-game
-launcher renders correctly on the native PS5 display path.
+1. Download **DKRR-Installer.elf** from this project's release.
+2. Copy both ROMs into **DKRR** at the root of the USB drive. Keep them as ordinary files, not inside a ZIP. Names do not matter.
+3. Connect the drive, start the normal homebrew environment and close DKR-R. Send the ELF using your usual sender on Windows or Linux.
+4. Wait for the completion notification and ShadowMountPlus' app discovery, then launch the PS5 icon.
 
-## Work needed
+The installer identifies the ROMs by checksum and copies them to internal
+storage. It generates controller sounds locally and registers the app folder.
+Already installed, valid ROMs are reused. The PC and USB are no longer needed
+for normal play; the usual homebrew environment is still required.
 
-- Show a native first-run/import screen before a ROM is installed.
-- Expose console/USB locations, validate contents and byte order, then copy the
-  selected ROM atomically to the owned destination. Reject corrupt/unsupported
-  images and existing different files; never depend on the USB remaining inserted.
-- Persist the selected revision and reopen the normal game after installation.
-- Use a direct native save backend without a separate metadata service, PC
-  connection or per-boot helper command; preserve storage integrity and ownership.
-- Verify installation, cold boot, save/reload and launching with the PC disconnected.
+Optional Python sender, from an extracted source folder:
 
-The installer can contain a precompiled native runtime. It does not need to run
-LLVM or compile the whole port on the PS5. A build-on-console product would be a
-different toolchain project and is not required for this target.
+```console
+python tools/send_elf.py YOUR_PS5_IP /path/to/DKRR-Installer.elf
+```
 
-## Distribution
+Use `python3` on Linux. Python is not required when using another ELF sender.
 
-Upstream explicitly discusses binary releases of its combined runtime. Such a
-release must preserve the GPL notices and provide complete corresponding source
-for the exact shipped revision/dependencies. A supported ROM remains a separate
-user input. Font/artwork/dependency terms must also be checked for the actual
-installer contents. No blanket permission for original game data is inferred.
+## If installation stops
 
-[Upstream runtime notice](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/runtime-recomp/COPYING-NOTICE.md)
-· [Distribution notes](LICENSES.md) · [Save support today](SAVES.md)
+A missing-ROM message means one of the two clean US revisions was not found.
+Unknown or changed installed files are preserved. After an interruption, rerun
+the same ELF before launching the game; it can resume known partial work and
+recover a staged update. Do not delete save folders to fix an installation.
+The receiver's success marker is `DKRR UNIVERSAL INSTALL PASS.`.
+
+[Updates](UPDATES.md) · [Controls](CONTROLS.md) · [Test status](VALIDATION.md).

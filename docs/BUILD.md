@@ -1,102 +1,65 @@
-# Build and install from source
+# Developer build
 
-[Deutsch](BUILD.de.md) · [Windows / WSL2](WINDOWS.md) · [Installer target](INSTALLER.md)
+The planned normal installation uses the [ROM-free ELF installer](INSTALLER.md).
+This page is for developers and users who want to compile their own copy. The
+optional **Start-Windows.cmd** / **bash Start-Linux.sh** assistant still creates a
+private ROM-containing installer; do not share that file. The first build
+downloads public sources and needs several GB of free space. [Windows setup](WINDOWS.md).
 
-The current release builds on a PC and installs a **native PS5 application**.
-The installed game does not use PC emulation, streaming or an open build assistant.
-The current console-side save-service dependency is described in [Saves](SAVES.md).
-A single-ELF installer with on-console ROM selection is planned, not yet delivered.
+## ROMs and console
 
-## Easiest current route
+| Revision | Size | Canonical SHA-1 |
+|---|---|---|
+| US 1.0 / v77 | 12 MiB | `0cb115d8716dbbc2922fda38e533b9fe63bb9670` |
+| US 1.1 / Rev A / v80 | 12 MiB | `6d96743d46f8c0cd0edb0ec5600b003c89b93755` |
 
-Extract the source ZIP and run `python3 setup.py` in its folder. Use the local
-assistant to select supported ROM(s), check prerequisites, build and install.
-It never uploads your ROM to GitHub. The command route below is equivalent.
+Both are required by the normal installer. Byte order is detected from contents;
+original files are read-only. PAL is unsupported. The PS5 must already support
+native homebrew, an ELF receiver and ShadowMountPlus. Tested sessions used 13.60,
+Relapse / WebKit Autoloader 0.6.1 and kstuff-lite; etaHEN was not used.
 
-## Requirements
+## Manual commands (advanced)
 
-Build host: Linux x86-64, Bash and Python 3.12+. Windows uses [WSL2](WINDOWS.md);
-native Windows Python is not enough. Install Make, Git, util-linux/flock,
-curl/wget, tar/unzip, patch, pkg-config, PCRE2 development files, ImageMagick,
-CMake, Clang/LLD/LLVM development tools, glslang and SPIR-V tools/headers.
-The assistant lists missing packages. Source tests also need SDL2 development files.
-The checked Linux host used Clang/LLD 23.1.1, CMake 3.31.6 and Python 3.14.
-Allow many GB for source/compiler products. Builds do not install OS packages.
-
-PS5: an existing working native-homebrew environment, ShadowMountPlus and an
-ELF receiver. The tested setup is firmware 13.60, Relapse / WebKit Autoloader
-0.6.1, kstuff-lite (user-reported approximately 1.11), ShadowMountPlus
-1.7-beta5fix1, without etaHEN. Other combinations need testing.
-
-| Supported clean 12-MiB dump | Canonical SHA-1 |
-|---|---|
-| US 1.0 / v77 | `0cb115d8716dbbc2922fda38e533b9fe63bb9670` |
-| US 1.1 / Rev A / v80 | `6d96743d46f8c0cd0edb0ec5600b003c89b93755` |
-
-Byte order is detected from contents, not extension. Input files are read-only.
-A single-version build needs one dump; a dual build needs both. PAL is unsupported.
-
-## Manual build
-
-Run in Bash from the extracted project folder. Replace ROM paths with your own:
+Use Linux x86-64/WSL2 with Python 3.12+ and the prerequisites reported by
+`python3 tools/host_requirements.py`. Run in Bash from a fresh extracted source
+folder; replace the two ROM paths:
 
 ```bash
-export DKR_PS5_WORK="$PWD/work/lowmem"
-bash build.sh
+export DKR_PS5_WORK="$PWD/work/sdl"
 export DKR_SDL_WORK="$DKR_PS5_WORK"
-export DKR_GPU_WORK="$PWD/work/vulkan"
-bash build_gpu.sh
+export DKR_GPU_WORK="$PWD/work/gpu"
 export DKR_RT64_WORK="$PWD/work/rt64"
-bash build_rt64.sh
 export DKR_GAME_WORK="$PWD/work/game"
-unset DKR_ROM
-export DKR_ROM_V77="/absolute/path/to/your/own-US-1.0-dump.z64"
-export DKR_ROM_V80="/absolute/path/to/your/own-US-1.1-dump.z64"
+export DKR_ROM_V77="/absolute/path/to/owned-US-1.0.z64"
+export DKR_ROM_V80="/absolute/path/to/owned-US-1.1.z64"
+export DKR_PS5_HIGH_REFRESH_BUILD=1 DKR_PS5_LINE_TABLES=1
+bash build.sh
+bash build_gpu.sh
+bash build_rt64.sh
 bash build_integrated.sh
 python3 tools/record_native_build.py "$DKR_GAME_WORK"
-python3 tools/build_native_game_installer.py   "$DKR_SDL_WORK/sdk/ps5-payload-sdk" "$DKR_GAME_WORK"
-python3 tools/build_owned_rom_installer.py   "$DKR_SDL_WORK/sdk/ps5-payload-sdk" "$DKR_GAME_WORK"
-bash tools/build_save_metadata.sh "$DKR_SDL_WORK/sdk/ps5-payload-sdk"
+python3 tools/build_universal_installer.py \
+  "$DKR_SDL_WORK/sdk/ps5-payload-sdk" \
+  "$DKR_GAME_WORK/private/native/PPSA94678" \
+  "$DKR_GAME_WORK/private/CANDIDATE.json" \
+  "$DKR_GAME_WORK/private/universal"
 ```
 
-Use a fresh `DKR_GAME_WORK` for a new attempt; preserve completed private outputs.
-`DKR_PS5_JOBS` / `DKR_GPU_JOBS` limit compilation jobs (default four).
-`CMAKE_BIN` selects an installed CMake when needed. Downloads and source patches
-are checked against pinned hashes. A failed partial build is not a completed one.
-
-For a single-ROM build, replace the ROM-selection/game-build block with:
+Close DKR-R and start the normal console ELF receiver before sending:
 
 ```bash
-unset DKR_ROM_V77 DKR_ROM_V80
-export DKR_ROM="/absolute/path/to/your/own-supported-US-dump.z64"
-export DKR_PS5_HIGH_REFRESH_BUILD=1 DKR_PS5_LINE_TABLES=1
-bash build_game.sh
-python3 tools/record_native_build.py "$DKR_GAME_WORK"
+python3 tools/send_elf.py YOUR_PS5_LAN_IP "$DKR_GAME_WORK/private/universal/DKRR-Installer.elf"
 ```
 
-Then run the same installer/helper builder commands. Only included revisions
-are available in the resulting app.
+Supply both owned ROMs in `USB/DKRR`; require `DKRR UNIVERSAL INSTALL PASS.`.
+ShadowMountPlus discovers the registered source; launch the installed PS5 icon.
+The sibling `DKRR-Update.elf` uses console-side installation records; no previous
+PC work is needed. Early unmanaged versions require explicit verified
+`--migration APP RECEIPT` inputs when packaging. Before a new published release,
+increase `installer_sequence` in `PORT_RELEASE.json`; never reuse one sequence
+for different program builds. Use a new output directory for each package.
 
-## Install on the PS5
-
-Start the normal homebrew environment and ELF receiver. Close DKR-R. The title
-`PPSA94678` and `/data/homebrew/PPSA94678` must belong to this port; the installer
-refuses different existing files. For an existing version, use [Updates](UPDATES.md).
-
-```bash
-python3 tools/send_elf.py YOUR_PS5_LAN_IP "$DKR_GAME_WORK/private/dkrr-install-game-1.0.6-preview.elf"
-python3 tools/send_elf.py YOUR_PS5_LAN_IP "$DKR_GAME_WORK/private/dkrr-install-owned-rom.elf"
-python3 tools/send_elf.py YOUR_PS5_LAN_IP bin/dkrr-save-metadata.elf --no-wait
-```
-
-Require `NATIVE INSTALL PASS.` and `OWN ROM INSTALL PASS.` from their respective
-installers. A transfer alone does not prove installation or gameplay. The final
-command starts the **console-side** save service for the current console session;
-it does not run a PC service. For the current reboot limitation and an autoloader
-workaround, read [Saves](SAVES.md).
-
-Scan `/data/homebrew` in ShadowMountPlus and start **DKR-R 1.0.6 PS5 Preview** from
-its PS5 icon. Do not use the anonymous ELF receiver to launch `eboot.bin` as the game.
-After installation, closing the PC assistant does not stop the native game.
-Keep generated game/ROM installers private. [Controls](CONTROLS.md) ·
-[Display](DISPLAY.md) · [Known issues](KNOWN_ISSUES.md) · [Licences](LICENSES.md).
+These two universal ELFs exclude ROMs and extracted controller PCM. Public
+distribution still requires console acceptance and the matching source/licence
+review. Keep the private full app, CANDIDATE.json and matching debug ELF locally.
+[Controls](CONTROLS.md) · [Saves](SAVES.md) · [Validation limits](VALIDATION.md).

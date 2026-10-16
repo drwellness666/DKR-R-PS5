@@ -1,24 +1,12 @@
-# Roadmap
+# Next improvements
 
-## Installation and startup
+Gyro steering, adaptive L2, controller item sounds, native saves and the universal
+installer/update are **implemented in Beta 3**. Their remaining work is testing
+and fixing behavior on more consoles, not starting those features from scratch.
 
-- One ROM-free installer ELF, ROM selection/import on the PS5 and normal icon launch.
-- Direct native save storage; remove the metadata helper rather than automate it.
-- Cold-boot/save tests with the PC disconnected.
+- Fix the Tracks-preview water flash and reproducible frame-time spikes.
+- Broaden installer/update recovery, native-save and DualSense testing.
+- Test more displays, loaders, Controller Paks, online modes and compatible mods.
+- Complete the Windows/WSL2 developer-build walkthrough on Windows.
 
-[Installer design and current limits](INSTALLER.md). The existing source-build
-route remains available; these installer changes are not yet released features.
-
-## Controller features
-
-- **Optional gyro steering:** calibration, recenter, sensitivity and stick fallback.
-- **Optional adaptive L2 shot feedback:** resistance and impulse on actual item use;
-  reset on release, pause, disconnect and when disabled. Keep Classic gas tapping.
-
-## Stability
-
-- Isolate the brief Tracks-preview water flash and reproducible frame-time spikes.
-- Test more displays/loaders, texture packs, online/mod use and Controller Paks.
-- Simplify compatible updates after the standalone installation flow is proven.
-
-No dates are promised. [Known issues](KNOWN_ISSUES.md) · [Validation](VALIDATION.md)
+[Known issues](KNOWN_ISSUES.md) · [Test status](VALIDATION.md).
