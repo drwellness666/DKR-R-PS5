@@ -1,29 +1,22 @@
-# Upstream DKR-R title graphics
+# Title artwork
 
-The PS5 title now uses the actual DKR-R project graphics. 
+The PS5 build uses the original graphics from the pinned DKR-R project:
 
-- Icon: assets/ui/Icons/DKR-R-Spinning-Icon.png from the pinned DKR-R source,
-  used by its launcher. Upstream credits the application icon to
+- **Icon:** `assets/ui/Icons/DKR-R-Spinning-Icon.png`, credited upstream to
   [POOTERMAN](https://www.deviantart.com/pooterman).
-- Background: the unmodified image linked at the top of the pinned DKR-R README,
-  with the Recompiled wordmark on the project sky/cloud background.
-- Source paths, URL and SHA-256 values: TITLE_ART_SOURCES.json.
+- **Background:** the unmodified cloud/wordmark header linked in its README.
+- **Source paths and hashes:** `TITLE_ART_SOURCES.json` at the repository root.
 
-The format pipeline only scales/encodes these inputs: 512x512 PNG icon and two identical
-3840x2160 single-level BC7_UNORM DX10 DDS selection/launch backgrounds. No figure, facial expression,
-cap, balloon, logo or scenery is repainted or regenerated. Both title-selection and launch use the same upstream header. The game releases
-the launch overlay after its first completed presentation. This does not imply a Nintendo/Sony endorsement.
+The recipe scales/encodes a 512×512 PNG icon and identical 3840×2160 BC7 DDS
+selection/launch images. It does not repaint characters or use extracted ROM
+models/textures. The launch overlay clears after the first game presentation.
+Icon, selected-title background and launch handoff were confirmed on the test PS5.
 
-The public integration includes the recipe and provenance. The graphics are
-obtained as verified public build inputs; console-ready output stays in the
-private local build tree. No extracted ROM model or texture is used by this
-recipe. Preserve upstream and artist terms: these graphics are not assigned
-CC0 by the port. The project source's MIT licence does not grant Nintendo/Rare
-rights. Review asset terms separately before distributing a packaged app/artwork.
+The repository includes the recipe and provenance; graphics are fetched as
+verified local build inputs. Upstream/artist terms continue to apply. These
+images are not assigned CC0 by the port, and a project-code licence does not
+grant rights to Nintendo/Rare artwork. Review the actual packaged contents and
+preserve attribution before distributing an application.
 
-Source: [pinned DKR-R README and credits](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/README.md).
-Formats: [public native template](https://github.com/blackbearreloaded/ps5-native-app-boilerplate/blob/main/docs/PLATFORM_NOTES.md).
-Icon, selected-title background and launch-image release have been confirmed on the tested PS5.
-
-See [title presentation](../../docs/DISPLAY.md) for paired images,
-Shell registration boundaries and the qualified display path.
+[Upstream README/credits](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/README.md)
+· [Display](../../docs/DISPLAY.md) · [Licences](../../docs/LICENSES.md)
