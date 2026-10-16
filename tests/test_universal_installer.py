@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Actual universal C installer with synthetic ROM banks, filesystem and faults."""
+import fcntl,hashlib,json,os,pathlib,shutil,struct,subprocess,sys,tempfile,unittest
+ROOT=pathlib.Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'))
+from build_universal_installer import emit,hash_source,release_files
+from build_native_game_bundle_updater import CORE,inventory,inventory_hash
+SIZE=12*1024*1024
+SOUNDS=(0x21,0x232,0x233,0x135,0x134,0x151,0x0f,0x9f,0x13a)
+def fixture_rom(revision):
+    rom=bytearray(SIZE);rom[:4]=bytes.fromhex('80371240');base=969568 if revision==77 else 970976
+    def u32(p,v):struct.pack_into('>I',rom,p,v)
+    def u16(p,v):struct.pack_into('>H',rom,p,v)
+    u32(base,50);start=base+208;table=start+0x100;audio=start+0x1000
+    u32(base+39*4,0x100);u32(base+40*4,0x1000)
+    for p,v in ((4,0x100),(8,0x1000),(24,0x2000),(28,0x4000)):u32(table+p,v)
+    bank=audio+0x100;u16(bank,0x4231);u32(bank+4,0x20);u32(bank+0x24,32000);u32(bank+0x2c,0x40)
+    u16(bank+0x4e,1);u32(bank+0x50,0x80)
+    for off,v in ((0,0xa0),(4,0xc0),(8,0xe0)):u32(bank+0x80+off,v)
+    rom[bank+0x8d]=127;u32(bank+0xa4,1000000);rom[bank+0xac:bank+0xae]=b'\x7f\x7f';rom[bank+0xc4]=60
+    u32(bank+0xe4,9);u32(bank+0xf0,0x120);u32(bank+0x120,2);u32(bank+0x124,1)
+    rom[audio+0x1000:audio+0x1009]=bytes.fromhex('60 12 34 56 78 9a bc de f0')
+    for sound in SOUNDS:
+        p=audio+0x2000+10*sound;u16(p,1);rom[p+2]=128;rom[p+4]=100
+    return bytes(rom)
+class Universal(unittest.TestCase):
+ @classmethod
+ def setUpClass(cls):
+    cls.tmp=tempfile.TemporaryDirectory(prefix='dkrr-universal-');cls.base=pathlib.Path(cls.tmp.name);cls.data=cls.base/'data';cls.mnt=cls.base/'mnt';cls.mnt.mkdir();cls.user=cls.base/'system-user';cls.user.mkdir()
+    cls.roms={r:fixture_rom(r) for r in (77,80)}
+    cls.hashes={r:hashlib.sha1(data).hexdigest() for r,data in cls.roms.items()}
+    (cls.base/'hash.c').write_text(hash_source());(cls.base/'fault.c').write_text('''#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
+int __real_rename(const char*,const char*);
+int __real_fsync(int);
+static int moved_to_history=0;
+int __wrap_fsync(int fd){
+ char p[64],name[1024];snprintf(p,sizeof(p),"/proc/self/fd/%d",fd);ssize_t len=readlink(p,name,sizeof(name)-1);if(len>=0)name[len]=0;else name[0]=0;
+ if(moved_to_history&&getenv("DKRR_FAIL_HISTORY_SYNC")&&strstr(name,"/installation/history")){errno=EIO;return -1;}
+ return __real_fsync(fd);
+}
+int __wrap_rename(const char*a,const char*b){
+ if(getenv("DKRR_FAIL_ACTIVATE")&&strstr(a,"staged-integrated-")&&strstr(b,"homebrew/PPSA94678")){errno=EIO;return -1;}
+ int rc=__real_rename(a,b);
+ if(rc==0&&strstr(a,"homebrew/PPSA94678")&&strstr(b,"/history/"))moved_to_history=1;
+ if(rc==0&&getenv("DKRR_POWER_CUT")&&strstr(a,"homebrew/PPSA94678")&&strstr(b,"/history/"))_exit(77);
+ if(rc==0&&getenv("DKRR_POWER_AFTER_ACTIVATE")&&strstr(a,"staged-integrated-")&&strstr(b,"homebrew/PPSA94678"))_exit(78);
+ return rc;
+}
+ssize_t __real_write(int,const void*,size_t);
+ssize_t __wrap_write(int fd,const void*buf,size_t n){
+ static int failed=0;char p[64],name[1024];snprintf(p,sizeof(p),"/proc/self/fd/%d",fd);ssize_t len=readlink(p,name,sizeof(name)-1);if(len>=0)name[len]=0;else name[0]=0;
+ if(getenv("DKRR_FAIL_WRITE")&&strstr(name,"staged-integrated-")&&strstr(name,"eboot.bin")){
+  if(failed){errno=ENOSPC;return -1;}failed=1;return __real_write(fd,buf,n>1?n/2:n);
+ }
+ return __real_write(fd,buf,n);
+}
+''')
+    flags=['clang','-std=c11','-D_GNU_SOURCE','-g','-O1','-fsanitize=address,undefined']
+    cls.flags=flags
+    cls.objects=[]
+    for src in (cls.base/'hash.c',*[ROOT/'installer'/n for n in ('files.c','rom.c','audio.c','vadpcm.c','register.c')]):
+        out=cls.base/(src.name+'.o');warnings=['-Wall','-Wextra','-Werror'] if src.parent==ROOT/'installer' else []
+        subprocess.run(flags+warnings+['-I',str(ROOT/'installer'),'-c',str(src),'-o',str(out)],check=True);cls.objects.append(out)
+    cls.binaries=[];cls.legacy=cls.base/'legacy';cls.legacy_receipt=cls.base/'legacy-receipt.json'
+    for name in CORE:
+        p=cls.legacy/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b'legacy synthetic '+name.encode())
+    (cls.legacy/'eboot.bin').write_bytes(bytes.fromhex('4f153d1d')+b'legacy-code')
+    (cls.legacy/'sce_sys/param.json').write_text(json.dumps({'titleId':'PPSA94678','attribute3':0x40040}))
+    files=inventory(cls.legacy)
+    cls.legacy_receipt.write_text(json.dumps(dict(files=files,app_manifest_sha256=inventory_hash(files),build_id='integrated-'+'0'*24)))
+    for i in range(3):
+        app=cls.base/f'app{i}';build='integrated-'+str(i+1)*24;w=cls.base/f'build{i}';w.mkdir()
+        for name in CORE:
+            p=app/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b'public synthetic '+name.encode())
+        (app/'eboot.bin').write_bytes(bytes.fromhex('4f153d1d')+build.encode())
+        (app/'sce_sys/param.json').write_text(json.dumps({'titleId':'PPSA94678','attribute3':0x40040}))
+        private=app/'assets/controller-audio/us-v77';private.mkdir(parents=True);(private/'0.pcm').write_bytes(b'MUST-NOT-BE-EMBEDDED')
+        files=emit(app,build,w,[(cls.legacy,cls.legacy_receipt)],sequence=i+1);assert not any('controller-audio' in n for n in files)
+        subprocess.run(['clang','-c',str(w/'embedded.S'),'-o',str(w/'embedded.o')],check=True)
+        target=w/'installer'
+        common=[f'-DDKRR_TEST_ROM_HASH77="{cls.hashes[77]}"',f'-DDKRR_TEST_ROM_HASH80="{cls.hashes[80]}"']
+        # ROM hashes are compiled into rom.c, not the main unit.
+        romobj=w/'rom.o';subprocess.run(flags+common+['-I',str(ROOT/'installer'),'-Wall','-Wextra','-Werror','-c',str(ROOT/'installer/rom.c'),'-o',str(romobj)],check=True)
+        objs=[romobj if p.name=='rom.c.o' else p for p in cls.objects]
+        subprocess.run(flags+['-Wall','-Wextra','-Werror','-DDKRR_HOST_TEST=1',f'-DDKRR_UPDATE_ONLY={int(i==2)}',f'-DDKRR_INSTALL_ROOT="{cls.data}"',f'-DDKRR_USB_ROOT="{cls.mnt}"',f'-DDKRR_SYSTEM_USER_ROOT="{cls.user}"','-I',str(ROOT/'installer'),'-I',str(w),str(ROOT/'installer/main.c'),str(w/'embedded.o'),*[str(o) for o in objs],str(cls.base/'fault.c'),'-Wl,--wrap=rename','-Wl,--wrap=write','-Wl,--wrap=fsync','-lm','-o',str(target)],check=True)
+        cls.binaries.append(target)
+    cls.live=cls.data/'homebrew/PPSA94678'
+ @classmethod
+ def tearDownClass(cls):cls.tmp.cleanup()
+ def setUp(self):
+    if self.data.exists():shutil.rmtree(self.data)
+    self.data.mkdir()
+    for p in self.user.iterdir():
+     if p.is_dir():shutil.rmtree(p)
+     else:p.unlink()
+    (self.data/'shadowmount').mkdir();(self.data/'shadowmount/manual.lst').write_bytes(b'# preserve notes\n/mnt/usb1/other-game\n')
+    for p in self.mnt.iterdir():shutil.rmtree(p)
+    folder=self.mnt/'usb0/DKRR';folder.mkdir(parents=True)
+    for rev in (77,80):(folder/f'owned {rev}.z64').write_bytes(self.roms[rev])
+ def run_installer(self,index=0,ok=True,**fault):
+    env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1',**fault)
+    r=subprocess.run([str(self.binaries[index])],env=env,capture_output=True,text=True)
+    self.assertEqual(r.returncode==0,ok,r.stdout+r.stderr)
+    if ok:self.assertIn('DKRR UNIVERSAL UPDATE PASS.' if index==2 else 'DKRR UNIVERSAL INSTALL PASS.',r.stdout)
+    return r
+ def test_fresh_repeat_update_and_second_update(self):
+    self.run_installer();saved=self.data/'dkrr/profile-us-v77/saves';saved.mkdir();(saved/'keep.bin').write_bytes(b'keep progress')
+    config=self.data/'dkrr/profile-us-v77/general.json';config.write_bytes(b'keep settings')
+    self.run_installer();self.run_installer(1);self.run_installer(2)
+    self.assertEqual((saved/'keep.bin').read_bytes(),b'keep progress');self.assertEqual(config.read_bytes(),b'keep settings')
+    self.assertEqual((self.data/'shadowmount/manual.lst').read_bytes(),b'# preserve notes\n/mnt/usb1/other-game\n'+str(self.live).encode()+b'\n')
+    self.assertIn(b'3'*24,(self.live/'eboot.bin').read_bytes())
+    self.assertEqual(len(list((self.data/'dkrr/installation/history').iterdir())),2)
+    self.run_installer(0,False);self.assertIn(b'3'*24,(self.live/'eboot.bin').read_bytes())
+    for rev in (77,80):
+     self.assertEqual((self.data/f'dkrr/roms/dkr.us.v{rev}.z64').read_bytes(),self.roms[rev])
+     self.assertEqual(len(list((self.live/f'assets/controller-audio/us-v{rev}').glob('*.pcm'))),9)
+    # Updates use internal ROMs after USB has been removed.
+    shutil.rmtree(self.mnt/'usb0');self.run_installer(2)
+ def test_exact_legacy_migration_and_update_only_guard(self):
+    self.run_installer(2,False);self.assertFalse(self.live.exists())
+    self.live.parent.mkdir(parents=True);shutil.copytree(self.legacy,self.live)
+    r=self.run_installer(0,False,DKRR_POWER_CUT='1');self.assertEqual(r.returncode,77)
+    self.run_installer(0);self.assertIn(b'1'*24,(self.live/'eboot.bin').read_bytes())
+ def test_wrong_missing_rom_and_symlink(self):
+    (self.mnt/'usb0/DKRR/owned 80.z64').write_bytes(b'bad'.ljust(SIZE,b'\0'));self.run_installer(ok=False);self.assertFalse(self.live.exists())
+    self.setUp();p=self.mnt/'usb0/DKRR/owned 80.z64';p.unlink();p.symlink_to(self.mnt/'usb0/DKRR/owned 77.z64');self.run_installer(ok=False);self.assertFalse(self.live.exists())
+ def test_all_byte_orders(self):
+    p=self.mnt/'usb0/DKRR/owned 77.z64';data=bytearray(self.roms[77]);data[0::2],data[1::2]=data[1::2],data[0::2];p.write_bytes(data)
+    data=bytearray(self.roms[80]);data[0::4],data[1::4],data[2::4],data[3::4]=data[3::4],data[2::4],data[1::4],data[0::4];(self.mnt/'usb0/DKRR/owned 80.z64').write_bytes(data)
+    self.run_installer();self.assertEqual((self.data/'dkrr/roms/dkr.us.v77.z64').read_bytes(),self.roms[77])
+ def test_unknown_app_and_running_game(self):
+    self.run_installer();original=(self.live/'eboot.bin').read_bytes();(self.live/'eboot.bin').write_bytes(b'foreign');self.run_installer(1,False)
+    self.assertEqual((self.live/'eboot.bin').read_bytes(),b'foreign');(self.live/'eboot.bin').write_bytes(original)
+    with (self.data/'dkrr/profile-us-v77/.app-run.lock').open('rb') as f:
+     fcntl.flock(f,fcntl.LOCK_SH|fcntl.LOCK_NB);self.run_installer(1,False)
+    self.assertEqual((self.live/'eboot.bin').read_bytes(),original)
+ def test_failed_activation_resume_and_power_cut(self):
+    self.run_installer();old=(self.live/'eboot.bin').read_bytes()
+    self.run_installer(1,False,DKRR_FAIL_ACTIVATE='1');self.assertEqual((self.live/'eboot.bin').read_bytes(),old)
+    self.run_installer(1);self.assertIn(b'2'*24,(self.live/'eboot.bin').read_bytes())
+    r=self.run_installer(2,False,DKRR_POWER_CUT='1');self.assertEqual(r.returncode,77);self.assertFalse(self.live.exists())
+    self.run_installer(2);self.assertIn(b'3'*24,(self.live/'eboot.bin').read_bytes())
+ def test_partial_write_and_cut_after_activation(self):
+    self.run_installer();old=(self.live/'eboot.bin').read_bytes()
+    self.run_installer(1,False,DKRR_FAIL_WRITE='1');self.assertEqual((self.live/'eboot.bin').read_bytes(),old)
+    self.run_installer(1)
+    r=self.run_installer(2,False,DKRR_POWER_AFTER_ACTIVATE='1');self.assertEqual(r.returncode,78)
+    self.assertIn(b'3'*24,(self.live/'eboot.bin').read_bytes());self.run_installer(2)
+ def test_failed_backup_directory_sync_keeps_recovery_record(self):
+    self.run_installer();old=(self.live/'eboot.bin').read_bytes()
+    r=self.run_installer(1,False,DKRR_FAIL_HISTORY_SYNC='1');self.assertEqual(r.returncode,7)
+    self.assertFalse(self.live.exists())
+    self.assertTrue((self.data/'dkrr/installation/transaction.manifest').is_file())
+    history=list((self.data/'dkrr/installation/history').iterdir());self.assertEqual(len(history),1)
+    self.assertEqual((history[0]/'eboot.bin').read_bytes(),old)
+    self.run_installer(1);self.assertIn(b'2'*24,(self.live/'eboot.bin').read_bytes())
+    self.assertFalse((self.data/'dkrr/installation/transaction.manifest').exists())
+ def test_corrupt_managed_manifest_is_refused(self):
+    self.run_installer();p=self.live/'dkrr-install.manifest';p.write_text('DKRR-INSTALL-2\ninvalid\n1\n../outside\n')
+    old=(self.live/'eboot.bin').read_bytes();self.run_installer(1,False);self.assertEqual((self.live/'eboot.bin').read_bytes(),old)
+ def test_foreign_registered_title_identity_is_protected(self):
+    p=self.user/'app/PPSA94678/sce_sys/param.json';p.parent.mkdir(parents=True);p.write_bytes(b'unrelated registered title')
+    self.run_installer(0,False);self.assertFalse(self.live.exists());self.assertEqual(p.read_bytes(),b'unrelated registered title')
+    p.write_bytes((self.base/'app0/sce_sys/param.json').read_bytes());self.run_installer()
+ def test_registration_preserves_unknown_link_and_resumes(self):
+    path=self.data/'shadowmount/manual.lst';outside=self.base/'unrelated-list.txt';outside.write_bytes(b'keep unrelated data')
+    path.unlink();path.symlink_to(outside)
+    r=self.run_installer(0,False);self.assertEqual(r.returncode,9);self.assertEqual(outside.read_bytes(),b'keep unrelated data')
+    installed=(self.live/'eboot.bin').read_bytes();path.unlink();path.write_text('# retained\n')
+    self.run_installer();self.assertEqual((self.live/'eboot.bin').read_bytes(),installed)
+    self.assertEqual(path.read_bytes(),b'# retained\n'+str(self.live).encode()+b'\n')
+ def test_package_positive_inventory_refuses_extra_user_data(self):
+    app=self.base/'app0';p=app/'assets/personal.json';p.write_text('synthetic unrelated user data')
+    try:
+     with self.assertRaises(ValueError):release_files(app)
+    finally:p.unlink()
+ def test_staging_exact_prefix_and_unknown_bytes(self):
+    self.run_installer();stage=self.data/('dkrr/installation/staged-integrated-'+'2'*24+'-r2');stage.mkdir()
+    (stage/'.dkrr-stage-id').write_text('integrated-'+'2'*24+'-r2')
+    (stage/'eboot.bin').write_bytes(bytes.fromhex('4f153d1d'))
+    self.run_installer(1)
+    stage=self.data/('dkrr/installation/staged-integrated-'+'3'*24+'-r3');stage.mkdir();(stage/'.dkrr-stage-id').write_text('integrated-'+'3'*24+'-r3')
+    (stage/'eboot.bin').write_bytes(b'unknown');before=(self.live/'eboot.bin').read_bytes();self.run_installer(2,False)
+    self.assertEqual((stage/'eboot.bin').read_bytes(),b'unknown');self.assertEqual((self.live/'eboot.bin').read_bytes(),before)
+if __name__=='__main__':unittest.main()

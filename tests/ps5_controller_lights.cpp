@@ -6,9 +6,12 @@
 #include <vector>
 #include <cstring>
 #define SDL_memcmp std::memcmp
+#define SDL_memcpy std::memcpy
+#define SDL_zero(v) std::memset(&(v),0,sizeof(v))
 
 // Exercise the actual pinned SDL SetLED function with a modeled ScePad endpoint.
 using Uint8=std::uint8_t;
+using Uint32=std::uint32_t;
 struct SDL_Joystick {};
 struct PS5_PadContext { int handle=17; };
 struct PS5_PadColor { std::uint8_t r,g,b,a; };
@@ -23,6 +26,10 @@ static int SDL_SetError(const char*,...) { return -1; }
 static int scePadSetLightBar(int h,const PS5_PadColor* c) {
     ++calls;handle=h;last=*c;return returned;
 }
+static unsigned char trigger_packet[120]{};
+static int trigger_calls=0;
+int scePadSetTriggerEffect(int,const void*) __attribute__((weak));
+int scePadSetTriggerEffect(int h,const void*p) { ++trigger_calls;handle=h;std::memcpy(trigger_packet,p,120);return returned; }
 #include "ps5_led.inc"
 
 int main() {
@@ -119,5 +126,19 @@ int main() {
     assert(calls==before_calls);
     returned=-31;assert(PS5_JoystickSendEffect(&pad,command,sizeof(command))==-1);
     assert(calls==before_calls+1 && handle==17);
+    returned=0;
+    PS5_ItemEffect effect{0x44545247,1,3,{}};
+    assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==0 && trigger_calls==1);
+    assert(trigger_packet[0]==1 && trigger_packet[8]==2 && trigger_packet[16]==3 && trigger_packet[17]==6 && trigger_packet[18]==3);
+    for(int i=64;i<120;++i)assert(trigger_packet[i]==0); // R2 never touched.
+    effect.mode=2;assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==0);
+    assert(trigger_packet[8]==3 && trigger_packet[16]==2 && trigger_packet[17]==3 && trigger_packet[18]==50);
+    effect.mode=0;assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==0);
+    assert(trigger_packet[0]==1);for(int i=1;i<120;++i)assert(trigger_packet[i]==0);
+    effect.mode=3;assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==-1);
+    effect.mode=1;effect.strength=6;assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==-1);
+    effect.strength=3;effect.reserved[0]=1;assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==-1);
+    assert(trigger_calls==3);
+    std::puts("PASS bounded native L2 packet, weapon/pulse/off modes and malformed packet refusal; R2 untouched");
     std::puts("PASS both actual US address tables, read-only guest inventory, bounds/owner/menu/pause guards, atomic expiry, actual SDL/ScePad colors and system reset, exact command refusal, deduplication, failure suppression and disable cleanup");
 }
