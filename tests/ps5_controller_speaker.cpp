@@ -8,6 +8,7 @@
 #include <thread>
 using namespace dkrr;
 static std::atomic<int> opens{0},outputs{0},closes{0},active{0},loaded{-1},fail_open{0};
+static std::atomic<unsigned> load_calls{0},loaded_revision{0};
 extern "C" int sceAudioOutOpen(int user,int type,int index,unsigned length,unsigned hz,unsigned format) {
     assert(user==42&&type==4&&index==0&&length==256&&hz==48000&&format==0);
     ++opens;if(fail_open)return -77;++active;return 17;
@@ -18,7 +19,7 @@ extern "C" int sceAudioOutOutput(int h,const void*p) {
     return 0;
 }
 extern "C" int sceAudioOutClose(int h){assert(h==17);++closes;--active;return 0;}
-static std::vector<std::int16_t> load(unsigned rev,unsigned clip){assert(rev==80&&clip<9);loaded=static_cast<int>(clip);return std::vector<std::int16_t>(24000,12000);}
+static std::vector<std::int16_t> load(unsigned rev,unsigned clip){assert((rev==77||rev==80)&&clip<9);++load_calls;loaded_revision=rev;loaded=static_cast<int>(clip);return std::vector<std::int16_t>(24000,12000);}
 template<class Test>static void wait(Test test){for(int i=0;i<1000&&!test();++i)std::this_thread::sleep_for(std::chrono::milliseconds(1));assert(test());}
 int main(){
     ps5_items::Item held{0x80401100,0,1,true,0},spent=held;spent.quantity=0;
@@ -41,5 +42,19 @@ int main(){
         speaker.update(true,42,held,80,true,0.25F,80);speaker.update(true,42,spent,90,false,0.25F,80);wait([]{return active.load()==1;});
     }
     assert(active==0&&opens==closes+1); // One failed open owns no port.
+    assert(load_calls==1); // The retry path reuses the already loaded cue.
+    {
+        ps5_speaker::Speaker speaker(load);
+        const auto before=load_calls.load();
+        for(unsigned i=0;i<3;++i) {
+            const auto old_opens=opens.load(),old_closes=closes.load();
+            const unsigned revision=i==2?77:80;
+            speaker.update(true,42,held,100+i*30,true,0.25F,revision);
+            speaker.update(true,42,spent,120+i*30,false,0.25F,revision);
+            wait([&]{return opens.load()>old_opens;});wait([&]{return closes.load()>old_closes;});
+            assert(load_calls==before+(i==2?2U:1U));
+            assert(loaded_revision==revision);
+        }
+    }
     puts("PASS actual controller audio worker: all five item types/levels, release-use edge, no pickup/loss sound, no port while disabled/idle, correct native user/route/format, bounded gain, pause cancellation, failure isolation and shutdown close");
 }

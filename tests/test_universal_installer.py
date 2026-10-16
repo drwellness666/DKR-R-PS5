@@ -77,10 +77,19 @@ ssize_t __wrap_write(int fd,const void*buf,size_t n){
         for name in CORE:
             p=app/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b'public synthetic '+name.encode())
         (app/'eboot.bin').write_bytes(bytes.fromhex('4f153d1d')+build.encode())
+        # Both installed artwork files must remain distinct entries even when
+        # their package symbols share one embedded byte sequence.
+        (app/'sce_sys/pic1.dds').write_bytes((app/'sce_sys/pic0.dds').read_bytes())
         (app/'sce_sys/param.json').write_text(json.dumps({'titleId':'PPSA94678','attribute3':0x40040}))
         private=app/'assets/controller-audio/us-v77';private.mkdir(parents=True);(private/'0.pcm').write_bytes(b'MUST-NOT-BE-EMBEDDED')
         files=emit(app,build,w,[(cls.legacy,cls.legacy_receipt)],sequence=i+1);assert not any('controller-audio' in n for n in files)
         subprocess.run(['clang','-c',str(w/'embedded.S'),'-o',str(w/'embedded.o')],check=True)
+        import re
+        symbols=subprocess.check_output(['nm','-n',str(w/'embedded.o')],text=True)
+        values={name:int(value,16) for value,name in re.findall(r'^([0-9a-f]+) \w (release_[0-9]+_(?:start|end))$',symbols,re.M)}
+        i0=sorted(files).index('sce_sys/pic0.dds');i1=sorted(files).index('sce_sys/pic1.dds')
+        assert values[f'release_{i0}_start']==values[f'release_{i1}_start']
+        assert values[f'release_{i0}_end']==values[f'release_{i1}_end']
         target=w/'installer'
         common=[f'-DDKRR_TEST_ROM_HASH77="{cls.hashes[77]}"',f'-DDKRR_TEST_ROM_HASH80="{cls.hashes[80]}"']
         # ROM hashes are compiled into rom.c, not the main unit.
