@@ -691,7 +691,7 @@
          ControlsNote("Memory Pak stores game data. Rumble Pak enables vibration on supported controllers. "
                       "Both can stay enabled: the virtual Memory Pak takes priority whenever the game asks "
                       "for storage.",
-@@ -427,20 +448,49 @@
+@@ -427,20 +448,87 @@
  
  // ------------------------------------------------------------ bindings
  
@@ -721,7 +721,45 @@
 +    PaddockGap(20.0F);
 +}
 +
++#if defined(__PROSPERO__)
++#include "ps5_controller_diagram.inl"
++void DrawPs5CompactBindings(ControlsPageState& state,float width,const std::function<void()>& commit) {
++    namespace input=dkr::runtime::input;
++    static std::array<int,input::kPlayerCount> selection{4,4,4,4};
++    static_assert(static_cast<unsigned>(input::Action::Count)==dkrr::ps5_pad::action_count);
++    int& selected=selection[g_selected_player];
++    dkrr::ps5_pad::Bindings bindings;
++    for(unsigned i=0;i<dkrr::ps5_pad::action_count;++i){
++        bindings.primary[i]=input::controller_binding(g_selected_player,static_cast<input::Action>(i));
++        bindings.alternate[i]=input::secondary_controller_binding(g_selected_player,static_cast<input::Action>(i));
++    }
++    DrawPs5ControllerDiagram(bindings,selected,width);
++    std::vector<SettingsChoice> actions;
++    for(const char* label:dkrr::ps5_pad::action_names)actions.emplace_back(label);
++    SettingsDropdown("pad-action","Action",&selected,actions,width);
++    PaddockGap(8.0F);
++    const std::string primary="Change: "+FriendlyBinding(input::controller_binding_name(bindings.primary[selected]));
++    if(SettingsButton(primary.c_str(),width))BeginControllerCapture(selected,CaptureDevice::Controller,false);
++    PaddockGap(8.0F);
++    if(ControlsDisclosure("pad-more","More binding options",state.mapping_open,width)){
++        const std::string alternate="Alternate: "+FriendlyBinding(input::controller_binding_name(bindings.alternate[selected]));
++        if(SettingsButton(alternate.c_str(),width))BeginControllerCapture(selected,CaptureDevice::Controller,true);
++        PaddockGap(8.0F);
++        if(SettingsButton("Restore classic controls",width)){
++            const auto before=TakeControlsSnapshot();input::apply_controller_preset(g_selected_player,input::ControllerPreset::Classic);
++            commit();state.undo=before;state.undo_message="Classic controls restored.";
++        }
++        if(g_selected_player!=0&&SettingsButton("Copy Player 1 bindings",width)){
++            const auto before=TakeControlsSnapshot();input::copy_bindings(0,g_selected_player);commit();state.undo=before;state.undo_message="Player 1 bindings copied.";
++        }
++    }
++}
++#endif
++
  void DrawControlsBindings(ControlsPageState& state, float width, const std::function<void()>& commit) {
++#if defined(__PROSPERO__)
++    DrawPs5CompactBindings(state,width,commit);return;
++#endif
      namespace input = dkr::runtime::input;
 -    const bool keyboard = input::keyboard_player() == static_cast<int>(g_selected_player);
 +    const bool keyboard = !kConsoleMenuLayout && input::keyboard_player() == static_cast<int>(g_selected_player);
@@ -745,7 +783,7 @@
      const float column = std::floor(width / static_cast<float>(columns));
      ImDrawList* draw = ImGui::GetWindowDrawList();
      const PaddockType head = PaddockReading(13.0F, true, 1.45F);
-@@ -527,13 +577,14 @@
+@@ -527,13 +615,14 @@
                              width - 8.0F);
                  ImGui::Unindent(4.0F);
                  PaddockGap(6.0F);
@@ -762,7 +800,7 @@
                      ImGui::BeginGroup();
                      PaddockText(PaddockReading(12.0F, false, 1.45F), PaddockRgb(kSetMuted),
                                  kHeads[static_cast<std::size_t>(device_column + 1)], cell - 8.0F);
-@@ -541,6 +592,7 @@
+@@ -541,6 +630,7 @@
                      binding_button(device_column, cell - 8.0F);
                      ImGui::EndGroup();
                      bottom = std::max(bottom, ImGui::GetItemRectMax().y);
@@ -770,7 +808,7 @@
                      ++slot;
                  }
                  ImGui::SetCursorScreenPos({row_at.x, bottom + 8.0F});
-@@ -713,6 +765,10 @@
+@@ -713,14 +803,18 @@
      const std::size_t player = g_selected_player;
      ControlsScope(false, width);
      ControlsHeading("Motion steering", width);
@@ -781,63 +819,49 @@
      bool gyro = input::gyro_enabled(player);
      if (SettingsCheck("##gyro", "Enable gyro steering", &gyro, width)) {
          input::set_gyro_enabled(gyro, player);
-@@ -799,6 +855,55 @@
-         ControlsNote("Recenter and calibrate your controller from the in-game overlay.", width);
+         commit();
+     }
+-    PaddockGap(8.0F);
+-    ControlsNote("Requires a controller with a motion sensor.", width);
+     if (!gyro) return;
++    if (kConsoleMenuLayout && !ControlsDisclosure("gyro-tuning", "Gyro tuning", g_controls_page.advanced_open, width)) return;
++    if (!kConsoleMenuLayout) ControlsNote("Requires a controller with a motion sensor.", width);
+     int axis = static_cast<int>(input::gyro_axis(player));
+     if (SettingsDropdown("motion-style", "Motion style", &axis,
+                          {"Roll controller like a wheel", "Turn controller left and right"}, width)) {
+@@ -800,6 +894,31 @@
      } else if (!available) {
          ControlsNote("No SDL gyro sensor was reported by Controller " + std::to_string(player + 1U) + ".", width);
-+    }
+     }
 +}
 +
 +
 +void DrawControlsPs5(float width, bool live, const std::function<void()>& commit) {
-+    namespace platform = dkr::runtime::platform;
-+    ControlsScope(true, width);
-+        if (kConsoleMenuLayout) {
-+            PaddockGap(16.0F);
-+            ControlsHeading("Adaptive L2 feedback", width);
-+            bool feedback = platform::item_feedback_enabled();
-+            if (SettingsCheck("##item-feedback", "L2 missile and trap feedback", &feedback, width)) {
-+                platform::set_item_feedback_enabled(feedback);
-+                commit();
-+            }
-+            ControlsNote("Optional light resistance while pulling L2 with a missile or trap, "
-+                         "then a short impulse when the item is consumed. Off by default.", width);
-+            PaddockGap(16.0F);
-+            ControlsHeading("DualSense light bar", width);
-+            bool lights = platform::controller_lights_enabled();
-+            if (SettingsCheck("##balloon-light", "Match held balloon color", &lights, width)) {
-+                platform::set_controller_lights_enabled(lights);
-+                commit();
-+            }
-+            ControlsNote("Optional dim item colors during local play. Blue: boost; red: missiles; "
-+                         "green: traps; yellow: shield; violet: magnet. No item or paused: your normal system light. "
-+                         "Off restores your normal light. Default off.", width);
-+        }
-+    PaddockGap(20.0F);
-+    ControlsHeading("Controller speaker", width);
++    namespace platform=dkr::runtime::platform;
++    ControlsScope(true,width);
++    bool feedback=platform::item_feedback_enabled();
++    if(SettingsCheck("##item-feedback","Adaptive L2 item feedback",&feedback,width)){platform::set_item_feedback_enabled(feedback);commit();}
++    PaddockGap(8.0F);
++    bool lights=platform::controller_lights_enabled();
++    if(SettingsCheck("##balloon-light","Match held balloon color",&lights,width)){platform::set_controller_lights_enabled(lights);commit();}
++    PaddockGap(8.0F);
 +    bool speaker=platform::controller_speaker_enabled();
-+    if(SettingsCheck("##ps5-speaker", "Original balloon item sounds (experimental)", &speaker, width)) {
-+        platform::set_controller_speaker_enabled(speaker);commit();
-+    }
-+    ControlsNote("Short boost, missile, trap, shield and magnet effects from your ROM. TV sound stays active. Off by default.",width);
-+    if(speaker) {
++    if(SettingsCheck("##ps5-speaker","Controller sounds",&speaker,width)){platform::set_controller_speaker_enabled(speaker);commit();}
++    if(speaker){
 +        int volume=static_cast<int>(std::lround(platform::controller_speaker_volume()*100.0F));
-+        if(SettingsRange("##ps5-speaker-volume","Item speaker volume",&volume,0,100,width,
-+            [](int v){return SettingsRangeValue{std::to_string(v),"%"};})) {
++        if(SettingsRange("##ps5-speaker-volume","Controller volume",&volume,0,100,width,[](int v){return SettingsRangeValue{std::to_string(v),"%"};})){
 +            platform::set_controller_speaker_volume(float(volume)/100.0F);commit();
 +        }
-+        ControlsNote(platform::controller_speaker_status(g_selected_player),width);
++        const char* status=platform::controller_speaker_status(g_selected_player);
++        if(status&&*status)ControlsNote(status,width);
 +    }
-+    PaddockGap(22.0F);
-+    if(dkr::runtime::enhancements::modern_options_visible(dkr::runtime::enhancements::presentation_profile())) {
-+        DrawControlsMotion(width,live,commit);
-+    } else {
-+        ControlsHeading("Motion steering",width);
-+        ControlsNote("Gyro steering requires Modern presentation. Classic button controls remain unchanged.",width);
-     }
++    PaddockGap(12.0F);
++    if(dkr::runtime::enhancements::modern_options_visible(dkr::runtime::enhancements::presentation_profile()))DrawControlsMotion(width,live,commit);
++    else ControlsNote("Gyro steering requires Modern presentation.",width);
  }
  
-@@ -907,6 +1012,7 @@
+ // ------------------------------------------------------------ shortcuts
+@@ -907,6 +1026,7 @@
                    dkr::runtime::input::action_label(static_cast<Action>(g_capture_action));
          help = g_capture_device == CaptureDevice::Keyboard
              ? "Press a keyboard key. Escape cancels."
@@ -845,7 +869,28 @@
              : "Press a gamepad button or move an axis firmly. Escape cancels.";
      } else if (g_capture_action == kShortcutCaptureAction) {
          heading = ShortcutActionLabel(g_capture_shortcut_action);
-@@ -1033,7 +1139,7 @@
+@@ -998,9 +1118,9 @@
+     // h1 { min-height: 0; margin-bottom: 10px }: the heading's box is 6 px
+     // taller than the study's 58 px line.
+     PaddockGap(4.0F);
+-    PaddockText(PaddockReading(14.0F, false, 1.45F), PaddockRgb(kSetMuted),
++    if(!kConsoleMenuLayout)PaddockText(PaddockReading(14.0F, false, 1.45F), PaddockRgb(kSetMuted),
+                 "Configure your devices and button mappings.", width);
+-    PaddockGap(24.0F);
++    PaddockGap(kConsoleMenuLayout?8.0F:24.0F);
+ 
+     // The local player (.controls-player-bar): four painted chips.
+ #if defined(__ANDROID__)
+@@ -1012,7 +1132,7 @@
+         const PaddockType label_type = PaddockReading(14.0F, false, 1.45F);
+         const float label_width = std::ceil(PaddockMeasure(label_type, "Local player"));
+         const ImVec2 at = ImGui::GetCursorScreenPos();
+-        const float chip_height = std::ceil(PaddockSign(18.0F, 1.4F).line + 24.0F);
++        const float chip_height = kConsoleMenuLayout?40.0F:std::ceil(PaddockSign(18.0F, 1.4F).line + 24.0F);
+         float chips_x = at.x + label_width + 16.0F;
+         float chips_width = std::min(520.0F, width - label_width - 16.0F);
+         float chips_y = at.y;
+@@ -1033,7 +1153,7 @@
              ImGui::SetCursorScreenPos({chips_x + (chip_width + 10.0F) * static_cast<float>(player), chips_y});
              const std::string label = "Player " + std::to_string(player + 1U);
              if (DrawSoundChip(label.c_str(), player == g_selected_player, chip_width)) {
@@ -854,7 +899,7 @@
              }
          }
          ImGui::SetCursorScreenPos({at.x, chips_y + chip_height});
-@@ -1041,7 +1147,7 @@
+@@ -1041,7 +1161,7 @@
      }
      PaddockGap(20.0F);
      const int picked = SettingsSecondaryNav("controls-sections",
@@ -863,7 +908,7 @@
                                              g_controls_section, width);
      if (picked >= 0) g_controls_section = picked;
      PaddockGap(22.0F);
-@@ -1073,7 +1179,7 @@
+@@ -1073,7 +1193,7 @@
  
      const bool modern = dkr::runtime::enhancements::modern_options_visible(
          dkr::runtime::enhancements::presentation_profile());
@@ -872,7 +917,7 @@
          ControlsScope(g_controls_section == 2, width);
          ControlsHeading(g_controls_section == 2 ? "Stick response" : "Motion steering", width);
          ControlsNote("These adjustments require Modern presentation. Accurate preserves the original control "
-@@ -1087,7 +1193,8 @@
+@@ -1087,7 +1207,8 @@
      } else if (g_controls_section == 2) {
          DrawControlsDriving(state, width, commit);
      } else if (g_controls_section == 3) {
@@ -1237,7 +1282,7 @@
  #include "controller_snapshot.hpp"
  #include "controller_mapping_policy.hpp"
  #include "custom_music.hpp"
-@@ -82,6 +92,18 @@
+@@ -82,6 +92,19 @@
  std::atomic<std::uint32_t> g_ui_tone_duration_ms{0U};
  std::atomic<bool> g_rumble_enabled{true};
  std::atomic<float> g_rumble_strength{1.0F};
@@ -1246,6 +1291,7 @@
 +dkrr::ps5_lights::Mailbox g_controller_lights;
 +std::atomic<bool> g_item_feedback_enabled{false};
 +dkrr::ps5_items::Mailbox g_controller_items;
++dkrr::ps5_sounds::Mailbox g_controller_sounds;
 +std::atomic<bool> g_speaker_enabled{false};
 +std::atomic<float> g_speaker_volume{0.25F};
 +std::uint64_t ControllerLightTime() {
@@ -1256,7 +1302,7 @@
  std::atomic<dkr::runtime::platform::InputBackend> g_requested_input_backend{
      dkr::runtime::platform::InputBackend::Automatic};
  std::atomic<dkr::runtime::platform::InputBackend> g_active_input_backend{
-@@ -104,6 +126,12 @@
+@@ -104,6 +127,13 @@
      bool rumble = false;
      bool gyro = false;
      bool mapped = false;
@@ -1265,16 +1311,17 @@
 +    dkrr::ps5_lights::Output light;
 +    dkrr::ps5_items::Output item_effect;
 +    dkrr::ps5_speaker::Speaker speaker;
++    std::uint64_t speaker_event=0;
 +#endif
      std::string mapping_source;
  };
  std::vector<ControllerRecord> g_controller_devices;
-@@ -494,6 +522,19 @@
+@@ -494,6 +524,19 @@
  
  void CloseControllerRecord(ControllerRecord& record) {
      if (record.controller != nullptr) {
 +#if defined(__PROSPERO__)
-+        record.speaker = dkrr::ps5_speaker::Speaker{};
++        record.speaker = dkrr::ps5_speaker::Speaker{};record.speaker_event=0;
 +        record.item_effect.update(false,{},0,false,[&](const dkrr::ps5_items::Command& command) {
 +            return SDL_GameControllerSendEffect(record.controller,&command,sizeof(command));
 +        });
@@ -1289,7 +1336,7 @@
          SDL_GameControllerClose(record.controller);
          record.controller = nullptr;
          record.joystick = nullptr;
-@@ -661,6 +702,9 @@
+@@ -661,6 +704,9 @@
  #endif
              record.gyro = SDL_GameControllerHasSensor(
                  record.controller, SDL_SENSOR_GYRO) == SDL_TRUE;
@@ -1299,7 +1346,7 @@
              record.mapping_source = MappingSourceForGuid(guid);
          } else {
              record.joystick = SDL_JoystickOpen(index);
-@@ -1520,6 +1564,19 @@
+@@ -1520,6 +1566,19 @@
  
  #if DKR_RUNTIME_HAS_RT64
  ultramodern::renderer::WindowHandle dkr::runtime::platform::create_window() {
@@ -1319,7 +1366,7 @@
      if (g_window == nullptr) {
  #if defined(DKR_IOS)
          // Desktop fullscreen, as on the Mac. Real fullscreen makes SDL restore
-@@ -2194,6 +2251,17 @@
+@@ -2194,6 +2253,17 @@
              dkr::runtime::custom_music::render(g_custom_music_buffer.data(),
                                                 sample_count / 2U, g_audio_frequency);
          }
@@ -1337,7 +1384,7 @@
          for (std::size_t i = 0; i < sample_count; i += 2) {
              // RDRAM's 32-bit word swap leaves each native stereo pair in R,L
              // order. Restore conventional L,R order before sending it to SDL.
-@@ -2436,9 +2504,58 @@
+@@ -2436,9 +2506,60 @@
      }
      const bool blocked = dkr::runtime::ui::overlay_visible();
      const bool window_focused = g_window != nullptr &&
@@ -1383,8 +1430,10 @@
 +            const auto port = static_cast<std::size_t>(assigned-g_controllers.begin());
 +            const auto item = g_controller_items.read(port,now,blocked || !window_focused || online_routing);
 +            const bool pressed = port<kControllerCount && (g_physical_buttons[port].load(std::memory_order_acquire)&0x2000U);
-+            record.speaker.update(speaker && attached,dkrr_ps5_pad_user_id(record.joystick),item,now,pressed,
-+                g_speaker_volume.load(std::memory_order_acquire)*g_master_volume.load(std::memory_order_acquire)*dkr::runtime::audio::sound_effects_volume(),dkrr_ps5_active_revision());
++            const bool sound_blocked=blocked || !window_focused || online_routing || !attached;
++            const int game_clip=g_controller_sounds.take(unsigned(port),now,sound_blocked,record.speaker_event);
++            record.speaker.update(speaker && !sound_blocked,dkrr_ps5_pad_user_id(record.joystick),item,now,pressed,
++                g_speaker_volume.load(std::memory_order_acquire)*g_master_volume.load(std::memory_order_acquire)*dkr::runtime::audio::sound_effects_volume(),dkrr_ps5_active_revision(),game_clip);
 +            const bool pulled = SDL_GameControllerGetAxis(record.controller,SDL_CONTROLLER_AXIS_TRIGGERLEFT)>3276;
 +            const int result = record.item_effect.update(enabled,item,now,pulled,[&](const dkrr::ps5_items::Command& command) {
 +                return SDL_GameControllerSendEffect(record.controller,&command,sizeof(command));
@@ -1396,7 +1445,7 @@
      const int configured_keyboard_player =
          dkr::runtime::input::keyboard_player();
      const std::size_t online_profile = std::min(
-@@ -2687,6 +2804,98 @@
+@@ -2687,6 +2808,98 @@
  #endif
  }
  
@@ -1482,19 +1531,59 @@
 +    if(player<g_controllers.size())for(const auto& r:g_controller_devices)if(r.controller==g_controllers[player]) {
 +        const int status=r.speaker.status();
 +        if(status==-3)return "Controller speaker worker unavailable. Restart DKR-R to retry.";
-+        if(status==-2)return "Original item audio is missing from this installation.";
++        if(status==-2)return "Controller audio is missing. Run the current update ELF to repair it.";
 +        if(status<0)return "Controller speaker unavailable. Toggle off/on to retry; TV sound remains active.";
-+        if(status>0)return "Native speaker output accepted. Confirm the audible result on the controller.";
++        if(status>0)return "";
 +    }
 +#else
 +    (void)player;
 +#endif
-+    return "Experimental: output opens on item use. PS5 controller-speaker volume also applies.";
++    return "";
 +}
 +
  bool dkr::runtime::platform::gyro_available(std::size_t player) {
  #if DKR_RUNTIME_HAS_RT64
      std::scoped_lock lock(g_platform_mutex);
+@@ -3320,3 +3533,39 @@
+     (void)assignments;
+ #endif
+ }
++
++#if defined(__PROSPERO__)
++namespace {
++bool NativeSoundContext(const std::uint8_t* ram) {
++    if(!ram || !g_speaker_enabled.load(std::memory_order_acquire) ||
++        !dkr::runtime::netplay::external_side_effects_allowed())return false;
++    namespace a=dkr::runtime::revision_addresses;
++    const dkrr::ps5_lights::Guest g({ram,0x800000});
++    return g.valid(a::GameMode,4)&&g.valid(a::IsPaused,1)&&g.valid(a::IsInTracksMenu,4)&&g.valid(a::LevelLoadTimer,4)&&
++        g.word(a::GameMode)==0&&!g.byte(a::IsPaused)&&!g.word(a::IsInTracksMenu)&&!g.word(a::LevelLoadTimer);
++}
++std::uint32_t NativeSoundObject(const dkrr::ps5_lights::Guest&g,unsigned port) {
++    namespace a=dkr::runtime::revision_addresses;
++    if(port>=4||!g.valid(a::NumberOfRacers,4)||!g.valid(a::RacersByPort,4))return 0;
++    const auto count=g.word(a::NumberOfRacers),table=g.word(a::RacersByPort);
++    if(!count||count>10||port>=count||(table&3U)||!g.valid(table,count*4U))return 0;
++    const auto object=g.word(table+port*4U);
++    if((object&3U)||!g.valid(object,0x68))return 0;const auto racer=g.word(object+0x64);
++    if((racer&3U)||!g.valid(racer,2)||(unsigned(g.byte(racer))<<8|g.byte(racer+1))!=port)return 0;
++    return object;
++}
++}
++extern "C" bool dkrr_controller_sounds_enabled(){return g_speaker_enabled.load(std::memory_order_relaxed);}
++extern "C" void dkrr_controller_game_sound(const std::uint8_t* ram,unsigned port,unsigned clip) {
++    if(clip>=dkrr::ps5_sounds::count||!NativeSoundContext(ram))return;
++    const dkrr::ps5_lights::Guest g({ram,0x800000});
++    if(NativeSoundObject(g,port))g_controller_sounds.publish(port,clip,ControllerLightTime());
++}
++extern "C" void dkrr_controller_zipper_sound(const std::uint8_t*ram,std::uint32_t x,std::uint32_t y,std::uint32_t z) {
++    if(!NativeSoundContext(ram))return;const dkrr::ps5_lights::Guest g({ram,0x800000});
++    for(unsigned port=0;port<4;++port){const auto object=NativeSoundObject(g,port);
++        if(object&&g.word(object+0xc)==x&&g.word(object+0x10)==y&&g.word(object+0x14)==z)
++            g_controller_sounds.publish(port,dkrr::ps5_sounds::zipper,ControllerLightTime());
++    }
++}
++#endif
 --- a/runtime-recomp/src/game/runtime_platform.hpp
 +++ b/runtime-recomp/src/game/runtime_platform.hpp
 @@ -76,6 +76,16 @@
@@ -1721,20 +1810,21 @@
              const bool is_directory = entry.is_directory(error);
 --- a/runtime-recomp/src/game/runtime_ui.cpp
 +++ b/runtime-recomp/src/game/runtime_ui.cpp
-@@ -19,6 +19,12 @@
+@@ -19,6 +19,13 @@
  #include "generated/jumpman_font.h"
  #include "generated/racing_banana_font.h"
  #include "generated/selawik_font.h"
 +#if defined(__PROSPERO__)
 +#include "ps5_revision_selection.h"
 +#include "ps5_menu_layout.hpp"
++#include "ps5_controller_diagram.hpp"
 +#include "ps5_display_options.h"
 +#include "ps5_diagnostics.h"
 +#endif
  #include "countdown_tone_policy.hpp"
  #include "custom_tracks.hpp"
  #include "launcher_render_policy.hpp"
-@@ -64,6 +70,9 @@
+@@ -64,6 +71,9 @@
  #include "startup_performance.hpp"
  #include "runtime_telemetry.hpp"
  #include "runtime_texture_packs.hpp"
@@ -1744,7 +1834,7 @@
  #include "save_manager.hpp"
  #include "runtime_save_routing.hpp"
  #include "texture_pack_browser_policy.hpp"
-@@ -477,7 +486,7 @@
+@@ -477,7 +487,7 @@
  }
  bool g_online_guide_do_not_show_again = true;
  bool g_online_guide_reopen_requested = false;
@@ -1753,7 +1843,7 @@
  RefreshRate g_modern_refresh_mode = RefreshRate::Display;
  #elif defined(__ANDROID__)
  // Conservative first-use defaults only. The settings loader restores all
-@@ -489,7 +498,7 @@
+@@ -489,7 +499,7 @@
  int g_modern_refresh_target = 60;
  #if defined(DKR_IOS)
  Resolution g_modern_resolution = Resolution::Original2x;
@@ -1762,7 +1852,7 @@
  Resolution g_modern_resolution = Resolution::Original2x;
  #else
  Resolution g_modern_resolution = Resolution::Auto;
-@@ -498,7 +507,7 @@
+@@ -498,7 +508,7 @@
  Antialiasing g_modern_antialiasing = Antialiasing::None;
  #if defined(DKR_IOS)
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
@@ -1771,7 +1861,7 @@
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::Off;
  #else
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
-@@ -551,6 +560,7 @@
+@@ -551,6 +561,7 @@
  std::string g_texture_pack_manage_id;
  std::string g_texture_pack_remove_id;
  std::string g_texture_pack_remove_name;
@@ -1779,7 +1869,7 @@
  // Set when an action in Track Lab (import, arm, play) switched the presentation
  // profile to Modern on the player's behalf. Shown in Track Lab and Graphics,
  // cleared when the player changes the profile there by hand.
-@@ -680,7 +690,11 @@
+@@ -680,7 +691,11 @@
  constexpr int kPageTextures = 8;
  constexpr int kMenuPageCount = 9;
  // Stable page IDs, explicit visual order for both pointer and controller use.
@@ -1791,7 +1881,19 @@
  int StepSidebarSelection(int current,int direction) {
      const auto found=std::find(kSidebarOrder.begin(),kSidebarOrder.end(),current);
      const int index=found==kSidebarOrder.end()?0:static_cast<int>(found-kSidebarOrder.begin());
-@@ -1206,6 +1220,9 @@
+@@ -707,7 +722,11 @@
+ bool g_capture_popup_pending = false;
+ bool g_capture_finished = false;
+ std::size_t g_selected_player = 0;
++#if defined(__PROSPERO__)
++int g_controls_section = 1;
++#else
+ int g_controls_section = 0;
++#endif
+ constexpr int kShortcutCaptureAction = -2;
+ constexpr int kAssignControllerCaptureAction = -3;
+ constexpr std::size_t kShortcutActionCount = static_cast<std::size_t>(
+@@ -1206,6 +1225,9 @@
  }
  
  void LoadLauncherFonts() {
@@ -1801,7 +1903,7 @@
      ++g_font_generation;
      ImGuiIO& io = ImGui::GetIO();
      static constexpr ImWchar kLauncherGlyphRanges[] = {
-@@ -1336,9 +1353,22 @@
+@@ -1336,9 +1358,22 @@
          g_font_fps = g_font_controls != nullptr ? g_font_controls : body_font;
      }
      LoadBrandLogoIntoAtlas();
@@ -1824,7 +1926,7 @@
  }
  
  class ControlFontScope {
-@@ -1533,6 +1563,10 @@
+@@ -1533,6 +1568,10 @@
  #if defined(__ANDROID__)
      // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
      dkr::runtime::mobile_graphics::apply_accurate_budget(config);
@@ -1835,7 +1937,7 @@
  #endif
  }
  
-@@ -1752,6 +1786,12 @@
+@@ -1752,6 +1791,12 @@
          output << "memory_pak=" << (dkr::runtime::pak::enabled() ? 1 : 0) << '\n';
          output << "rumble=" << (dkr::runtime::platform::rumble_enabled() ? 1 : 0) << '\n';
          output << "rumble_strength=" << dkr::runtime::platform::rumble_strength() << '\n';
@@ -1848,7 +1950,7 @@
          output << "stick_deadzone=" << dkr::runtime::input::stick_deadzone() << '\n';
          output << "stick_anti_deadzone=" << dkr::runtime::input::stick_anti_deadzone() << '\n';
          output << "stick_sensitivity=" << dkr::runtime::input::stick_sensitivity() << '\n';
-@@ -2424,6 +2464,14 @@
+@@ -2424,6 +2469,14 @@
                  dkr::runtime::pak::set_enabled(number != 0);
              } else if (key == "rumble") {
                  dkr::runtime::platform::set_rumble_enabled(number != 0);
@@ -1863,7 +1965,7 @@
              } else if (key == "rumble_strength") {
                  dkr::runtime::platform::set_rumble_strength(std::stof(value));
              } else if (key == "stick_deadzone") {
-@@ -2513,6 +2561,16 @@
+@@ -2513,6 +2566,16 @@
      // still owns an open handle. Migration may call SaveSettings below, so
      // release the read handle before attempting that replacement.
      input.close();
@@ -1880,7 +1982,7 @@
      g_online_automatic_backend = dkr::runtime::netplay::experimental::migrated_automatic_backend(
          has_automatic_backend_setting, g_online_automatic_backend, has_legacy_backend_setting);
      for (std::size_t channel = 0; channel < kSoundChannelCount; ++channel) {
-@@ -4307,6 +4365,11 @@
+@@ -4307,6 +4370,11 @@
  }
  
  void DrawSidebarCurrentStripe() {
@@ -1892,7 +1994,7 @@
      const ImVec2 minimum = ImGui::GetItemRectMin();
      const ImVec2 maximum = ImGui::GetItemRectMax();
      ImDrawList* draw = ImGui::GetWindowDrawList();
-@@ -4322,6 +4385,7 @@
+@@ -4322,6 +4390,7 @@
      draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
                          std::max(rounding - 1.0F, 0.0F));
      draw->PopClipRect();
@@ -1900,7 +2002,7 @@
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -6352,12 +6416,18 @@
+@@ -6352,12 +6421,18 @@
          "HIDE FROM LIST keeps DKR-R's managed copy on disk. Choose Hidden "
          "from the Visibility filter to restore it later.");
      ImGui::Dummy({0.0F, 8.0F});
@@ -1919,7 +2021,7 @@
      ImGui::Dummy({0.0F, 12.0F});
      const float available = std::max(ImGui::GetContentRegionAvail().x, 1.0F);
      const float gap = ImGui::GetStyle().ItemSpacing.x;
-@@ -6375,11 +6445,13 @@
+@@ -6375,11 +6450,13 @@
      }
      if (!compact) ImGui::SameLine();
      ImGui::PushStyleColor(ImGuiCol_Button, {0.45F, 0.09F, 0.10F, 1.0F});
@@ -1933,7 +2035,7 @@
      ImGui::PopStyleColor();
      ImGui::EndPopup();
  }
-@@ -6456,6 +6528,10 @@
+@@ -6456,6 +6533,10 @@
              ImGui::TextWrapped("%s", value.c_str());
          };
          detail_row("TYPE", dkr::runtime::texture_packs::format_name(pack.format));
@@ -1944,7 +2046,7 @@
          detail_row("PRIORITY", std::to_string(pack.priority) +
                     (pack.priority == 1U ? " (highest)" : " (lower number wins)"));
          detail_row("MANAGED SIZE",
-@@ -6519,6 +6595,11 @@
+@@ -6519,6 +6600,11 @@
      if (ImGui::Button("REMOVE PACK...", {action_width, 42.0F})) {
          g_texture_pack_remove_id = pack.id;
          g_texture_pack_remove_name = pack.name;
@@ -1956,7 +2058,7 @@
          request_removal = true;
          ImGui::CloseCurrentPopup();
      }
-@@ -8053,6 +8134,15 @@
+@@ -8053,6 +8139,15 @@
      if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
          return false;
      }
@@ -1972,7 +2074,7 @@
      if (g_capture_action == kShortcutCaptureAction) {
          if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
              event->key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-@@ -8166,6 +8256,11 @@
+@@ -8166,6 +8261,11 @@
  
  void DrawOverlayContent(float content_width) {
      if (g_overlay_page == kPagePlay) {
@@ -1984,7 +2086,7 @@
          DrawPageHeading("PLAY");
          ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
          ImGui::TextWrapped("Taj has paused the race. The island is waiting whenever you are ready.");
-@@ -8173,12 +8268,19 @@
+@@ -8173,12 +8273,19 @@
          ImGui::Dummy({0.0F, 18.0F});
          DrawStartingLights(true);
          ImGui::Dummy({0.0F, 12.0F});
@@ -2004,7 +2106,7 @@
      } else if (g_overlay_page == kPageGraphics) {
          DrawGraphicsPage(content_width, true);
      } else if (g_overlay_page == kPageSound) {
-@@ -8991,6 +9093,11 @@
+@@ -8991,6 +9098,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -2016,7 +2118,7 @@
          LauncherSidebarButton("PLAY", 0, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("DKR-R ONLINE", kPageOnlineMp, page, sidebar_selection,
-@@ -9009,6 +9116,7 @@
+@@ -9009,6 +9121,7 @@
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("ABOUT DKR-R", kPageAbout, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
@@ -2024,7 +2126,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9408,6 +9516,9 @@
+@@ -9408,6 +9521,9 @@
      }
  #endif
      inspector->newFrame(application.framebufferGraphicsWorker.get());
@@ -2034,7 +2136,7 @@
      if (auto* hud_window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window())) {
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
-@@ -9461,7 +9572,8 @@
+@@ -9461,7 +9577,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -2044,7 +2146,7 @@
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9494,6 +9606,11 @@
+@@ -9494,6 +9611,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -2056,7 +2158,7 @@
          SidebarButton("PLAY", 0, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
          SidebarButton("DKR-R ONLINE", kPageOnlineMp, sidebar_selection, nav_inner_width,
-@@ -9512,6 +9629,7 @@
+@@ -9512,6 +9634,7 @@
                        sidebar_layout.button_height);
          SidebarButton("ABOUT DKR-R", kPageAbout, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
@@ -2064,7 +2166,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9574,6 +9692,11 @@
+@@ -9574,6 +9697,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -2076,7 +2178,7 @@
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9756,6 +9879,18 @@
+@@ -9756,6 +9884,18 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
