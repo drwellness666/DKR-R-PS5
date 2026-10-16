@@ -1,5 +1,17 @@
 # Changelog
 
+## Beta 3.1 — console menu refinements
+
+- Put Controls, Graphics, Sound and Textures next to Play; preserve existing settings and page identities.
+- Replace overflowing horizontal subsection tabs with one full-width section selector, using Cross to open/select and Circle to cancel.
+- Separate Graphics into Display and HUD & Detail; simplify the paused-race page.
+- Reuse loaded controller-sound cues and the prepared missile mix instead of reading/mixing them again on every use.
+- Store identical title images only once inside each installer/update ELF; installed artwork is unchanged.
+- Recommend the optional DKR REMASTERED pack by sr.gu, with its official community link.
+
+This candidate does not claim a fix for Tracks-preview water flicker or measured
+FPS gains. The published Beta 3 package remains available unchanged.
+
 ## Beta 3 — universal installation and native PS5 extras
 
 - One ROM-free installer ELF: import both owned US ROMs from USB on PS5.

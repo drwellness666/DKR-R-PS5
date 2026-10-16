@@ -7,9 +7,10 @@ An unofficial PS5 port of [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R).
 
 [📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇩🇪 Deutsch](README.de.md) · [📖 Help](docs/README.md) · [🐛 Report a problem](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Beta 3 preview.** Gameplay has been tested on PS5. The new USB installer,
+**Beta 3.1 development preview.** Gameplay has been tested on PS5. The new USB installer,
 native save backend and additional controller effects are included in this
-preview; their PS5 testing is still in progress. [Test status](docs/VALIDATION.md).
+preview; their PS5 testing is still in progress. Menu refinements are on this branch;
+see Releases for packaged versions. [Test status](docs/VALIDATION.md).
 
 ## 🎮 What this port adds
 
@@ -18,7 +19,7 @@ preview; their PS5 testing is still in progress. [Test status](docs/VALIDATION.m
 | Native PS5 app | Start from a PS5 home-screen icon, with matching background and launch artwork. |
 | Both US revisions | Choose **US 1.0 or US 1.1 / Rev A** under **Touchpad → Play** for the next launch. |
 | Shared setup | Keep controls, picture, sound and texture selections when switching revision. Progress and Controller Paks stay separate. |
-| Controller-friendly menus | Full-size interface at 4K, clear version cards and D-pad navigation. Classic Cross acceleration preserves gas tapping. |
+| Controller-friendly menus | Full-size interface at 4K, clear version cards, common settings first and a single section selector. Classic Cross acceleration preserves gas tapping. |
 | DualSense extras | Optional held-balloon light colors; experimental gyro steering, L2 item feedback and item sounds from the controller speaker. Together under **Controls → PS5**. |
 | TV output | Optional 1080p, 1440p and **4K**, plus experimental **120 Hz / VRR**. Match display follows the active output; actual FPS depend on the scene and settings. |
 | Installation and updates | One ROM-free installer ELF, then one update ELF for later versions. ROM import and controller-sound preparation happen on the PS5. |
@@ -45,6 +46,15 @@ homebrew setup is still required after a console restart. To update, close the
 game and send the new **DKRR-Update.elf** once. Settings, progress and texture
 packs stay on the console. No compilation is needed for this ELF route.
 [Installation help](docs/INSTALLER.md) · [Updates](docs/UPDATES.md).
+
+## 🎨 Optional texture pack
+
+**DKR REMASTERED by sr.gu** is a recommended optional pack; **v0.2.7** was
+confirmed visible on both US revisions in our PS5 sessions. Get it through the
+[official DKR-R Discord](https://discord.com/invite/AMWfXdBjNP), which upstream
+links for its community texture pack. Import it under **Textures** and use
+**Modern** presentation. It is a separate download under its author's terms.
+[Pack help](docs/CONTROLS.md#texture-packs-and-mods).
 
 ## ⚠️ Known issues
 

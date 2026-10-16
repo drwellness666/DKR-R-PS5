@@ -1,8 +1,8 @@
 {
-  "tag": "ps5-beta.3",
+  "tag": "ps5-beta.3.1",
   "upstream_version": "1.0.6",
   "source_only": false,
-  "qualification": "Experimental preview: 53 host checks and native builds pass; universal installation/update, fresh-boot native saves and new controller effects await complete PS5 verification.",
+  "qualification": "Experimental preview: host checks and native builds cover menu refinements, cue caching and installer deduplication; complete PS5 verification of new paths remains open.",
   "development_candidate": true,
-  "installer_sequence": 3
+  "installer_sequence": 4
 }

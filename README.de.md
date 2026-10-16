@@ -7,9 +7,10 @@ Ein inoffizieller PS5-Port von [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R
 
 [📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇬🇧 English](README.md) · [📖 Hilfe](docs/README.md) · [🐛 Fehler melden](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Beta-3-Vorschau.** Das Spiel wurde auf PS5 getestet. Der neue USB-Installer,
+**Beta-3.1-Entwicklungsvorschau.** Das Spiel wurde auf PS5 getestet. Der neue USB-Installer,
 die native Speicherfunktion und die zusätzlichen Controller-Effekte sind in
-dieser Vorschau enthalten; ihre PS5-Tests laufen noch. [Teststand](docs/VALIDATION.md).
+dieser Vorschau enthalten; ihre PS5-Tests laufen noch. Die Menüverbesserungen
+sind auf diesem Branch; fertige Pakete stehen unter Releases. [Teststand](docs/VALIDATION.md).
 
 ## 🎮 Was dieser Port ergänzt
 
@@ -18,7 +19,7 @@ dieser Vorschau enthalten; ihre PS5-Tests laufen noch. [Teststand](docs/VALIDATI
 | Native PS5-App | Start über ein PS5-Icon, mit passendem Hintergrund und Startgrafik. |
 | Beide US-Revisionen | Unter **Touchpad → Play** zwischen **US 1.0 und US 1.1 / Rev A** für den nächsten Start wählen. |
 | Gemeinsame Einrichtung | Steuerung, Bild, Ton und Texturauswahl beim Versionswechsel behalten. Fortschritt und Controller Paks bleiben getrennt. |
-| Controllerfreundliche Menüs | Bildschirmfüllende Oberfläche bei 4K, klare Versionskarten und Navigation per Steuerkreuz. Klassisches Gasgeben mit Kreuz erhält das Gas-Antippen. |
+| Controllerfreundliche Menüs | Bildschirmfüllende Oberfläche bei 4K, klare Versionskarten, häufige Einstellungen zuerst und ein einzelner Abschnittswähler. Klassisches Gasgeben mit Kreuz erhält das Gas-Antippen. |
 | DualSense-Extras | Optionale Ballon-Lichtfarben; experimentelle Gyrosteuerung, L2-Item-Effekte und Item-Geräusche über den Controller-Lautsprecher. Gemeinsam unter **Controls → PS5**. |
 | TV-Ausgabe | Wahlweise 1080p, 1440p und **4K**, dazu experimentelle **120 Hz / VRR**. Match display folgt der aktiven Ausgabe; die tatsächlichen FPS hängen von Szene und Einstellungen ab. |
 | Installation und Updates | Eine ROM-freie Installer-ELF, später eine Update-ELF. ROM-Import und Vorbereitung der Controller-Geräusche erfolgen auf der PS5. |
@@ -48,6 +49,15 @@ Für ein Update das Spiel schließen und die neue **DKRR-Update.elf** einmal
 senden. Einstellungen, Fortschritt und Texturpakete bleiben auf der Konsole.
 Für diesen ELF-Weg ist keine eigene Kompilation nötig.
 [Installationshilfe](docs/INSTALLER.md) · [Updates](docs/UPDATES.md).
+
+## 🎨 Optionales Texturpaket
+
+**DKR REMASTERED von sr.gu** ist eine optionale Empfehlung; **v0.2.7** war in
+unseren PS5-Sitzungen auf beiden US-Revisionen sichtbar. Die Bezugsquelle ist der
+[offizielle DKR-R-Discord](https://discord.com/invite/AMWfXdBjNP), den auch das
+Originalprojekt für sein Community-Texturpaket verlinkt. Unter **Textures**
+importieren und **Modern** verwenden. Das Paket wird separat zu den Bedingungen
+des Autors angeboten. [Paket-Hilfe](docs/CONTROLS.md#texture-packs-and-mods).
 
 ## ⚠️ Bekannte Fehler
 
