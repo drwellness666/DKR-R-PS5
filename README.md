@@ -7,10 +7,8 @@ An unofficial PS5 port of [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R).
 
 [📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇩🇪 Deutsch](README.de.md) · [📖 Help](docs/README.md) · [🐛 Report a problem](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Beta 3.1 development preview.** Gameplay has been tested on PS5. The new USB installer,
-native save backend and additional controller effects are included in this
-preview; their PS5 testing is still in progress. Menu refinements are on this branch;
-see Releases for packaged versions. [Test status](docs/VALIDATION.md).
+**Beta 3.2 preview.** Compact controller mapping and new original controller cues.
+Gameplay was tested on PS5; new features are covered by the [validation report](docs/VALIDATION.md).
 
 ## 🎮 What this port adds
 
@@ -19,8 +17,8 @@ see Releases for packaged versions. [Test status](docs/VALIDATION.md).
 | Native PS5 app | Start from a PS5 home-screen icon, with matching background and launch artwork. |
 | Both US revisions | Choose **US 1.0 or US 1.1 / Rev A** under **Touchpad → Play** for the next launch. |
 | Shared setup | Keep controls, picture, sound and texture selections when switching revision. Progress and Controller Paks stay separate. |
-| Controller-friendly menus | Full-size interface at 4K, clear version cards, common settings first and a single section selector. Classic Cross acceleration preserves gas tapping. |
-| DualSense extras | Optional held-balloon light colors; experimental gyro steering, L2 item feedback and item sounds from the controller speaker. Together under **Controls → PS5**. |
+| Controller-friendly menus | Full-size interface at 4K, clear version cards, a live controller diagram and compact button mapping. Classic Cross acceleration preserves gas tapping. |
+| DualSense extras | Optional held-balloon light colors; gyro steering, L2 item feedback and original item, pickup, coin, horn and boost-pad sounds. Together under **Controls → PS5**. |
 | TV output | Optional 1080p, 1440p and **4K**, plus experimental **120 Hz / VRR**. Match display follows the active output; actual FPS depend on the scene and settings. |
 | Installation and updates | One ROM-free installer ELF, then one update ELF for later versions. ROM import and controller-sound preparation happen on the PS5. |
 | Built-in storage and diagnostics | Direct native save handling, local error journals and a frame-time capture tool. No separate save helper is part of this version. |
@@ -60,11 +58,9 @@ links for its community texture pack. Import it under **Textures** and use
 
 - Brief water flicker when entering a **Tracks preview**; Adventure water was reported stable.
 - Occasional **microstutters**, especially with heavier graphics settings or texture packs.
-- The new installer, fresh-boot native saves, gyro, adaptive L2 and controller speaker still need wider PS5 testing. These controller extras are optional and start off.
-- No HDR. Online, mods, Controller Paks and other firmware/TV combinations need broader testing. 120-Hz output is not a promise of constant 120 FPS.
+- HDR is unavailable. Compatibility and experimental-feature details are in the [validation report](docs/VALIDATION.md).
 
-Next work focuses on these fixes and compatibility testing. Gyro and adaptive L2
-are already implemented, not future-only features. [Known issues](docs/KNOWN_ISSUES.md).
+[Known issues and compatibility](docs/KNOWN_ISSUES.md).
 
 ## 🛠️ Build, credits and licences
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## Beta 3.2 — controller experience
+
+- Show current per-player bindings on an original vector controller diagram.
+- Replace the long mapping list with an action selector; keep alternate bindings and restore/copy actions under More binding options.
+- Compact PS5 options and move gyro fine-tuning behind a disclosure. Normal play no longer shows speaker diagnostic instructions.
+- Add original horn, weapon-balloon pickup/upgrade, silver-coin, gold-balloon and boost-pad cues to the existing controller-sound switch.
+- Observe real audio calls in both US revisions; suppress nonlocal, paused, loading and rollback events. Item use has priority and cues never accumulate.
+- Prepare 32 short cues per ROM locally, including sample-bank rendering of all eight silver-coin jingles; no PCM is embedded in shared ELFs.
+- Show which ROM’s controller sounds are being prepared during installation.
+- Extend the automated checks for real game-call routing, live mapping geometry and malformed compressed sequences.
+
+
 ## Beta 3.1 — console menu refinements
 
 - Put Controls, Graphics, Sound and Textures next to Play; preserve existing settings and page identities.

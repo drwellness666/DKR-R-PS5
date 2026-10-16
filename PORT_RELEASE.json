@@ -1,8 +1,8 @@
 {
-  "tag": "ps5-beta.3.1",
+  "tag": "ps5-beta.3.2",
   "upstream_version": "1.0.6",
   "source_only": false,
-  "qualification": "Experimental preview: host checks and native builds cover menu refinements, cue caching and installer deduplication; complete PS5 verification of new paths remains open.",
+  "qualification": "Controller-experience preview: native build and automated checks; physical acceptance recorded separately in docs/VALIDATION.md.",
   "development_candidate": true,
-  "installer_sequence": 4
+  "installer_sequence": 5
 }

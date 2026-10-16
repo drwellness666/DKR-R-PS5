@@ -7,10 +7,8 @@ Ein inoffizieller PS5-Port von [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R
 
 [📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇬🇧 English](README.md) · [📖 Hilfe](docs/README.md) · [🐛 Fehler melden](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Beta-3.1-Entwicklungsvorschau.** Das Spiel wurde auf PS5 getestet. Der neue USB-Installer,
-die native Speicherfunktion und die zusätzlichen Controller-Effekte sind in
-dieser Vorschau enthalten; ihre PS5-Tests laufen noch. Die Menüverbesserungen
-sind auf diesem Branch; fertige Pakete stehen unter Releases. [Teststand](docs/VALIDATION.md).
+**Beta 3.2 Preview.** Kompakte Tastenbelegung und zusätzliche originale Controller-Töne.
+Das Spiel wurde auf PS5 gespielt; Prüfungen der neuen Funktionen stehen im [Testbericht](docs/VALIDATION.md).
 
 ## 🎮 Was dieser Port ergänzt
 
@@ -19,8 +17,8 @@ sind auf diesem Branch; fertige Pakete stehen unter Releases. [Teststand](docs/V
 | Native PS5-App | Start über ein PS5-Icon, mit passendem Hintergrund und Startgrafik. |
 | Beide US-Revisionen | Unter **Touchpad → Play** zwischen **US 1.0 und US 1.1 / Rev A** für den nächsten Start wählen. |
 | Gemeinsame Einrichtung | Steuerung, Bild, Ton und Texturauswahl beim Versionswechsel behalten. Fortschritt und Controller Paks bleiben getrennt. |
-| Controllerfreundliche Menüs | Bildschirmfüllende Oberfläche bei 4K, klare Versionskarten, häufige Einstellungen zuerst und ein einzelner Abschnittswähler. Klassisches Gasgeben mit Kreuz erhält das Gas-Antippen. |
-| DualSense-Extras | Optionale Ballon-Lichtfarben; experimentelle Gyrosteuerung, L2-Item-Effekte und Item-Geräusche über den Controller-Lautsprecher. Gemeinsam unter **Controls → PS5**. |
+| Controllerfreundliche Menüs | Vollgroße Oberfläche bei 4K, klare Versionskarten, eine Controller-Grafik mit aktueller Belegung und kompakte Tastenzuordnung. Klassisches Gasgeben mit Kreuz erhält das Gas-Antippen. |
+| DualSense-Extras | Optionale Ballon-Lichtfarben, Gyrosteuerung, L2-Item-Effekte und Item-, Sammel-, Münz-, Hupen- und Boostfeld-Töne über den Controller-Lautsprecher. Gemeinsam unter **Controls → PS5**. |
 | TV-Ausgabe | Wahlweise 1080p, 1440p und **4K**, dazu experimentelle **120 Hz / VRR**. Match display folgt der aktiven Ausgabe; die tatsächlichen FPS hängen von Szene und Einstellungen ab. |
 | Installation und Updates | Eine ROM-freie Installer-ELF, später eine Update-ELF. ROM-Import und Vorbereitung der Controller-Geräusche erfolgen auf der PS5. |
 | Integriertes Speichern und Diagnose | Direkte native Speicherfunktion, lokale Fehlerprotokolle und eine Bildzeitmessung. Ein zusätzlicher Save-Helper gehört nicht zu dieser Version. |
@@ -63,12 +61,9 @@ des Autors angeboten. [Paket-Hilfe](docs/CONTROLS.md#texture-packs-and-mods).
 
 - Kurzes Wasserflackern beim Einstieg in eine **Tracks-Vorschau**; Adventure-Wasser wurde als stabil gemeldet.
 - Gelegentliche **Mikroruckler**, besonders bei aufwendigen Grafikeinstellungen oder Texturpaketen.
-- Neuer Installer, natives Speichern nach einem vollständigen Neustart, Gyro, adaptives L2 und Controller-Lautsprecher benötigen weitere PS5-Tests. Diese Controller-Extras sind optional und zunächst aus.
-- Kein HDR. Online, Mods, Controller Paks und andere Firmware-/TV-Kombinationen benötigen weitere Tests. 120-Hz-Ausgabe bedeutet nicht durchgehend 120 FPS.
+- HDR ist nicht verfügbar. Details zur Kompatibilität und zu experimentellen Funktionen stehen im [Testbericht](docs/VALIDATION.md).
 
-Die nächsten Arbeiten konzentrieren sich auf diese Fehler und die
-Kompatibilität. Gyro und adaptives L2 sind bereits eingebaut und keine reinen
-Zukunftspläne. [Bekannte Fehler](docs/KNOWN_ISSUES.md).
+[Bekannte Fehler und Kompatibilität](docs/KNOWN_ISSUES.md).
 
 ## 🛠️ Selbst bauen, Mitwirkende und Lizenzen
 
