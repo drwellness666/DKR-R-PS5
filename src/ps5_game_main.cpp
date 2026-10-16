@@ -19,6 +19,7 @@
 #include "ps5_revision_selection.h"
 #include "ps5_display_options.h"
 #include "ps5_diagnostics.h"
+#include "ps5_installation_lease.hpp"
 
 int dkrr_game_main(int, char **);
 extern "C" unsigned dkrr_report_missing_imports(void (*)(const char *));
@@ -76,6 +77,11 @@ static void configure_render_diagnostics() {
 }
 int main() {
     ps5_fp_ieee();
+    const int installation_lease=dkrr_runtime_installation_lease();
+    if(installation_lease<0) {
+        report("installation is busy or the shared application lease is unavailable");
+        dkrr_diag_shutdown();dkrr_close_this_title();for(;;)usleep(100000);
+    }
     ps5_klog_capture_stderr("[DKR-R game] ");
     // Pipeline caching and persistence will be measured after the first real
     // game test. Native data is confined to the game's own /data/dkrr subtree.
@@ -157,6 +163,7 @@ int main() {
     struct ps5_heap_stats stats={};ps5_heap_stats(&stats);
     report("completed status=%d revision=%u heap-peak=%zu heap-libc-fallbacks=%llu",status,revision,stats.peak_bytes,stats.libc_fallbacks);
     dkrr_diag_shutdown();
+    close(installation_lease);
     usleep(200000);
     report("self-close returned rc=0x%08x",unsigned(dkrr_close_this_title()));
     for(;;)usleep(100000);

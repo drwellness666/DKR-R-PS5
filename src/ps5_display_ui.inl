@@ -24,7 +24,7 @@ void DrawPs5DisplayFields(float width, bool entered) {
     if (active.high_refresh_build) {
         SettingsDropdown("ps5-tv-rate", "TV refresh rate", &ui.refresh,
                          {"60 Hz (default)", "120 Hz (experimental)"}, width, false,
-                         "120 Hz is used only when offered by the console. Match display below follows the selected rate.");
+                         "120 Hz is used only when offered by the console. Match display targets the active output rate after restart. It does not guarantee 120 rendered FPS.");
     } else {
         SettingsHelp("TV refresh rate: 60 Hz. A separate optional test build enables the 120 Hz choice.", width);
     }
