@@ -2,7 +2,7 @@
 
 An unofficial native PS5 port of [Diddy Kong Racing Recompiled](https://github.com/ThatGuyMcd/DKR-R), based on DKR-R **1.0.6**.
 
-**[Download the source beta](https://github.com/drwellness666/DKR-R-PS5/releases/tag/ps5-beta.2)** · [Deutsch](README.de.md) · [Known issues](docs/KNOWN_ISSUES.md) · [Roadmap](docs/ROADMAP.md)
+**[Download the source beta](https://github.com/drwellness666/DKR-R-PS5/releases/tag/ps5-beta.2.1)** · [Deutsch](README.de.md) · [Known issues](docs/KNOWN_ISSUES.md) · [Roadmap](docs/ROADMAP.md)
 
 ## What works
 
@@ -15,7 +15,7 @@ This is a **beta**. Brief water flicker in Tracks previews and occasional micros
 
 ## Get started
 
-You need a **Linux x86-64 PC** (or Linux in WSL2), **Python 3.12+**, your own clean **US 1.0 and/or US 1.1 ROM dump**, and a PS5 already able to launch native homebrew with an ELF receiver and ShadowMountPlus. PAL ROMs are unsupported.
+To build this source release, use **Linux x86-64** or [**Windows with WSL2**](docs/WINDOWS.md), **Python 3.12+**, your own clean **US 1.0 and/or US 1.1 ROM dump**, and a PS5 already able to launch native homebrew with an ELF receiver and ShadowMountPlus. PAL ROMs are unsupported.
 
 1. Download and extract **DKR-R-PS5-source.zip** from the release.
 2. Open a terminal in the extracted folder and run:
@@ -26,7 +26,7 @@ You need a **Linux x86-64 PC** (or Linux in WSL2), **Python 3.12+**, your own cl
 
 3. In the local assistant: **choose your ROM(s) → check the PC → build → enter your PS5's LAN IP → install**. Missing PC prerequisites are listed before building. Then scan `/data/homebrew` in ShadowMountPlus and launch DKR-R from its PS5 icon.
 
-The first build downloads public sources and takes time. All compilation runs on your PC. If you already have a different DKR-R installation, follow the [update guide](docs/UPDATES.md). After a console reboot, use **Start save helper** in the assistant before loading existing progress.
+The first build downloads public sources and takes time. Native Windows Python alone cannot run the Linux toolchain. All compilation runs on your PC. If you already have a different DKR-R installation, follow the [update guide](docs/UPDATES.md). The game runs natively on the PS5 without a running PC. The current setup has a console-side save-support startup dependency: [what it does and the direct-storage target](docs/SAVES.md). A [single-ELF installer with on-console ROM selection](docs/INSTALLER.md) is the next installation target, not a released feature.
 
 Prefer commands or need details? [Manual build/install](docs/BUILD.md) · [Controls and texture packs](docs/CONTROLS.md) · [Display settings](docs/DISPLAY.md).
 

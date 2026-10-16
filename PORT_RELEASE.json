@@ -1,6 +1,6 @@
 {
-  "tag": "ps5-beta.2",
+  "tag": "ps5-beta.2.1",
   "upstream_version": "1.0.6",
   "source_only": true,
-  "qualification": "Experimental native source beta; tested scope in docs/VALIDATION.md and known issues in docs/KNOWN_ISSUES.md"
+  "qualification": "Native gameplay accepted in sessions with console-side save support active. Cold-boot startup integration and standalone console installer remain open; see docs/SAVES.md and docs/INSTALLER.md."
 }

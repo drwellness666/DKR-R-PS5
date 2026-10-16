@@ -95,7 +95,7 @@ class Assistant:
             output=self.runner([sys.executable,'tools/send_elf.py',str(address),str(game/name)],env)
             if marker not in output:raise RuntimeError('No authoritative installer success marker. Stop and inspect the console; do not retry blindly.')
         self.runner([sys.executable,'tools/send_elf.py',str(address),str(self.root/'bin/dkrr-save-metadata.elf'),'--no-wait'],env)
-        with self.lock:self.state.update(installed=True,stage='Files installed. Scan /data/homebrew with ShadowMountPlus and launch DKR-R from its PS5 icon. Save helper sent; restart it after a console reboot.')
+        with self.lock:self.state.update(installed=True,stage='Files installed. Scan /data/homebrew with ShadowMountPlus and launch DKR-R from its PS5 icon. Console save service sent for this session. The installed game itself needs no running PC; see docs/SAVES.md for the current console-reboot limitation.')
     def start(self,operation,args):
         with self.lock:
             if self.state['busy']:raise ValueError('An operation is already running.')
