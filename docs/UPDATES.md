@@ -19,5 +19,5 @@ exact version was included in the updater's migration list.
 transfer alone does not mean the installation completed. There is no silent
 Internet download or automatic background installation.
 
-The universal update is experimental in Beta 3. [Install](INSTALLER.md) ·
+The universal update is part of the beta. [Install](INSTALLER.md) ·
 [Test status](VALIDATION.md) · [Technical design](ARCHITECTURE.md).

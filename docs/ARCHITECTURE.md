@@ -14,8 +14,8 @@ no compiler, PC build receipt or source checkout is needed on the console.
 The PC source build remains a developer option.
 
 The installer searches `DKRR` and the root of USB drives 0–7. It identifies ROM
-contents, supports z64/n64/v64 byte orders and generates the 18 private controller
-cues locally. Optional controller features remain in the game's Controls → PS5
+contents, supports z64/n64/v64 byte orders and generates 32 private controller
+cues per revision locally. Optional controller features remain in the game's Controls → PS5
 page and default off. A short installer uses PS5 notifications and the receiver
 log; it creates no graphical launcher or background service.
 
@@ -47,8 +47,12 @@ subsection rows; Graphics separates display controls from HUD/detail controls.
 Sections compiled out of the native build are omitted.
 
 Controller audio is loaded on the speaker worker and cached per revision. Its
-bounded nine-cue cache also retains the missile mix; disabling output still
-closes the native speaker port. Identical program assets share an embedded blob
+bounded 32-cue cache also retains the missile mix; disabling output still
+closes the native speaker port. Extra sounds observe actual original audio
+calls through linker wrappers for both revisions. Collectible scopes preserve
+registers and identify the local racer; menu/loading/pause/rollback gates discard
+unwanted events. A per-player latest-event mailbox expires old events; lower
+priority cues never interrupt an active or pending item cue. Identical program assets share an embedded blob
 inside the payload; installation still writes and verifies every target file.
 
 Rendering, output rate and original game simulation remain separate. No global
@@ -61,3 +65,16 @@ These are implemented candidate mechanisms, not physical-console acceptance.
 Shared binaries require the matching source/licence package and a component
 review. Beta 3 includes ROM-free installer/update ELFs with matching source.
 [Validation](VALIDATION.md).
+
+## Further native features
+
+Internet updates need verified HTTPS downloads, a signed bounded release
+manifest and activation after the running title releases its installation
+lease. Private GitHub releases require authentication; no access token is
+embedded. The current self-contained update ELF remains the available path.
+
+HDR needs a 10-bit presentation path, correct color transfer, UI brightness
+and SDR fallback. This target currently presents 8-bit SDR. Public
+[PS5 HDR presenter research](https://github.com/blackbearreloaded/ps5-hardware-video-decoding-research/blob/main/docs/implementation.md)
+provides a possible VideoOut direction; integration into the
+[PS5 Vulkan driver](https://github.com/mihawk-99/PS5_Vulkan) and RT64 is separate work.

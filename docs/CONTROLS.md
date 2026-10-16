@@ -19,21 +19,25 @@ and Circle goes back. Common settings come first: **Play → Controls → Graphi
 → Sound → Textures → Save Manager**, followed by Mods / Hacks, Online and About.
 Use the full-width **SECTION** selector to choose a page's subsection with Cross
 and D-pad; Circle cancels. **Graphics** separates Display from HUD & Detail.
-**Controls → Button mapping** supports custom bindings.
+**Controls → Button mapping** shows the current player’s controller layout. Choose
+an action, then **Change** to bind a button or trigger. **More binding options**
+contains alternate bindings, Classic restore and copying Player 1’s layout.
+Restoring a layout can be undone.
 The old trigger-driving preset was removed; custom mappings are preserved.
 
 Normal vibration is available under **Controls → Device**. PS5-specific options
 are together under **Controls → PS5**:
 
 - **Match held balloon color:** the held item color, then normal system lighting.
-- **L2 missile and trap feedback:** light resistance and an item-use impulse, including release-to-fire.
-- **Original balloon item sounds:** optional short boost, missile, trap, shield and magnet cues on the controller speaker. Volume is adjustable; normal TV sound stays active. PCM is generated privately from your ROM.
+- **Adaptive L2 item feedback:** light resistance and an item-use impulse, including release-to-fire.
+- **Controller sounds:** one switch for all short original cues: all five item types, weapon-balloon pickups/upgrades, silver coins, gold balloons, your character’s horn and boost pads. Set their volume with **Controller volume**; TV sound stays active.
 - **Gyro steering:** enable per player, choose roll/yaw, sensitivity, deadzone, calibrate and recenter. Requires Modern presentation; stick steering remains available.
 
-All optional effects start off and save with the shared configuration. The new
-native gyro, adaptive-trigger and speaker paths are experimental and await broader PS5 testing.
-The speaker uses an experimental native PADSPK route; unavailable output is
-reported in this page without rerouting or stopping TV audio.
+All optional effects start off and save with the shared configuration. Sounds go
+to the local player’s controller, with item use taking priority and no growing
+sound queue. They stop while the game is paused or loading. The installer
+prepares them from your ROMs; no game audio is distributed. Gyro tuning stays
+under **Gyro tuning**. [Feature status](VALIDATION.md).
 
 ## Choose the game revision and language
 

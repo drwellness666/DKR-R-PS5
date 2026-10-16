@@ -2,14 +2,17 @@
 
 ## Automated checks
 
-The current implementation passed **54 host check commands**, including **13
+The current implementation passed **56 host check commands**, including **13
 installer/update cases** with injected write, synchronization and activation
 failures. Tests also cover shared settings, both language bridges, menu layout,
 controller adapters, direct save handling and diagnostics. Menu tests exercise
 the real ImGui section selector at narrow and wide widths, D-pad traversal,
 Cross selection and Circle cancellation. Speaker tests check cue reuse and
-revision invalidation; payload tests verify duplicate-file aliases. All **18** native
-controller-sound outputs matched the previous extractor byte for byte.
+revision invalidation; payload tests verify duplicate-file aliases. The original
+**18** cue outputs remain byte-identical. **64** cues are prepared from the
+owner’s two ROMs. New tests exercise actual US77/US80 sound wrappers, native
+player/context gating and compact binding UI. The bounded CSeq decoder also
+passes 8,000 malformed-input cases under address/undefined-behavior sanitizers.
 
 The native PS5 game and both universal payloads compile and link with the public
 homebrew SDK. Every one of the **35** embedded program files was read back from

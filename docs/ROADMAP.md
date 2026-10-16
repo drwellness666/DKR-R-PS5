@@ -8,5 +8,6 @@ and fixing behavior on more consoles, not starting those features from scratch.
 - Broaden installer/update recovery, native-save and DualSense testing.
 - Test more displays, loaders, Controller Paks, online modes and compatible mods.
 - Complete the Windows/WSL2 developer-build walkthrough on Windows.
+- Build a verified native Internet-update channel and a complete HDR presentation path.
 
 [Known issues](KNOWN_ISSUES.md) · [Test status](VALIDATION.md).

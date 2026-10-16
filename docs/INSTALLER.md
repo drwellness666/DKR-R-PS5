@@ -1,8 +1,5 @@
 # Install DKR-R on PS5 📦
 
-The Beta 3 installer is implemented and builds for PS5. Its end-to-end console
-run is still pending; use it as an experimental preview.
-
 ## What you need
 
 - A PS5 that already runs native homebrew, with an ELF receiver and ShadowMountPlus.
