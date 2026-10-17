@@ -11,9 +11,14 @@ current third-party notice. This notice records provenance and is not itself
 a licence grant. The font is not relicensed under GPL by this port. The source
 repository includes the integration recipe, not a standalone font download.
 
-Selawik Regular/Semibold provide missing characters under SIL OFL 1.1; their
-licence is retained separately. Jumpman is not linked into this PS5 target.
-Its supplied EULA expressly permits software embedding and distinguishes it
-from standalone font downloads; its removal was not based on a blanket ban.
+The original DKR-R font loader is used unchanged: Racing Banana for menu text
+and signs, Jumpman for headings and digits, Selawik for reading text, and the
+original default/monospace fallback policy. No extra Selawik glyph merge is
+added to Racing Banana. The font data, glyph ranges, sizes and metrics match
+the pinned upstream source.
+
+Selawik's SIL OFL 1.1 and Jumpman's original EULA remain included. Jumpman's EULA
+expressly permits software embedding and distinguishes it from standalone font
+downloads.
 
 Source: https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/THIRD_PARTY.md#fonts

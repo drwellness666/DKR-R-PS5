@@ -222,6 +222,12 @@
       "component": "DKR-R upstream notices",
       "source": "DKR-R/packaging/licenses/Selawik-OFL.txt",
       "sha256": "77b7c2506d4efb22e09c8ccf10159f4956eab3ef7c007fef95de136bcf45300c"
+    },
+    {
+      "component": "DKR-R interface / Jumpman",
+      "source": "DKR-R/packaging/licenses/Jumpman-LICENSE.txt",
+      "revision": "c3eda4d368afbc729ed4a71312cce38d27f87c37",
+      "sha256": "1b488aafb01a7f6427a759207f3cef2344dbb7d80afe1944d98945735a3c8215"
     }
   ]
 }
