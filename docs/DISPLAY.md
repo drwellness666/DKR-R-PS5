@@ -59,7 +59,7 @@ A fresh install requires ShadowMountPlus to scan `/data/homebrew`. Copying artwo
 files alone does not guarantee that the PS5 shell refreshes an already registered
 title. Compatible updates preserve existing title identity and artwork.
 
-## Optional HDR10 (development candidate)
+## Optional HDR10
 
 Under **Graphics → Game display**, choose **HDR output → HDR10** and apply
 for the next launch. HDR is off by default. PS5 HDR and a compatible display
@@ -77,8 +77,8 @@ The original game is SDR. This is an explicit SDR-to-HDR expansion into a real
 pipelines and game logic are retained. The extra two image layers and final
 pass are allocated only for HDR; their GPU cost still needs console measurement.
 
-This candidate declares the HDR title capability. The stable Beta 3.4 updater
-rejects a changed title declaration; an existing installation needs a qualified
-metadata migration before this HDR candidate can replace it. Do not remove
+The current build declares the HDR title capability. Earlier beta updaters
+reject a changed title declaration; an existing installation needs a qualified
+metadata migration before the new build can replace it. Do not remove
 that safeguard or overwrite registered metadata by hand. HDR/VRR/120-Hz
 coexistence and display brightness remain to verify on PS5.

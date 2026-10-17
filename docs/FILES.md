@@ -1,4 +1,4 @@
-# What is shared
+# Repository contents
 
 ## Repository and source download
 
@@ -26,10 +26,9 @@ main README and help index are the starting points for players.
 - **SHA256SUMS.txt / BUILD-INFO.json** — download checksums and version/test information.
 
 The universal ELFs contain compiled program code and upstream interface/title
-artwork. They contain no complete ROMs or extracted controller audio. They are
-experimental previews; [licences and artwork terms](LICENSES.md) still apply.
+artwork. They contain no complete ROMs or extracted controller audio. Version 1.0 is in preparation; [licences and artwork terms](LICENSES.md) still apply.
 
-## Kept off GitHub
+## Personal and build data
 
 Owned ROMs, extracted PCM, private ROM-containing installers, full private app
 bundles, ROM-derived debug symbols/generated CPU trees, saves/Paks, third-party

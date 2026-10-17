@@ -20,16 +20,16 @@ The universal installer creates its private controller audio on the console.
 
 ## Fonts and artwork
 
-The development interface uses **Racing Banana** from the pinned DKR-R inputs,
-with **Selawik** for missing characters and reading text. Selawik's SIL OFL 1.1
-and copyright remain included. Racing Banana is not a ROM-extracted font;
-upstream explicitly asks public distributors to confirm redistribution rights.
-That confirmation is not documented here yet. See the
-[font notice](../licenses/Racing-Banana-NOTICE.md). Beta 3.4 used Selawik alone.
+The interface uses DKR-R's original, unchanged font setup: **Racing Banana**
+for menu text and signs, **Jumpman** for headings and digits, and **Selawik** for
+reading text, including upstream's existing fallback behavior. Font data,
+loading code, glyph ranges, sizes and metrics are kept identical.
 
-Jumpman is currently not linked. Its supplied EULA expressly permits embedding
-in software and distinguishes that from a standalone font download; it was not
-removed because PS5 or free software inherently cannot use it.
+Selawik's SIL OFL 1.1 and copyright remain included. Jumpman's supplied EULA
+expressly permits software embedding; its original terms are included in the
+component notices. Racing Banana is not extracted from the ROM. Upstream asks
+public distributors to confirm redistribution rights; that confirmation is
+not documented here yet. [Font notice](../licenses/Racing-Banana-NOTICE.md).
 
 Title graphics and interface images come from the pinned DKR-R project. Its
 application icon is credited to **POOTERMAN**. These images keep their original

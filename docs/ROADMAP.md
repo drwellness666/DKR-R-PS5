@@ -1,7 +1,7 @@
 # Next improvements
 
 Gyro steering, adaptive L2, controller item sounds, native saves and the universal
-installer/update are **implemented in Beta 3**. Their remaining work is testing
+installer/update are **implemented in the current 1.0 preparation**. Their remaining work is testing
 and fixing behavior on more consoles, not starting those features from scratch.
 
 - Fix the Tracks-preview water flash and reproducible frame-time spikes.

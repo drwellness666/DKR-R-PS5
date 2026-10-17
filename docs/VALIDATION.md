@@ -2,8 +2,8 @@
 
 ## Automated checks
 
-The automated checks include **16 installer/update cases** with injected write, synchronization and activation
-failures. Tests also cover shared settings, both language bridges, menu layout,
+The automated checks include **18 installer/update cases** with injected write, synchronization and activation
+failures, stale registration snapshots and occupied temporary slots. Tests also cover shared settings, both language bridges, menu layout,
 controller adapters, direct save handling and diagnostics. Menu tests exercise
 the real ImGui section selector at narrow and wide widths, D-pad traversal,
 Cross selection and Circle cancellation. Speaker tests check cue reuse and
@@ -35,17 +35,13 @@ homebrew SDK. Every one of the **37** embedded program files was read back from
 each ELF and matched the app. ROMs and extracted controller PCM are excluded.
 The exact source gate is [source-check.yml](../.github/workflows/source-check.yml).
 
-## Development HDR/font checks
+## Original typography and HDR
 
-Racing Banana with Selawik fallback passes the actual ImGui atlas test: 25 font
-banks and 75 visible glyph checks. HDR tests check 10,001 monotonic luminances,
-ST 2084 reference points, Rec.709-to-2020 conversion, independent UI white,
-premultiplied alpha and saved/preview/next-launch settings. The GLSL shaders
-compile to validated SPIR-V with a reproducible embedded header. The actual
-patched WSI registration function passes failed-HDR-to-SDR fallback, distinct
-format/set reuse and the 15-buffer bound; the driver also compiles natively.
-The actual embedded vertex/pixel shaders were also rendered off-screen on the host Radeon (RADV RENOIR): 15,360 read-back channel comparisons across five brightness/alpha/colour cases matched the reference within two 10-bit levels. CI can repeat this on software Vulkan. This does not test PS5 VideoOut or TV luminance.
-These additions are not covered by the earlier PS5 confirmations below.
+The original upstream font loader, all three font sources and typography metrics
+are compared exactly with the pinned DKR-R archive. Its actual ImGui atlas test
+passes with 26 font banks and 52 visible glyph checks. A blocked-`fsync` test also
+confirms that HDR render snapshots keep working while a preference save waits;
+concurrent calibration changes are read as complete, coherent choices.
 
 ## Confirmed on PS5
 
@@ -64,8 +60,8 @@ rumble, balloon light colors, icon/background and launch-image handoff.
 - Development HDR title migration, HDR/SDR HDMI output, brightness/UI composition, HDR with VRR/120 Hz and GPU cost.
 - More tracks, Paks, mods, online modes, displays and a complete Windows/WSL2 build.
 
-These do not prevent sharing the work as an experimental beta. Host checks do
-not prove a feature's physical-console behavior or constant 120 FPS.
+These are final qualification items for version 1.0. Host checks do not prove
+a feature's physical-console behavior or constant 120 FPS.
 
 ## Why SDK tests do not replace a console
 
