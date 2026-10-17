@@ -5,6 +5,7 @@
 - Signed Internet-update check and download under About DKR-R. Optional launch checks are off by default.
 - Native ready/commit handoff to the console's existing ELF receiver; installation waits for the game to finish all file access.
 - Exact size/SHA-256 verification, restricted HTTPS redirects, cancellation and separate manual update fallback.
+- Accept native PS5 zero-link-count metadata for read-only update preferences and atomic preference replacement.
 - No extra crypto dependency: the port reuses its pinned Monocypher and Mbed TLS sources.
 - Avoid a disabled performance report's clock read and the duplicate clock read during active generic captures. Periodic rollback diagnostics now require explicit profiling.
 - Tracks-preview water, reported microstutters and HDR remain open.
