@@ -9,7 +9,7 @@ from test_ps5_internet_update import dependencies
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('game_work',nargs='?',type=pathlib.Path);parser.add_argument('--cache',action='append',type=pathlib.Path,default=[]);a=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('game_work',nargs='?',type=pathlib.Path);parser.add_argument('--cache',action='append',type=pathlib.Path,default=[]);parser.add_argument('--permission-regression-only',action='store_true');a=parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='dkrr-native-update-') as folder:
         t=pathlib.Path(folder);deps=dependencies(a.game_work,a.cache,t);app=t/'data/homebrew/PPSA94678';root=t/'data/dkrr';prefs=root/'preferences';client=prefs/f'update-client-{os.getuid()}';lease=root/'app.lock'
         client.mkdir(parents=True,mode=0o700);key=t/'key.pem'
@@ -59,6 +59,10 @@ def main():
         def unchanged():
             assert all((app/p.relative_to(old)).read_bytes()==p.read_bytes() for p in old.rglob('*') if p.is_file())
             assert (prefs/'controls.json').read_bytes()==b'KEEP controls' and (root/'profile-us-v77/saves/save.bin').read_bytes()==b'KEEP progress' and (root/'mods/textures.pack').read_bytes()==b'KEEP textures'
+        if a.permission_regression_only:
+            reset();run('prepare');run('apply',-1,FAIL_APP_RENAMES='1');unchanged();run('recover',FAIL_APP_RENAMES='1');unchanged()
+            print('PASS denied app-directory replacements: unchanged files require no restore writes, and the next start recovers')
+            return
         # Complete update: directory inode and already mapped executable survive;
         # full next manifest includes retained private sounds, no embedded ROM.
         reset();inode=app.stat().st_ino;run('prepare');unchanged();run('apply');assert app.stat().st_ino==inode
@@ -78,6 +82,7 @@ def main():
         for i in (0,8,len(PUBLIC_FILES)):
             reset();run('prepare');run('apply',-1,FAIL_RENAME=str(i));unchanged();run('recover')
         reset();(app/'assets/ui/Icons').chmod(0o555);run('prepare',-1);unchanged();(app/'assets/ui/Icons').chmod(0o755)
+        reset();run('prepare');run('apply',-1,FAIL_APP_RENAMES='1');unchanged();run('recover',FAIL_APP_RENAMES='1');unchanged()
         # Corrupt bytes fail before staging, even with an otherwise valid offer.
         reset();data=bytearray(original_package);data[-1]^=1;package.write_bytes(data);run('prepare',-1);unchanged()
         # A validly signed but malformed file table is rejected, including path
