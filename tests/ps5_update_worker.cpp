@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ps5_internet_update.hpp"
+#include "ps5_native_update.hpp"
+#include <unistd.h>
 #include <algorithm>
 #include <cassert>
 #include <chrono>
@@ -14,7 +16,7 @@
 namespace {
 std::string mode,channel,old_channel,payload,sent;
 struct Record {std::string url;std::size_t at=0;};std::map<int,Record> records;
-int next_id=10,connections=0,sockets=0;std::size_t ack_at=0;
+int next_id=10,connections=0,preparations=0;
 std::string file(const char* p){std::ifstream f(p,std::ios::binary);return {std::istreambuf_iterator<char>(f),{}};}
 bool is_catalog(int id){return records[id].url.find("raw.githubusercontent.com/")!=std::string::npos;}
 bool is_redirect(int id){return (mode=="redirect"||mode=="bad-redirect")&&!is_catalog(id)&&records[id].url.find("github.com/")!=std::string::npos;}
@@ -49,15 +51,13 @@ int sceHttpReadData(int id,void* data,std::size_t size){
     if(!is_catalog(id)&&mode=="cancel")std::this_thread::sleep_for(std::chrono::milliseconds(10));
     auto n=std::min({size,body.size()-r.at,std::size_t(17)});std::memcpy(data,body.data()+r.at,n);r.at+=n;return int(n);
 }
-int sceNetSocket(const char*,int family,int type,int protocol){assert(family==2&&type==1&&protocol==6);++sockets;return 22;}
-int sceNetSocketClose(int socket){assert(socket==22);return 0;}
-int sceNetSetsockopt(int,int,int,const void*,unsigned){return 0;}
-int sceNetConnect(int,const void* address,unsigned size){assert(size==16);auto* p=static_cast<const unsigned char*>(address);assert(p[0]==16&&p[1]==2&&p[2]==(9021>>8)&&p[3]==(9021&255)&&p[4]==127&&p[7]==1);return mode=="receiver"?-1:0;}
-int sceNetSend(int,const void* data,std::size_t size,int){auto n=mode=="short-send"?std::size_t(1):size;sent.append(static_cast<const char*>(data),n);return int(n);}
-int sceNetRecv(int,void* data,std::size_t size,int){
-    if(mode=="no-ack")return -1;
-    assert(sent==payload);const std::string ready="DKRR UPDATE READY v1\n";
-    auto n=std::min({size,ready.size()-ack_at,std::size_t(3)});std::memcpy(data,ready.data()+ack_at,n);ack_at+=n;return int(n);
+
+}
+namespace dkrr::updates::native {
+bool prepare(int fd,const Offer& offer,char* error,std::size_t capacity) {
+    ++preparations;assert(offer.native_package&&payload_digest(fd,offer));
+    std::string readback(payload.size(),'\0');assert(read(fd,readback.data(),readback.size())==static_cast<ssize_t>(readback.size())&&readback==payload);
+    if(mode=="prepare-fail"){std::snprintf(error,capacity,"Native preparation failed.");return false;}return true;
 }
 }
 int main(int argc,char** argv){
@@ -81,16 +81,15 @@ int main(int argc,char** argv){
         assert(state==State::Available);dkrr::updates::install();
         if(mode=="cancel"){wait([]{return dkrr::updates::view().received>0;});dkrr::updates::cancel();}
         wait([]{auto s=dkrr::updates::view().state;return s==State::Closing||s==State::Failed;});
-        const bool good=mode=="good"||mode=="redirect"||mode=="short-send"||automatic;
+        const bool good=mode=="good"||mode=="redirect"||automatic;
         assert(dkrr::updates::close_requested()==good);
-        if(good){assert(dkrr::updates::view().state==State::Closing&&sent==payload+"DKRRGO1\n");}
+        if(good){assert(dkrr::updates::view().state==State::Closing&&preparations==1);}
         else assert(dkrr::updates::view().state==State::Failed);
     }
     dkrr::updates::shutdown();
     assert(dkrr::updates::set_automatic_check(false));
     assert(!dkrr::updates::automatic_check());
-    if(mode=="digest"||mode=="oversize"||mode=="signature"||mode=="offline"||mode=="current"||mode=="cancel"||mode=="bad-redirect")assert(sockets==0&&sent.empty());
-    if(mode=="receiver")assert(sent.empty());
-    if(mode=="no-ack")assert(sent==payload&&!dkrr::updates::close_requested());
+    if(mode=="digest"||mode=="oversize"||mode=="signature"||mode=="offline"||mode=="current"||mode=="cancel"||mode=="bad-redirect")assert(preparations==0);
+    if(mode=="prepare-fail")assert(preparations==1&&!dkrr::updates::close_requested());
     assert(connections>=1);std::printf("PASS native update worker: %s\n",mode.c_str());
 }

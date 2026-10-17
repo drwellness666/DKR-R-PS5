@@ -177,6 +177,13 @@ ssize_t __wrap_write(int fd,const void*buf,size_t n){
     self.live.parent.mkdir(parents=True);shutil.copytree(self.legacy,self.live)
     r=self.run_installer(0,False,DKRR_POWER_CUT='1');self.assertEqual(r.returncode,77)
     self.run_installer(0);self.assertIn(b'1'*24,(self.live/'eboot.bin').read_bytes())
+ def test_native_update_directory_access_and_pending_transaction_guard(self):
+    self.run_installer()
+    for path in (self.live,self.live/'sce_sys',self.live/'sce_module'):
+     self.assertEqual(path.stat().st_uid,os.getuid());self.assertEqual(path.stat().st_mode&0o777,0o755)
+    pending=self.data/'dkrr/preferences/update-client-1/native-install';pending.mkdir(parents=True);(pending/'unknown').write_bytes(b'preserve pending recovery')
+    before=(self.live/'eboot.bin').read_bytes();self.run_installer(1,False)
+    self.assertEqual((self.live/'eboot.bin').read_bytes(),before);self.assertEqual((pending/'unknown').read_bytes(),b'preserve pending recovery')
  def test_wrong_missing_rom_and_symlink(self):
     (self.mnt/'usb0/DKRR/owned 80.z64').write_bytes(b'bad'.ljust(SIZE,b'\0'));self.run_installer(ok=False);self.assertFalse(self.live.exists())
     self.setUp();p=self.mnt/'usb0/DKRR/owned 80.z64';p.unlink();p.symlink_to(self.mnt/'usb0/DKRR/owned 77.z64');self.run_installer(ok=False);self.assertFalse(self.live.exists())
