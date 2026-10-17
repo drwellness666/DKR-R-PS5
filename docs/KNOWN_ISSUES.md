@@ -8,7 +8,7 @@
 | Controller speaker | Experimental PADSPK output. The page reports unavailable output; normal TV audio stays active. Short cues do not reproduce the game's full spatial/reverb mixer. |
 | Wider compatibility | Online, arbitrary mods, ghost/Pak persistence, other loaders/TVs and the full Windows/WSL2 developer build need more coverage. |
 | Internet updates | New receiver-free native path. Public GitHub access and a one-time upgrade from older betas are required; complete PS5 activation/restart remains to verify. |
-| HDR | Not implemented. |
+| HDR | Implemented in the development candidate, default off; HDR title-metadata migration, physical output, brightness and performance qualification remain open. Not included in Beta 3.4 downloads. |
 
 4K/119.88 Hz with VRR Automatic was confirmed on an LG C1. Constant 120 rendered
 FPS is not guaranteed. A new-game Adventure intro skip was reported but has not

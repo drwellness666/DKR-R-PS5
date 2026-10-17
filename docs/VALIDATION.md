@@ -35,6 +35,18 @@ homebrew SDK. Every one of the **37** embedded program files was read back from
 each ELF and matched the app. ROMs and extracted controller PCM are excluded.
 The exact source gate is [source-check.yml](../.github/workflows/source-check.yml).
 
+## Development HDR/font checks
+
+Racing Banana with Selawik fallback passes the actual ImGui atlas test: 25 font
+banks and 75 visible glyph checks. HDR tests check 10,001 monotonic luminances,
+ST 2084 reference points, Rec.709-to-2020 conversion, independent UI white,
+premultiplied alpha and saved/preview/next-launch settings. The GLSL shaders
+compile to validated SPIR-V with a reproducible embedded header. The actual
+patched WSI registration function passes failed-HDR-to-SDR fallback, distinct
+format/set reuse and the 15-buffer bound; the driver also compiles natively.
+The actual embedded vertex/pixel shaders were also rendered off-screen on the host Radeon (RADV RENOIR): 15,360 read-back channel comparisons across five brightness/alpha/colour cases matched the reference within two 10-bit levels. CI can repeat this on software Vulkan. This does not test PS5 VideoOut or TV luminance.
+These additions are not covered by the earlier PS5 confirmations below.
+
 ## Confirmed on PS5
 
 Earlier sessions confirmed gameplay picture/sound, both US revisions and
@@ -49,6 +61,7 @@ rumble, balloon light colors, icon/background and launch-image handoff.
 - Native HTTPS reachability, the one-time app-directory permission grant and a complete receiver-free update/restart on PS5.
 - New native save handling after a complete reboot, without the old preview's helper.
 - Physical gyro, adaptive L2 and controller-speaker behavior.
+- Development HDR title migration, HDR/SDR HDMI output, brightness/UI composition, HDR with VRR/120 Hz and GPU cost.
 - More tracks, Paks, mods, online modes, displays and a complete Windows/WSL2 build.
 
 These do not prevent sharing the work as an experimental beta. Host checks do

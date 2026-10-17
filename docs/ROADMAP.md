@@ -9,6 +9,6 @@ and fixing behavior on more consoles, not starting those features from scratch.
 - Test more displays, loaders, Controller Paks, online modes and compatible mods.
 - Complete the Windows/WSL2 developer-build walkthrough on Windows.
 - Qualify the receiver-free, in-process Internet installer and restart recovery on PS5.
-- Build a complete HDR presentation path with brightness calibration and SDR fallback.
+- Qualify the implemented HDR10 path, its title-metadata migration, brightness calibration, SDR fallback and GPU cost.
 
 [Known issues](KNOWN_ISSUES.md) · [Test status](VALIDATION.md).

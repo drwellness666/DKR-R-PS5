@@ -33,7 +33,7 @@ start, preserve the configuration and use the [diagnostic guide](DIAGNOSTICS.md)
 
 ALLM is governed by the console/TV output path. It was reported as game mode in
 the tested system log; there is no separate ALLM override in this port. Output
-is SDR. HDR is not implemented.
+uses SDR by default. The development HDR10 path is described below.
 
 ## Frame-rate target
 
@@ -58,3 +58,27 @@ Artwork sources and terms are recorded in [ARTWORK.md](../homebrew/DKR-R-Game/AR
 A fresh install requires ShadowMountPlus to scan `/data/homebrew`. Copying artwork
 files alone does not guarantee that the PS5 shell refreshes an already registered
 title. Compatible updates preserve existing title identity and artwork.
+
+## Optional HDR10 (development candidate)
+
+Under **Graphics → Game display**, choose **HDR output → HDR10** and apply
+for the next launch. HDR is off by default. PS5 HDR and a compatible display
+are required. Initialization refusal or a persistent non-HDR HDMI status
+returns to SDR; the saved preference is retained.
+
+**HDR brightness** contains menu/reference white (80–300 nits), display peak
+(400–2000 nits) and scene highlight expansion. The menu is composed separately
+so its white does not inherit the scene peak. A temporary checker pattern shows
+reference white/black and peak/98% peak; it clears when the page closes.
+Defaults are 200-nit reference white, 800-nit peak and 35% highlight expansion.
+
+The original game is SDR. This is an explicit SDR-to-HDR expansion into a real
+10-bit BT.2020/PQ output, not an authored HDR remaster. The existing SDR VI/UI
+pipelines and game logic are retained. The extra two image layers and final
+pass are allocated only for HDR; their GPU cost still needs console measurement.
+
+This candidate declares the HDR title capability. The stable Beta 3.4 updater
+rejects a changed title declaration; an existing installation needs a qualified
+metadata migration before this HDR candidate can replace it. Do not remove
+that safeguard or overwrite registered metadata by hand. HDR/VRR/120-Hz
+coexistence and display brightness remain to verify on PS5.
