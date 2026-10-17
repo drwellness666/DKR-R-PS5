@@ -49,6 +49,12 @@ class Universal(unittest.TestCase):
 #include <stdio.h>
 int __real_rename(const char*,const char*);
 int __real_fsync(int);
+ssize_t __real_read(int,void*,size_t);
+ssize_t __wrap_read(int fd,void*buf,size_t n){
+ char p[64],name[1024];snprintf(p,sizeof(p),"/proc/self/fd/%d",fd);ssize_t len=readlink(p,name,sizeof(name)-1);if(len>=0)name[len]=0;else name[0]=0;
+ if(getenv("DKRR_REJECT_FULL_NONROM_READ")&&strstr(name,"not-a-rom.bin")&&n>4)_exit(79);
+ return __real_read(fd,buf,n);
+}
 static int moved_to_history=0;
 int __wrap_fsync(int fd){
  char p[64],name[1024];snprintf(p,sizeof(p),"/proc/self/fd/%d",fd);ssize_t len=readlink(p,name,sizeof(name)-1);if(len>=0)name[len]=0;else name[0]=0;
@@ -108,7 +114,7 @@ ssize_t __wrap_write(int fd,const void*buf,size_t n){
         # ROM hashes are compiled into rom.c, not the main unit.
         romobj=w/'rom.o';subprocess.run(flags+common+['-I',str(ROOT/'installer'),'-Wall','-Wextra','-Werror','-c',str(ROOT/'installer/rom.c'),'-o',str(romobj)],check=True)
         objs=[romobj if p.name=='rom.c.o' else p for p in cls.objects]
-        command=flags+['-Wall','-Wextra','-Werror','-DDKRR_HOST_TEST=1',f'-DDKRR_UPDATE_ONLY={int(i==2)}',f'-DDKRR_INSTALL_ROOT="{cls.data}"',f'-DDKRR_USB_ROOT="{cls.mnt}"',f'-DDKRR_SYSTEM_USER_ROOT="{cls.user}"','-I',str(ROOT/'installer'),'-I',str(w),str(ROOT/'installer/main.c'),str(w/'embedded.o'),*[str(o) for o in objs],str(cls.base/'fault.c'),'-Wl,--wrap=rename','-Wl,--wrap=write','-Wl,--wrap=fsync','-lm','-o',str(target)]
+        command=flags+['-Wall','-Wextra','-Werror','-DDKRR_HOST_TEST=1',f'-DDKRR_UPDATE_ONLY={int(i==2)}',f'-DDKRR_INSTALL_ROOT="{cls.data}"',f'-DDKRR_USB_ROOT="{cls.mnt}"',f'-DDKRR_SYSTEM_USER_ROOT="{cls.user}"','-I',str(ROOT/'installer'),'-I',str(w),str(ROOT/'installer/main.c'),str(w/'embedded.o'),*[str(o) for o in objs],str(cls.base/'fault.c'),'-Wl,--wrap=rename','-Wl,--wrap=write','-Wl,--wrap=read','-Wl,--wrap=fsync','-lm','-o',str(target)]
         subprocess.run(command,check=True)
         if i==2:
             cls.network_binary=w/"network-update"
@@ -191,6 +197,18 @@ ssize_t __wrap_write(int fd,const void*buf,size_t n){
     p=self.mnt/'usb0/DKRR/owned 77.z64';data=bytearray(self.roms[77]);data[0::2],data[1::2]=data[1::2],data[0::2];p.write_bytes(data)
     data=bytearray(self.roms[80]);data[0::4],data[1::4],data[2::4],data[3::4]=data[3::4],data[2::4],data[1::4],data[0::4];(self.mnt/'usb0/DKRR/owned 80.z64').write_bytes(data)
     self.run_installer();self.assertEqual((self.data/'dkrr/roms/dkr.us.v77.z64').read_bytes(),self.roms[77])
+ def test_crowded_unrelated_usb_before_rom_drive(self):
+    (self.mnt/'usb1').mkdir();(self.mnt/'usb0/DKRR').rename(self.mnt/'usb1/DKRR')
+    for i in range(300):(self.mnt/f'usb0/unrelated-{i}.txt').write_bytes(b'keep')
+    self.run_installer()
+    self.assertEqual(len(list((self.mnt/'usb0').iterdir())),300)
+    self.assertEqual((self.data/'dkrr/roms/dkr.us.v80.z64').read_bytes(),self.roms[80])
+ def test_non_rom_size_match_checks_header_before_reading_body(self):
+    (self.mnt/'usb1').mkdir();(self.mnt/'usb0/DKRR').rename(self.mnt/'usb1/DKRR')
+    unrelated=self.mnt/'usb0/not-a-rom.bin'
+    with unrelated.open('wb') as f:f.truncate(SIZE)
+    self.run_installer(DKRR_REJECT_FULL_NONROM_READ='1')
+    self.assertEqual(unrelated.stat().st_size,SIZE)
  def test_unknown_app_and_running_game(self):
     self.run_installer();original=(self.live/'eboot.bin').read_bytes();(self.live/'eboot.bin').write_bytes(b'foreign');self.run_installer(1,False)
     self.assertEqual((self.live/'eboot.bin').read_bytes(),b'foreign');(self.live/'eboot.bin').write_bytes(original)

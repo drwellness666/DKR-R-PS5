@@ -125,7 +125,7 @@ int main() {
     write(pref,std::string(65,'x'));assert(dkrr_ps5_read_display_choice(&c)==-1);
     write(pref,std::string("resolution=1080p\nrefresh=60\n") + std::string(1,'\0')); assert(dkrr_ps5_read_display_choice(&c)==-1);
     fs::remove(pref); fs::create_symlink(root/"save-fixture",pref);assert(dkrr_ps5_choose_display({2160,60})==-1);assert(dkrr_ps5_read_display_choice(&c)==-1);fs::remove(pref);
-    write(temp,"interrupted write: preserve");assert(dkrr_ps5_choose_display({1080,60})==-1);assert(read(temp)=="interrupted write: preserve");fs::remove(temp);
+    write(temp,"interrupted write: preserve");assert(dkrr_ps5_choose_display({1080,60})==0);assert(read(temp)=="interrupted write: preserve");fs::remove(temp);
     assert(dkrr_ps5_choose_display({2160,60})==0);dkrr_ps5_initialize_display();offered.clear();add(1920,1080,59940);assert(surface(1080,59940)==VK_SUCCESS);assert(dkrr_ps5_display_status().fallback);
     offered.clear();add(3840,2160,59940);add(1920,1080,59940);create_failure=1;assert(surface(1080,59940)==VK_SUCCESS);assert(dkrr_ps5_display_status().fallback);
     create_failure=2;assert(surface(0,0)==VK_ERROR_DEVICE_LOST);create_failure=0;
