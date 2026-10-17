@@ -1,0 +1,11 @@
+{
+  "compiler": "Glslang Version: 11:16.6.0\nESSL Version: OpenGL ES GLSL 3.20 glslang Khronos. 16.6.0\nGLSL Version: 4.60 glslang Khronos. 16.6.0\nSPIR-V Version 0x00010600, Revision 1\nGLSL.std.450 Version 100, Revision 1\nKhronos Tool ID 8\nSPIR-V Generator Version 11\nGL_KHR_vulkan_glsl version 100\nARB_GL_gl_spirv version 100\n",
+  "sources": {
+    "ps5_hdr.vert": "3aea6280fbc53f312ba3b14bc640766a335f7ce153077cc909f2d5a2183a04af",
+    "ps5_hdr.frag": "57de6c8f1c924cabf70b0d3d4b86d13bdf9aec56e3e4573257e65dca30852d11"
+  },
+  "spirv": {
+    "vert": "58a13742238c0651b8eeda455ba8962c12f41d9d627cd90480d3ed38cdf90a5c",
+    "frag": "03f6b1e9df42f525386b20db65af7982e6a75e1bb560347e45eab79e8a72f9b5"
+  }
+}

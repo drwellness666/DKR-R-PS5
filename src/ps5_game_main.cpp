@@ -18,6 +18,7 @@
 #include "ps5_shader_cache.h"
 #include "ps5_revision_selection.h"
 #include "ps5_display_options.h"
+#include "ps5_hdr_options.h"
 #include "ps5_diagnostics.h"
 #include "ps5_installation_lease.hpp"
 #include "ps5_internet_update.hpp"
@@ -111,6 +112,7 @@ int main() {
     report("build=integrated-v1 source=%s; US dual + languages + optional controls/output + diagnostics",dkrr_diag_build());
     configure_render_diagnostics();
     dkrr_ps5_initialize_display();
+    dkrr_ps5_initialize_hdr();
     const auto output = dkrr_ps5_boot_display_choice();
     report("display requested: %up / %u Hz; SDR; HDMI VRR/ALLM governed by system", output.resolution, output.refresh);
     const char*cache_option=getenv("DKR_PS5_SHADER_CACHE");
