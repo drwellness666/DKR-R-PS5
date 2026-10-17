@@ -6,7 +6,7 @@
 - Download a signed data-only package; no downloaded installer code is executed.
 - Prepare app-specific directory access during installation; leave system and other app directories unchanged.
 - Save and join game workers before replacing program files, keeping the installed app folder in place.
-- Restore interrupted native transactions at startup. Keep old copies intact until recovery completes.
+- Restore interrupted native transactions at startup. Keep old copies intact until recovery completes; avoid rewriting already restored files when filesystem access is denied.
 - Keep the legacy Beta 3.3 channel for one-time migration and the manual ELF route for offline use.
 - Add sanitizer tests for every replacement cut, repeated recovery, invalid packages and filesystem failures.
 
