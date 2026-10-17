@@ -25,6 +25,7 @@ extern "C" int __wrap_fstat(int fd,struct stat* st){int r=__real_fstat(fd,st);if
 extern "C" int __real_rename(const char*,const char*);
 static unsigned replacements;
 extern "C" int __wrap_rename(const char* from,const char* to) {
+    if(std::getenv("FAIL_APP_RENAMES")&&std::strstr(to,DKRR_NATIVE_APP)){errno=EPERM;return -1;}
     if(std::strstr(from,"/native-install/new/")&&std::strstr(to,DKRR_NATIVE_APP)) {
         const char* fail=std::getenv("FAIL_RENAME");
         if(fail&&replacements++==unsigned(std::atoi(fail))){errno=EIO;return -1;}
