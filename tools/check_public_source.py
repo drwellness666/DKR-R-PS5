@@ -20,6 +20,8 @@ def check(name, first):
         failures.append(name + ': private/unsafe path')
     if PurePosixPath(name).suffix.lower() in forbidden:
         failures.append(name + ': excluded binary/game artifact')
+    if any(marker in first for marker in (b'-----BEGIN '+b'PRIVATE KEY-----', b'-----BEGIN '+b'OPENSSH PRIVATE KEY-----', b'-----BEGIN '+b'EC PRIVATE KEY-----', b'-----BEGIN '+b'RSA PRIVATE KEY-----')):
+        failures.append(name + ': private signing or authentication key')
     if first[:4] in magic:
         failures.append(name + ': Nintendo 64 ROM header')
 
@@ -34,21 +36,21 @@ for path in root.rglob('*'):
     if not path.is_file():
         continue
     with path.open('rb') as f:
-        check(str(relative), f.read(4))
+        check(str(relative), f.read(2048))
     count += 1
     if path.name.endswith(('.tar.gz', '.tar.xz')):
         with tarfile.open(path) as archive:
             for member in archive:
                 if member.isfile():
                     with archive.extractfile(member) as f:
-                        check(str(relative) + '/' + member.name, f.read(4))
+                        check(str(relative) + '/' + member.name, f.read(2048))
                     count += 1
     elif path.suffix.lower() == '.zip':
         with zipfile.ZipFile(path) as archive:
             for member in archive.infolist():
                 if not member.is_dir():
                     with archive.open(member) as f:
-                        check(str(relative) + '/' + member.filename, f.read(4))
+                        check(str(relative) + '/' + member.filename, f.read(2048))
                     count += 1
 if failures:
     raise SystemExit('\n'.join(failures))

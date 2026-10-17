@@ -8,7 +8,7 @@ PUBLIC_FILES={
  'eboot.bin','sce_module/libc.prx','sce_sys/param.json','sce_sys/icon0.png','sce_sys/pic0.dds','sce_sys/pic1.dds',
  'assets/controllers/gamecontrollerdb.txt',
  *('assets/filters/'+n for n in ('Perfect_CRT-240p-BRT.png','Perfect_CRT-240p.png','Perfect_CRT.png','README.md','aperture-grille.png','scanlines-soft.png','shadow-mask.png')),
- *('assets/licenses/'+n for n in ('DKR-R-MIT.md','GPL-3.0.txt','LLVM-libcxx.txt','SDL2.txt','Selawik-OFL.txt','THIRD_PARTY.md','Title-Artwork-Sources.json','Title-Artwork.md','VADPCM-MPL-2.0.txt','libsamplerate.txt')),
+ *('assets/licenses/'+n for n in ('DKR-R-MIT.md','GPL-3.0.txt','LLVM-libcxx.txt','SDL2.txt','Selawik-OFL.txt','THIRD_PARTY.md','Title-Artwork-Sources.json','Title-Artwork.md','VADPCM-MPL-2.0.txt','libsamplerate.txt','Monocypher.md','Mbed-TLS.md')),
  'assets/ui/Backgrounds/DKR-R-Launcher-Background.png',
  *('assets/ui/CustomTrackBackgrounds/custom-row-'+str(i)+'.png' for i in range(1,7)),
  'assets/ui/CustomTrackBackgrounds/rt64.json',
@@ -95,9 +95,9 @@ def build(sdk,app,receipt,output,migrations=()):
         obj=work/(source.name+'.o');flags=['-std=c11','-O2','-Wall','-Wextra','-Werror'] if source.parent==ROOT/'installer' else ['-O2']
         subprocess.run([cc,*flags,'-I',str(ROOT/'installer'),'-c',str(source),'-o',str(obj)],check=True);objects.append(obj)
     built={}
-    for update in (False,True):
-        target=output/('DKRR-Update.elf' if update else 'DKRR-Installer.elf')
-        subprocess.run([cc,'-std=c11','-O2','-Wall','-Wextra','-Werror',f'-DDKRR_UPDATE_ONLY={int(update)}','-I',str(ROOT/'installer'),'-I',str(work),str(ROOT/'installer/main.c'),*[str(o) for o in objects],'-o',str(target)],check=True)
+    for edition in ('Installer','Update','Network-Update'):
+        target=output/('DKRR-'+edition+'.elf')
+        subprocess.run([cc,'-std=c11','-O2','-Wall','-Wextra','-Werror',f'-DDKRR_UPDATE_ONLY={int(edition!="Installer")}',f'-DDKRR_NETWORK_UPDATE={int(edition=="Network-Update")}','-I',str(ROOT/'installer'),'-I',str(work),str(ROOT/'installer/main.c'),*[str(o) for o in objects],'-o',str(target)],check=True)
         subprocess.run([str(sdk/'bin/prospero-strip'),'--strip-debug',str(target)],check=True);target.chmod(0o600)
         built[target.name]=dict(size=target.stat().st_size,sha256=hashlib.sha256(target.read_bytes()).hexdigest())
     source_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'installer').glob('*')) if p.is_file()}

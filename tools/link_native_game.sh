@@ -27,6 +27,7 @@ build_id=$(python3 "$root/tools/native_build_identity.py" "$root" "$game" "$sdl"
 profile="$game/game-ps5/dkr-ps5-profile.json"
 [[ -f $profile ]] || { echo 'Missing selected-revision CMake profile' >&2; exit 2; }
 mapfile -t revisions < <(python3 -c 'import json,sys;p=json.load(open(sys.argv[1]));print(p["v77"]);print(p["v80"])' "$profile")
+release_sequence=$(python3 -c 'import json,sys;v=json.load(open(sys.argv[1]))["installer_sequence"];assert type(v) is int and 1<=v<=2147483647;print(v)' "$root/PORT_RELEASE.json")
 cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revisions[1]}" -std=c++20 -O2 -fexceptions -fcxx-exceptions -D_LIBCPP_ENABLE_EXPERIMENTAL -Wall -Wextra -Werror \
     -fvisibility=hidden -ffunction-sections -fdata-sections \
     -I "$root/src" -c "$root/src/ps5_game_main.cpp" -o "$build/obj/game_main.o"
@@ -64,6 +65,17 @@ cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions \
     -I "$root/src" -c "$root/src/ps5_controller_speaker.cpp" -o "$build/obj/controller_speaker.o"
 cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revisions[1]}" -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden -ffunction-sections -fdata-sections \
     -I "$root/src" -I "$game/source/N64Recomp/include" -c "$root/src/ps5_game_audio_hooks.cpp" -o "$build/obj/game_audio_hooks.o"
+cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions -fvisibility=hidden \
+    -DDKRR_RELEASE_SEQUENCE="$release_sequence" -I "$root/src" \
+    -c "$root/src/ps5_internet_update.cpp" -o "$build/obj/internet_update.o"
+cc -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -DMBEDTLS_CONFIG_FILE=\"legacy_mod_hash_config.h\" -I "$root/src" \
+    -I "$game/source/DKR-R/extern/monocypher/src" -I "$game/source/DKR-R/extern/monocypher/src/optional" \
+    -I "$game/source/DKR-R/extern/mbedtls/include" -I "$game/source/DKR-R/runtime-recomp/src/game/mods" \
+    -c "$root/src/ps5_update_policy.cpp" -o "$build/obj/update_policy.o"
+cc -std=c11 -O2 -fvisibility=hidden \
+    -I "$game/source/DKR-R/extern/monocypher/src" \
+    -c "$game/source/DKR-R/extern/monocypher/src/optional/monocypher-ed25519.c" -o "$build/obj/update_ed25519.o"
 python3 "$root/tools/prepare_emutls.py" "$gpu/PS5_PayloadSDK/libc/emutls.c" "$build/gen/emutls.c"
 cc -std=c11 -O2 -fvisibility=hidden -c "$build/gen/emutls.c" -o "$build/obj/emutls.o"
 for lib in libSceAgc libSceAgcDriver; do
@@ -96,9 +108,9 @@ link_game() {
 "$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
     --version-script "$build/gen/game-symbols.map" --exclude-libs=ALL -e _start -o "$build/llvm-pie.elf" \
     "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/import_check.o" \
-    "$build/obj/controller_speaker.o" "$build/obj/game_audio_hooks.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
+    "$build/obj/controller_speaker.o" "$build/obj/game_audio_hooks.o" "$build/obj/internet_update.o" "$build/obj/update_policy.o" "$build/obj/update_ed25519.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
     --start-group "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
-    "${radv_link_inputs[@]}" --as-needed "$sdk"/target/lib/*.so
+    "${radv_link_inputs[@]}" --no-as-needed "$sdk/target/lib/libSceHttp.so" "$sdk/target/lib/libSceSsl.so" "$sdk/target/lib/libSceNet.so" --as-needed "$sdk"/target/lib/*.so
 }
 # First pass obtains imports without introducing new library dependencies.
 printf 'unsigned dkrr_report_missing_imports(void (*emit)(const char *)){(void)emit;return 0;}\n' > "$build/gen/import_check.c"
@@ -132,6 +144,8 @@ cp "$root/LICENSE" "$target/assets/licenses/GPL-3.0.txt"
 cp "$root/THIRD_PARTY.md" "$target/assets/licenses/THIRD_PARTY.md"
 cp "$root/licenses/LLVM-libcxx.txt" "$target/assets/licenses/LLVM-libcxx.txt"
 cp "$root/licenses/VADPCM-MPL-2.0.txt" "$target/assets/licenses/VADPCM-MPL-2.0.txt"
+cp "$root/licenses/Monocypher.md" "$target/assets/licenses/Monocypher.md"
+cp "$root/licenses/Mbed-TLS.md" "$target/assets/licenses/Mbed-TLS.md"
 cp "$root/licenses/SDL2.txt" "$target/assets/licenses/SDL2.txt"
 cp "$root/licenses/libsamplerate.txt" "$target/assets/licenses/libsamplerate.txt"
 cp "$root/homebrew/DKR-R-Game/ARTWORK.md" "$target/assets/licenses/Title-Artwork.md"
