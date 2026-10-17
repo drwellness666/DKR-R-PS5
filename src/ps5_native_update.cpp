@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <set>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -81,7 +82,13 @@ bool marker(const Path& path,const char* text) {
     bool ok=size<sizeof(data)&&fstat(fd,&st)==0&&S_ISREG(st.st_mode)&&st.st_nlink<=1&&st.st_uid==getuid()&&st.st_size==static_cast<off_t>(size)&&read_all(fd,data,size)&&!std::memcmp(data,text,size);
     close(fd);return ok;
 }
-bool present(const Path& path){struct stat st{};return lstat(path.c_str(),&st)==0;}
+bool present(const Path& path){
+    struct stat st{};if(lstat(path.c_str(),&st)==0)return true;
+    if(errno==ENOENT)return false;
+    // A metadata/I/O error is not evidence of absence. In particular it must
+    // never turn an active transaction into an abandoned staging directory.
+    throw std::runtime_error("Update entry metadata is unavailable");
+}
 bool copy_stream(int source,const Path& target,std::uint64_t size,unsigned mode) {
     int fd=open(target.c_str(),O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW,mode);if(fd<0)return false;
     unsigned char buffer[65536];bool ok=true;
@@ -150,6 +157,16 @@ bool collect_cleanup(const Path& root,const Path& relative,std::vector<Path>& fi
 }
 bool cleanup(Context& c) {
     std::vector<Path> files,dirs;if(!collect_cleanup(c.root,"",files,dirs))return c.fail("Unrecognized update recovery files were preserved for inspection.");
+    // Callers with an active transaction have verified a complete old or new
+    // installation. Retire that transaction durably before destroying either
+    // journal or backup. Directory enumeration order is unspecified; a crash
+    // during later deletion must only resume cleanup, never need missing data.
+    const auto active=c.root+"/applying";
+    auto entry=std::find(files.begin(),files.end(),active);
+    if(entry!=files.end()) {
+        if(unlink(active.c_str())<0||!sync(active))return false;
+        files.erase(entry);CHECKPOINT("retired",0);
+    }
     for(const auto& p:files)if(unlink(p.c_str())<0)return false;
     // collect_cleanup appends children before their parents.
     for(const auto& p:dirs)if(rmdir(p.c_str())<0)return false;
@@ -189,7 +206,7 @@ bool canonical_string(const unsigned char* data,std::size_t size,const char* exp
 }
 bool prepare_impl(Context& c,int fd,const Offer& offer) {
     if(!offer.native_package||offer.sequence<=DKRR_RELEASE_SEQUENCE||!payload_digest(fd,offer))return c.fail("The native update signature or package digest is invalid.");
-    if(!private_directory(c.client))return c.fail("The private update folder is unavailable.");
+    if(!private_directory(c.client)||!sync(c.client))return c.fail("The private update folder is unavailable or could not be synchronized.");
     if(present(c.root))return c.fail("An earlier update needs recovery. Close and restart DKR-R first.");
     auto manifests=std::make_unique<std::array<dkrr_manifest,2>>();
     auto& old=(*manifests)[0];auto& next=(*manifests)[1];
@@ -230,8 +247,14 @@ int recover_impl(Context& c,int lease) {
     else if(!present(c.root+"/applying")){result=cleanup(c)?0:-1;}
     else {
         auto manifests=std::make_unique<std::array<dkrr_manifest,2>>();
-    auto& old=(*manifests)[0];auto& next=(*manifests)[1];
-        if(!marker(c.root+"/applying","APPLY\n")||!marker(c.root+"/ready","READY\n")||!load_journal(c,old,next))c.fail("The update recovery journal could not be verified.");
+        auto& old=(*manifests)[0];auto& next=(*manifests)[1];
+        if(!marker(c.root+"/ready","READY\n")||!load_journal(c,old,next))c.fail("The update recovery journal could not be verified.");
+        else if(!marker(c.root+"/applying","APPLY\n")) {
+            // An incomplete commit marker cannot precede file activation.
+            // Require the complete old installation before abandoning it.
+            if(dkrr_manifest_check(c.app.c_str(),&old,1)==0)result=cleanup(c)?0:-1;
+            else c.fail("The activation marker is incomplete and the old installation does not match.");
+        }
         else if(marker(c.root+"/committed","DONE\n")&&dkrr_manifest_check(c.app.c_str(),&next,1)==0){result=cleanup(c)?0:-1;}
         else if(rollback(c,old)){c.fail("An interrupted update was restored. Start DKR-R again.");result=1;}
     }
@@ -250,7 +273,11 @@ bool apply_impl(Context& c,int lease) {
     // Keep eboot last among program files, followed only by the manifest.
     std::vector<const char*> names;for(auto* n:dkrr_public_files)if(std::strcmp(n,"eboot.bin"))names.push_back(n);names.push_back("eboot.bin");names.push_back("dkrr-install.manifest");
     for(std::size_t i=0;i<names.size();++i){auto from=c.root+"/new/"+names[i],to=c.app+"/"+names[i];
-        if(rename(from.c_str(),to.c_str())<0||!sync(to)||!sync(from)){ok=false;break;}
+        const auto* previous=find(old,names[i]);const auto* updated=find(next,names[i]);
+        const bool identical=previous&&updated&&previous->size==updated->size&&previous->mode==updated->mode&&!std::strcmp(previous->sha1,updated->sha1);
+        // In particular, never replace the already loaded, identical libc or
+        // the unchanged shell metadata. Only changed program entries move.
+        if(!identical&&(rename(from.c_str(),to.c_str())<0||!sync(to)||!sync(from))){ok=false;break;}
         CHECKPOINT("replaced",unsigned(i));
     }
     if(ok)ok=dkrr_manifest_check(c.app.c_str(),&next,1)==0&&touch(c.root+"/committed","DONE\n");

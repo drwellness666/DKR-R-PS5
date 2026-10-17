@@ -96,7 +96,11 @@ bool update_directory(char (&folder)[160]) {
     }
     std::snprintf(folder,sizeof(folder),DKRR_UPDATE_ROOT "/preferences/update-client-%u",unsigned(getuid()));
     if(mkdir(folder,0700)<0&&errno!=EEXIST)return false;
-    return lstat(folder,&st)==0&&S_ISDIR(st.st_mode)&&st.st_uid==getuid()&&(st.st_mode&077)==0;
+    if(lstat(folder,&st)<0||!S_ISDIR(st.st_mode)||st.st_uid!=getuid()||(st.st_mode&077)!=0)return false;
+    // Persist the private directory's own entry, including after an earlier
+    // interrupted first creation. Syncing only files inside it is insufficient.
+    int parent=open(DKRR_UPDATE_ROOT "/preferences",O_RDONLY|O_DIRECTORY|O_NOFOLLOW);if(parent<0)return false;
+    bool good=fsync(parent)==0;if(close(parent)<0)good=false;return good;
 }
 bool load_automatic_check() {
     char folder[160],path[240],text[2];if(!update_directory(folder))return false;
