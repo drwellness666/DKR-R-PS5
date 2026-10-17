@@ -1,5 +1,5 @@
 name: Console bug
-description: Report a problem with the PS5 beta.
+description: Report a problem with the PS5 port.
 body:
   - type: checkboxes
     attributes:
@@ -10,7 +10,7 @@ body:
   - type: input
     attributes:
       label: Port version
-      description: The beta version from the download or the build ID in Graphics.
+      description: The port version from the download or the build ID in Graphics.
     validations:
       required: true
   - type: input
