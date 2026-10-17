@@ -19,6 +19,7 @@
 #include <string_view>
 #include <vector>
 #include "generated/selawik_font.h"
+#include "generated/racing_banana_font.h"
 std::uint64_t g_font_generation=0;
 int g_race_button_flat=0;ImFont*g_race_button_flat_font=nullptr;
 ImFont *g_font_controls=nullptr,*g_font_heading=nullptr,*g_font_title=nullptr,*g_font_fps=nullptr;
@@ -32,6 +33,7 @@ int main(){
  ImGui::CreateContext();LoadConsoleFonts();auto&io=ImGui::GetIO();
  unsigned char*p;int w,h;io.Fonts->GetTexDataAsRGBA32(&p,&w,&h);
  check(p&&w>0&&h>0&&w<=4096&&h<=4096,"bounded populated atlas");
+ check(std::strstr(io.FontDefault->GetDebugName(),"Racing Banana"),"Racing Banana is not the primary face");
  unsigned checked=0;
  for(auto*font:io.Fonts->Fonts)for(ImWchar c:{ImWchar('A'),ImWchar('0'),ImWchar(0x00FC)}){
   const auto*g=font->FindGlyphNoFallback(c);check(g&&g->Visible,"ASCII, digit or German glyph missing");
@@ -40,5 +42,5 @@ int main(){
   check(coverage>0,"glyph is fully transparent");++checked;
  }
  check(io.Fonts->Fonts.Size==25,"all expected font banks installed");
- std::printf("PASS: actual console OFL loader, %d font banks, %u visible glyph checks, atlas=%dx%d; no restricted font linked\n",io.Fonts->Fonts.Size,checked,w,h);ImGui::DestroyContext();
+ std::printf("PASS: actual console Racing Banana + Selawik loader, %d font banks, %u visible glyph checks, atlas=%dx%d; missing characters use Selawik\n",io.Fonts->Fonts.Size,checked,w,h);ImGui::DestroyContext();
 }
