@@ -68,10 +68,23 @@ review. Beta 3 includes ROM-free installer/update ELFs with matching source.
 
 ## Further native features
 
-Internet updates need verified HTTPS downloads, a signed bounded release
-manifest and activation after the running title releases its installation
-lease. Private GitHub releases require authentication; no access token is
-embedded. The current self-contained update ELF remains the available path.
+The game checks a bounded, Ed25519-signed release manifest over native system
+HTTPS. The manifest binds the title, monotonic installer sequence, exact payload
+size, SHA-256 and release tag; download addresses are derived locally. Only this
+repository's release path and GitHub's HTTPS asset host are allowed. The download
+is streamed to an unlinked, process-owned temporary inode, then checked in full.
+The existing local ELF receiver starts the signed network edition of the same
+universal installer. Its ready/commit handshake precedes filesystem changes; it
+waits for the game's shared lease to be released before replacing program files.
+The game requests ordinary shutdown only after that handoff. There is no resident
+service or PC agent. Checks, download and verification run on a joined worker;
+network checks at launch are optional, default off and shared by both revisions.
+
+Private GitHub releases cannot be fetched anonymously. No token is embedded;
+the public channel becomes reachable only when the owner opens the repository.
+The manual ELF route remains available. The signing key is kept outside source;
+`tools/sign_update_channel.py` refuses a key that does not match the client's
+public key. Newer upstream DKR-R versions still need reviewed port integration.
 
 HDR needs a 10-bit presentation path, correct color transfer, UI brightness
 and SDR fallback. This target currently presents 8-bit SDR. Public

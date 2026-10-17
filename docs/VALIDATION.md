@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-The current implementation passed **56 host check commands**, including **13
+The current implementation passed **57 host check commands**, including **15
 installer/update cases** with injected write, synchronization and activation
 failures. Tests also cover shared settings, both language bridges, menu layout,
 controller adapters, direct save handling and diagnostics. Menu tests exercise
@@ -14,8 +14,14 @@ owner’s two ROMs. New tests exercise actual US77/US80 sound wrappers, native
 player/context gating and compact binding UI. The bounded CSeq decoder also
 passes 8,000 malformed-input cases under address/undefined-behavior sanitizers.
 
-The native PS5 game and both universal payloads compile and link with the public
-homebrew SDK. Every one of the **35** embedded program files was read back from
+Signed-update tests exercise the actual native worker with 13 service scenarios,
+all manifest truncations and byte mutations, 10,000 malformed inputs, wrong
+signatures/digests, redirects, cancellation and missing receiver. The network
+installer is tested before commit, across partial commit messages and while the
+game retains its lease.
+
+The native PS5 game and all three universal payloads compile and link with the public
+homebrew SDK. Every one of the **37** embedded program files was read back from
 each ELF and matched the app. ROMs and extracted controller PCM are excluded.
 The exact source gate is [source-check.yml](../.github/workflows/source-check.yml).
 
@@ -30,6 +36,7 @@ rumble, balloon light colors, icon/background and launch-image handoff.
 ## Still to verify
 
 - The new universal ELF's complete install/update and app registration on PS5.
+- Native HTTPS reachability and the Internet updater's complete game-to-receiver handoff.
 - New native save handling after a complete reboot, without the old preview's helper.
 - Physical gyro, adaptive L2 and controller-speaker behavior.
 - More tracks, Paks, mods, online modes, displays and a complete Windows/WSL2 build.
