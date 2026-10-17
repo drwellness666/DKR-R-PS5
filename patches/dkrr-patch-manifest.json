@@ -4,7 +4,7 @@
   "files": {
     "runtime-recomp/CMakeLists.txt": {
       "original_sha256": "c7a186e2b13f8a3d66ef3f98cba82548c503d24f7448077ccd5765d25103f3b7",
-      "patched_sha256": "b390199db04849a5341d74c99c2734a88283b28df2ab9aee91e4f3aba077d073"
+      "patched_sha256": "1b1f023ee7c4874eab4494c0a0e2f19b9f58c8f9ac1966f5aacd064c2858015a"
     },
     "runtime-recomp/src/game/game_main.cpp": {
       "original_sha256": "aa56151f96a050fc85d612b450db3b5192b0c80a626b79d5ce24af64ab128733",
@@ -64,7 +64,7 @@
     },
     "runtime-recomp/src/game/runtime_platform.cpp": {
       "original_sha256": "91d9ae49a9fe266ac731b7f73a868203f541fbe301661d470ba23c34f72f949e",
-      "patched_sha256": "34ce21808b71b51c2e116c34356ede6e0ab59e3276ea167e3fa2e1e33d8c0bf1"
+      "patched_sha256": "386d31f9d9c37a8e1159ddd9153c1be05694de03ac0be5fd0e356a2d03c5dd8f"
     },
     "runtime-recomp/src/game/runtime_platform.hpp": {
       "original_sha256": "51f44b3b0719a09e3b6176a8e4e4d92a041f1fe16205ef2199c320f4898d6c22",
@@ -96,11 +96,11 @@
     },
     "runtime-recomp/src/game/runtime_ui.cpp": {
       "original_sha256": "efa6e5618e46e379c5787f51b67d138d999f99a13ceab02f81cb955e0fa0c86d",
-      "patched_sha256": "2fedcc4678d9d68b8b25f60b86fea5f63f5eacacf9039067326a4f47bdc641e4"
+      "patched_sha256": "c6376e56148e80be35a1accb0f86479562627abb4949b2df47a44f2e5a0ab3ae"
     },
     "runtime-recomp/src/game/runtime_ui_paddock.inl": {
       "original_sha256": "3958334961f6a6b91be789b5c84a0e8a1168bef804650a354bad741a1a581099",
-      "patched_sha256": "828244e2260a09f5036f7aac81fdaad320b6925df49bb7dbd7b640b56759f9fd"
+      "patched_sha256": "c96510d68f887d236bf0d5b2d2256c50a92f9356d14a624edaf7db7c4bed1c4e"
     },
     "runtime-recomp/tests/quick_join_transport_tests.cpp": {
       "original_sha256": "4f128aebad23c8034a45692fadc63b90cb32c8aa03f0c4d1c0e7d7d40ec09779",
@@ -127,5 +127,5 @@
       "patched_sha256": "485d238d7004f5eb404cd285e151656c54ddac67baec60d84f60a1ba9636125a"
     }
   },
-  "patch_sha256": "e3042706c17501339a06cb96be2f9ec709892c032cfa421124045a6280cd7adb"
+  "patch_sha256": "643c1dfeeb1a7b83855bc07d4406938c43ec4449906941b2d573aaf6f0e88ffa"
 }

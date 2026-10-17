@@ -1,3 +1,4 @@
+diff --git a/runtime-recomp/CMakeLists.txt b/runtime-recomp/CMakeLists.txt
 --- a/runtime-recomp/CMakeLists.txt
 +++ b/runtime-recomp/CMakeLists.txt
 @@ -1,6 +1,11 @@
@@ -35,7 +36,7 @@
 +        message(FATAL_ERROR "Select at least one owned PS5 ROM revision")
 +    endif()
 +    file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/dkr-ps5-profile.json"
-+        CONTENT "{\"v77\":${DKR_PAYLOAD_V77_ENABLED},\"v80\":${DKR_PAYLOAD_V80_ENABLED},\"interface_fonts\":\"Racing-Banana+Selawik\"}\n")
++        CONTENT "{\"v77\":${DKR_PAYLOAD_V77_ENABLED},\"v80\":${DKR_PAYLOAD_V80_ENABLED},\"interface_fonts\":\"upstream-DKR-R\"}\n")
 +endif()
 +
  if(DKR_RUNTIME_BUILD_GENERATED)
@@ -129,14 +130,13 @@
  endif()
  
  if(DKR_RUNTIME_BUILD_GENERATED)
-@@ -854,7 +896,26 @@
+@@ -854,7 +896,25 @@
          set_property(SOURCE resources/dkr-r.rc APPEND PROPERTY COMPILE_DEFINITIONS
              "DKR_RELEASE_RESOURCE_VERSION=${DKR_RELEASE_RESOURCE_VERSION},${DKR_RELEASE_BUILD_NUMBER}")
      endif()
 -    if(ANDROID)
 +    if(PS5)
-+        # Racing Banana is the primary face; Selawik supplies missing glyphs.
-+        list(FILTER DKR_GAME_SOURCES EXCLUDE REGEX "generated/jumpman_font\\.c$")
++        # Keep all original upstream interface fonts and their loading policy.
 +        # Native CRT/linking is supplied by the public PS5 toolchain adapter.
 +        add_library(DKRPortGame STATIC ${DKR_GAME_SOURCES})
 +        set_source_files_properties(src/game/game_main.cpp PROPERTIES
@@ -157,7 +157,7 @@
          add_library(DKRPortGame SHARED ${DKR_GAME_SOURCES} src/android/android_platform.cpp src/android/mobile_ui.cpp)
          target_link_libraries(DKRPortGame PRIVATE SDL2::SDL2 SDL2::SDL2main android log)
      else()
-@@ -901,13 +962,14 @@
+@@ -901,13 +961,14 @@
      # unresolved on Linux. MSVC is order-independent, and this ordering keeps
      # both platforms on the same single-runtime link graph.
      target_link_libraries(DKRPortGame PRIVATE
@@ -175,7 +175,7 @@
      if(MSVC)
          target_compile_options(DKRPortGame PRIVATE /FS)
      endif()
-@@ -947,6 +1009,9 @@
+@@ -947,6 +1008,9 @@
                      "$<TARGET_FILE_DIR:DKRPortGame>/SDL2.dll"
                  VERBATIM
              )
@@ -185,6 +185,7 @@
          elseif(IOS)
              dkr_ios_finish(DKRPortGame)
          else()
+diff --git a/runtime-recomp/src/game/game_main.cpp b/runtime-recomp/src/game/game_main.cpp
 --- a/runtime-recomp/src/game/game_main.cpp
 +++ b/runtime-recomp/src/game/game_main.cpp
 @@ -1,3 +1,6 @@
@@ -317,6 +318,7 @@
              if(!mod_failure.empty())dkr::runtime::ui::report_mod_error("Custom content stopped safely: "+mod_failure);
              std::fprintf(stderr,
                           "[boot][stop] game stopped; returning to launcher\n");
+diff --git a/runtime-recomp/src/game/game_payload.cpp b/runtime-recomp/src/game/game_payload.cpp
 --- a/runtime-recomp/src/game/game_payload.cpp
 +++ b/runtime-recomp/src/game/game_payload.cpp
 @@ -4,8 +4,18 @@
@@ -356,6 +358,7 @@
      default:
          return nullptr;
      }
+diff --git a/runtime-recomp/src/game/game_registration.cpp b/runtime-recomp/src/game/game_registration.cpp
 --- a/runtime-recomp/src/game/game_registration.cpp
 +++ b/runtime-recomp/src/game/game_registration.cpp
 @@ -47,6 +47,15 @@
@@ -394,6 +397,7 @@
      }
      payload->entrypoint(rdram, context);
  }
+diff --git a/runtime-recomp/src/game/mods/legacy_mod_launch.cpp b/runtime-recomp/src/game/mods/legacy_mod_launch.cpp
 --- a/runtime-recomp/src/game/mods/legacy_mod_launch.cpp
 +++ b/runtime-recomp/src/game/mods/legacy_mod_launch.cpp
 @@ -1,3 +1,7 @@
@@ -434,6 +438,7 @@
          auto seed=codec::blank_bytes();
          if(std::filesystem::exists(original)) {
              regular(original);seed=read_file(original,codec::kImageSize);
+diff --git a/runtime-recomp/src/game/mods/legacy_mod_process.cpp b/runtime-recomp/src/game/mods/legacy_mod_process.cpp
 --- a/runtime-recomp/src/game/mods/legacy_mod_process.cpp
 +++ b/runtime-recomp/src/game/mods/legacy_mod_process.cpp
 @@ -45,7 +45,7 @@
@@ -472,6 +477,7 @@
  #else
      if(!executable.is_absolute() || !request.is_absolute() || timeout.count()<=0)
          throw Error("Importer requires absolute private executable/request paths and a bounded timeout.");
+diff --git a/runtime-recomp/src/game/mods/online_mod_runtime.cpp b/runtime-recomp/src/game/mods/online_mod_runtime.cpp
 --- a/runtime-recomp/src/game/mods/online_mod_runtime.cpp
 +++ b/runtime-recomp/src/game/mods/online_mod_runtime.cpp
 @@ -14,7 +14,7 @@
@@ -494,6 +500,7 @@
  #else
      struct sysinfo memory{};
      if(sysinfo(&memory)!=0)return 0;
+diff --git a/runtime-recomp/src/game/netplay/datagram_socket.cpp b/runtime-recomp/src/game/netplay/datagram_socket.cpp
 --- a/runtime-recomp/src/game/netplay/datagram_socket.cpp
 +++ b/runtime-recomp/src/game/netplay/datagram_socket.cpp
 @@ -13,6 +13,7 @@
@@ -514,6 +521,7 @@
      local.sin_family = AF_INET;
      local.sin_addr.s_addr = htonl(INADDR_ANY);
      local.sin_port = htons(port);
+diff --git a/runtime-recomp/src/game/netplay/network_interfaces.cpp b/runtime-recomp/src/game/netplay/network_interfaces.cpp
 --- a/runtime-recomp/src/game/netplay/network_interfaces.cpp
 +++ b/runtime-recomp/src/game/netplay/network_interfaces.cpp
 @@ -22,6 +22,7 @@
@@ -524,6 +532,7 @@
  #include <cerrno>
  #include <fcntl.h>
  #include <ifaddrs.h>
+diff --git a/runtime-recomp/src/game/rt64_renderer.cpp b/runtime-recomp/src/game/rt64_renderer.cpp
 --- a/runtime-recomp/src/game/rt64_renderer.cpp
 +++ b/runtime-recomp/src/game/rt64_renderer.cpp
 @@ -1,4 +1,9 @@
@@ -700,6 +709,7 @@
  }
  void dkr::runtime::RT64Renderer::repeat_owned() {
      if(!owned_mode_||!application_)return;
+diff --git a/runtime-recomp/src/game/runtime_controls_ui.inl b/runtime-recomp/src/game/runtime_controls_ui.inl
 --- a/runtime-recomp/src/game/runtime_controls_ui.inl
 +++ b/runtime-recomp/src/game/runtime_controls_ui.inl
 @@ -38,6 +38,11 @@
@@ -987,6 +997,7 @@
      } else {
          DrawControlsShortcuts(width, commit);
      }
+diff --git a/runtime-recomp/src/game/runtime_graphics_ui.inl b/runtime-recomp/src/game/runtime_graphics_ui.inl
 --- a/runtime-recomp/src/game/runtime_graphics_ui.inl
 +++ b/runtime-recomp/src/game/runtime_graphics_ui.inl
 @@ -9,9 +9,15 @@
@@ -1153,6 +1164,7 @@
 +    } // Display-only reset/undo
      ImGui::PopStyleVar();
  }
+diff --git a/runtime-recomp/src/game/runtime_hud_layout.cpp b/runtime-recomp/src/game/runtime_hud_layout.cpp
 --- a/runtime-recomp/src/game/runtime_hud_layout.cpp
 +++ b/runtime-recomp/src/game/runtime_hud_layout.cpp
 @@ -738,6 +738,9 @@
@@ -1165,6 +1177,7 @@
      g_player_pass_active = BeginHudPass(rdram, context, 0x30);
  }
  
+diff --git a/runtime-recomp/src/game/runtime_input.cpp b/runtime-recomp/src/game/runtime_input.cpp
 --- a/runtime-recomp/src/game/runtime_input.cpp
 +++ b/runtime-recomp/src/game/runtime_input.cpp
 @@ -70,6 +70,7 @@
@@ -1297,6 +1310,7 @@
  }
  
  int dkr::runtime::input::keyboard_player() {
+diff --git a/runtime-recomp/src/game/runtime_input.hpp b/runtime-recomp/src/game/runtime_input.hpp
 --- a/runtime-recomp/src/game/runtime_input.hpp
 +++ b/runtime-recomp/src/game/runtime_input.hpp
 @@ -38,6 +38,14 @@
@@ -1324,6 +1338,7 @@
  int keyboard_player();
  void set_keyboard_player(int player);
  bool background_input_enabled(std::size_t player);
+diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/game/runtime_platform.cpp
 --- a/runtime-recomp/src/game/runtime_platform.cpp
 +++ b/runtime-recomp/src/game/runtime_platform.cpp
 @@ -1,5 +1,15 @@
@@ -1444,7 +1459,7 @@
          for (std::size_t i = 0; i < sample_count; i += 2) {
              // RDRAM's 32-bit word swap leaves each native stereo pair in R,L
              // order. Restore conventional L,R order before sending it to SDL.
-@@ -2436,9 +2506,60 @@
+@@ -2436,9 +2506,61 @@
      }
      const bool blocked = dkr::runtime::ui::overlay_visible();
      const bool window_focused = g_window != nullptr &&
@@ -1457,8 +1472,11 @@
          g_online_input_routing.load(std::memory_order_acquire);
 +#if defined(__PROSPERO__)
 +    const bool lights = !sdl3_native && g_controller_lights_enabled.load(std::memory_order_acquire);
++    const bool effects = !sdl3_native && g_item_feedback_enabled.load(std::memory_order_acquire);
++    const bool speaker = !sdl3_native && g_speaker_enabled.load(std::memory_order_acquire);
++    const auto feedback_time = (lights || effects || speaker) ? ControllerLightTime() : 0U;
 +    if (!sdl3_native) {
-+        const auto now = lights ? ControllerLightTime() : 0U;
++        const auto now = feedback_time;
 +        for (auto& record : g_controller_devices) {
 +            if (record.controller == nullptr || !record.led) continue;
 +            const auto assigned = std::find(g_controllers.begin(),g_controllers.end(),record.controller);
@@ -1479,9 +1497,7 @@
 +#endif
 +#if defined(__PROSPERO__)
 +    if (!sdl3_native) {
-+        const bool effects = g_item_feedback_enabled.load(std::memory_order_acquire);
-+        const bool speaker = g_speaker_enabled.load(std::memory_order_acquire);
-+        const auto now = ControllerLightTime();
++        const auto now = feedback_time;
 +        for (auto& record : g_controller_devices) {
 +            if (!record.controller) continue;
 +            const auto assigned = std::find(g_controllers.begin(),g_controllers.end(),record.controller);
@@ -1505,7 +1521,7 @@
      const int configured_keyboard_player =
          dkr::runtime::input::keyboard_player();
      const std::size_t online_profile = std::min(
-@@ -2687,6 +2808,98 @@
+@@ -2687,6 +2809,98 @@
  #endif
  }
  
@@ -1604,7 +1620,7 @@
  bool dkr::runtime::platform::gyro_available(std::size_t player) {
  #if DKR_RUNTIME_HAS_RT64
      std::scoped_lock lock(g_platform_mutex);
-@@ -3320,3 +3533,39 @@
+@@ -3320,3 +3534,39 @@
      (void)assignments;
  #endif
  }
@@ -1644,6 +1660,7 @@
 +    }
 +}
 +#endif
+diff --git a/runtime-recomp/src/game/runtime_platform.hpp b/runtime-recomp/src/game/runtime_platform.hpp
 --- a/runtime-recomp/src/game/runtime_platform.hpp
 +++ b/runtime-recomp/src/game/runtime_platform.hpp
 @@ -76,6 +76,16 @@
@@ -1663,6 +1680,7 @@
  ultramodern::input::connected_device_info_t get_connected_device_info(int controller);
  
  struct ControllerSummary {
+diff --git a/runtime-recomp/src/game/runtime_portable.cpp b/runtime-recomp/src/game/runtime_portable.cpp
 --- a/runtime-recomp/src/game/runtime_portable.cpp
 +++ b/runtime-recomp/src/game/runtime_portable.cpp
 @@ -95,7 +95,7 @@
@@ -1674,6 +1692,7 @@
      return false; // signed bundle cannot hold portable.txt
  #elif defined(__ANDROID__)
      return false;
+diff --git a/runtime-recomp/src/game/runtime_save_routing.cpp b/runtime-recomp/src/game/runtime_save_routing.cpp
 --- a/runtime-recomp/src/game/runtime_save_routing.cpp
 +++ b/runtime-recomp/src/game/runtime_save_routing.cpp
 @@ -68,10 +68,12 @@
@@ -1689,6 +1708,7 @@
      const std::filesystem::path active_path =
          ultramodern::get_save_file_path().lexically_normal();
      if (active_path != expected_path.lexically_normal()) {
+diff --git a/runtime-recomp/src/game/runtime_saves_ui.inl b/runtime-recomp/src/game/runtime_saves_ui.inl
 --- a/runtime-recomp/src/game/runtime_saves_ui.inl
 +++ b/runtime-recomp/src/game/runtime_saves_ui.inl
 @@ -174,7 +174,7 @@
@@ -1757,6 +1777,7 @@
          PaddockText(PaddockSign(19.0F, 1.45F, 0.0F), PaddockRgb(kSetText), "PIT LANE SAFETY LOCK", inner);
          PaddockGap(12.0F);
          PaddockText(PaddockReading(16.0F, false, 1.45F), PaddockRgb(kSetMuted),
+diff --git a/runtime-recomp/src/game/runtime_settings_ui.inl b/runtime-recomp/src/game/runtime_settings_ui.inl
 --- a/runtime-recomp/src/game/runtime_settings_ui.inl
 +++ b/runtime-recomp/src/game/runtime_settings_ui.inl
 @@ -399,7 +399,7 @@
@@ -1801,6 +1822,7 @@
  }
  
  // ------------------------------------------------------------ section signs
+diff --git a/runtime-recomp/src/game/runtime_support.cpp b/runtime-recomp/src/game/runtime_support.cpp
 --- a/runtime-recomp/src/game/runtime_support.cpp
 +++ b/runtime-recomp/src/game/runtime_support.cpp
 @@ -23,9 +23,11 @@
@@ -1842,6 +1864,7 @@
      result.operating_system = "Windows";
      result.cpu = WindowsCpuName();
      MEMORYSTATUSEX memory{};
+diff --git a/runtime-recomp/src/game/runtime_texture_packs.cpp b/runtime-recomp/src/game/runtime_texture_packs.cpp
 --- a/runtime-recomp/src/game/runtime_texture_packs.cpp
 +++ b/runtime-recomp/src/game/runtime_texture_packs.cpp
 @@ -4,6 +4,9 @@
@@ -1868,6 +1891,7 @@
              if (stop_token.stop_requested()) return;
              if (error) break;
              const bool is_directory = entry.is_directory(error);
+diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/runtime_ui.cpp
 --- a/runtime-recomp/src/game/runtime_ui.cpp
 +++ b/runtime-recomp/src/game/runtime_ui.cpp
 @@ -1,3 +1,6 @@
@@ -1961,40 +1985,7 @@
  constexpr int kShortcutCaptureAction = -2;
  constexpr int kAssignControllerCaptureAction = -3;
  constexpr std::size_t kShortcutActionCount = static_cast<std::size_t>(
-@@ -1206,6 +1229,9 @@
- }
- 
- void LoadLauncherFonts() {
-+#if defined(__PROSPERO__)
-+#include "ps5_ui_fonts.inl"
-+#else
-     ++g_font_generation;
-     ImGuiIO& io = ImGui::GetIO();
-     static constexpr ImWchar kLauncherGlyphRanges[] = {
-@@ -1336,9 +1362,22 @@
-         g_font_fps = g_font_controls != nullptr ? g_font_controls : body_font;
-     }
-     LoadBrandLogoIntoAtlas();
-+#if defined(__PROSPERO__)
-+    // Separate CPU atlas construction from later Vulkan texture upload in logs.
-+    unsigned char* atlas_pixels = nullptr;
-+    int atlas_width = 0, atlas_height = 0;
-+    io.Fonts->GetTexDataAsRGBA32(&atlas_pixels, &atlas_width, &atlas_height);
-+    const ImFontGlyph* body_a = body_font != nullptr ? body_font->FindGlyph('A') : nullptr;
-+    const ImFontGlyph* reading_a = g_paddock_reading[0][0] != nullptr
-+        ? g_paddock_reading[0][0]->FindGlyph('A') : nullptr;
-+    std::fprintf(stderr, "[ps5][ui] atlas=%dx%d fonts=%d pixels=%d body-A=%d reading-A=%d\n",
-+        atlas_width, atlas_height, io.Fonts->Fonts.Size, atlas_pixels != nullptr,
-+        body_a != nullptr && body_a->Visible, reading_a != nullptr && reading_a->Visible);
-+#endif
- #if defined(__ANDROID__) || defined(DKR_IOS)
-     dkr::runtime::mobile::install_context();
- #endif
-+#endif // native PS5 uses only OFL fonts
- }
- 
- class ControlFontScope {
-@@ -1533,6 +1572,10 @@
+@@ -1533,6 +1556,10 @@
  #if defined(__ANDROID__)
      // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
      dkr::runtime::mobile_graphics::apply_accurate_budget(config);
@@ -2005,7 +1996,7 @@
  #endif
  }
  
-@@ -1752,6 +1795,12 @@
+@@ -1752,6 +1779,12 @@
          output << "memory_pak=" << (dkr::runtime::pak::enabled() ? 1 : 0) << '\n';
          output << "rumble=" << (dkr::runtime::platform::rumble_enabled() ? 1 : 0) << '\n';
          output << "rumble_strength=" << dkr::runtime::platform::rumble_strength() << '\n';
@@ -2018,7 +2009,7 @@
          output << "stick_deadzone=" << dkr::runtime::input::stick_deadzone() << '\n';
          output << "stick_anti_deadzone=" << dkr::runtime::input::stick_anti_deadzone() << '\n';
          output << "stick_sensitivity=" << dkr::runtime::input::stick_sensitivity() << '\n';
-@@ -2424,6 +2473,14 @@
+@@ -2424,6 +2457,14 @@
                  dkr::runtime::pak::set_enabled(number != 0);
              } else if (key == "rumble") {
                  dkr::runtime::platform::set_rumble_enabled(number != 0);
@@ -2033,7 +2024,7 @@
              } else if (key == "rumble_strength") {
                  dkr::runtime::platform::set_rumble_strength(std::stof(value));
              } else if (key == "stick_deadzone") {
-@@ -2513,6 +2570,16 @@
+@@ -2513,6 +2554,16 @@
      // still owns an open handle. Migration may call SaveSettings below, so
      // release the read handle before attempting that replacement.
      input.close();
@@ -2050,7 +2041,7 @@
      g_online_automatic_backend = dkr::runtime::netplay::experimental::migrated_automatic_backend(
          has_automatic_backend_setting, g_online_automatic_backend, has_legacy_backend_setting);
      for (std::size_t channel = 0; channel < kSoundChannelCount; ++channel) {
-@@ -4307,6 +4374,11 @@
+@@ -4307,6 +4358,11 @@
  }
  
  void DrawSidebarCurrentStripe() {
@@ -2062,7 +2053,7 @@
      const ImVec2 minimum = ImGui::GetItemRectMin();
      const ImVec2 maximum = ImGui::GetItemRectMax();
      ImDrawList* draw = ImGui::GetWindowDrawList();
-@@ -4322,6 +4394,7 @@
+@@ -4322,6 +4378,7 @@
      draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
                          std::max(rounding - 1.0F, 0.0F));
      draw->PopClipRect();
@@ -2070,7 +2061,7 @@
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -6352,12 +6425,18 @@
+@@ -6352,12 +6409,18 @@
          "HIDE FROM LIST keeps DKR-R's managed copy on disk. Choose Hidden "
          "from the Visibility filter to restore it later.");
      ImGui::Dummy({0.0F, 8.0F});
@@ -2089,7 +2080,7 @@
      ImGui::Dummy({0.0F, 12.0F});
      const float available = std::max(ImGui::GetContentRegionAvail().x, 1.0F);
      const float gap = ImGui::GetStyle().ItemSpacing.x;
-@@ -6375,11 +6454,13 @@
+@@ -6375,11 +6438,13 @@
      }
      if (!compact) ImGui::SameLine();
      ImGui::PushStyleColor(ImGuiCol_Button, {0.45F, 0.09F, 0.10F, 1.0F});
@@ -2103,7 +2094,7 @@
      ImGui::PopStyleColor();
      ImGui::EndPopup();
  }
-@@ -6456,6 +6537,10 @@
+@@ -6456,6 +6521,10 @@
              ImGui::TextWrapped("%s", value.c_str());
          };
          detail_row("TYPE", dkr::runtime::texture_packs::format_name(pack.format));
@@ -2114,7 +2105,7 @@
          detail_row("PRIORITY", std::to_string(pack.priority) +
                     (pack.priority == 1U ? " (highest)" : " (lower number wins)"));
          detail_row("MANAGED SIZE",
-@@ -6519,6 +6604,11 @@
+@@ -6519,6 +6588,11 @@
      if (ImGui::Button("REMOVE PACK...", {action_width, 42.0F})) {
          g_texture_pack_remove_id = pack.id;
          g_texture_pack_remove_name = pack.name;
@@ -2126,7 +2117,7 @@
          request_removal = true;
          ImGui::CloseCurrentPopup();
      }
-@@ -8053,6 +8143,15 @@
+@@ -8053,6 +8127,15 @@
      if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
          return false;
      }
@@ -2142,7 +2133,7 @@
      if (g_capture_action == kShortcutCaptureAction) {
          if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
              event->key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-@@ -8166,6 +8265,11 @@
+@@ -8166,6 +8249,11 @@
  
  void DrawOverlayContent(float content_width) {
      if (g_overlay_page == kPagePlay) {
@@ -2154,7 +2145,7 @@
          DrawPageHeading("PLAY");
          ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
          ImGui::TextWrapped("Taj has paused the race. The island is waiting whenever you are ready.");
-@@ -8173,12 +8277,19 @@
+@@ -8173,12 +8261,19 @@
          ImGui::Dummy({0.0F, 18.0F});
          DrawStartingLights(true);
          ImGui::Dummy({0.0F, 12.0F});
@@ -2174,7 +2165,7 @@
      } else if (g_overlay_page == kPageGraphics) {
          DrawGraphicsPage(content_width, true);
      } else if (g_overlay_page == kPageSound) {
-@@ -8991,6 +9102,11 @@
+@@ -8991,6 +9086,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -2186,7 +2177,7 @@
          LauncherSidebarButton("PLAY", 0, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("DKR-R ONLINE", kPageOnlineMp, page, sidebar_selection,
-@@ -9009,6 +9125,7 @@
+@@ -9009,6 +9109,7 @@
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("ABOUT DKR-R", kPageAbout, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
@@ -2194,7 +2185,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9335,6 +9452,9 @@
+@@ -9335,6 +9436,9 @@
  }
  
  void dkr::runtime::ui::draw(RT64::Application& application) {
@@ -2204,7 +2195,7 @@
      // Publish only an atomic value; the raster worker snapshots it into the
      // next pass's push constants. No GPU resources or samplers are rebuilt.
      // Keep this before visibility checks so closing the overlay or changing
-@@ -9408,6 +9528,9 @@
+@@ -9408,6 +9512,9 @@
      }
  #endif
      inspector->newFrame(application.framebufferGraphicsWorker.get());
@@ -2214,7 +2205,7 @@
      if (auto* hud_window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window())) {
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
-@@ -9461,7 +9584,8 @@
+@@ -9461,7 +9568,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -2224,7 +2215,7 @@
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9494,6 +9618,11 @@
+@@ -9494,6 +9602,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -2236,7 +2227,7 @@
          SidebarButton("PLAY", 0, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
          SidebarButton("DKR-R ONLINE", kPageOnlineMp, sidebar_selection, nav_inner_width,
-@@ -9512,6 +9641,7 @@
+@@ -9512,6 +9625,7 @@
                        sidebar_layout.button_height);
          SidebarButton("ABOUT DKR-R", kPageAbout, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
@@ -2244,7 +2235,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9574,6 +9704,11 @@
+@@ -9574,6 +9688,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -2256,7 +2247,7 @@
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9756,6 +9891,18 @@
+@@ -9756,6 +9875,18 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -2275,6 +2266,7 @@
      // RT64's ImGui backend owns normal pointer, keyboard and gamepad event
      // delivery. Do not turn those events into page-focus requests: ImGui must
      // be allowed to retain the item selected by the previous event so the
+diff --git a/runtime-recomp/src/game/runtime_ui_paddock.inl b/runtime-recomp/src/game/runtime_ui_paddock.inl
 --- a/runtime-recomp/src/game/runtime_ui_paddock.inl
 +++ b/runtime-recomp/src/game/runtime_ui_paddock.inl
 @@ -6,6 +6,13 @@
@@ -2291,19 +2283,7 @@
  
  // ------------------------------------------------------------------ colour
  
-@@ -381,9 +388,9 @@
-         }
-     }
-     if (type.font == nullptr) type.font = ImGui::GetFont();
--    type.size = px;
--    type.ascent = px;
--    type.content = px;
-+    type.size = kConsoleMenuLayout ? px * g_paddock_reading_scale : px;
-+    type.ascent = kConsoleMenuLayout ? px * 2210.0F / 2048.0F : px;
-+    type.content = kConsoleMenuLayout ? px * 2724.0F / 2048.0F : px;
-     type.line = px * line_height;
-     type.tracking = px * tracking_em;
-     return type;
+diff --git a/runtime-recomp/tests/quick_join_transport_tests.cpp b/runtime-recomp/tests/quick_join_transport_tests.cpp
 --- a/runtime-recomp/tests/quick_join_transport_tests.cpp
 +++ b/runtime-recomp/tests/quick_join_transport_tests.cpp
 @@ -134,6 +134,12 @@
@@ -2319,6 +2299,7 @@
      assert(quick_join_transport);
      assert(quick_join_transport->maximum_plaintext_datagram_bytes() ==
             protocol::kMaximumQuickJoinDatagramBytes);
+diff --git a/scripts/generate_legacy_menu_qualification.py b/scripts/generate_legacy_menu_qualification.py
 --- a/scripts/generate_legacy_menu_qualification.py
 +++ b/scripts/generate_legacy_menu_qualification.py
 @@ -15,9 +15,11 @@
@@ -2360,6 +2341,7 @@
              if isolated:command += ["--functions-per-output-file","1"]
              run_stage(command, f"v{revision} config generation")
              run_stage([str(args.recompiler.resolve()),str(config)], f"v{revision} recompilation ({config.name})")
+diff --git a/scripts/generate_recomp_config.py b/scripts/generate_recomp_config.py
 --- a/scripts/generate_recomp_config.py
 +++ b/scripts/generate_recomp_config.py
 @@ -27,6 +27,7 @@
@@ -2386,6 +2368,7 @@
  
      manual = ", ".join(
          "{ name = %s, section = %s, vram = %s, size = %s }"
+diff --git a/runtime-recomp/src/game/save_storage.hpp b/runtime-recomp/src/game/save_storage.hpp
 --- a/runtime-recomp/src/game/save_storage.hpp
 +++ b/runtime-recomp/src/game/save_storage.hpp
 @@ -28,6 +28,10 @@
@@ -2472,6 +2455,7 @@
          }
          if (entries.size() > 8) {
              std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
+diff --git a/runtime-recomp/src/game/runtime_details_ui.inl b/runtime-recomp/src/game/runtime_details_ui.inl
 --- a/runtime-recomp/src/game/runtime_details_ui.inl
 +++ b/runtime-recomp/src/game/runtime_details_ui.inl
 @@ -579,6 +579,9 @@
@@ -2484,6 +2468,7 @@
      PaddockGap(13.0F);
      DetailText("Diddy Kong Racing - Recompiled", width, kSetMuted, 0.0F);
      PaddockGap(24.0F);
+diff --git a/runtime-recomp/src/game/performance_capture.hpp b/runtime-recomp/src/game/performance_capture.hpp
 --- a/runtime-recomp/src/game/performance_capture.hpp
 +++ b/runtime-recomp/src/game/performance_capture.hpp
 @@ -24,8 +24,10 @@
