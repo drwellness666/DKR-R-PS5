@@ -21,9 +21,11 @@
 #include "ps5_diagnostics.h"
 #include "ps5_installation_lease.hpp"
 #include "ps5_internet_update.hpp"
+#include "ps5_native_update.hpp"
 
 int dkrr_game_main(int, char **);
 extern "C" unsigned dkrr_report_missing_imports(void (*)(const char *));
+extern "C" int sceKernelSendNotificationRequest(int,void*,size_t,int) __attribute__((weak));
 extern "C" int sceKernelOpen(const char *,int,int);
 extern "C" int sceKernelClose(int);
 extern "C" int sceKernelStat(const char *,struct stat *);
@@ -43,6 +45,12 @@ static void report(const char *format, ...) {
     std::snprintf(line,sizeof(line),"[DKR-R] native-game: %s\n",text);
     sceKernelDebugOutText(0,line);
     dkrr_diag_note(line);
+}
+static void notify_update(const char* message) {
+    if(!sceKernelSendNotificationRequest)return;
+    struct {char reserved[45];char text[3075];} notification{};
+    std::snprintf(notification.text,sizeof(notification.text),"%s",message);
+    sceKernelSendNotificationRequest(0,&notification,sizeof(notification),0);
 }
 static void missing_import(const char *name) {
     report("unresolved function import: %s",name);
@@ -82,6 +90,12 @@ int main() {
     if(installation_lease<0) {
         report("installation is busy or the shared application lease is unavailable");
         dkrr_diag_shutdown();dkrr_close_this_title();for(;;)usleep(100000);
+    }
+    char update_error[192]{};
+    const int recovery=dkrr::updates::native::recover(installation_lease,update_error,sizeof(update_error));
+    if(recovery!=0) {
+        report("native update recovery: %s",update_error);notify_update(update_error);
+        close(installation_lease);dkrr_diag_shutdown();dkrr_close_this_title();for(;;)usleep(100000);
     }
     ps5_klog_capture_stderr("[DKR-R game] ");
     // Pipeline caching and persistence will be measured after the first real
@@ -165,6 +179,12 @@ int main() {
     struct ps5_heap_stats stats={};ps5_heap_stats(&stats);
     dkrr::updates::shutdown();
     report("completed status=%d revision=%u heap-peak=%zu heap-libc-fallbacks=%llu",status,revision,stats.peak_bytes,stats.libc_fallbacks);
+    if(dkrr::updates::close_requested()) {
+        bool installed=status==0&&dkrr::updates::native::apply(installation_lease,update_error,sizeof(update_error));
+        const char* message=installed?"DKR-R updated. Start it again from its PS5 icon.":update_error[0]?update_error:"Update postponed because the game did not close cleanly. Start DKR-R again.";
+        report("native update result: %s",message);
+        notify_update(message);
+    }
     dkrr_diag_shutdown();
     close(installation_lease);
     usleep(200000);

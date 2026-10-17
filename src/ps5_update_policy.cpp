@@ -29,8 +29,11 @@ bool verify_offer(const char* text,std::size_t size,const unsigned char key[32],
     if(!text||!key||!size||size>manifest_limit)return false;
     std::string_view rest(text,size),lines[8];std::size_t signed_size=0;
     for(unsigned i=0;i<8;++i){auto at=rest.find('\n');if(at==rest.npos)return false;lines[i]=rest.substr(0,at);rest.remove_prefix(at+1);if(i==6)signed_size=size-rest.size();}
-    if(!rest.empty()||lines[0]!="DKRR-UPDATE-1"||lines[1]!="PPSA94678"||lines[6]!="DKRR-Network-Update.elf")return false;
+    const bool native=lines[0]=="DKRR-UPDATE-2"&&lines[6]=="DKRR-Update.dkru";
+    const bool legacy=lines[0]=="DKRR-UPDATE-1"&&lines[6]=="DKRR-Network-Update.elf";
+    if(!rest.empty()||(!native&&!legacy)||lines[1]!="PPSA94678")return false;
     Offer result{};std::uint64_t sequence=0;
+    result.native_package=native;
     if(!number(lines[2],sequence)||sequence>2147483647||!number(lines[4],result.bytes)||result.bytes<64||result.bytes>payload_limit)return false;
     result.sequence=static_cast<unsigned>(sequence);
     auto tag=lines[3];if(tag.size()<10||tag.size()>=sizeof(result.tag)||!tag.starts_with("ps5-"))return false;
@@ -54,8 +57,10 @@ bool allowed_asset_url(const char* url,bool redirected) {
 bool payload_digest(int fd,const Offer& offer) {
     struct stat st{};unsigned char header[20],digest[32],buffer[65536];
     if(fd<0||fstat(fd,&st)<0||!S_ISREG(st.st_mode)||st.st_nlink>1||st.st_size<0||static_cast<std::uint64_t>(st.st_size)!=offer.bytes||lseek(fd,0,SEEK_SET)<0)return false;
-    // Only a little-endian x86-64 ELF is ever sent to the console loader.
-    if(read(fd,header,sizeof(header))!=sizeof(header)||std::memcmp(header,"\177ELF\2\1\1",7)||header[18]!=62||header[19]||lseek(fd,0,SEEK_SET)<0)return false;
+    if(read(fd,header,sizeof(header))!=sizeof(header))return false;
+    if(offer.native_package) {if(std::memcmp(header,"DKRRPK2\n",8))return false;}
+    else if(std::memcmp(header,"\177ELF\2\1\1",7)||header[18]!=62||header[19])return false;
+    if(lseek(fd,0,SEEK_SET)<0)return false;
     mbedtls_sha256_context sha;mbedtls_sha256_init(&sha);bool ok=mbedtls_sha256_starts(&sha,0)==0;std::uint64_t count=0;
     while(ok){auto n=read(fd,buffer,sizeof(buffer));if(n<0&&errno==EINTR)continue;if(n<0){ok=false;break;}if(!n)break;count+=static_cast<std::uint64_t>(n);if(count>offer.bytes||mbedtls_sha256_update(&sha,buffer,static_cast<std::size_t>(n))!=0)ok=false;}
     if(ok)ok=mbedtls_sha256_finish(&sha,digest)==0&&count==offer.bytes&&std::memcmp(digest,offer.sha256,32)==0;

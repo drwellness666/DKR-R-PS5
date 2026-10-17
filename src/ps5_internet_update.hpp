@@ -10,6 +10,7 @@ struct Offer {
     std::uint64_t bytes{};
     char tag[64]{};
     unsigned char sha256[32]{};
+    bool native_package{};
 };
 // Exact, signed wire format. No URLs or filesystem paths come from the feed.
 bool verify_offer(const char*,std::size_t,const unsigned char key[32],Offer&);

@@ -3,6 +3,7 @@
 // ps5-native-app-boilerplate, examples/update-check, commit 44ae1dab529654ea.
 // Copyright (C) 2026 BlackBearReloaded (HTTPS service sequence reference).
 #include "ps5_internet_update.hpp"
+#include "ps5_native_update.hpp"
 #ifndef DKRR_UPDATE_KEY_HEADER
 #define DKRR_UPDATE_KEY_HEADER "ps5_update_channel.h"
 #endif
@@ -33,9 +34,7 @@ int sceHttpSetConnectTimeOut(int,std::uint32_t) __attribute__((weak)); int sceHt
 int sceHttpSetRecvTimeOut(int,std::uint32_t) __attribute__((weak)); int sceHttpsEnableOption(int,std::uint32_t) __attribute__((weak));
 int sceHttpSendRequest(int,const void*,std::size_t) __attribute__((weak)); int sceHttpGetStatusCode(int,int*) __attribute__((weak));
 int sceHttpGetAllResponseHeaders(int,char**,std::size_t*) __attribute__((weak)); int sceHttpReadData(int,void*,std::size_t) __attribute__((weak));
-int sceNetSocket(const char*,int,int,int) __attribute__((weak)); int sceNetSocketClose(int) __attribute__((weak));
-int sceNetSetsockopt(int,int,int,const void*,unsigned) __attribute__((weak)); int sceNetConnect(int,const void*,unsigned) __attribute__((weak));
-int sceNetSend(int,const void*,std::size_t,int) __attribute__((weak)); int sceNetRecv(int,void*,std::size_t,int) __attribute__((weak));
+
 }
 namespace dkrr::updates {
 namespace {
@@ -46,7 +45,7 @@ std::atomic_bool stopping{},busy{},exit_ready{},services_ready{},automatic_enabl
 #ifndef DKRR_RELEASE_SEQUENCE
 #error "Compile with the installer release sequence"
 #endif
-constexpr char catalog[]="https://raw.githubusercontent.com/drwellness666/DKR-R-PS5/main/updates/channel.txt";
+constexpr char catalog[]="https://raw.githubusercontent.com/drwellness666/DKR-R-PS5/main/updates/native-channel.txt";
 void state(State value,const char* message) {
     std::lock_guard lock(mutex);current.state=value;
     std::snprintf(current.message,sizeof(current.message),"%s",message);
@@ -118,7 +117,7 @@ int temporary_file() {
     if(unlink(path)<0){close(fd);return -1;}return fd;
 }
 bool download(Services& services,const Offer& release,int fd) {
-    char url[2048];std::snprintf(url,sizeof(url),"https://github.com/drwellness666/DKR-R-PS5/releases/download/%s/DKRR-Network-Update.elf",release.tag);
+    char url[2048];std::snprintf(url,sizeof(url),"https://github.com/drwellness666/DKR-R-PS5/releases/download/%s/DKRR-Update.dkru",release.tag);
     const auto deadline=Clock::now()+std::chrono::minutes(10);
     for(unsigned hop=0;hop<4&&!stopping.load();++hop){
         if(!allowed_asset_url(url,hop!=0))return false;
@@ -134,26 +133,6 @@ bool download(Services& services,const Offer& release,int fd) {
         }return false;
     }return false;
 }
-bool send_all(int socket,const void* data,std::size_t size) {
-    auto* bytes=static_cast<const unsigned char*>(data);std::size_t at=0;
-    while(at<size&&!stopping.load()){int n=sceNetSend(socket,bytes+at,size-at,0);if(n<=0||static_cast<std::size_t>(n)>size-at)return false;at+=static_cast<std::size_t>(n);}return at==size;
-}
-bool handoff(int fd) {
-    struct Address {unsigned char length,family;unsigned short port;unsigned address;unsigned short vport;unsigned char padding[6];};
-    const Address address={16,2,static_cast<unsigned short>((9021<<8)|(9021>>8)),0x0100007f,0,{0}};
-    int socket=sceNetSocket("dkrr_update",2,1,6);if(socket<0)return false;
-    struct Close {int fd;~Close(){sceNetSocketClose(fd);}} close_socket{socket};
-    const int timeout=5000000;for(int option:{0x1105,0x1106,0x1109})if(sceNetSetsockopt(socket,0xffff,option,&timeout,sizeof(timeout))<0)return false;
-    if(sceNetConnect(socket,&address,sizeof(address))<0||lseek(fd,0,SEEK_SET)<0)return false;
-    unsigned char buffer[65536];
-    const auto deadline=Clock::now()+std::chrono::minutes(2);
-    for(;;){if(Clock::now()>=deadline||stopping.load())return false;auto n=read(fd,buffer,sizeof(buffer));if(n<0&&errno==EINTR)continue;if(n<0)return false;if(!n)break;if(!send_all(socket,buffer,static_cast<std::size_t>(n)))return false;}
-    constexpr char ready[]="DKRR UPDATE READY v1\n";char response[sizeof(ready)-1];std::size_t at=0;
-    while(at<sizeof(response)&&!stopping.load()){int n=sceNetRecv(socket,response+at,sizeof(response)-at,0);if(n<=0||static_cast<std::size_t>(n)>sizeof(response)-at)return false;at+=static_cast<std::size_t>(n);}
-    if(at!=sizeof(response)||std::memcmp(response,ready,sizeof(response)))return false;
-    constexpr char commit[]="DKRRGO1\n";
-    return send_all(socket,commit,sizeof(commit)-1);
-}
 void run_check() {
     Services services;if(!services.start()){state(State::Unavailable,"Update service unavailable. The installed game is unchanged.");return;}
     Request request;if(!request.start(services,catalog)||request.code!=200){state(State::Unavailable,"No public update channel is available. The installed game is unchanged.");return;}
@@ -165,7 +144,7 @@ void run_check() {
     }
     Offer result;if(stopping.load())return;
     if(Clock::now()>=deadline){state(State::Unavailable,"Update check timed out.");return;}
-    if(!verify_offer(text,used,dkrr_update_public_key,result)){state(State::Failed,"Update signature is invalid. Nothing was downloaded or installed.");return;}
+    if(!verify_offer(text,used,dkrr_update_public_key,result)||!result.native_package){state(State::Failed,"Update signature is invalid. Nothing was downloaded or installed.");return;}
     {std::lock_guard lock(mutex);offer=result;current.sequence=result.sequence;current.bytes=result.bytes;current.received=0;}
     state(result.sequence>DKRR_RELEASE_SEQUENCE?State::Available:State::Current,result.sequence>DKRR_RELEASE_SEQUENCE?"A verified update is available.":"You have the latest available version.");
 }
@@ -177,8 +156,9 @@ void run_install() {
     if(fd<0||!services.start()||!download(services,release,fd)){state(State::Failed,"Download cancelled or verification failed. The installed game is unchanged.");return;}
     if(stopping.load())return;
     state(State::HandingOff,"Preparing installation on this PS5...");
-    if(!handoff(fd)){state(State::Failed,"The PS5 ELF receiver did not accept the update. The installed game is unchanged.");return;}
-    state(State::Closing,"Closing DKR-R to install the update. A PS5 notification confirms completion.");
+    char error[192]{};
+    if(!native::prepare(fd,release,error,sizeof(error))){state(State::Failed,error[0]?error:"The native update could not be prepared. The installed game is unchanged.");return;}
+    state(State::Closing,"Saving and closing DKR-R. The game installs this update itself.");
     exit_ready.store(true,std::memory_order_release);
 }
 void launch(bool installing) {
@@ -196,8 +176,7 @@ void initialize(){
        !sceHttpCreateTemplate||!sceHttpDeleteTemplate||!sceHttpCreateConnectionWithURL||!sceHttpDeleteConnection||
        !sceHttpCreateRequestWithURL||!sceHttpDeleteRequest||!sceHttpSetAutoRedirect||!sceHttpSetResolveTimeOut||
        !sceHttpSetConnectTimeOut||!sceHttpSetSendTimeOut||!sceHttpSetRecvTimeOut||!sceHttpsEnableOption||
-       !sceHttpSendRequest||!sceHttpGetStatusCode||!sceHttpGetAllResponseHeaders||!sceHttpReadData||
-       !sceNetSocket||!sceNetSocketClose||!sceNetSetsockopt||!sceNetConnect||!sceNetSend||!sceNetRecv){
+       !sceHttpSendRequest||!sceHttpGetStatusCode||!sceHttpGetAllResponseHeaders||!sceHttpReadData){
         state(State::Unavailable,"Native update services are unavailable. ELF updates remain available.");return;
     }
     services_ready.store(true);automatic_enabled.store(load_automatic_check());
