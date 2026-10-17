@@ -20,6 +20,7 @@
 #include "ps5_display_options.h"
 #include "ps5_diagnostics.h"
 #include "ps5_installation_lease.hpp"
+#include "ps5_internet_update.hpp"
 
 int dkrr_game_main(int, char **);
 extern "C" unsigned dkrr_report_missing_imports(void (*)(const char *));
@@ -156,11 +157,13 @@ int main() {
         char name[]="/app0/eboot.bin",rom_flag[]="--rom",config_flag[]="--config";
         char *args[]={name,rom_flag,const_cast<char *>(rom),config_flag,const_cast<char *>(profile),nullptr};
         dkrr_diag_stage(DKR_DIAG_GAME);
+        dkrr::updates::initialize();
         try { status=dkrr_game_main(5,args); }
         catch(const std::exception &e) { report("runtime exception: %s",e.what());status=2; }
         if(status==0 && runtime_error_reported.load(std::memory_order_relaxed))status=5;
     }
     struct ps5_heap_stats stats={};ps5_heap_stats(&stats);
+    dkrr::updates::shutdown();
     report("completed status=%d revision=%u heap-peak=%zu heap-libc-fallbacks=%llu",status,revision,stats.peak_bytes,stats.libc_fallbacks);
     dkrr_diag_shutdown();
     close(installation_lease);
