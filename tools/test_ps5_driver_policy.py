@@ -82,3 +82,9 @@ int main(void){
  (work/'test.c').write_text(code);out=work/'test'
  subprocess.run(['clang','-std=c11','-O1','-Wall','-Wextra','-Werror','-fsanitize=address,undefined',str(work/'test.c'),'-o',str(out)],check=True)
  subprocess.run([str(out)],check=True,env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'))
+ # HDR is a second exact layer; rate/log policies above remain independently checked.
+ from apply_ps5_hdr_driver import apply as apply_hdr
+ from hdr_driver_test_support import run as run_hdr
+ apply_hdr(mesa);apply_hdr(mesa)
+ assert apply(mesa)["hdr_layer_retained"]
+ run_hdr((mesa/'src/vulkan/wsi/wsi_common_videoout.c').read_text(),work)

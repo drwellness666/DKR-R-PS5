@@ -39,6 +39,10 @@ cc -DDKR_PS5_HIGH_REFRESH_BUILD="$high_refresh" -std=c++20 -O2 -Wall -Wextra -We
     -I "$root/src" -c "$root/src/ps5_display_options.cpp" -o "$build/obj/display_options.o"
 cc -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden -ffunction-sections -fdata-sections \
     -I "$root/src" -c "$root/src/ps5_display_videoout.cpp" -o "$build/obj/display_videoout.o"
+for part in options videoout; do
+    cc -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden -ffunction-sections -fdata-sections \
+        -I "$root/src" -c "$root/src/ps5_hdr_$part.cpp" -o "$build/obj/hdr_$part.o"
+done
 for file in app_crt app_cpp_runtime; do
     input="$native/$file.cpp"
     [[ $file != app_crt ]] || input="$root/src/ps5_game_crt.cpp"
@@ -120,7 +124,7 @@ printf '{ local: _Zn*; _Zd*; getargv; realpath; lstat; getcwd; pathconf; __wrap_
 link_game() {
 "$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
     --version-script "$build/gen/game-symbols.map" --exclude-libs=ALL -e _start -o "$build/llvm-pie.elf" \
-    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/import_check.o" \
+    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/hdr_options.o" "$build/obj/hdr_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/import_check.o" \
     "$build/obj/controller_speaker.o" "$build/obj/game_audio_hooks.o" "$build/obj/internet_update.o" "$build/obj/native_update.o" "$build/obj/update_files.o" "$build/obj/update_sha1.o" "$build/obj/update_policy.o" "$build/obj/update_ed25519.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
     --start-group "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
     "${radv_link_inputs[@]}" --no-as-needed "$sdk/target/lib/libSceHttp.so" "$sdk/target/lib/libSceSsl.so" "$sdk/target/lib/libSceNet.so" --as-needed "$sdk"/target/lib/*.so
@@ -155,6 +159,8 @@ cp "$root/licenses/DKR-R-LICENSE.md" "$target/assets/licenses/DKR-R-MIT.md"
 cp "$root/licenses/DKR-R-Selawik-OFL.txt" "$target/assets/licenses/Selawik-OFL.txt"
 cp "$root/LICENSE" "$target/assets/licenses/GPL-3.0.txt"
 cp "$root/THIRD_PARTY.md" "$target/assets/licenses/THIRD_PARTY.md"
+cat "$root/licenses/Racing-Banana-NOTICE.md" >> "$target/assets/licenses/THIRD_PARTY.md"
+cat "$root/licenses/COMPONENT-NOTICES.txt" >> "$target/assets/licenses/THIRD_PARTY.md"
 cp "$root/licenses/LLVM-libcxx.txt" "$target/assets/licenses/LLVM-libcxx.txt"
 cp "$root/licenses/VADPCM-MPL-2.0.txt" "$target/assets/licenses/VADPCM-MPL-2.0.txt"
 cp "$root/licenses/Monocypher.md" "$target/assets/licenses/Monocypher.md"
@@ -190,6 +196,8 @@ p['localizedParameters']['en-US']['titleName']='DKR-R '+version+' PS5 Preview'
 # its public source describes 0x40000 as the VRR-compatible declaration.
 # Runtime activation still requires a saved 120 Hz choice, positive native
 # support and the WSI's measured vblank check. No legacy 0x80000 flag.
+# HDR capability; buffers remain SDR unless opted in and successfully negotiated.
+p['attribute'] = p.get('attribute',0) | 0x20000000
 if sys.argv[4] == '1':
     p['attribute3'] = p.get('attribute3', 0) | 0x40040
 pathlib.Path(sys.argv[2]).write_text(json.dumps(p,indent=2)+'\n')

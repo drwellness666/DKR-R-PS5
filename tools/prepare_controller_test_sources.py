@@ -53,6 +53,10 @@ wanted = set(manifest['files']) | {
     'runtime-recomp/src/game/runtime_enhancements.hpp',
     'runtime-recomp/src/game/modern_camera_policy.hpp',
     'runtime-recomp/src/game/presentation_policy.hpp',
+    'runtime-recomp/src/game/generated/racing_banana_font.c',
+    'runtime-recomp/src/game/generated/racing_banana_font.h',
+    'runtime-recomp/src/game/generated/selawik_font.c',
+    'runtime-recomp/src/game/generated/selawik_font.h',
 }
 found = set()
 with tarfile.open(fetch(game_row)) as archive:

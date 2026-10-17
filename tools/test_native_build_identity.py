@@ -5,7 +5,7 @@ import pathlib,tempfile
 from native_build_identity import identify
 with tempfile.TemporaryDirectory(prefix='dkrr-native-identity-') as tmp:
  p=pathlib.Path(tmp);root=p/'kit';game=p/'game';sdl=p/'sdl';support=p/'gpu/PS5_Vulkan'
- for name in ('VULKAN_SOURCES.json','PORT_RELEASE.json','tools/link_native_game.sh','tools/native_build_identity.py','tools/generate_native_import_check.py','tools/build_universal_installer.py','vendor/ps5-sdk-source.tar.gz','src/ps5_profile_paths.hpp'):
+ for name in ('VULKAN_SOURCES.json','PORT_RELEASE.json','tools/link_native_game.sh','tools/native_build_identity.py','tools/generate_native_import_check.py','tools/build_universal_installer.py','tools/StagePS5HDR.cmake','tools/build_hdr_shaders.py','tools/apply_ps5_hdr_driver.py','vendor/ps5-sdk-source.tar.gz','src/ps5_profile_paths.hpp'):
   f=root/name;f.parent.mkdir(parents=True,exist_ok=True);f.write_text('fixture '+name)
  def current():return identify(root,game,sdl,support,1)
  first=current();assert any(x['path']=='source/ps5_profile_paths.hpp' for x in first['inputs'])
@@ -20,4 +20,6 @@ with tempfile.TemporaryDirectory(prefix='dkrr-native-identity-') as tmp:
  assert current()['build_id']!=second['build_id']
  (root/'installer/files.c').unlink()
  header.unlink();assert current()['build_id']!=second['build_id']
+ before=current()['build_id'];(root/'src/ps5_hdr.frag').write_text('authored HDR shader');assert current()['build_id']!=before
+ before=current()['build_id'];(root/'tools/StagePS5HDR.cmake').write_text('changed HDR composition');assert current()['build_id']!=before
 print('PASS actual native identity: C++ header edits/additions/removal change the build ID; unrelated prose does not')

@@ -40,7 +40,7 @@ def inventory():
               'patches/0003-plume-ps5-radv-display.patch',
               'patches/0004-rt64-ps5-build-platform.patch',
               'patches/0005-dkrr-ps5-native-preview.patch',
-              'patches/dkrr-patch-manifest.json', 'src/plume_ps5_display.h', 'src/ps5_display_options.h', 'src/ps5_diagnostics.h', 'tools/apply_dependency_patch.py']
+              'patches/dkrr-patch-manifest.json', 'src/plume_ps5_display.h', 'src/ps5_display_options.h', 'src/ps5_diagnostics.h', 'src/ps5_hdr_options.h', 'src/ps5_hdr_presenter.hpp', 'src/ps5_hdr_shaders.h', 'tools/StagePS5HDR.cmake', 'patches/0007-rt64-ps5-hdr-present.patch', 'patches/0008-plume-ps5-hdr-swapchain.patch', 'patches/hdr-stage-manifest.json', 'tools/apply_dependency_patch.py']
     return {'files': files, 'links': links, 'inputs': {name:digest(root/name) for name in inputs}}
 
 if stamp.exists():

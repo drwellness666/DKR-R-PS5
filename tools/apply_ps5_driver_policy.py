@@ -14,7 +14,14 @@ def apply(mesa):
   if p.is_symlink() or not p.is_file():raise ValueError('Missing ordinary pinned driver source: '+name)
   digest=hashlib.sha256(p.read_bytes()).hexdigest();old&=digest==row['original_sha256'];new&=digest==row['patched_sha256']
  if new:return {'unchanged':True,'patch_sha256':spec['patch_sha256']}
- if not old:raise ValueError('Unknown/mixed PS5 driver source; use a fresh pinned tree')
+ if not old:
+  hdr_spec=root/'patches/ps5-hdr-driver.json'
+  if hdr_spec.is_file():
+   hdr=json.loads(hdr_spec.read_text());expected={n:v['patched_sha256'] for n,v in spec['files'].items()}
+   expected.update({n:v['patched_sha256'] for n,v in hdr['files'].items()})
+   if all((mesa/n).is_file() and not (mesa/n).is_symlink() and hashlib.sha256((mesa/n).read_bytes()).hexdigest()==h for n,h in expected.items()):
+    return {'unchanged':True,'patch_sha256':spec['patch_sha256'],'hdr_layer_retained':True}
+  raise ValueError('Unknown/mixed PS5 driver source; use a fresh pinned tree')
  receipt=apply_dependency_patch(mesa,patch)
  for name,row in spec['files'].items():
   if hashlib.sha256((mesa/name).read_bytes()).hexdigest()!=row['patched_sha256']:raise ValueError('Driver policy read-back mismatch: '+name)
