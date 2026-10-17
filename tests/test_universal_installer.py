@@ -108,7 +108,11 @@ ssize_t __wrap_write(int fd,const void*buf,size_t n){
         # ROM hashes are compiled into rom.c, not the main unit.
         romobj=w/'rom.o';subprocess.run(flags+common+['-I',str(ROOT/'installer'),'-Wall','-Wextra','-Werror','-c',str(ROOT/'installer/rom.c'),'-o',str(romobj)],check=True)
         objs=[romobj if p.name=='rom.c.o' else p for p in cls.objects]
-        subprocess.run(flags+['-Wall','-Wextra','-Werror','-DDKRR_HOST_TEST=1',f'-DDKRR_UPDATE_ONLY={int(i==2)}',f'-DDKRR_INSTALL_ROOT="{cls.data}"',f'-DDKRR_USB_ROOT="{cls.mnt}"',f'-DDKRR_SYSTEM_USER_ROOT="{cls.user}"','-I',str(ROOT/'installer'),'-I',str(w),str(ROOT/'installer/main.c'),str(w/'embedded.o'),*[str(o) for o in objs],str(cls.base/'fault.c'),'-Wl,--wrap=rename','-Wl,--wrap=write','-Wl,--wrap=fsync','-lm','-o',str(target)],check=True)
+        command=flags+['-Wall','-Wextra','-Werror','-DDKRR_HOST_TEST=1',f'-DDKRR_UPDATE_ONLY={int(i==2)}',f'-DDKRR_INSTALL_ROOT="{cls.data}"',f'-DDKRR_USB_ROOT="{cls.mnt}"',f'-DDKRR_SYSTEM_USER_ROOT="{cls.user}"','-I',str(ROOT/'installer'),'-I',str(w),str(ROOT/'installer/main.c'),str(w/'embedded.o'),*[str(o) for o in objs],str(cls.base/'fault.c'),'-Wl,--wrap=rename','-Wl,--wrap=write','-Wl,--wrap=fsync','-lm','-o',str(target)]
+        subprocess.run(command,check=True)
+        if i==2:
+            cls.network_binary=w/"network-update"
+            network=command.copy();network[-1]=str(cls.network_binary);network.insert(1,"-DDKRR_NETWORK_UPDATE=1");subprocess.run(network,check=True)
         cls.binaries.append(target)
     cls.live=cls.data/'homebrew/PPSA94678'
  @classmethod
@@ -129,6 +133,31 @@ ssize_t __wrap_write(int fd,const void*buf,size_t n){
     self.assertEqual(r.returncode==0,ok,r.stdout+r.stderr)
     if ok:self.assertIn('DKRR UNIVERSAL UPDATE PASS.' if index==2 else 'DKRR UNIVERSAL INSTALL PASS.',r.stdout)
     return r
+ def network_process(self):
+    env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1')
+    p=subprocess.Popen([str(self.network_binary)],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env)
+    self.assertEqual(p.stdout.readline(),b'DKRR UPDATE READY v1\n')
+    return p
+ def test_network_disconnect_or_bad_commit_changes_nothing(self):
+    for command in (b'',b'BADGO12\n'):
+        p=self.network_process();self.assertFalse((self.data/'dkrr').exists())
+        if command:p.stdin.write(command);p.stdin.flush()
+        p.stdin.close();p.wait(timeout=5)
+        self.assertEqual(p.returncode,10,p.stdout.read()+p.stderr.read())
+        self.assertFalse((self.data/'dkrr').exists());p.stdout.close();p.stderr.close()
+ def test_network_waits_for_game_then_keeps_saved_data(self):
+    import time
+    self.run_installer();before=(self.live/'eboot.bin').read_bytes()
+    saved=self.data/'dkrr/profile-us-v77/saves';saved.mkdir();(saved/'keep.bin').write_bytes(b'keep network update progress')
+    lease=open(self.data/'dkrr/profile-us-v77/.app-run.lock','rb');fcntl.flock(lease,fcntl.LOCK_SH)
+    p=self.network_process();self.assertEqual((self.live/'eboot.bin').read_bytes(),before)
+    p.stdin.write(b'DKRR');p.stdin.flush();time.sleep(.05);self.assertIsNone(p.poll())
+    p.stdin.write(b'GO1\n');p.stdin.flush();p.stdin.close();time.sleep(.15)
+    self.assertIsNone(p.poll());self.assertEqual((self.live/'eboot.bin').read_bytes(),before)
+    fcntl.flock(lease,fcntl.LOCK_UN);lease.close();p.wait(timeout=20)
+    self.assertEqual(p.returncode,0,p.stdout.read()+p.stderr.read());p.stdout.close();p.stderr.close()
+    self.assertIn(b'3'*24,(self.live/'eboot.bin').read_bytes())
+    self.assertEqual((saved/'keep.bin').read_bytes(),b'keep network update progress')
  def test_fresh_repeat_update_and_second_update(self):
     self.run_installer();saved=self.data/'dkrr/profile-us-v77/saves';saved.mkdir();(saved/'keep.bin').write_bytes(b'keep progress')
     config=self.data/'dkrr/profile-us-v77/general.json';config.write_bytes(b'keep settings')
