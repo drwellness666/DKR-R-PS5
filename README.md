@@ -7,7 +7,7 @@ An unofficial PS5 port of [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R).
 
 [📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇩🇪 Deutsch](README.de.md) · [📖 Help](docs/README.md) · [🐛 Report a problem](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Beta 3.3 candidate.** Signed Internet updates in the existing PS5 interface.
+**Beta 3.4 candidate.** In-game Internet updates without a running ELF receiver.
 Gameplay was tested on PS5; new features are covered by the [validation report](docs/VALIDATION.md).
 
 ## 🎮 What this port adds
@@ -39,9 +39,9 @@ Autoloader 0.6.1, kstuff-lite and ShadowMountPlus with an LG C1.
 3. Connect the drive, close DKR-R and send the installer to your PS5's ELF receiver. Wait for its completion notification.
 4. Once ShadowMountPlus discovers the app, start **DKR-R** from its PS5 icon.
 
-After installation, the PC and USB drive are not needed to play. Your normal
+After installation, no PC, USB drive or ELF receiver is needed to play or use in-game updates. Your normal
 homebrew setup is still required after a console restart. To update, use **Touchpad → About DKR-R → PS5 updates**, or close the game and
-send **DKRR-Update.elf** once. Settings, progress and texture packs stay on the
+send **DKRR-Update.elf** once. Upgrading from an older beta requires this one-time manual update to add the native installer. Settings, progress and texture packs stay on the
 console. No compilation is needed for this ELF route.
 [Installation help](docs/INSTALLER.md) · [Updates](docs/UPDATES.md).
 

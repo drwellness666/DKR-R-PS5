@@ -1,8 +1,8 @@
 {
-  "tag": "ps5-beta.3.3",
+  "tag": "ps5-beta.3.4",
   "upstream_version": "1.0.6",
   "source_only": false,
-  "qualification": "Native Internet-update candidate with signed manifests; verification scope is recorded in docs/VALIDATION.md.",
+  "qualification": "Receiver-free in-process Internet updates; exact validation scope is recorded in docs/VALIDATION.md.",
   "development_candidate": true,
-  "installer_sequence": 6
+  "installer_sequence": 7
 }

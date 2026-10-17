@@ -7,7 +7,7 @@ Ein inoffizieller PS5-Port von [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R
 
 [📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇬🇧 English](README.md) · [📖 Hilfe](docs/README.md) · [🐛 Fehler melden](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Beta 3.3 Kandidat.** Signierte Internet-Updates direkt in der vorhandenen PS5-Oberfläche.
+**Beta 3.4 Kandidat.** Internet-Updates im Spiel ohne laufenden ELF-Empfänger.
 Das Spiel wurde auf PS5 gespielt; Prüfungen der neuen Funktionen stehen im [Testbericht](docs/VALIDATION.md).
 
 ## 🎮 Was dieser Port ergänzt
@@ -47,6 +47,7 @@ Updates unter **Touchpad → About DKR-R → PS5 updates** aufrufen oder das Spi
 schließen und **DKRR-Update.elf** einmal senden. Einstellungen, Fortschritt und
 Texturpakete bleiben auf der Konsole.
 Für diesen ELF-Weg ist keine eigene Kompilation nötig.
+Für Spielen und Internet-Updates sind danach weder PC, USB-Stick noch laufender ELF-Empfänger nötig. Beim Wechsel von einer älteren Beta wird die neue Update-ELF einmalig benötigt; sie ergänzt den nativen Installer.
 [Installationshilfe](docs/INSTALLER.md) · [Updates](docs/UPDATES.md).
 
 ## 🎨 Optionales Texturpaket
