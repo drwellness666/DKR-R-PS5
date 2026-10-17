@@ -61,7 +61,7 @@ private item PCM on the console; ROMs and generated sounds are excluded from
 shared installer packages.
 Source: [VADPCM decode.c](https://github.com/depp/vadpcm/blob/main/codec/decode.c).
 
-The current development target uses upstream Racing Banana for the main face and signs, with unmodified Microsoft Selawik Regular/Semibold as Unicode fallback and reading faces (SIL OFL 1.1). Racing Banana provenance and the outstanding public redistribution confirmation are recorded in `licenses/Racing-Banana-NOTICE.md`. Jumpman is not linked; its upstream EULA permits software embedding and does not justify a blanket prohibition. Beta 3.4 used Selawik alone.
+The port keeps DKR-R's original interface typography: Racing Banana for menu text and signs; Jumpman for headings and digits; Selawik Regular/Semibold for reading text (SIL OFL 1.1); and upstream's default/monospace fallbacks. Font data, loading policy, sizing and glyph ranges are unchanged. Racing Banana provenance and the outstanding redistribution confirmation are recorded in `licenses/Racing-Banana-NOTICE.md`. Jumpman's original EULA permits software embedding and is included in the component notices.
 
 The title recipe fetches the original DKR-R icon and README header. Sources,
 hashes and attribution are in `TITLE_ART_SOURCES.json` and

@@ -7,9 +7,9 @@ Ein inoffizieller PS5-Port von [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R
 
 [📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇬🇧 English](README.md) · [📖 Hilfe](docs/README.md) · [🐛 Fehler melden](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Beta 3.4.** Internet-Updates im Spiel ohne laufenden ELF-Empfänger.
-Der Entwicklungsstand ergänzt optionales HDR10 und Racing Banana. Diese Ergänzungen sind noch nicht in den veröffentlichten Beta-3.4-Downloads enthalten.
-Das Spiel wurde auf PS5 gespielt; Prüfungen der neuen Funktionen stehen im [Testbericht](docs/VALIDATION.md).
+**Version 1.0 ist in Vorbereitung.** Dieser Branch enthält alle aktuellen Änderungen.
+Installer und Update für 1.0 erscheinen nach der abschließenden Prüfung.
+[Fortschritt und Teststand](docs/VALIDATION.md).
 
 ## 🎮 Was dieser Port ergänzt
 
@@ -18,9 +18,9 @@ Das Spiel wurde auf PS5 gespielt; Prüfungen der neuen Funktionen stehen im [Tes
 | Native PS5-App | Start über ein PS5-Icon, mit passendem Hintergrund und Startgrafik. |
 | Beide US-Revisionen | Unter **Touchpad → Play** zwischen **US 1.0 und US 1.1 / Rev A** für den nächsten Start wählen. |
 | Gemeinsame Einrichtung | Steuerung, Bild, Ton und Texturauswahl beim Versionswechsel behalten. Fortschritt und Controller Paks bleiben getrennt. |
-| Controllerfreundliche Menüs | Vollgroße Oberfläche bei 4K, klare Versionskarten, eine Controller-Grafik mit aktueller Belegung und kompakte Tastenzuordnung. Klassisches Gasgeben mit Kreuz erhält das Gas-Antippen. |
+| Controllerfreundliche Menüs | Originale DKR-R-Typografie, vollgroße Oberfläche bei 4K, klare Versionskarten, eine Controller-Grafik mit aktueller Belegung und kompakte Tastenzuordnung. Klassisches Gasgeben mit Kreuz erhält das Gas-Antippen. |
 | DualSense-Extras | Optionale Ballon-Lichtfarben, Gyrosteuerung, L2-Item-Effekte und Item-, Sammel-, Münz-, Hupen- und Boostfeld-Töne über den Controller-Lautsprecher. Gemeinsam unter **Controls → PS5**. |
-| TV-Ausgabe | Wahlweise 1080p, 1440p und **4K**, dazu experimentelle **120 Hz / VRR**. Match display folgt der aktiven Ausgabe; die tatsächlichen FPS hängen von Szene und Einstellungen ab. |
+| TV-Ausgabe | Wahlweise 1080p, 1440p und **4K**, optionales **HDR10** und experimentelle **120 Hz / VRR**. Match display folgt der aktiven Ausgabe; die tatsächlichen FPS hängen von Szene und Einstellungen ab. |
 | Installation und Updates | Eine ROM-freie Installer-ELF. Spätere Updates werden im Spiel heruntergeladen oder als Update-ELF gesendet. ROM-Import und Controller-Töne werden auf der PS5 vorbereitet. |
 | Integriertes Speichern und Diagnose | Direkte native Speicherfunktion, lokale Fehlerprotokolle und eine Bildzeitmessung. Ein zusätzlicher Save-Helper gehört nicht zu dieser Version. |
 

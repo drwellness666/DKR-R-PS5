@@ -1,8 +1,8 @@
 {
-  "tag": "ps5-beta.3.5",
+  "tag": "ps5-v1.0.0",
   "upstream_version": "1.0.6",
   "source_only": false,
-  "qualification": "Development candidate: optional HDR10 and Racing Banana interface; latest published beta remains 3.4.",
-  "development_candidate": true,
-  "installer_sequence": 8
+  "qualification": "Version 1.0 preparation: integrated current source; final console and distribution checks remain open.",
+  "installer_sequence": 8,
+  "release_status": "unreleased"
 }
