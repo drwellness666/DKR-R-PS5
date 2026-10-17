@@ -17,8 +17,12 @@ int dkrr_rom_identify(const char *path,unsigned char **bytes,unsigned *revision)
  *bytes=NULL;*revision=0;if(dkrr_regular(path,0)!=1)return -1;
  int fd=open(path,O_RDONLY|O_NOFOLLOW);if(fd<0)return -1;struct stat st;
  if(fstat(fd,&st)<0||st.st_size!=DKRR_ROM_SIZE){close(fd);return -1;}
+ // Reject unrelated same-size USB files before allocating/reading 12 MiB.
+ unsigned char header[4];size_t got=0;
+ while(got<sizeof(header)){ssize_t n=read(fd,header+got,sizeof(header)-got);if(n<0&&errno==EINTR)continue;if(n<=0){close(fd);return -1;}got+=(size_t)n;}
+ if(memcmp(header,"\x80\x37\x12\x40",4)&&memcmp(header,"\x37\x80\x40\x12",4)&&memcmp(header,"\x40\x12\x37\x80",4)){close(fd);return -1;}
  unsigned char *rom=malloc(DKRR_ROM_SIZE);if(!rom){close(fd);return -1;}
- size_t at=0;int ok=1;while(at<DKRR_ROM_SIZE){ssize_t n=read(fd,rom+at,DKRR_ROM_SIZE-at);if(n<0&&errno==EINTR)continue;if(n<=0){ok=0;break;}at+=(size_t)n;}
+ memcpy(rom,header,sizeof(header));size_t at=sizeof(header);int ok=1;while(at<DKRR_ROM_SIZE){ssize_t n=read(fd,rom+at,DKRR_ROM_SIZE-at);if(n<0&&errno==EINTR)continue;if(n<=0){ok=0;break;}at+=(size_t)n;}
  unsigned char extra;if(read(fd,&extra,1)!=0)ok=0;close(fd);if(!ok){free(rom);return -1;}
  if(!memcmp(rom,"\x37\x80\x40\x12",4))for(size_t i=0;i<DKRR_ROM_SIZE;i+=2){unsigned char b=rom[i];rom[i]=rom[i+1];rom[i+1]=b;}
  else if(!memcmp(rom,"\x40\x12\x37\x80",4))for(size_t i=0;i<DKRR_ROM_SIZE;i+=4){unsigned char a=rom[i],b=rom[i+1];rom[i]=rom[i+3];rom[i+1]=rom[i+2];rom[i+2]=b;rom[i+3]=a;}
@@ -36,7 +40,9 @@ static int consider(const char *p,struct dkrr_rom out[2]) {
 static int scan(const char *folder,struct dkrr_rom out[2]) {
  struct stat st;if(lstat(folder,&st)<0)return errno==ENOENT?0:-1;if(!S_ISDIR(st.st_mode))return -1;
  DIR *dir=opendir(folder);if(!dir)return -1;struct dirent *e;unsigned count=0;int rc=0;
- while((e=readdir(dir))){if(!strcmp(e->d_name,".")||!strcmp(e->d_name,".."))continue;if(++count>256){rc=-1;break;}
+ // A bounded search miss on one crowded drive must not prevent the DKRR
+ // folder on a later drive from being checked.
+ while((e=readdir(dir))){if(!strcmp(e->d_name,".")||!strcmp(e->d_name,".."))continue;if(++count>256)break;
   char path[DKRR_PATH];if(snprintf(path,sizeof(path),"%s/%s",folder,e->d_name)>=(int)sizeof(path)){rc=-1;break;}
   if(consider(path,out)<0){rc=-1;break;}if(out[0].revision&&out[1].revision)break;
  }closedir(dir);return rc;
