@@ -53,9 +53,9 @@ def main():
             subprocess.run([str(t/'policy'),str(release_channel),str(t/'release-public.bin'),str(a.release_payload or '-'),'--release' if a.release_payload else '--channel'],env=env,check=True)
         payload.write_bytes(data)
         data_root=t/'data/dkrr';(data_root/'preferences').mkdir(parents=True)
-        subprocess.run(cpp+['-pthread','-DDKRR_RELEASE_SEQUENCE=6','-DDKRR_UPDATE_KEY_HEADER="fixture_key.h"','-DDKRR_UPDATE_ROOT="'+str(data_root)+'"',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_internet_update.cpp'),str(ROOT/'tests/ps5_update_worker.cpp'),*objects,'-o',str(t/'worker')],check=True)
-        for mode in ('good','offline','current','signature','digest','oversize','receiver','cancel','redirect','bad-redirect','short-send','no-ack','auto'):
+        subprocess.run(cpp+['-pthread','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-DDKRR_RELEASE_SEQUENCE=6','-DDKRR_UPDATE_KEY_HEADER="fixture_key.h"','-DDKRR_UPDATE_ROOT="'+str(data_root)+'"',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_internet_update.cpp'),str(ROOT/'tests/ps5_update_worker.cpp'),*objects,'-o',str(t/'worker')],check=True)
+        for mode in ('good','offline','current','signature','digest','oversize','receiver','cancel','redirect','bad-redirect','short-send','no-ack','auto','zero-links'):
             subprocess.run([str(t/'worker'),mode,str(manifest),str(t/'current.txt'),str(payload)],env=env,check=True,timeout=20)
         assert not list(data_root.rglob('*.elf'))
-        print('PASS actual native update worker: 13 service scenarios, shared opt-in auto-check, no retained download, no execution before verification')
+        print('PASS actual native update worker: 14 service scenarios, native zero-link metadata, shared opt-in auto-check, no retained download, no execution before verification')
 if __name__=='__main__':main()
