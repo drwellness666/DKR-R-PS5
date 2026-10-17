@@ -103,7 +103,10 @@ bool load_automatic_check() {
     char folder[160],path[240],text[2];if(!update_directory(folder))return false;
     std::snprintf(path,sizeof(path),"%s/auto-check",folder);
     int fd=open(path,O_RDONLY|O_NOFOLLOW);if(fd<0)return false;struct stat st{};
-    bool enabled=fstat(fd,&st)==0&&S_ISREG(st.st_mode)&&st.st_nlink==1&&st.st_uid==getuid()&&
+    // Native PS5 stat may report zero for unavailable link-count metadata.
+    // Read-only access and atomic entry replacement never mutate that inode;
+    // match the existing native-save policy without fabricating a link count.
+    bool enabled=fstat(fd,&st)==0&&S_ISREG(st.st_mode)&&st.st_nlink<=1&&st.st_uid==getuid()&&
         st.st_size==1&&read(fd,text,sizeof(text))==1&&text[0]=='1';close(fd);return enabled;
 }
 int temporary_file() {
@@ -211,7 +214,7 @@ bool automatic_check(){return automatic_enabled.load();}
 bool set_automatic_check(bool enabled){
     char folder[160],path[240],pending[260];if(!update_directory(folder))return false;
     std::snprintf(path,sizeof(path),"%s/auto-check",folder);
-    struct stat st{};if(lstat(path,&st)==0){if(!S_ISREG(st.st_mode)||st.st_uid!=getuid()||st.st_nlink!=1)return false;}else if(errno!=ENOENT)return false;
+    struct stat st{};if(lstat(path,&st)==0){if(!S_ISREG(st.st_mode)||st.st_uid!=getuid()||st.st_nlink>1)return false;}else if(errno!=ENOENT)return false;
     std::snprintf(pending,sizeof(pending),"%s/auto-check-%u-%llu",folder,unsigned(getpid()),static_cast<unsigned long long>(Clock::now().time_since_epoch().count()));
     int fd=open(pending,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW,0600);if(fd<0)return false;
     char value=enabled?'1':'0';bool good=write(fd,&value,1)==1&&fsync(fd)==0;if(close(fd)<0)good=false;
