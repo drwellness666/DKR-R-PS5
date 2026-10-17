@@ -8,7 +8,8 @@
 - Save and join game workers before replacing program files, keeping the installed app folder in place.
 - Restore interrupted native transactions at startup. Keep old copies intact until recovery completes; avoid rewriting already restored files when filesystem access is denied.
 - Keep the legacy Beta 3.3 channel for one-time migration and the manual ELF route for offline use.
-- Add sanitizer tests for every replacement cut, repeated recovery, invalid packages and filesystem failures.
+- Keep unchanged runtime/metadata files in place; synchronize journal ancestry, retire completed transactions before cleanup and fail closed on metadata read errors.
+- Add sanitizer tests for every replacement cut, repeated recovery, interrupted cleanup, partial markers, invalid packages and filesystem failures.
 
 ## Beta 3.3
 
