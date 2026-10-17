@@ -73,12 +73,34 @@ HTTPS. The manifest binds the title, monotonic installer sequence, exact payload
 size, SHA-256 and release tag; download addresses are derived locally. Only this
 repository's release path and GitHub's HTTPS asset host are allowed. The download
 is streamed to an unlinked, process-owned temporary inode, then checked in full.
-The existing local ELF receiver starts the signed network edition of the same
-universal installer. Its ready/commit handshake precedes filesystem changes; it
-waits for the game's shared lease to be released before replacing program files.
-The game requests ordinary shutdown only after that handoff. There is no resident
-service or PC agent. Checks, download and verification run on a joined worker;
-network checks at launch are optional, default off and shared by both revisions.
+The new client downloads **DKRR-Update.dkru**, a bounded data-only package.
+It never calls the ELF receiver or executes a downloaded installer. The one-time
+universal installer grants uid 1 directory-entry replacement in this title's
+verified app tree only. No parent homebrew/system folder is made writable.
+
+Preparation verifies the installed manifest, every public package file and
+retained private controller sounds. The title metadata and libc runtime must
+remain byte-identical; ABI migrations use the manual installer. The worker
+prepares complete new files and verified old copies in a process-owned 0700
+folder. The game then follows its existing save/shutdown path and joins its I/O,
+controller and update workers. The same installation lease is upgraded to an
+exclusive lock before activation.
+
+Each file is atomically renamed over its old directory entry; the app folder
+itself remains in place for ShadowMountPlus' existing mount. eboot is replaced
+last among program files, followed by the complete installation manifest. A
+fsynced journal and old file copies allow the native entry point to restore an
+interrupted transaction before starting gameplay. Copies are retained throughout
+recovery so interruption of recovery is repeatable. A committed update is
+verified and its temporary recovery copy retired on the next launch. The manual
+installer refuses a pending native transaction rather than racing or overwriting
+it. Unknown files, symlinks, hardlinks, mismatched files and downgrades are refused.
+
+Checks, downloads, verification and staging run on a joined worker. Checks at
+launch are optional, default off and shared by both ROM revisions. There is no
+resident service, child installer process, kernel backend or PC agent. Legacy
+Beta 3.3 clients keep their separate signed ELF channel for migration; new clients
+only read `updates/native-channel.txt` and never contact port 9021.
 
 Private GitHub releases cannot be fetched anonymously. No token is embedded;
 the public channel becomes reachable only when the owner opens the repository.

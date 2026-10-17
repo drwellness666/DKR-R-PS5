@@ -2,8 +2,7 @@
 
 ## Automated checks
 
-The current implementation passed **57 host check commands**, including **15
-installer/update cases** with injected write, synchronization and activation
+The automated checks include **16 installer/update cases** with injected write, synchronization and activation
 failures. Tests also cover shared settings, both language bridges, menu layout,
 controller adapters, direct save handling and diagnostics. Menu tests exercise
 the real ImGui section selector at narrow and wide widths, D-pad traversal,
@@ -14,13 +13,20 @@ owner’s two ROMs. New tests exercise actual US77/US80 sound wrappers, native
 player/context gating and compact binding UI. The bounded CSeq decoder also
 passes 8,000 malformed-input cases under address/undefined-behavior sanitizers.
 
-Signed-update tests exercise the actual native worker with 14 service scenarios,
+Signed-update tests exercise the actual native worker with 12 service scenarios,
 all manifest truncations and byte mutations, 10,000 malformed inputs, wrong
-signatures/digests, redirects, cancellation and missing receiver. The network
+signatures/digests, redirects, cancellation and failed native preparation. No ELF socket API is supplied in the worker test, so a receiver dependency would fail to link. The legacy network
 installer is tested before commit, across partial commit messages and while the
 game retains its lease. Update-preference tests also reproduce the native
 zero-link-count metadata and check repeated save/load without changing an
 existing inode.
+
+The in-process installer is exercised in **191 subprocess operations** under
+address/undefined-behavior sanitizers: a real cut after each public file and
+manifest replacement, restart recovery, another cut during recovery, full-disk
+and rename failures, malformed signed tables, retained owner data, unknown files,
+symlinks/hardlinks and native zero-link metadata. The app directory inode and
+an open mapping of the old executable remain valid during replacement.
 
 The native PS5 game and all three universal payloads compile and link with the public
 homebrew SDK. Every one of the **37** embedded program files was read back from
@@ -38,7 +44,7 @@ rumble, balloon light colors, icon/background and launch-image handoff.
 ## Still to verify
 
 - The new universal ELF's complete install/update and app registration on PS5.
-- Native HTTPS reachability and the Internet updater's complete game-to-receiver handoff.
+- Native HTTPS reachability, the one-time app-directory permission grant and a complete receiver-free update/restart on PS5.
 - New native save handling after a complete reboot, without the old preview's helper.
 - Physical gyro, adaptive L2 and controller-speaker behavior.
 - More tracks, Paks, mods, online modes, displays and a complete Windows/WSL2 build.

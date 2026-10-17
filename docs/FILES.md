@@ -10,7 +10,7 @@
 | `tests/`, `.github/` | Automated checks, bug reports and contribution templates |
 | Pinned source manifests, `vendor/`, `licenses/`, `LICENSE`, `THIRD_PARTY.md` | Exact dependency sources, build inputs and required notices |
 | `homebrew/`, artwork source manifest | App metadata, artwork preparation and attribution |
-| `updates/channel.txt` | Signed version information for the in-game updater |
+| `updates/native-channel.txt`, `updates/channel.txt` | Signed version information for native and legacy clients |
 | `SHA256SUMS` | Checksums of the source files |
 
 Technical sources and notices are needed to maintain and rebuild the port. The
@@ -20,7 +20,8 @@ main README and help index are the starting points for players.
 
 - **DKRR-Installer.elf** — imports the owner's ROMs from USB and installs the app.
 - **DKRR-Update.elf** — manual update using the console's own ROMs.
-- **DKRR-Network-Update.elf** — verified download for the in-game updater; not a manual payload.
+- **DKRR-Update.dkru** — data-only package downloaded and installed by the game.
+- **DKRR-Network-Update.elf** — migration download for older Beta 3.3 clients; not a manual payload.
 - **DKR-R-PS5-source.zip** — matching integration source and pinned build recipes.
 - **SHA256SUMS.txt / BUILD-INFO.json** — download checksums and version/test information.
 

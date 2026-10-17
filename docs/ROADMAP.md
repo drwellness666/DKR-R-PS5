@@ -8,7 +8,7 @@ and fixing behavior on more consoles, not starting those features from scratch.
 - Broaden installer/update recovery, native-save and DualSense testing.
 - Test more displays, loaders, Controller Paks, online modes and compatible mods.
 - Complete the Windows/WSL2 developer-build walkthrough on Windows.
-- Qualify the new signed native Internet-update path on PS5.
+- Qualify the receiver-free, in-process Internet installer and restart recovery on PS5.
 - Build a complete HDR presentation path with brightness calibration and SDR fallback.
 
 [Known issues](KNOWN_ISSUES.md) · [Test status](VALIDATION.md).

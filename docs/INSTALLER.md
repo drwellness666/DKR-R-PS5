@@ -16,7 +16,7 @@
 The installer identifies the ROMs by checksum and copies them to internal
 storage. It generates controller sounds locally and registers the app folder.
 Already installed, valid ROMs are reused. The PC and USB are no longer needed
-for normal play; the usual homebrew environment is still required.
+for normal play or future in-game updates. An ELF receiver is only needed for the initial installation or a manual update; the usual homebrew environment is still required.
 
 Optional Python sender, from an extracted source folder:
 
