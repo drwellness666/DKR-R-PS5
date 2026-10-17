@@ -9,7 +9,7 @@ from test_ps5_internet_update import dependencies
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('game_work',nargs='?',type=pathlib.Path);parser.add_argument('--cache',action='append',type=pathlib.Path,default=[]);parser.add_argument('--permission-regression-only',action='store_true');a=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('game_work',nargs='?',type=pathlib.Path);parser.add_argument('--cache',action='append',type=pathlib.Path,default=[]);parser.add_argument('--permission-regression-only',action='store_true');parser.add_argument('--cleanup-regression-only',action='store_true');parser.add_argument('--marker-regression-only',action='store_true');parser.add_argument('--stat-regression-only',choices=('root','marker'));parser.add_argument('--ancestry-regression-only',action='store_true');a=parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='dkrr-native-update-') as folder:
         t=pathlib.Path(folder);deps=dependencies(a.game_work,a.cache,t);app=t/'data/homebrew/PPSA94678';root=t/'data/dkrr';prefs=root/'preferences';client=prefs/f'update-client-{os.getuid()}';lease=root/'app.lock'
         client.mkdir(parents=True,mode=0o700);key=t/'key.pem'
@@ -40,7 +40,7 @@ def main():
         for source in (deps/'monocypher/src/monocypher.c',deps/'monocypher/src/optional/monocypher-ed25519.c',deps/'mbedtls/library/sha256.c',deps/'mbedtls/library/platform_util.c',ROOT/'installer/files.c',t/'hash.c'):
             obj=t/(source.name+'.o');subprocess.run(['clang','-std=c11','-D_GNU_SOURCE',*flags,'-c',str(source),'-o',str(obj)],check=True);objects.append(str(obj))
         binary=t/'native-test'
-        subprocess.run(['clang++','-std=c++20',*flags,'-Wall','-Wextra','-Werror','-DDKRR_RELEASE_SEQUENCE=7','-DDKRR_NATIVE_TEST_HOOK','-DDKRR_UPDATE_ROOT="'+str(root)+'"','-DDKRR_NATIVE_APP="'+str(app)+'"','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-Wl,--wrap=rename','-Wl,--wrap=write',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_native_update.cpp'),str(ROOT/'tests/ps5_native_update.cpp'),*objects,'-o',str(binary)],check=True)
+        subprocess.run(['clang++','-std=c++20',*flags,'-Wall','-Wextra','-Werror','-DDKRR_RELEASE_SEQUENCE=7','-DDKRR_NATIVE_TEST_HOOK','-DDKRR_UPDATE_ROOT="'+str(root)+'"','-DDKRR_NATIVE_APP="'+str(app)+'"','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-Wl,--wrap=rename','-Wl,--wrap=write','-Wl,--wrap=unlink','-Wl,--wrap=readdir','-Wl,--wrap=closedir','-Wl,--wrap=fsync',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_native_update.cpp'),str(ROOT/'tests/ps5_native_update.cpp'),*objects,'-o',str(binary)],check=True)
         env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1');runs=[]
         def run(action,expected=0,cut=None,index=0,zero=False,**failure):
             extra={} if cut is None else dict(CUT_EVENT=cut,CUT_INDEX=str(index))
@@ -63,9 +63,34 @@ def main():
             reset();run('prepare');run('apply',-1,FAIL_APP_RENAMES='1');unchanged();run('recover',FAIL_APP_RENAMES='1');unchanged()
             print('PASS denied app-directory replacements: unchanged files require no restore writes, and the next start recovers')
             return
+        if a.ancestry_regression_only:
+            reset();trace=t/'sync-trace';trace.unlink(missing_ok=True);run('prepare',FSYNC_TRACE=str(trace))
+            assert str(prefs) in trace.read_text().splitlines(), 'Private journal parent entry was not synchronized'
+            run('recover');unchanged()
+            print('PASS complete journal directory ancestry synchronized before activation')
+            return
+        if a.stat_regression_only:
+            failure={'FAIL_STAT_ROOT':'1'} if a.stat_regression_only=='root' else {'FAIL_STAT_APPLY_ONCE':'1'}
+            reset();run('prepare');run('apply',cut='replaced',index=8)
+            before={str(p.relative_to(client)):p.read_bytes() for p in (client/'native-install').rglob('*') if p.is_file()}
+            run('recover',-1,**failure)
+            assert before=={str(p.relative_to(client)):p.read_bytes() for p in (client/'native-install').rglob('*') if p.is_file()}
+            run('recover',1);unchanged()
+            print('PASS recovery metadata errors fail closed and preserve the complete recovery copy')
+            return
+        if a.marker_regression_only:
+            reset();run('prepare');run('apply',-1,FAIL_APPLY_MARKER='1');unchanged();run('recover');unchanged()
+            print('PASS partial activation marker: unchanged app recovers without a completed commit marker')
+            return
+        if a.cleanup_regression_only:
+            reset();run('prepare');run('apply');run('recover',cut='removed-journal',ORDER_JOURNAL_FIRST='1');run('recover',ORDER_JOURNAL_FIRST='1')
+            assert (app/'dkrr-install.manifest').read_text()==new_manifest
+            print('PASS interrupted cleanup: transaction retired durably before deleting journals or backups')
+            return
         # Complete update: directory inode and already mapped executable survive;
         # full next manifest includes retained private sounds, no embedded ROM.
-        reset();inode=app.stat().st_ino;run('prepare');unchanged();run('apply');assert app.stat().st_ino==inode
+        reset();inode=app.stat().st_ino;stable_inodes={n:(app/n).stat().st_ino for n in ('sce_module/libc.prx','sce_sys/param.json')};run('prepare');unchanged();run('apply');assert app.stat().st_ino==inode
+        assert all((app/n).stat().st_ino==v for n,v in stable_inodes.items())
         assert (app/'dkrr-install.manifest').read_text()==new_manifest
         assert all((app/p.relative_to(new)).read_bytes()==p.read_bytes() for p in new.rglob('*') if p.is_file())
         run('recover');assert not (client/'native-install').exists()
@@ -79,10 +104,24 @@ def main():
         reset();run('prepare',cut='prepared');run('recover');unchanged()
         reset();run('prepare',zero=True);run('apply',zero=True);run('recover',zero=True)
         reset();run('prepare',-1,FAIL_WRITE='1');unchanged();assert not (client/'native-install').exists()
-        for i in (0,8,len(PUBLIC_FILES)):
+        for i in (0,8,len(PUBLIC_FILES)-2):
             reset();run('prepare');run('apply',-1,FAIL_RENAME=str(i));unchanged();run('recover')
         reset();(app/'assets/ui/Icons').chmod(0o555);run('prepare',-1);unchanged();(app/'assets/ui/Icons').chmod(0o755)
         reset();run('prepare');run('apply',-1,FAIL_APP_RENAMES='1');unchanged();run('recover',FAIL_APP_RENAMES='1');unchanged()
+        reset();run('prepare');run('apply',-1,FAIL_APPLY_MARKER='1');unchanged();run('recover');unchanged()
+        for event in ('removed-journal','retired'):
+            reset();run('prepare');run('apply');run('recover',cut=event,ORDER_JOURNAL_FIRST='1');run('recover',ORDER_JOURNAL_FIRST='1')
+            assert (app/'dkrr-install.manifest').read_text()==new_manifest
+            reset();run('prepare');run('apply',cut='replaced',index=8);run('recover',1,cut=event,ORDER_JOURNAL_FIRST='1');run('recover',ORDER_JOURNAL_FIRST='1');unchanged()
+        for failure in ({'FAIL_STAT_ROOT':'1'},{'FAIL_STAT_APPLY_ONCE':'1'}):
+            reset();run('prepare');run('apply',cut='replaced',index=8)
+            before={str(p.relative_to(client)):p.read_bytes() for p in (client/'native-install').rglob('*') if p.is_file()}
+            run('recover',-1,**failure)
+            assert before=={str(p.relative_to(client)):p.read_bytes() for p in (client/'native-install').rglob('*') if p.is_file()}
+            run('recover',1);unchanged()
+        reset();trace=t/'sync-trace';trace.unlink(missing_ok=True);run('prepare',FSYNC_TRACE=str(trace))
+        assert str(prefs) in trace.read_text().splitlines(), 'Private journal parent entry was not synchronized'
+        run('recover');unchanged()
         # Corrupt bytes fail before staging, even with an otherwise valid offer.
         reset();data=bytearray(original_package);data[-1]^=1;package.write_bytes(data);run('prepare',-1);unchanged()
         # A validly signed but malformed file table is rejected, including path
