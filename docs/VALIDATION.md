@@ -21,11 +21,11 @@ game retains its lease. Update-preference tests also reproduce the native
 zero-link-count metadata and check repeated save/load without changing an
 existing inode.
 
-The in-process installer is exercised in **191 subprocess operations** under
+The in-process installer is exercised in **194 subprocess operations** under
 address/undefined-behavior sanitizers: a real cut after each public file and
 manifest replacement, restart recovery, another cut during recovery, full-disk
 and rename failures, malformed signed tables, retained owner data, unknown files,
-symlinks/hardlinks and native zero-link metadata. The app directory inode and
+symlinks/hardlinks and native zero-link metadata. Persistent denial of app-directory renames also leaves an unchanged previous installation startable without restoration writes. The app directory inode and
 an open mapping of the old executable remain valid during replacement.
 
 The native PS5 game and all three universal payloads compile and link with the public
