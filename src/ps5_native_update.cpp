@@ -170,6 +170,12 @@ bool rollback(Context& c,const dkrr_manifest& old) {
         // A previous interrupted restoration only leaves this exact private
         // replacement entry; unlinking it never follows or mutates its inode.
         if(present(temp)){struct stat st{};if(lstat(temp.c_str(),&st)<0||!S_ISREG(st.st_mode)||st.st_uid!=getuid()||st.st_nlink>1||unlink(temp.c_str())<0)return false;}
+        // The first activation can be denied by the console's filesystem
+        // policy even after staging succeeded. An unchanged file needs no
+        // restoration write. This also makes restart recovery possible while
+        // that denial persists, instead of blocking the old game at startup.
+        if(i<public_count&&matches(target,*find(old,name)))continue;
+        if(i==public_count){dkrr_manifest installed{};if(dkrr_manifest_read(target.c_str(),&installed)==0&&same_inventory(old,installed))continue;}
         unsigned mode=i==public_count?0644:find(old,name)->mode;
         if(!copy_file(c.root+"/old/"+name,temp,mode)||rename(temp.c_str(),target.c_str())<0||!sync(target))return c.fail("Recovery was interrupted. Start DKR-R again to complete it.");
         CHECKPOINT("restored",unsigned(i));
@@ -253,12 +259,15 @@ bool apply_impl(Context& c,int lease) {
 }
 }
 bool prepare(int fd,const Offer& offer,char* error,std::size_t capacity) {
-    Context c{.error=error,.capacity=capacity};try {const bool ok=prepare_impl(c,fd,offer);if(!ok&&present(c.root)&&!present(c.root+"/applying"))cleanup(c);return ok;}catch(...){return c.fail("Native update preparation stopped. The installed game is unchanged.");}
+    try {Context c{.error=error,.capacity=capacity};const bool ok=prepare_impl(c,fd,offer);if(!ok&&present(c.root)&&!present(c.root+"/applying"))cleanup(c);return ok;}
+    catch(...){std::snprintf(error,capacity,"Native update preparation stopped. The installed game is unchanged.");return false;}
 }
 int recover(int lease,char* error,std::size_t capacity) {
-    Context c{.error=error,.capacity=capacity};try {return recover_impl(c,lease);}catch(...){c.fail("Native update recovery stopped. Existing files were preserved.");return -1;}
+    try {Context c{.error=error,.capacity=capacity};return recover_impl(c,lease);}
+    catch(...){std::snprintf(error,capacity,"Native update recovery stopped. Existing files were preserved.");return -1;}
 }
 bool apply(int lease,char* error,std::size_t capacity) {
-    Context c{.error=error,.capacity=capacity};try {return apply_impl(c,lease);}catch(...){return c.fail("Native update stopped. Start DKR-R again to complete recovery.");}
+    try {Context c{.error=error,.capacity=capacity};return apply_impl(c,lease);}
+    catch(...){std::snprintf(error,capacity,"Native update stopped. Start DKR-R again to complete recovery.");return false;}
 }
 }
