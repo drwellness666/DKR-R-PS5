@@ -5,6 +5,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
+#include <cstdint>
 #include <fcntl.h>
 #include <mutex>
 #include <sys/stat.h>
@@ -17,7 +18,12 @@ constexpr char directory[]=DKR_DISPLAY_DATA_ROOT "/preferences";
 constexpr char path[]=DKR_DISPLAY_DATA_ROOT "/preferences/hdr-output.txt";
 constexpr char next[]=DKR_DISPLAY_DATA_ROOT "/preferences/hdr-output.txt.next";
 std::mutex mutex;
-dkrr_ps5_hdr_choice calibration{0,200,800,35};
+// Render snapshots never wait on preference reads, writes or fsync. One word
+// publishes a complete validated choice, so readers cannot see mixed fields.
+static_assert(std::atomic<std::uint32_t>::is_always_lock_free);
+constexpr std::uint32_t pack(dkrr_ps5_hdr_choice c){return c.enabled|(c.paper_white<<1)|(c.peak<<10)|(c.expansion<<21);}
+constexpr dkrr_ps5_hdr_choice unpack(std::uint32_t c){return {c&1,(c>>1)&511,(c>>10)&2047,(c>>21)&127};}
+std::atomic<std::uint32_t> calibration{pack({0,200,800,35})};
 std::atomic<unsigned> requested{0},output{0},reason{0},pattern{0};
 std::atomic<std::int64_t> pattern_until{0};
 std::int64_t now_ms(){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();}
@@ -38,12 +44,12 @@ int read_choice(dkrr_ps5_hdr_choice *c){
 }
 }
 extern "C" int dkrr_ps5_read_hdr_choice(dkrr_ps5_hdr_choice *c){std::scoped_lock lock(mutex);return read_choice(c);}
-extern "C" void dkrr_ps5_initialize_hdr(){std::scoped_lock lock(mutex);read_choice(&calibration);requested=calibration.enabled;output=reason=pattern=0;}
+extern "C" void dkrr_ps5_initialize_hdr(){std::scoped_lock lock(mutex);dkrr_ps5_hdr_choice c{};read_choice(&c);calibration.store(pack(c),std::memory_order_release);requested=c.enabled;output=reason=pattern=0;}
 extern "C" unsigned dkrr_ps5_hdr_requested(){return requested.load();}
-extern "C" dkrr_ps5_hdr_choice dkrr_ps5_hdr_calibration(){std::scoped_lock lock(mutex);return calibration;}
+extern "C" dkrr_ps5_hdr_choice dkrr_ps5_hdr_calibration(){return unpack(calibration.load(std::memory_order_acquire));}
 extern "C" struct dkrr_ps5_hdr_status dkrr_ps5_hdr_status(){return {output.load(),reason.load()};}
 extern "C" void dkrr_ps5_hdr_report(unsigned o,unsigned r){reason=r;output=o;}
-extern "C" void dkrr_ps5_hdr_preview(dkrr_ps5_hdr_choice c){if(dkrr::hdr::valid(c)){std::scoped_lock lock(mutex);calibration=c;}}
+extern "C" void dkrr_ps5_hdr_preview(dkrr_ps5_hdr_choice c){if(dkrr::hdr::valid(c))calibration.store(pack(c),std::memory_order_release);}
 extern "C" void dkrr_ps5_hdr_calibration_pattern(unsigned p){pattern_until=p?now_ms()+300:0;pattern=p!=0;}
 extern "C" unsigned dkrr_ps5_hdr_pattern(){return pattern.load() && now_ms()<pattern_until.load();}
 extern "C" int dkrr_ps5_choose_hdr(dkrr_ps5_hdr_choice c){
@@ -62,5 +68,5 @@ extern "C" int dkrr_ps5_choose_hdr(dkrr_ps5_hdr_choice c){
     if(!ok||rename(next,path)){unlink(next);errno=EIO;return -1;}
     fd=open(directory,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);if(fd<0)return -1;
     const int synced=fsync(fd);close(fd);if(synced)return -1;
-    calibration=c;return 0;
+    calibration.store(pack(c),std::memory_order_release);return 0;
 }

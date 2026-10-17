@@ -27,7 +27,7 @@ public:
             auto vs=device->createShader(dkrr_hdr_vert,sizeof(dkrr_hdr_vert),"main",RenderShaderFormat::SPIRV);
             auto ps=device->createShader(dkrr_hdr_frag,sizeof(dkrr_hdr_frag),"main",RenderShaderFormat::SPIRV);
             if(!layout||!set||!vs||!ps)return false;
-            if(!static_cast<VulkanPipelineLayout*>(layout.get())->vk || !static_cast<VulkanShader*>(vs.get())->vk || !static_cast<VulkanShader*>(ps.get())->vk)return false;
+            if(!static_cast<VulkanDescriptorSet*>(set.get())->vk || !static_cast<VulkanPipelineLayout*>(layout.get())->vk || !static_cast<VulkanShader*>(vs.get())->vk || !static_cast<VulkanShader*>(ps.get())->vk)return false;
             RenderGraphicsPipelineDesc p;p.pipelineLayout=layout.get();p.vertexShader=vs.get();p.pixelShader=ps.get();
             p.renderTargetFormat[0]=RenderFormat::R10G10B10A2_UNORM;p.renderTargetCount=1;
             pipeline=device->createGraphicsPipeline(p);if(!pipeline||!static_cast<VulkanGraphicsPipeline*>(pipeline.get())->vk)return false;

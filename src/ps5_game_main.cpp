@@ -114,7 +114,7 @@ int main() {
     dkrr_ps5_initialize_display();
     dkrr_ps5_initialize_hdr();
     const auto output = dkrr_ps5_boot_display_choice();
-    report("display requested: %up / %u Hz; SDR; HDMI VRR/ALLM governed by system", output.resolution, output.refresh);
+    report("display requested: %up / %u Hz; colour=%s; HDMI VRR/ALLM governed by system", output.resolution, output.refresh, dkrr_ps5_hdr_requested()?"HDR10":"SDR");
     const char*cache_option=getenv("DKR_PS5_SHADER_CACHE");
     if(cache_option && !strcmp(cache_option,"1")){
         const char*cache="/data/dkrr/renderer/radv-shader-cache";
