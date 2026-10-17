@@ -33,6 +33,7 @@ jobs:
       - run: python3 tools/test_ps5_menu_sections.py
       - run: python3 tests/test_build_assistant.py
       - run: python3 tools/test_ps5_internet_update.py
+      - run: python3 tools/test_ps5_native_update.py
       - run: python3 tools/test_ps5_diagnostics.py
       - run: python3 tools/test_native_game_installer.py
       - run: python3 tools/test_native_game_deployer.py
