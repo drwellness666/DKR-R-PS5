@@ -65,9 +65,10 @@ with tempfile.TemporaryDirectory(prefix='dkrr-revisions-') as temporary:
         pref.unlink()
         pending = data / 'preferences/boot-revision.txt.next'
         pending.write_text('interrupted choice; preserve')
-        assert api.dkrr_ps5_choose_revision(80 if mask == 2 else 77) == -1
-        assert pending.read_text() == 'interrupted choice; preserve' and not pref.exists()
+        assert api.dkrr_ps5_choose_revision(80 if mask == 2 else 77) == 0
+        assert pending.read_text() == 'interrupted choice; preserve' and pref.is_file()
         pending.unlink()
+        pref.unlink()
         roms[0].unlink()
         assert api.dkrr_ps5_choose_revision(77) == -1
         if mask == 3:
