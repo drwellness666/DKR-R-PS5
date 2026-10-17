@@ -232,6 +232,23 @@ ssize_t __wrap_write(int fd,const void*buf,size_t n){
     installed=(self.live/'eboot.bin').read_bytes();path.unlink();path.write_text('# retained\n')
     self.run_installer();self.assertEqual((self.live/'eboot.bin').read_bytes(),installed)
     self.assertEqual(path.read_bytes(),b'# retained\n'+str(self.live).encode()+b'\n')
+ def test_registration_preserves_stale_and_foreign_temporary_files(self):
+    folder=self.data/'shadowmount';path=folder/'manual.lst';before=path.read_bytes()
+    legacy=folder/'manual.lst.dkrr.tmp';legacy.write_bytes(b'old interrupted registration snapshot')
+    outside=self.base/'unrelated-registration.txt';outside.write_bytes(b'keep unrelated registration')
+    link=folder/'manual.lst.dkrr.0.tmp';link.symlink_to(outside)
+    partial=folder/'manual.lst.dkrr.1.tmp';partial.write_bytes(b'# previous list before another app changed it\n')
+    self.run_installer()
+    self.assertEqual(path.read_bytes(),before+str(self.live).encode()+b'\n')
+    self.assertEqual(legacy.read_bytes(),b'old interrupted registration snapshot')
+    self.assertTrue(link.is_symlink());self.assertEqual(outside.read_bytes(),b'keep unrelated registration')
+    self.assertEqual(partial.read_bytes(),b'# previous list before another app changed it\n')
+ def test_registration_slot_exhaustion_preserves_existing_list(self):
+    folder=self.data/'shadowmount';path=folder/'manual.lst';before=path.read_bytes()
+    for slot in range(128):(folder/f'manual.lst.dkrr.{slot}.tmp').write_bytes(b'preserve occupied slot')
+    result=self.run_installer(0,False);self.assertEqual(result.returncode,9)
+    self.assertEqual(path.read_bytes(),before)
+    for slot in range(128):self.assertEqual((folder/f'manual.lst.dkrr.{slot}.tmp').read_bytes(),b'preserve occupied slot')
  def test_package_positive_inventory_refuses_extra_user_data(self):
     app=self.base/'app0';p=app/'assets/personal.json';p.write_text('synthetic unrelated user data')
     try:

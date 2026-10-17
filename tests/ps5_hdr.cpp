@@ -1,14 +1,45 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ps5_hdr_policy.hpp"
 #include <cassert>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <cerrno>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <mutex>
+#include <thread>
 #include <unistd.h>
 namespace fs=std::filesystem;
 static bool close(double a,double b,double e=1e-5){return std::abs(a-b)<e;}
+static std::mutex sync_mutex;
+static std::condition_variable sync_wake;
+static bool stall_sync=false,sync_entered=false,release_sync=false,snapshot_complete=false;
+extern "C" int __real_fsync(int);
+extern "C" int __wrap_fsync(int fd){
+    {std::unique_lock lock(sync_mutex);if(stall_sync){sync_entered=true;sync_wake.notify_all();sync_wake.wait(lock,[]{return release_sync;});}}
+    return __real_fsync(fd);
+}
+static void snapshot_during_save(){
+    {std::lock_guard lock(sync_mutex);stall_sync=true;sync_entered=release_sync=snapshot_complete=false;}
+    int saved=-1;std::thread writer([&]{saved=dkrr_ps5_choose_hdr({1,160,600,10});});
+    {std::unique_lock lock(sync_mutex);assert(sync_wake.wait_for(lock,std::chrono::seconds(3),[]{return sync_entered;}));}
+    std::thread renderer([]{
+        const auto c=dkrr_ps5_hdr_calibration();assert(dkrr::hdr::valid(c));
+        {std::lock_guard lock(sync_mutex);snapshot_complete=true;}sync_wake.notify_all();
+    });
+    bool completed_while_save_blocked;
+    {std::unique_lock lock(sync_mutex);completed_while_save_blocked=sync_wake.wait_for(lock,std::chrono::seconds(3),[]{return snapshot_complete;});release_sync=true;stall_sync=false;}
+    sync_wake.notify_all();writer.join();renderer.join();
+    assert(saved==0 && completed_while_save_blocked);
+    const dkrr_ps5_hdr_choice a{1,80,400,0},b{0,300,2000,100};
+    dkrr_ps5_hdr_preview(a);std::atomic<bool> done{false};
+    std::thread preview([&]{for(unsigned i=0;i<100000;++i)dkrr_ps5_hdr_preview(i&1?a:b);done=true;});
+    do {const auto c=dkrr_ps5_hdr_calibration();assert((c.enabled==a.enabled&&c.paper_white==a.paper_white&&c.peak==a.peak&&c.expansion==a.expansion)||(c.enabled==b.enabled&&c.paper_white==b.paper_white&&c.peak==b.peak&&c.expansion==b.expansion));}while(!done);
+    preview.join();
+}
 int main(){
     using namespace dkrr::hdr;
     assert(valid({0,200,800,35})&&!valid({2,200,800,35})&&!valid({1,79,800,35})&&!valid({1,200,399,35})&&!valid({1,200,800,101}));
@@ -31,9 +62,10 @@ int main(){
     assert(dkrr_ps5_read_hdr_choice(&c)==1&&c.paper_white==200); // preview never writes
     dkrr_ps5_hdr_calibration_pattern(1);assert(dkrr_ps5_hdr_pattern());dkrr_ps5_hdr_calibration_pattern(0);assert(!dkrr_ps5_hdr_pattern());
     dkrr_ps5_hdr_report(3,2);assert(dkrr_ps5_hdr_status().output==3&&dkrr_ps5_hdr_status().reason==2);
+    snapshot_during_save();
     auto file=root/"preferences/hdr-output.txt";fs::remove(file);fs::create_symlink(root/"outside",file);
     assert(dkrr_ps5_read_hdr_choice(&c)==-1&&!c.enabled);assert(dkrr_ps5_choose_hdr({1,200,800,35})==-1&&!fs::exists(root/"outside"));
     fs::remove(file);std::ofstream(file)<<"hdr=1\npaper_white=200\npeak=800\nexpansion=35\nextra=1\n";
     assert(dkrr_ps5_read_hdr_choice(&c)==-1&&!c.enabled);assert(dkrr_ps5_choose_hdr({1,200,800,35})==-1);
-    std::puts("PASS HDR reference/PQ/gamut, 10001 monotonic luminances, independent UI white, premultiplied alpha, settings, next-launch semantics, preview isolation and unsafe-file refusal");
+    std::puts("PASS HDR reference/PQ/gamut, 10001 monotonic luminances, UI white/alpha, settings, next-launch semantics, preview isolation, unsafe-file refusal and coherent render snapshots during blocked fsync");
 }

@@ -20,27 +20,28 @@
 #include <vector>
 #include "generated/selawik_font.h"
 #include "generated/racing_banana_font.h"
+#include "generated/jumpman_font.h"
 std::uint64_t g_font_generation=0;
 int g_race_button_flat=0;ImFont*g_race_button_flat_font=nullptr;
 ImFont *g_font_controls=nullptr,*g_font_heading=nullptr,*g_font_title=nullptr,*g_font_fps=nullptr;
 #include "runtime_ui_paddock.inl"
 void LoadBrandLogoIntoAtlas(){ImGui::GetIO().Fonts->TexDesiredWidth=2048;}
-void LoadConsoleFonts(){
-#include "ps5_ui_fonts.inl"
-}
+#include "upstream_launcher_fonts.inl"
 static void check(bool ok,const char*why){if(!ok){std::fprintf(stderr,"FAIL: %s\n",why);std::exit(1);}}
 int main(){
- ImGui::CreateContext();LoadConsoleFonts();auto&io=ImGui::GetIO();
+ ImGui::CreateContext();LoadLauncherFonts();auto&io=ImGui::GetIO();
  unsigned char*p;int w,h;io.Fonts->GetTexDataAsRGBA32(&p,&w,&h);
  check(p&&w>0&&h>0&&w<=4096&&h<=4096,"bounded populated atlas");
- check(std::strstr(io.FontDefault->GetDebugName(),"Racing Banana"),"Racing Banana is not the primary face");
+ check(io.FontDefault->FontSize==19.0F && g_font_controls->FontSize==21.0F,"original body and control sizes");
+ check(g_font_heading->FontSize==58.0F && g_font_title->FontSize==68.0F && g_font_fps->FontSize==24.0F,"original Jumpman sizes");
+ check(g_font_heading!=io.FontDefault && g_font_controls!=io.FontDefault,"original font roles remain separate");
  unsigned checked=0;
- for(auto*font:io.Fonts->Fonts)for(ImWchar c:{ImWchar('A'),ImWchar('0'),ImWchar(0x00FC)}){
-  const auto*g=font->FindGlyphNoFallback(c);check(g&&g->Visible,"ASCII, digit or German glyph missing");
+ for(auto*font:io.Fonts->Fonts)for(ImWchar c:{ImWchar('A'),ImWchar('0')}){
+  const auto*g=font->FindGlyphNoFallback(c);check(g&&g->Visible,"letter or digit missing");
   unsigned long long coverage=0;
   for(int y=int(g->V0*h);y<int(g->V1*h);++y)for(int x=int(g->U0*w);x<int(g->U1*w);++x)coverage+=p[(y*w+x)*4+3];
   check(coverage>0,"glyph is fully transparent");++checked;
  }
- check(io.Fonts->Fonts.Size==25,"all expected font banks installed");
- std::printf("PASS: actual console Racing Banana + Selawik loader, %d font banks, %u visible glyph checks, atlas=%dx%d; missing characters use Selawik\n",io.Fonts->Fonts.Size,checked,w,h);ImGui::DestroyContext();
+ check(io.Fonts->Fonts.Size==26,"all original font banks installed");
+ std::printf("PASS: unchanged upstream loader, %d font banks, %u visible glyph checks, atlas=%dx%d; Racing Banana, Jumpman, reading faces and original fallbacks\n",io.Fonts->Fonts.Size,checked,w,h);ImGui::DestroyContext();
 }
