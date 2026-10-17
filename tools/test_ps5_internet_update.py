@@ -25,15 +25,16 @@ def dependencies(work,cache,temporary):
     return result
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('game_work',nargs='?',type=pathlib.Path);p.add_argument('--cache',action='append',type=pathlib.Path,default=[]);p.add_argument('--release-payload',type=pathlib.Path);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('game_work',nargs='?',type=pathlib.Path);p.add_argument('--cache',action='append',type=pathlib.Path,default=[]);p.add_argument('--release-payload',type=pathlib.Path);p.add_argument('--native-package',type=pathlib.Path);a=p.parse_args()
     with tempfile.TemporaryDirectory(prefix='dkrr-network-update-') as d:
         t=pathlib.Path(d);deps=dependencies(a.game_work,a.cache,t);key=t/'test-key.pem'
         with key.open('wb') as output:subprocess.run(['openssl','genpkey','-algorithm','ED25519'],stdout=output,check=True)
         public=subprocess.check_output(['openssl','pkey','-in',str(key),'-pubout','-outform','DER'])[12:];assert len(public)==32;(t/'public.bin').write_bytes(public)
         (t/'fixture_key.h').write_text('static const unsigned char dkrr_update_public_key[32]={'+','.join(str(n) for n in public)+'};\n')
         data=bytearray(range(256));data[:7]=b'\x7fELF\x02\x01\x01';struct.pack_into('<H',data,18,62);payload=t/'payload.elf';payload.write_bytes(data)
-        def signed(sequence):
-            body=f'DKRR-UPDATE-1\nPPSA94678\n{sequence}\nps5-beta.3.4\n256\n{hashlib.sha256(data).hexdigest()}\nDKRR-Network-Update.elf\n'.encode();message=t/'body';message.write_bytes(body)
+        def signed(sequence,native=False):
+            version,name=(2,'DKRR-Update.dkru') if native else (1,'DKRR-Network-Update.elf')
+            body=f'DKRR-UPDATE-{version}\nPPSA94678\n{sequence}\nps5-beta.3.4\n256\n{hashlib.sha256(data).hexdigest()}\n{name}\n'.encode();message=t/'body';message.write_bytes(body)
             sig=subprocess.check_output(['openssl','pkeyutl','-sign','-rawin','-inkey',str(key),'-in',str(message)])
             return body+sig.hex().encode()+b'\n'
         manifest=t/'channel.txt';manifest.write_bytes(signed(7));(t/'current.txt').write_bytes(signed(6))
@@ -51,11 +52,15 @@ def main():
             trusted=bytes(int(n,16) for n in re.findall(r'0x([0-9a-f]{2})',(ROOT/'src/ps5_update_channel.h').read_text()));assert len(trusted)==32
             (t/'release-public.bin').write_bytes(trusted)
             subprocess.run([str(t/'policy'),str(release_channel),str(t/'release-public.bin'),str(a.release_payload or '-'),'--release' if a.release_payload else '--channel'],env=env,check=True)
-        payload.write_bytes(data)
+            native_channel=ROOT/'updates/native-channel.txt'
+            if native_channel.exists():
+                subprocess.run([str(t/'policy'),str(native_channel),str(t/'release-public.bin'),str(a.native_package or '-'),'--release' if a.native_package else '--channel'],env=env,check=True)
+        data[:8]=b'DKRRPK2\n';payload.write_bytes(data)
+        manifest.write_bytes(signed(7,True));(t/'current.txt').write_bytes(signed(6,True))
         data_root=t/'data/dkrr';(data_root/'preferences').mkdir(parents=True)
         subprocess.run(cpp+['-pthread','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-DDKRR_RELEASE_SEQUENCE=6','-DDKRR_UPDATE_KEY_HEADER="fixture_key.h"','-DDKRR_UPDATE_ROOT="'+str(data_root)+'"',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_internet_update.cpp'),str(ROOT/'tests/ps5_update_worker.cpp'),*objects,'-o',str(t/'worker')],check=True)
-        for mode in ('good','offline','current','signature','digest','oversize','receiver','cancel','redirect','bad-redirect','short-send','no-ack','auto','zero-links'):
+        for mode in ('good','offline','current','signature','digest','oversize','prepare-fail','cancel','redirect','bad-redirect','auto','zero-links'):
             subprocess.run([str(t/'worker'),mode,str(manifest),str(t/'current.txt'),str(payload)],env=env,check=True,timeout=20)
         assert not list(data_root.rglob('*.elf'))
-        print('PASS actual native update worker: 14 service scenarios, native zero-link metadata, shared opt-in auto-check, no retained download, no execution before verification')
+        print('PASS actual native update worker: 12 service scenarios, zero ELF-loader socket APIs, native zero-link metadata, shared opt-in auto-check, verified data-only preparation')
 if __name__=='__main__':main()

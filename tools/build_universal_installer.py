@@ -4,16 +4,8 @@
 import argparse,hashlib,json,pathlib,re,subprocess,tarfile
 from build_native_game_bundle_updater import inventory,inventory_hash
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-PUBLIC_FILES={
- 'eboot.bin','sce_module/libc.prx','sce_sys/param.json','sce_sys/icon0.png','sce_sys/pic0.dds','sce_sys/pic1.dds',
- 'assets/controllers/gamecontrollerdb.txt',
- *('assets/filters/'+n for n in ('Perfect_CRT-240p-BRT.png','Perfect_CRT-240p.png','Perfect_CRT.png','README.md','aperture-grille.png','scanlines-soft.png','shadow-mask.png')),
- *('assets/licenses/'+n for n in ('DKR-R-MIT.md','GPL-3.0.txt','LLVM-libcxx.txt','SDL2.txt','Selawik-OFL.txt','THIRD_PARTY.md','Title-Artwork-Sources.json','Title-Artwork.md','VADPCM-MPL-2.0.txt','libsamplerate.txt','Monocypher.md','Mbed-TLS.md')),
- 'assets/ui/Backgrounds/DKR-R-Launcher-Background.png',
- *('assets/ui/CustomTrackBackgrounds/custom-row-'+str(i)+'.png' for i in range(1,7)),
- 'assets/ui/CustomTrackBackgrounds/rt64.json',
- *('assets/ui/Icons/'+n for n in ('DKR-R-Logo.bmp','DKR-R-Short-Logo.png','DKR-R-Spinning-Icon.png')),
-}
+PUBLIC_FILES=set(re.findall(r'^    "([^"]+)",$',(ROOT/'src/ps5_update_files.h').read_text(),re.M))
+if len(PUBLIC_FILES)!=37:raise ValueError('Unexpected reviewed application allowlist')
 
 def sha1(data):return hashlib.sha1(data).hexdigest()
 def release_files(app,strict=False):
@@ -100,6 +92,12 @@ def build(sdk,app,receipt,output,migrations=()):
         subprocess.run([cc,'-std=c11','-O2','-Wall','-Wextra','-Werror',f'-DDKRR_UPDATE_ONLY={int(edition!="Installer")}',f'-DDKRR_NETWORK_UPDATE={int(edition=="Network-Update")}','-I',str(ROOT/'installer'),'-I',str(work),str(ROOT/'installer/main.c'),*[str(o) for o in objects],'-o',str(target)],check=True)
         subprocess.run([str(sdk/'bin/prospero-strip'),'--strip-debug',str(target)],check=True);target.chmod(0o600)
         built[target.name]=dict(size=target.stat().st_size,sha256=hashlib.sha256(target.read_bytes()).hexdigest())
+    # The installed game uses this data-only package directly. The legacy
+    # network ELF above exists only to migrate earlier Beta 3.3 clients.
+    from build_native_update_package import build as build_data_package
+    native_package=output/'DKRR-Update.dkru'
+    package=build_data_package(app,receipt,sequence,native_package)
+    built[native_package.name]={k:package[k] for k in ('size','sha256')}
     source_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'installer').glob('*')) if p.is_file()}
     unique={(f['size'],f['sha256']) for f in files.values()}
     metadata=dict(schema=1,build_id=record['build_id'],release_sequence=sequence,files=files,payloads=built,installer_sources=source_hashes,roms_embedded=False,original_pcm_embedded=False,

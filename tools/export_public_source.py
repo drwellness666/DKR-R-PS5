@@ -21,6 +21,7 @@ for name in files:
 shutil.copytree(root / 'docs', output / 'docs')
 (output / 'updates').mkdir()
 shutil.copy2(root / 'updates/channel.txt', output / 'updates/channel.txt')
+shutil.copy2(root / 'updates/native-channel.txt', output / 'updates/native-channel.txt')
 for folder in ('src', 'tools', 'patches', 'tests', 'licenses', 'installer'):
     shutil.copytree(root / folder, output / folder,
                     ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
@@ -38,7 +39,7 @@ shutil.copytree(root / 'homebrew/DKR-R-Game', output / 'homebrew/DKR-R-Game',
                 ignore=shutil.ignore_patterns('background-source.png', 'launch-background-source.png'))
 shutil.copytree(root / '.github/ISSUE_TEMPLATE', output / '.github/ISSUE_TEMPLATE')
 shutil.copy2(root / '.github/pull_request_template.md', output / '.github/pull_request_template.md')
-(output / '.gitignore').write_text('/work/\n/private/\n/native/\n/bin/\n/evidence/\n__pycache__/\n*.pyc\n*.z64\n*.v64\n*.n64\n*.o2r\n*.mpk\n*.eep\n*.sra\n*.fla\n*.elf\n*.bin\n*.prx\n*.sprx\n*.a\n*.o\n*.pcm\n*.wav\n*.pem\n*.key\n')
+(output / '.gitignore').write_text('/work/\n/private/\n/native/\n/bin/\n/evidence/\n__pycache__/\n*.pyc\n*.z64\n*.v64\n*.n64\n*.o2r\n*.mpk\n*.eep\n*.sra\n*.fla\n*.elf\n*.bin\n*.prx\n*.sprx\n*.a\n*.o\n*.pcm\n*.dkru\n*.wav\n*.pem\n*.key\n')
 workflow = output / '.github/workflows/source-check.yml'
 workflow.parent.mkdir(parents=True)
 shutil.copy2(root / '.github/workflows/source-check.yml', workflow)

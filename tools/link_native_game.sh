@@ -68,6 +68,19 @@ cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revi
 cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions -fvisibility=hidden \
     -DDKRR_RELEASE_SEQUENCE="$release_sequence" -I "$root/src" \
     -c "$root/src/ps5_internet_update.cpp" -o "$build/obj/internet_update.o"
+cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions -fvisibility=hidden \
+    -DDKRR_RELEASE_SEQUENCE="$release_sequence" -I "$root/src" \
+    -c "$root/src/ps5_native_update.cpp" -o "$build/obj/native_update.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden -ffunction-sections -fdata-sections \
+    -I "$root/installer" -c "$root/installer/files.c" -o "$build/obj/update_files.o"
+python3 - "$root" "$build/gen/update_sha1.c" <<'PY'
+import pathlib,sys
+sys.path.insert(0,str(pathlib.Path(sys.argv[1])/'tools'))
+from build_universal_installer import hash_source
+pathlib.Path(sys.argv[2]).write_text(hash_source())
+PY
+cc -std=c11 -O2 -fvisibility=hidden -ffunction-sections -fdata-sections \
+    -c "$build/gen/update_sha1.c" -o "$build/obj/update_sha1.o"
 cc -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -DMBEDTLS_CONFIG_FILE=\"legacy_mod_hash_config.h\" -I "$root/src" \
     -I "$game/source/DKR-R/extern/monocypher/src" -I "$game/source/DKR-R/extern/monocypher/src/optional" \
@@ -108,7 +121,7 @@ link_game() {
 "$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
     --version-script "$build/gen/game-symbols.map" --exclude-libs=ALL -e _start -o "$build/llvm-pie.elf" \
     "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/import_check.o" \
-    "$build/obj/controller_speaker.o" "$build/obj/game_audio_hooks.o" "$build/obj/internet_update.o" "$build/obj/update_policy.o" "$build/obj/update_ed25519.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
+    "$build/obj/controller_speaker.o" "$build/obj/game_audio_hooks.o" "$build/obj/internet_update.o" "$build/obj/native_update.o" "$build/obj/update_files.o" "$build/obj/update_sha1.o" "$build/obj/update_policy.o" "$build/obj/update_ed25519.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
     --start-group "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
     "${radv_link_inputs[@]}" --no-as-needed "$sdk/target/lib/libSceHttp.so" "$sdk/target/lib/libSceSsl.so" "$sdk/target/lib/libSceNet.so" --as-needed "$sdk"/target/lib/*.so
 }

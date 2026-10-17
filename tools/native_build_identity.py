@@ -3,7 +3,7 @@
 """Fingerprint native inputs locally; this private inventory is never published."""
 import argparse,hashlib,json,pathlib
 def identify(root,game,sdl,support,high):
-    groups={'source':root/'src','patches':root/'patches','game':game/'game-ps5',
+    groups={'source':root/'src','installer':root/'installer','patches':root/'patches','game':game/'game-ps5',
             'native':support/'tooling/native','sdl':sdl/'build/sdl',
             'samplerate':sdl/'build/samplerate'}
     rows=[]
@@ -11,9 +11,9 @@ def identify(root,game,sdl,support,high):
         for file in sorted(folder.rglob('*')):
             if not file.is_file():continue
             if name in ('game','sdl','samplerate') and file.suffix!='.a' and file.name not in ('dkr-ps5-profile.json','dkr-release.json'):continue
-            if name in ('source','patches','native') and file.suffix not in ('.c','.cpp','.h','.hpp','.inl','.patch','.json'):continue
+            if name in ('source','installer','patches','native') and file.suffix not in ('.c','.cpp','.h','.hpp','.inl','.patch','.json'):continue
             rows.append({'path':name+'/'+str(file.relative_to(folder)),'size':file.stat().st_size,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()})
-    for relative in ('VULKAN_SOURCES.json','PORT_RELEASE.json','tools/link_native_game.sh','tools/native_build_identity.py','tools/generate_native_import_check.py'):
+    for relative in ('VULKAN_SOURCES.json','PORT_RELEASE.json','tools/link_native_game.sh','tools/native_build_identity.py','tools/generate_native_import_check.py','tools/build_universal_installer.py','vendor/ps5-sdk-source.tar.gz'):
         file=root/relative;rows.append({'path':relative,'size':file.stat().st_size,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()})
     gpu=support.parent
     dependencies=[gpu/'radv-build/src/amd/vulkan/libvulkan_radeon.a']+sorted((support/'.deps/native/ps5-payload-sdk/target/lib').glob('*'))

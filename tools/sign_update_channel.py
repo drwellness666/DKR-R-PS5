@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Sign one ROM-free network-update ELF with an external Ed25519 release key."""
-import argparse,hashlib,pathlib,re,subprocess,tempfile
+"""Sign a ROM-free native package or legacy ELF with an external Ed25519 key."""
+import argparse,hashlib,pathlib,re,struct,subprocess,tempfile
 
 def manifest(payload,sequence,tag):
     if not 1<=sequence<=2147483647 or not re.fullmatch(r'ps5-[a-z0-9.-]{6,59}',tag) or '..' in tag:
         raise ValueError('Invalid release tag or sequence')
     with payload.open('rb') as stream:
         header=stream.read(20)
-        if header[:7]!=b'\x7fELF\x02\x01\x01' or header[18:20]!=b'\x3e\x00':raise ValueError('Expected an x86-64 ELF')
+        native=header[:8]==b'DKRRPK2\n'
+        if not native and (header[:7]!=b'\x7fELF\x02\x01\x01' or header[18:20]!=b'\x3e\x00'):raise ValueError('Expected a native data package or legacy x86-64 ELF')
+        if native and (len(header)<16 or struct.unpack_from('<II',header,8)!=(sequence,37)):raise ValueError('Native package sequence or file count differs')
         stream.seek(0);digest=hashlib.file_digest(stream,'sha256').hexdigest()
     size=payload.stat().st_size
     if not 64<=size<=128*1024*1024:raise ValueError('Unexpected update size')
-    return f'DKRR-UPDATE-1\nPPSA94678\n{sequence}\n{tag}\n{size}\n{digest}\nDKRR-Network-Update.elf\n'.encode()
+    version,name=(2,'DKRR-Update.dkru') if native else (1,'DKRR-Network-Update.elf')
+    return f'DKRR-UPDATE-{version}\nPPSA94678\n{sequence}\n{tag}\n{size}\n{digest}\n{name}\n'.encode()
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('payload',type=pathlib.Path);p.add_argument('--key',required=True,type=pathlib.Path);p.add_argument('--sequence',required=True,type=int);p.add_argument('--tag',required=True);p.add_argument('--output',required=True,type=pathlib.Path);a=p.parse_args()
