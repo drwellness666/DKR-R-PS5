@@ -10,10 +10,27 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+/* A previous attempt may have left a partial or obsolete snapshot. Never
+ * resume/overwrite that shared-directory file; reserve a fresh bounded slot. */
+static int write_temporary(const char *path,char temp[DKRR_PATH],const unsigned char *bytes,size_t length,unsigned mode) {
+ int fd=-1;
+ for(unsigned slot=0;slot<128;++slot) {
+  if(snprintf(temp,DKRR_PATH,"%s.dkrr.%u.tmp",path,slot)>=DKRR_PATH)return -1;
+  fd=open(temp,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW,(mode_t)mode);
+  if(fd>=0)break;
+  if(errno!=EEXIST)return -1;
+ }
+ if(fd<0)return -1;
+ size_t at=0;int good=1;
+ while(at<length){ssize_t n=write(fd,bytes+at,length-at);if(n<0&&errno==EINTR)continue;if(n<=0){good=0;break;}at+=(size_t)n;}
+ if(fchmod(fd,(mode_t)mode)<0||fsync(fd)<0)good=0;
+ if(close(fd)<0)good=0;
+ return good?0:-1;
+}
 int dkrr_register_source(const char *root,const char *app) {
  char folder[DKRR_PATH],path[DKRR_PATH],temp[DKRR_PATH];struct stat st;
  if(snprintf(folder,sizeof(folder),"%s/shadowmount",root)>=(int)sizeof(folder)||lstat(folder,&st)<0||!S_ISDIR(st.st_mode))return -1;
- if(snprintf(path,sizeof(path),"%s/manual.lst",folder)>=(int)sizeof(path)||snprintf(temp,sizeof(temp),"%s.dkrr.tmp",path)>=(int)sizeof(temp))return -1;
+ if(snprintf(path,sizeof(path),"%s/manual.lst",folder)>=(int)sizeof(path))return -1;
  int state=dkrr_regular(path,1);if(state<0)return -1;
  static unsigned char old[65536];size_t length=0;unsigned mode=0644;char before[41]={0};unsigned long long size=0;
  if(state==1){
@@ -29,7 +46,7 @@ int dkrr_register_source(const char *root,const char *app) {
  }
  size_t n=strlen(app);if(n>=DKRR_PATH||length+1+n+1>sizeof(old))return -1;
  if(length&&old[length-1]!='\n')old[length++]='\n';memcpy(old+length,app,n);length+=n;old[length++]='\n';
- if(dkrr_write_new(temp,old,length,mode)<0)return -1;
+ if(write_temporary(path,temp,old,length,mode)<0)return -1;
  if(state==0){if(dkrr_regular(path,1)!=0)return -1;}
  else {char current[41];unsigned long long now;if(dkrr_hash_file(path,current,&now)<0||now!=size||strcmp(current,before))return -1;}
  if(rename(temp,path)<0||dkrr_sync_parent(path)<0)return -1;
