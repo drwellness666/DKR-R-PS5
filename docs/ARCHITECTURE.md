@@ -86,13 +86,19 @@ folder. The game then follows its existing save/shutdown path and joins its I/O,
 controller and update workers. The same installation lease is upgraded to an
 exclusive lock before activation.
 
-Each file is atomically renamed over its old directory entry; the app folder
-itself remains in place for ShadowMountPlus' existing mount. eboot is replaced
+Changed program files are replaced atomically. Unchanged metadata and the loaded
+libc remain in place. The app folder keeps its identity for ShadowMountPlus'
+existing mount. eboot is replaced
 last among program files, followed by the complete installation manifest. A
 fsynced journal and old file copies allow the native entry point to restore an
 interrupted transaction before starting gameplay. Copies are retained throughout
 recovery so interruption of recovery is repeatable. A committed update is
-verified and its temporary recovery copy retired on the next launch. The manual
+verified and its temporary recovery copy retired on the next launch.
+
+The journal directory ancestry is synchronized before activation. A verified
+complete transaction is retired durably before cleanup deletes its journals or
+backups. An incomplete activation marker is abandoned only when the complete old
+app still matches. Metadata errors never mean missing files. The manual
 installer refuses a pending native transaction rather than racing or overwriting
 it. Unknown files, symlinks, hardlinks, mismatched files and downgrades are refused.
 

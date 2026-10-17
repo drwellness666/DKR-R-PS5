@@ -21,12 +21,14 @@ game retains its lease. Update-preference tests also reproduce the native
 zero-link-count metadata and check repeated save/load without changing an
 existing inode.
 
-The in-process installer is exercised in **194 subprocess operations** under
-address/undefined-behavior sanitizers: a real cut after each public file and
-manifest replacement, restart recovery, another cut during recovery, full-disk
-and rename failures, malformed signed tables, retained owner data, unknown files,
-symlinks/hardlinks and native zero-link metadata. Persistent denial of app-directory renames also leaves an unchanged previous installation startable without restoration writes. The app directory inode and
-an open mapping of the old executable remain valid during replacement.
+The in-process installer is exercised in **223 subprocess operations** under
+address/undefined-behavior sanitizers: cuts after every public-file step and the
+manifest, repeated recovery, write/rename failures and malformed signed tables.
+Cases also cover persistent write denial, partial activation markers, interrupted
+cleanup with reordered directory entries, metadata errors, journal-directory
+synchronization and upgrading the actual game lease. Owner data and the app's
+directory identity are retained; an old executable mapping remains valid during
+replacement.
 
 The native PS5 game and all three universal payloads compile and link with the public
 homebrew SDK. Every one of the **37** embedded program files was read back from
