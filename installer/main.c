@@ -28,6 +28,12 @@ extern int statvfs(const char*,struct statvfs*) __attribute__((weak));
 #ifndef DKRR_UPDATE_ONLY
 #define DKRR_UPDATE_ONLY 0
 #endif
+#ifndef DKRR_NETWORK_UPDATE
+#define DKRR_NETWORK_UPDATE 0
+#endif
+#if DKRR_NETWORK_UPDATE
+#include "network_gate.h"
+#endif
 static char data[DKRR_PATH],owned[DKRR_PATH],install[DKRR_PATH],live[DKRR_PATH],stage[DKRR_PATH],backup[DKRR_PATH],journal[DKRR_PATH];
 #ifndef DKRR_HOST_TEST
 extern int sceKernelSendNotificationRequest(int,void*,size_t,int);
@@ -144,6 +150,9 @@ static int prepare_stage(struct dkrr_manifest *m) {
 }
 int main(void) {
  setvbuf(stdout,NULL,_IOLBF,0);setvbuf(stderr,NULL,_IOLBF,0);
+#if DKRR_NETWORK_UPDATE
+ if(dkrr_network_commit()<0)return 10;
+#endif
  if(join(data,DKRR_INSTALL_ROOT,"dkrr")<0||join(owned,data,"roms")<0||join(install,data,"installation")<0||join(live,DKRR_INSTALL_ROOT,"homebrew/PPSA94678")<0)return 1;
  char staged_name[160];snprintf(staged_name,sizeof(staged_name),"staged-%s",release_stage_id);
  if(join(stage,install,staged_name)<0||join(journal,install,"transaction.manifest")<0)return 1;
@@ -155,7 +164,23 @@ int main(void) {
  for(size_t i=0;i<sizeof(leaves)/sizeof(leaves[0]);++i){char p[DKRR_PATH];unsigned mode=i==5?01777:i==6?0700:(i>=1&&i<=4)?0777:0755;if(join(p,data,leaves[i])<0||dkrr_mkdir(p,mode)<0)return 2;}
  char lockpath[DKRR_PATH];if(join(lockpath,data,"profile-us-v77/.app-run.lock")<0)return 2;
  int lock=open(lockpath,O_RDWR|O_CREAT|O_NOFOLLOW,0666);struct stat st;
- if(lock<0||fstat(lock,&st)<0||!S_ISREG(st.st_mode)||st.st_nlink>1||flock(lock,LOCK_EX|LOCK_NB)<0){if(lock>=0)close(lock);status("DKR-R is running or another install is active. Close it first.");return 2;}
+ int leased=-1;
+ if(lock>=0&&fstat(lock,&st)==0&&S_ISREG(st.st_mode)&&st.st_nlink<=1) {
+#if DKRR_NETWORK_UPDATE
+  // The in-game client has committed and requested orderly shutdown. Its
+  // shared lease remains held until every game I/O worker has stopped.
+  struct timespec start,now;
+  if(clock_gettime(CLOCK_MONOTONIC,&start)==0)do {
+   leased=flock(lock,LOCK_EX|LOCK_NB);if(leased==0)break;
+   if(errno!=EWOULDBLOCK&&errno!=EAGAIN)break;
+   usleep(100000);
+   if(clock_gettime(CLOCK_MONOTONIC,&now)<0)break;
+  }while(now.tv_sec-start.tv_sec<120);
+#else
+  leased=flock(lock,LOCK_EX|LOCK_NB);
+#endif
+ }
+ if(leased<0){if(lock>=0)close(lock);status("DKR-R is running or another install is active. Close it first.");return 2;}
  if(fchmod(lock,0666)<0){close(lock);return 2;}
  if(recover()<0){status("Interrupted installation needs inspection; existing files preserved.");close(lock);return 3;}
  had_live=exists_dir(live);static struct dkrr_manifest old,new;
