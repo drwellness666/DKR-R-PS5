@@ -35,14 +35,14 @@ You need a PS5 already set up for **native homebrew**, an **ELF receiver**,
 PAL ROMs are unsupported. Test sessions used firmware 13.60, Relapse / WebKit
 Autoloader 0.6.1, kstuff-lite and ShadowMountPlus with an LG C1.
 
-1. Get **DKRR-Installer.elf** from the beta release.
+1. Get **DKRR-Installer.elf** from the matching release.
 2. Put both ROMs in a folder named **DKRR** at the root of a USB drive. File names do not matter.
 3. Connect the drive, close DKR-R and send the installer to your PS5's ELF receiver. Wait for its completion notification.
 4. Once ShadowMountPlus discovers the app, start **DKR-R** from its PS5 icon.
 
 After installation, no PC, USB drive or ELF receiver is needed to play or use in-game updates. Your normal
 homebrew setup is still required after a console restart. To update, use **Touchpad → About DKR-R → PS5 updates**, or close the game and
-send **DKRR-Update.elf** once. Upgrading from an older beta requires this one-time manual update to add the native installer. Settings, progress and texture packs stay on the
+send **DKRR-Update.elf** once. Settings, progress and texture packs stay on the
 console. No compilation is needed for this ELF route.
 [Installation help](docs/INSTALLER.md) · [Updates](docs/UPDATES.md).
 
@@ -59,7 +59,8 @@ links for its community texture pack. Import it under **Textures** and use
 
 - Brief water flicker when entering a **Tracks preview**; Adventure water was reported stable.
 - Occasional **microstutters**, especially with heavier graphics settings or texture packs.
-- HDR10 is a development feature, absent from Beta 3.4 downloads. Compatibility and experimental-feature details are in the [validation report](docs/VALIDATION.md).
+- Upgrading an older registered beta to the new HDR-capable title is still being prepared. Keep your existing installation and saves.
+- HDR10 and the newest installation, update and controller features still need their final PS5 checks. See [test status](docs/VALIDATION.md).
 
 [Known issues and compatibility](docs/KNOWN_ISSUES.md).
 

@@ -2,6 +2,9 @@
 
 ## 1.0 — in preparation
 
+- Recover preference changes after interrupted display, HDR or version-selection writes; synchronize the directory and reject named pipes without blocking.
+- Continue ROM discovery on later USB drives when an earlier root is crowded; reject unrelated same-size files from their headers before bulk reads.
+- Correct older-beta upgrade guidance and consolidate the pre-release implementation review.
 - Keep DKR-R’s original typography unchanged: Racing Banana menu faces, Jumpman headings and digits, Selawik reading text and the original fallback policy.
 - Add optional HDR10 under Graphics → Display, with paper white, peak brightness, highlight expansion and a calibration pattern. SDR remains the default.
 - Keep interface brightness separate from scene highlights and compose both into a 10-bit PQ output.

@@ -37,18 +37,17 @@ Benötigt werden eine PS5 mit eingerichteter **nativer Homebrew**, ein
 nutzten Firmware 13.60, Relapse / WebKit Autoloader 0.6.1, kstuff-lite und
 ShadowMountPlus mit einem LG C1.
 
-1. **DKRR-Installer.elf** aus dem Beta-Release herunterladen.
+1. **DKRR-Installer.elf** aus dem passenden Release herunterladen.
 2. Beide ROMs auf einen USB-Stick in den Ordner **DKRR** direkt im Hauptverzeichnis legen. Die Dateinamen sind egal.
 3. Stick anschließen, DKR-R schließen und den Installer an den ELF-Empfänger senden. Auf die Abschlussmeldung warten.
 4. Sobald ShadowMountPlus die App erkannt hat, **DKR-R** über das PS5-Icon starten.
 
-Nach der Installation werden PC und USB-Stick zum Spielen nicht benötigt. Die
-übliche Homebrew-Einrichtung bleibt nach einem Konsolenneustart erforderlich.
-Updates unter **Touchpad → About DKR-R → PS5 updates** aufrufen oder das Spiel
-schließen und **DKRR-Update.elf** einmal senden. Einstellungen, Fortschritt und
-Texturpakete bleiben auf der Konsole.
-Für diesen ELF-Weg ist keine eigene Kompilation nötig.
-Für Spielen und Internet-Updates sind danach weder PC, USB-Stick noch laufender ELF-Empfänger nötig. Beim Wechsel von einer älteren Beta wird die neue Update-ELF einmalig benötigt; sie ergänzt den nativen Installer.
+Nach der Installation sind zum Spielen und für Internet-Updates weder PC,
+USB-Stick noch laufender ELF-Empfänger nötig. Die übliche Homebrew-Einrichtung
+bleibt nach einem Konsolenneustart erforderlich. Updates unter **Touchpad →
+About DKR-R → PS5 updates** aufrufen oder das Spiel schließen und
+**DKRR-Update.elf** einmal senden. Einstellungen, Fortschritt und Texturpakete
+bleiben auf der Konsole. Für diesen ELF-Weg ist keine eigene Kompilation nötig.
 [Installationshilfe](docs/INSTALLER.md) · [Updates](docs/UPDATES.md).
 
 ## 🎨 Optionales Texturpaket
@@ -64,7 +63,8 @@ des Autors angeboten. [Paket-Hilfe](docs/CONTROLS.md#texture-packs-and-mods).
 
 - Kurzes Wasserflackern beim Einstieg in eine **Tracks-Vorschau**; Adventure-Wasser wurde als stabil gemeldet.
 - Gelegentliche **Mikroruckler**, besonders bei aufwendigen Grafikeinstellungen oder Texturpaketen.
-- HDR10 gehört zum Entwicklungsstand und ist in den Beta-3.4-Downloads noch nicht enthalten. Details zur Kompatibilität und zu experimentellen Funktionen stehen im [Testbericht](docs/VALIDATION.md).
+- Das Upgrade einer bereits registrierten älteren Beta auf den neuen HDR-fähigen Titel ist noch in Vorbereitung. Vorhandene Installation und Spielstände behalten.
+- HDR10 und die neuesten Installations-, Update- und Controller-Funktionen brauchen noch ihre abschließenden PS5-Tests. Siehe [Teststand](docs/VALIDATION.md).
 
 [Bekannte Fehler und Kompatibilität](docs/KNOWN_ISSUES.md).
 
