@@ -10,6 +10,7 @@
 #include <map>
 #include <string>
 #include <thread>
+#include <sys/stat.h>
 namespace {
 std::string mode,channel,old_channel,payload,sent;
 struct Record {std::string url;std::size_t at=0;};std::map<int,Record> records;
@@ -19,6 +20,10 @@ bool is_catalog(int id){return records[id].url.find("raw.githubusercontent.com/"
 bool is_redirect(int id){return (mode=="redirect"||mode=="bad-redirect")&&!is_catalog(id)&&records[id].url.find("github.com/")!=std::string::npos;}
 }
 extern "C" {
+int __real_lstat(const char*,struct stat*);
+int __real_fstat(int,struct stat*);
+int __wrap_lstat(const char* path,struct stat* st){int r=__real_lstat(path,st);if(r==0&&mode=="zero-links")st->st_nlink=0;return r;}
+int __wrap_fstat(int fd,struct stat* st){int r=__real_fstat(fd,st);if(r==0&&mode=="zero-links")st->st_nlink=0;return r;}
 int sceNetPoolCreate(const char*,int,int){return 1;} int sceNetPoolDestroy(int){return 0;}
 int sceSslInit(std::size_t){return 2;} int sceSslTerm(int){return 0;}
 int sceHttpInit(int,int,std::size_t){return 3;} int sceHttpTerm(int){return 0;}
@@ -62,10 +67,11 @@ int main(int argc,char** argv){
     if(mode=="oversize")payload+='x';
     using State=dkrr::updates::State;
     const auto wait=[&](auto predicate){auto end=std::chrono::steady_clock::now()+std::chrono::seconds(5);while(std::chrono::steady_clock::now()<end){if(predicate())return;std::this_thread::sleep_for(std::chrono::milliseconds(2));}assert(false);};
-    assert(dkrr::updates::set_automatic_check(mode=="auto"));
+    const bool automatic=mode=="auto"||mode=="zero-links";
+    assert(dkrr::updates::set_automatic_check(automatic));
     dkrr::updates::initialize();
-    assert(dkrr::updates::automatic_check()==(mode=="auto"));
-    if(mode!="auto")dkrr::updates::check();
+    assert(dkrr::updates::automatic_check()==automatic);
+    if(!automatic)dkrr::updates::check();
     wait([]{return dkrr::updates::view().state!=State::Checking;});
     auto state=dkrr::updates::view().state;
     if(mode=="offline"){assert(state==State::Unavailable);}
@@ -75,12 +81,14 @@ int main(int argc,char** argv){
         assert(state==State::Available);dkrr::updates::install();
         if(mode=="cancel"){wait([]{return dkrr::updates::view().received>0;});dkrr::updates::cancel();}
         wait([]{auto s=dkrr::updates::view().state;return s==State::Closing||s==State::Failed;});
-        const bool good=mode=="good"||mode=="redirect"||mode=="short-send"||mode=="auto";
+        const bool good=mode=="good"||mode=="redirect"||mode=="short-send"||automatic;
         assert(dkrr::updates::close_requested()==good);
         if(good){assert(dkrr::updates::view().state==State::Closing&&sent==payload+"DKRRGO1\n");}
         else assert(dkrr::updates::view().state==State::Failed);
     }
     dkrr::updates::shutdown();
+    assert(dkrr::updates::set_automatic_check(false));
+    assert(!dkrr::updates::automatic_check());
     if(mode=="digest"||mode=="oversize"||mode=="signature"||mode=="offline"||mode=="current"||mode=="cancel"||mode=="bad-redirect")assert(sockets==0&&sent.empty());
     if(mode=="receiver")assert(sent.empty());
     if(mode=="no-ack")assert(sent==payload&&!dkrr::updates::close_requested());
