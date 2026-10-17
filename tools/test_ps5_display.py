@@ -46,5 +46,6 @@ with tempfile.TemporaryDirectory(prefix='dkrr-display-') as temporary:
                         f'-DDKR_DISPLAY_DATA_ROOT="{work / str(hfr)}"', f'-DDKR_PS5_HIGH_REFRESH_BUILD={hfr}', '-DDKR_PS5_GAME_DISPLAY=1',
                         '-I' + str(work / 'include'), '-I' + str(ROOT / 'src'),
                         str(ROOT / 'src/ps5_display_options.cpp'), str(ROOT / 'src/ps5_display_videoout.cpp'),
+                        str(ROOT / 'src/ps5_hdr_options.cpp'),
                         str(ROOT / 'tests/ps5_display.cpp'), '-o', str(output)], check=True)
         subprocess.run([str(output)], env=env, check=True)
