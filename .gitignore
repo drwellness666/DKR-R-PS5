@@ -21,3 +21,5 @@ __pycache__/
 *.o
 *.pcm
 *.wav
+*.pem
+*.key

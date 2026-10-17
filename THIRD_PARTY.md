@@ -82,3 +82,16 @@ and third-party texture packs. Separate universal ELF release previews contain
 compiled program code and upstream interface/title artwork; original controller
 PCM is generated from user ROMs on the console. Matching source, notices and
 pinned build recipes accompany those previews.
+
+## Native Internet updates
+
+The HTTPS service sequence in `src/ps5_internet_update.cpp` follows
+[ps5-native-app-boilerplate](https://github.com/blackbearreloaded/ps5-native-app-boilerplate/blob/44ae1dab529654eac795d2a7c4f5a0425102b8d7/examples/update-check/update_check.c),
+Copyright 2026 BlackBearReloaded, GPL-3.0-or-later. The public system certificate
+store remains authoritative; certificate and host verification are never disabled.
+Signature checking uses the optional Ed25519 module of the already pinned
+Monocypher dependency (BSD-2-Clause / CC0-1.0), and SHA-256 uses the already pinned
+Mbed TLS dependency (Apache-2.0). Their full licence notices are retained in `licenses/Monocypher.md` and
+`licenses/Mbed-TLS.md`, and copied into the installed app.
+No additional proprietary SDK, network service library or private release key is
+shipped. The in-game updater uses the console's existing ELF receiver over loopback.

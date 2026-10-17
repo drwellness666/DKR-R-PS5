@@ -7,7 +7,7 @@ Ein inoffizieller PS5-Port von [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R
 
 [📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇬🇧 English](README.md) · [📖 Hilfe](docs/README.md) · [🐛 Fehler melden](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Beta 3.2 Preview.** Kompakte Tastenbelegung und zusätzliche originale Controller-Töne.
+**Beta 3.3 Kandidat.** Signierte Internet-Updates direkt in der vorhandenen PS5-Oberfläche.
 Das Spiel wurde auf PS5 gespielt; Prüfungen der neuen Funktionen stehen im [Testbericht](docs/VALIDATION.md).
 
 ## 🎮 Was dieser Port ergänzt
@@ -20,7 +20,7 @@ Das Spiel wurde auf PS5 gespielt; Prüfungen der neuen Funktionen stehen im [Tes
 | Controllerfreundliche Menüs | Vollgroße Oberfläche bei 4K, klare Versionskarten, eine Controller-Grafik mit aktueller Belegung und kompakte Tastenzuordnung. Klassisches Gasgeben mit Kreuz erhält das Gas-Antippen. |
 | DualSense-Extras | Optionale Ballon-Lichtfarben, Gyrosteuerung, L2-Item-Effekte und Item-, Sammel-, Münz-, Hupen- und Boostfeld-Töne über den Controller-Lautsprecher. Gemeinsam unter **Controls → PS5**. |
 | TV-Ausgabe | Wahlweise 1080p, 1440p und **4K**, dazu experimentelle **120 Hz / VRR**. Match display folgt der aktiven Ausgabe; die tatsächlichen FPS hängen von Szene und Einstellungen ab. |
-| Installation und Updates | Eine ROM-freie Installer-ELF, später eine Update-ELF. ROM-Import und Vorbereitung der Controller-Geräusche erfolgen auf der PS5. |
+| Installation und Updates | Eine ROM-freie Installer-ELF. Spätere Updates werden im Spiel heruntergeladen oder als Update-ELF gesendet. ROM-Import und Controller-Töne werden auf der PS5 vorbereitet. |
 | Integriertes Speichern und Diagnose | Direkte native Speicherfunktion, lokale Fehlerprotokolle und eine Bildzeitmessung. Ein zusätzlicher Save-Helper gehört nicht zu dieser Version. |
 
 Modern/Accurate-Darstellung, HD-Texturpakete, Mods, Online-Funktionen und
@@ -43,8 +43,9 @@ ShadowMountPlus mit einem LG C1.
 
 Nach der Installation werden PC und USB-Stick zum Spielen nicht benötigt. Die
 übliche Homebrew-Einrichtung bleibt nach einem Konsolenneustart erforderlich.
-Für ein Update das Spiel schließen und die neue **DKRR-Update.elf** einmal
-senden. Einstellungen, Fortschritt und Texturpakete bleiben auf der Konsole.
+Updates unter **Touchpad → About DKR-R → PS5 updates** aufrufen oder das Spiel
+schließen und **DKRR-Update.elf** einmal senden. Einstellungen, Fortschritt und
+Texturpakete bleiben auf der Konsole.
 Für diesen ELF-Weg ist keine eigene Kompilation nötig.
 [Installationshilfe](docs/INSTALLER.md) · [Updates](docs/UPDATES.md).
 

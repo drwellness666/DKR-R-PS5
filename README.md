@@ -7,7 +7,7 @@ An unofficial PS5 port of [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R).
 
 [📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇩🇪 Deutsch](README.de.md) · [📖 Help](docs/README.md) · [🐛 Report a problem](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Beta 3.2 preview.** Compact controller mapping and new original controller cues.
+**Beta 3.3 candidate.** Signed Internet updates in the existing PS5 interface.
 Gameplay was tested on PS5; new features are covered by the [validation report](docs/VALIDATION.md).
 
 ## 🎮 What this port adds
@@ -20,7 +20,7 @@ Gameplay was tested on PS5; new features are covered by the [validation report](
 | Controller-friendly menus | Full-size interface at 4K, clear version cards, a live controller diagram and compact button mapping. Classic Cross acceleration preserves gas tapping. |
 | DualSense extras | Optional held-balloon light colors; gyro steering, L2 item feedback and original item, pickup, coin, horn and boost-pad sounds. Together under **Controls → PS5**. |
 | TV output | Optional 1080p, 1440p and **4K**, plus experimental **120 Hz / VRR**. Match display follows the active output; actual FPS depend on the scene and settings. |
-| Installation and updates | One ROM-free installer ELF, then one update ELF for later versions. ROM import and controller-sound preparation happen on the PS5. |
+| Installation and updates | One ROM-free installer ELF. Later updates can be downloaded in the game or sent as one update ELF. ROM import and controller-sound preparation happen on the PS5. |
 | Built-in storage and diagnostics | Direct native save handling, local error journals and a frame-time capture tool. No separate save helper is part of this version. |
 
 Modern/Accurate presentation, HD texture packs, mods, online features and
@@ -40,9 +40,9 @@ Autoloader 0.6.1, kstuff-lite and ShadowMountPlus with an LG C1.
 4. Once ShadowMountPlus discovers the app, start **DKR-R** from its PS5 icon.
 
 After installation, the PC and USB drive are not needed to play. Your normal
-homebrew setup is still required after a console restart. To update, close the
-game and send the new **DKRR-Update.elf** once. Settings, progress and texture
-packs stay on the console. No compilation is needed for this ELF route.
+homebrew setup is still required after a console restart. To update, use **Touchpad → About DKR-R → PS5 updates**, or close the game and
+send **DKRR-Update.elf** once. Settings, progress and texture packs stay on the
+console. No compilation is needed for this ELF route.
 [Installation help](docs/INSTALLER.md) · [Updates](docs/UPDATES.md).
 
 ## 🎨 Optional texture pack

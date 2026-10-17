@@ -1,8 +1,8 @@
 {
-  "tag": "ps5-beta.3.2",
+  "tag": "ps5-beta.3.3",
   "upstream_version": "1.0.6",
   "source_only": false,
-  "qualification": "Controller-experience preview: native build and automated checks; physical acceptance recorded separately in docs/VALIDATION.md.",
+  "qualification": "Native Internet-update candidate with signed manifests; verification scope is recorded in docs/VALIDATION.md.",
   "development_candidate": true,
-  "installer_sequence": 5
+  "installer_sequence": 6
 }
