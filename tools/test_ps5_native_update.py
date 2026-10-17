@@ -32,7 +32,7 @@ def main():
         package=t/'DKRR-Update.dkru';build(new,new_receipt,8,package)
         original_package=package.read_bytes()
         def sign():
-            data=package.read_bytes();body=f'DKRR-UPDATE-2\nPPSA94678\n8\nps5-beta.3.5\n{len(data)}\n{hashlib.sha256(data).hexdigest()}\nDKRR-Update.dkru\n'.encode();(t/'body').write_bytes(body)
+            data=package.read_bytes();body=f'DKRR-UPDATE-2\nPPSA94678\n8\nps5-v1.0.0\n{len(data)}\n{hashlib.sha256(data).hexdigest()}\nDKRR-Update.dkru\n'.encode();(t/'body').write_bytes(body)
             signature=subprocess.check_output(['openssl','pkeyutl','-sign','-rawin','-inkey',str(key),'-in',str(t/'body')]);(t/'channel').write_bytes(body+signature.hex().encode()+b'\n')
         sign()
         flags=['-O1','-g','-fsanitize=address,undefined','-fno-omit-frame-pointer','-DMBEDTLS_CONFIG_FILE="legacy_mod_hash_config.h"','-I'+str(ROOT/'src'),'-I'+str(t),'-I'+str(deps/'monocypher/src'),'-I'+str(deps/'monocypher/src/optional'),'-I'+str(deps/'mbedtls/include')]

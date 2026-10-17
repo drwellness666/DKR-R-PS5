@@ -1,20 +1,84 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Build the real PS5 interface font loader on the host with Racing Banana and Selawik fallback."""
-import argparse,pathlib,subprocess,tempfile
-root=pathlib.Path(__file__).resolve().parent.parent
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('game_work',type=pathlib.Path,nargs='?');p.add_argument('--cache',action='append',type=pathlib.Path,default=[]);a=p.parse_args()
-prepared=None
-if a.game_work is None:
- prepared=tempfile.TemporaryDirectory(prefix='dkrr-font-inputs-');a.game_work=pathlib.Path(prepared.name)/'game';cmd=['python3',str(root/'tools/prepare_controller_test_sources.py'),str(a.game_work)]
- for cache in a.cache:cmd+=['--cache',str(cache)]
- subprocess.run(cmd,check=True)
-s=a.game_work.resolve()/'source';game=s/'DKR-R/runtime-recomp/src/game';imgui=s/'rt64-game/src/contrib/imgui'
-with tempfile.TemporaryDirectory(prefix='dkrr-console-fonts-') as temp:
- temp=pathlib.Path(temp);font=temp/'font.o';racing=temp/'racing.o';out=temp/'fonts'
- subprocess.run(['clang','-std=c11','-O1','-I',str(game/'generated'),'-c',str(game/'generated/selawik_font.c'),'-o',str(font)],check=True)
- subprocess.run(['clang','-std=c11','-O1','-I',str(game/'generated'),'-c',str(game/'generated/racing_banana_font.c'),'-o',str(racing)],check=True)
- subprocess.run(['clang++','-D__PROSPERO__','-std=c++20','-O1','-Wno-nontrivial-memcall','-I',str(root/'src'),'-I',str(game),'-I',str(imgui),str(root/'tests/console_fonts.cpp'),str(font),str(racing),*[str(imgui/name) for name in ['imgui.cpp','imgui_draw.cpp','imgui_widgets.cpp','imgui_tables.cpp']],'-o',str(out)],check=True)
- subprocess.run([str(out)],check=True)
+"""Verify and bake DKR-R's unchanged upstream font loader without a ROM."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import tarfile
+import tempfile
 
-if prepared is not None:prepared.cleanup()
+root = Path(__file__).resolve().parent.parent
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('game_work', type=Path, nargs='?')
+parser.add_argument('--cache', type=Path, action='append', default=[])
+args = parser.parse_args()
+
+
+def launcher_function(text):
+    start = text.index('void LoadLauncherFonts() {')
+    return text[start:text.index('\nclass ControlFontScope', start)]
+
+
+with tempfile.TemporaryDirectory(prefix='dkrr-upstream-fonts-') as directory:
+    work = Path(directory)
+    game_work = args.game_work
+    if game_work is None:
+        game_work = work / 'game'
+        command = ['python3', str(root / 'tools/prepare_controller_test_sources.py'), str(game_work)]
+        for cache in args.cache:
+            command += ['--cache', str(cache)]
+        subprocess.run(command, check=True)
+
+    source = game_work.resolve() / 'source'
+    game = source / 'DKR-R/runtime-recomp/src/game'
+    imgui = source / 'rt64-game/src/contrib/imgui'
+    spec = next(row for row in json.loads((root / 'GAME_SOURCES.json').read_text())['sources']
+                if row['name'] == 'DKR-R')
+    caches = [game_work, game_work / 'downloads', *args.cache, root / 'vendor']
+    archive = next((cache / spec['file'] for cache in caches if (cache / spec['file']).is_file()), None)
+    if archive is None or hashlib.sha256(archive.read_bytes()).hexdigest() != spec['sha256']:
+        raise SystemExit('Missing exact pinned upstream archive for font comparison')
+    with tarfile.open(archive) as upstream:
+        members = {member.name.split('/', 1)[1]: member for member in upstream.getmembers()
+                   if member.isfile() and '/' in member.name}
+
+        def original(name):
+            return upstream.extractfile(members['runtime-recomp/src/game/' + name]).read()
+
+        actual_loader = launcher_function((game / 'runtime_ui.cpp').read_text())
+        if actual_loader != launcher_function(original('runtime_ui.cpp').decode()):
+            raise SystemExit('Production font loader differs from upstream DKR-R')
+        console_layout_flag = '''
+// Console pages use one vertical flow so D-pad movement follows the reading order.
+#if defined(__PROSPERO__)
+constexpr bool kConsoleMenuLayout = true;
+#else
+constexpr bool kConsoleMenuLayout = false;
+#endif
+'''
+        paddock = (game / 'runtime_ui_paddock.inl').read_text()
+        if paddock.replace(console_layout_flag, '') != original('runtime_ui_paddock.inl').decode():
+            raise SystemExit('Typography or font metrics differ from upstream DKR-R')
+        for face in ('racing_banana', 'jumpman', 'selawik'):
+            for suffix in ('c', 'h'):
+                name = f'generated/{face}_font.{suffix}'
+                if (game / name).read_bytes() != original(name):
+                    raise SystemExit('Font bytes differ from upstream: ' + name)
+
+    (work / 'upstream_launcher_fonts.inl').write_text(actual_loader)
+    objects = []
+    for face in ('racing_banana', 'jumpman', 'selawik'):
+        output = work / (face + '.o')
+        subprocess.run(['clang', '-std=c11', '-O1', '-I', str(game / 'generated'), '-c',
+                        str(game / f'generated/{face}_font.c'), '-o', str(output)], check=True)
+        objects.append(str(output))
+    executable = work / 'fonts'
+    subprocess.run(['clang++', '-D__PROSPERO__', '-std=c++20', '-O1', '-Wno-nontrivial-memcall',
+                    '-I', str(work), '-I', str(game), '-I', str(imgui),
+                    str(root / 'tests/console_fonts.cpp'), *objects,
+                    *[str(imgui / name) for name in ('imgui.cpp', 'imgui_draw.cpp', 'imgui_widgets.cpp', 'imgui_tables.cpp')],
+                    '-o', str(executable)], check=True)
+    subprocess.run([str(executable)], check=True)
+    print('PASS exact upstream font function, font data, typography metrics and fallback policy')

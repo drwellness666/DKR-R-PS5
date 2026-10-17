@@ -21,7 +21,7 @@ def package(root,output):
  output.parent.mkdir(parents=True,exist_ok=True)
  with zipfile.ZipFile(output,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as archive:
   for name,p in sorted(actual.items()):archive.write(p,'DKR-R-PS5/'+name)
- return {'file':output.name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'size':output.stat().st_size,'source_files':len(actual),'scope':'ROM-free source beta only; no console or private build output'}
+ return {'file':output.name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'size':output.stat().st_size,'source_files':len(actual),'scope':'ROM-free integration source; no personal game data or build output'}
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('source',type=pathlib.Path);p.add_argument('output',type=pathlib.Path);a=p.parse_args()
  try:result=package(a.source,a.output)
