@@ -1,0 +1,26 @@
+{
+  "rt64": {
+    "patch": "0007-rt64-ps5-hdr-present.patch",
+    "sha256": "132a9c7f4da38919c06e54bebc25cf1d34b7f8963c2f2c33935321747f1fd72b",
+    "files": {
+      "src/hle/rt64_present_queue.cpp": {
+        "original_sha256": "50994dab32220142b2963c28a7809dd8b11604c9cdca2fe191285008169e1aef",
+        "patched_sha256": "9d28f0c6ed9dff46e62581ee336b7a0dbfed0cf735817a381b262ed55adb29ef"
+      },
+      "src/gui/rt64_inspector.cpp": {
+        "original_sha256": "cdc807b36490dedf65adb3f23ee77e4666944a12a0129d6cc2c2f28b50fdf2aa",
+        "patched_sha256": "5da586ff1022f22880aa25140601efe7f239cd2ceb8b4d64b56225344aee2a1e"
+      }
+    }
+  },
+  "plume": {
+    "patch": "0008-plume-ps5-hdr-swapchain.patch",
+    "sha256": "0b5ce7fd8b12bf0a2ca0a0acc009124116f340bc6c71a2cc4f2c5f417d9cd7f9",
+    "files": {
+      "src/contrib/plume/plume_vulkan.cpp": {
+        "original_sha256": "ece69b0ecd20ce89794f344e293dcc55a614d728e6bacc14c3066f3835419913",
+        "patched_sha256": "ecb2d57f2193c26e5e102a8dbacb6ab7f3b5b19fc28b447442b96c26f3a57e35"
+      }
+    }
+  }
+}

@@ -35,7 +35,7 @@
 +        message(FATAL_ERROR "Select at least one owned PS5 ROM revision")
 +    endif()
 +    file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/dkr-ps5-profile.json"
-+        CONTENT "{\"v77\":${DKR_PAYLOAD_V77_ENABLED},\"v80\":${DKR_PAYLOAD_V80_ENABLED},\"interface_fonts\":\"Selawik-OFL\"}\n")
++        CONTENT "{\"v77\":${DKR_PAYLOAD_V77_ENABLED},\"v80\":${DKR_PAYLOAD_V80_ENABLED},\"interface_fonts\":\"Racing-Banana+Selawik\"}\n")
 +endif()
 +
  if(DKR_RUNTIME_BUILD_GENERATED)
@@ -73,7 +73,17 @@
      # Layer selection is a checked build-stage patch; never edit RT64 itself.
      dkr_stage_patch(rt64 "${DKR_RT64_SOURCE}" texture-layer-priority
          "${DKRPORT_ROOT}/patches/rt64/texture-layer-priority.patch"
-@@ -639,7 +669,9 @@
+@@ -620,6 +650,9 @@
+     endif()
+     include("${CMAKE_CURRENT_LIST_DIR}/cmake/EnhancedWater.cmake")
+     include("${CMAKE_CURRENT_LIST_DIR}/cmake/HleCommandGuard.cmake")
++    if(PS5)
++        include("${DKR_PS5_ADAPTERS_ROOT}/../tools/StagePS5HDR.cmake")
++    endif()
+     if(MSVC AND TARGET rt64)
+         # RT64 enables /MP internally. Ensure all compiler workers serialize
+         # writes to the target PDB so clean RelWithDebInfo builds are reliable.
+@@ -639,7 +672,9 @@
      set(DKR_V80_SYMBOL_MAP
          "${CMAKE_BINARY_DIR}/generated/dkr_v80_symbol_map.hpp")
      include("${CMAKE_CURRENT_LIST_DIR}/cmake/RevisionSymbolMap.cmake")
@@ -84,7 +94,7 @@
  
      # Each ROM revision contributes only its generated CPU payload. The
      # frontend, renderer, audio, input, netplay and settings runtime are linked
-@@ -678,6 +710,9 @@
+@@ -678,6 +713,9 @@
              "dkr_legacy_character_cinematic_portrait"
              "dkr_legacy_character_race_sound"
              "dkr_legacy_character_play_sound")
@@ -94,7 +104,7 @@
          foreach(REQUIRED_INPUT_HOOK IN LISTS REQUIRED_INPUT_HOOKS)
              set(REQUIRED_INPUT_HOOK_FOUND FALSE)
              foreach(GENERATED_FILE IN LISTS GENERATED_FILES)
-@@ -739,13 +774,17 @@
+@@ -739,13 +777,17 @@
          set(DKR_GENERATED_FILE_COUNT "${TOTAL_GENERATED_COUNT}" PARENT_SCOPE)
      endfunction()
  
@@ -119,14 +129,14 @@
  endif()
  
  if(DKR_RUNTIME_BUILD_GENERATED)
-@@ -854,7 +893,26 @@
+@@ -854,7 +896,26 @@
          set_property(SOURCE resources/dkr-r.rc APPEND PROPERTY COMPILE_DEFINITIONS
              "DKR_RELEASE_RESOURCE_VERSION=${DKR_RELEASE_RESOURCE_VERSION},${DKR_RELEASE_BUILD_NUMBER}")
      endif()
 -    if(ANDROID)
 +    if(PS5)
-+        # Public PS5 builds embed only Selawik (OFL), without the separately licensed fonts.
-+        list(FILTER DKR_GAME_SOURCES EXCLUDE REGEX "generated/(jumpman_font|racing_banana_font)\\.c$")
++        # Racing Banana is the primary face; Selawik supplies missing glyphs.
++        list(FILTER DKR_GAME_SOURCES EXCLUDE REGEX "generated/jumpman_font\\.c$")
 +        # Native CRT/linking is supplied by the public PS5 toolchain adapter.
 +        add_library(DKRPortGame STATIC ${DKR_GAME_SOURCES})
 +        set_source_files_properties(src/game/game_main.cpp PROPERTIES
@@ -147,7 +157,7 @@
          add_library(DKRPortGame SHARED ${DKR_GAME_SOURCES} src/android/android_platform.cpp src/android/mobile_ui.cpp)
          target_link_libraries(DKRPortGame PRIVATE SDL2::SDL2 SDL2::SDL2main android log)
      else()
-@@ -901,13 +959,14 @@
+@@ -901,13 +962,14 @@
      # unresolved on Linux. MSVC is order-independent, and this ordering keeps
      # both platforms on the same single-runtime link graph.
      target_link_libraries(DKRPortGame PRIVATE
@@ -165,7 +175,7 @@
      if(MSVC)
          target_compile_options(DKRPortGame PRIVATE /FS)
      endif()
-@@ -947,6 +1006,9 @@
+@@ -947,6 +1009,9 @@
                      "$<TARGET_FILE_DIR:DKRPortGame>/SDL2.dll"
                  VERBATIM
              )
@@ -1867,7 +1877,7 @@
  #include "runtime_ui.hpp"
  #include "runtime_portable.hpp"
  #include "render_power_policy.hpp"
-@@ -19,6 +22,13 @@
+@@ -19,6 +22,14 @@
  #include "generated/jumpman_font.h"
  #include "generated/racing_banana_font.h"
  #include "generated/selawik_font.h"
@@ -1876,12 +1886,13 @@
 +#include "ps5_menu_layout.hpp"
 +#include "ps5_controller_diagram.hpp"
 +#include "ps5_display_options.h"
++#include "ps5_hdr_options.h"
 +#include "ps5_diagnostics.h"
 +#endif
  #include "countdown_tone_policy.hpp"
  #include "custom_tracks.hpp"
  #include "launcher_render_policy.hpp"
-@@ -64,6 +74,9 @@
+@@ -64,6 +75,9 @@
  #include "startup_performance.hpp"
  #include "runtime_telemetry.hpp"
  #include "runtime_texture_packs.hpp"
@@ -1891,7 +1902,7 @@
  #include "save_manager.hpp"
  #include "runtime_save_routing.hpp"
  #include "texture_pack_browser_policy.hpp"
-@@ -477,7 +490,7 @@
+@@ -477,7 +491,7 @@
  }
  bool g_online_guide_do_not_show_again = true;
  bool g_online_guide_reopen_requested = false;
@@ -1900,7 +1911,7 @@
  RefreshRate g_modern_refresh_mode = RefreshRate::Display;
  #elif defined(__ANDROID__)
  // Conservative first-use defaults only. The settings loader restores all
-@@ -489,7 +502,7 @@
+@@ -489,7 +503,7 @@
  int g_modern_refresh_target = 60;
  #if defined(DKR_IOS)
  Resolution g_modern_resolution = Resolution::Original2x;
@@ -1909,7 +1920,7 @@
  Resolution g_modern_resolution = Resolution::Original2x;
  #else
  Resolution g_modern_resolution = Resolution::Auto;
-@@ -498,7 +511,7 @@
+@@ -498,7 +512,7 @@
  Antialiasing g_modern_antialiasing = Antialiasing::None;
  #if defined(DKR_IOS)
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
@@ -1918,7 +1929,7 @@
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::Off;
  #else
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
-@@ -551,6 +564,7 @@
+@@ -551,6 +565,7 @@
  std::string g_texture_pack_manage_id;
  std::string g_texture_pack_remove_id;
  std::string g_texture_pack_remove_name;
@@ -1926,7 +1937,7 @@
  // Set when an action in Track Lab (import, arm, play) switched the presentation
  // profile to Modern on the player's behalf. Shown in Track Lab and Graphics,
  // cleared when the player changes the profile there by hand.
-@@ -680,7 +694,11 @@
+@@ -680,7 +695,11 @@
  constexpr int kPageTextures = 8;
  constexpr int kMenuPageCount = 9;
  // Stable page IDs, explicit visual order for both pointer and controller use.
@@ -1938,7 +1949,7 @@
  int StepSidebarSelection(int current,int direction) {
      const auto found=std::find(kSidebarOrder.begin(),kSidebarOrder.end(),current);
      const int index=found==kSidebarOrder.end()?0:static_cast<int>(found-kSidebarOrder.begin());
-@@ -707,7 +725,11 @@
+@@ -707,7 +726,11 @@
  bool g_capture_popup_pending = false;
  bool g_capture_finished = false;
  std::size_t g_selected_player = 0;
@@ -1950,7 +1961,7 @@
  constexpr int kShortcutCaptureAction = -2;
  constexpr int kAssignControllerCaptureAction = -3;
  constexpr std::size_t kShortcutActionCount = static_cast<std::size_t>(
-@@ -1206,6 +1228,9 @@
+@@ -1206,6 +1229,9 @@
  }
  
  void LoadLauncherFonts() {
@@ -1960,7 +1971,7 @@
      ++g_font_generation;
      ImGuiIO& io = ImGui::GetIO();
      static constexpr ImWchar kLauncherGlyphRanges[] = {
-@@ -1336,9 +1361,22 @@
+@@ -1336,9 +1362,22 @@
          g_font_fps = g_font_controls != nullptr ? g_font_controls : body_font;
      }
      LoadBrandLogoIntoAtlas();
@@ -1983,7 +1994,7 @@
  }
  
  class ControlFontScope {
-@@ -1533,6 +1571,10 @@
+@@ -1533,6 +1572,10 @@
  #if defined(__ANDROID__)
      // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
      dkr::runtime::mobile_graphics::apply_accurate_budget(config);
@@ -1994,7 +2005,7 @@
  #endif
  }
  
-@@ -1752,6 +1794,12 @@
+@@ -1752,6 +1795,12 @@
          output << "memory_pak=" << (dkr::runtime::pak::enabled() ? 1 : 0) << '\n';
          output << "rumble=" << (dkr::runtime::platform::rumble_enabled() ? 1 : 0) << '\n';
          output << "rumble_strength=" << dkr::runtime::platform::rumble_strength() << '\n';
@@ -2007,7 +2018,7 @@
          output << "stick_deadzone=" << dkr::runtime::input::stick_deadzone() << '\n';
          output << "stick_anti_deadzone=" << dkr::runtime::input::stick_anti_deadzone() << '\n';
          output << "stick_sensitivity=" << dkr::runtime::input::stick_sensitivity() << '\n';
-@@ -2424,6 +2472,14 @@
+@@ -2424,6 +2473,14 @@
                  dkr::runtime::pak::set_enabled(number != 0);
              } else if (key == "rumble") {
                  dkr::runtime::platform::set_rumble_enabled(number != 0);
@@ -2022,7 +2033,7 @@
              } else if (key == "rumble_strength") {
                  dkr::runtime::platform::set_rumble_strength(std::stof(value));
              } else if (key == "stick_deadzone") {
-@@ -2513,6 +2569,16 @@
+@@ -2513,6 +2570,16 @@
      // still owns an open handle. Migration may call SaveSettings below, so
      // release the read handle before attempting that replacement.
      input.close();
@@ -2039,7 +2050,7 @@
      g_online_automatic_backend = dkr::runtime::netplay::experimental::migrated_automatic_backend(
          has_automatic_backend_setting, g_online_automatic_backend, has_legacy_backend_setting);
      for (std::size_t channel = 0; channel < kSoundChannelCount; ++channel) {
-@@ -4307,6 +4373,11 @@
+@@ -4307,6 +4374,11 @@
  }
  
  void DrawSidebarCurrentStripe() {
@@ -2051,7 +2062,7 @@
      const ImVec2 minimum = ImGui::GetItemRectMin();
      const ImVec2 maximum = ImGui::GetItemRectMax();
      ImDrawList* draw = ImGui::GetWindowDrawList();
-@@ -4322,6 +4393,7 @@
+@@ -4322,6 +4394,7 @@
      draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
                          std::max(rounding - 1.0F, 0.0F));
      draw->PopClipRect();
@@ -2059,7 +2070,7 @@
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -6352,12 +6424,18 @@
+@@ -6352,12 +6425,18 @@
          "HIDE FROM LIST keeps DKR-R's managed copy on disk. Choose Hidden "
          "from the Visibility filter to restore it later.");
      ImGui::Dummy({0.0F, 8.0F});
@@ -2078,7 +2089,7 @@
      ImGui::Dummy({0.0F, 12.0F});
      const float available = std::max(ImGui::GetContentRegionAvail().x, 1.0F);
      const float gap = ImGui::GetStyle().ItemSpacing.x;
-@@ -6375,11 +6453,13 @@
+@@ -6375,11 +6454,13 @@
      }
      if (!compact) ImGui::SameLine();
      ImGui::PushStyleColor(ImGuiCol_Button, {0.45F, 0.09F, 0.10F, 1.0F});
@@ -2092,7 +2103,7 @@
      ImGui::PopStyleColor();
      ImGui::EndPopup();
  }
-@@ -6456,6 +6536,10 @@
+@@ -6456,6 +6537,10 @@
              ImGui::TextWrapped("%s", value.c_str());
          };
          detail_row("TYPE", dkr::runtime::texture_packs::format_name(pack.format));
@@ -2103,7 +2114,7 @@
          detail_row("PRIORITY", std::to_string(pack.priority) +
                     (pack.priority == 1U ? " (highest)" : " (lower number wins)"));
          detail_row("MANAGED SIZE",
-@@ -6519,6 +6603,11 @@
+@@ -6519,6 +6604,11 @@
      if (ImGui::Button("REMOVE PACK...", {action_width, 42.0F})) {
          g_texture_pack_remove_id = pack.id;
          g_texture_pack_remove_name = pack.name;
@@ -2115,7 +2126,7 @@
          request_removal = true;
          ImGui::CloseCurrentPopup();
      }
-@@ -8053,6 +8142,15 @@
+@@ -8053,6 +8143,15 @@
      if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
          return false;
      }
@@ -2131,7 +2142,7 @@
      if (g_capture_action == kShortcutCaptureAction) {
          if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
              event->key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-@@ -8166,6 +8264,11 @@
+@@ -8166,6 +8265,11 @@
  
  void DrawOverlayContent(float content_width) {
      if (g_overlay_page == kPagePlay) {
@@ -2143,7 +2154,7 @@
          DrawPageHeading("PLAY");
          ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
          ImGui::TextWrapped("Taj has paused the race. The island is waiting whenever you are ready.");
-@@ -8173,12 +8276,19 @@
+@@ -8173,12 +8277,19 @@
          ImGui::Dummy({0.0F, 18.0F});
          DrawStartingLights(true);
          ImGui::Dummy({0.0F, 12.0F});
@@ -2163,7 +2174,7 @@
      } else if (g_overlay_page == kPageGraphics) {
          DrawGraphicsPage(content_width, true);
      } else if (g_overlay_page == kPageSound) {
-@@ -8991,6 +9101,11 @@
+@@ -8991,6 +9102,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -2175,7 +2186,7 @@
          LauncherSidebarButton("PLAY", 0, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("DKR-R ONLINE", kPageOnlineMp, page, sidebar_selection,
-@@ -9009,6 +9124,7 @@
+@@ -9009,6 +9125,7 @@
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("ABOUT DKR-R", kPageAbout, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
@@ -2183,7 +2194,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9335,6 +9451,9 @@
+@@ -9335,6 +9452,9 @@
  }
  
  void dkr::runtime::ui::draw(RT64::Application& application) {
@@ -2193,7 +2204,7 @@
      // Publish only an atomic value; the raster worker snapshots it into the
      // next pass's push constants. No GPU resources or samplers are rebuilt.
      // Keep this before visibility checks so closing the overlay or changing
-@@ -9408,6 +9527,9 @@
+@@ -9408,6 +9528,9 @@
      }
  #endif
      inspector->newFrame(application.framebufferGraphicsWorker.get());
@@ -2203,7 +2214,7 @@
      if (auto* hud_window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window())) {
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
-@@ -9461,7 +9583,8 @@
+@@ -9461,7 +9584,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -2213,7 +2224,7 @@
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9494,6 +9617,11 @@
+@@ -9494,6 +9618,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -2225,7 +2236,7 @@
          SidebarButton("PLAY", 0, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
          SidebarButton("DKR-R ONLINE", kPageOnlineMp, sidebar_selection, nav_inner_width,
-@@ -9512,6 +9640,7 @@
+@@ -9512,6 +9641,7 @@
                        sidebar_layout.button_height);
          SidebarButton("ABOUT DKR-R", kPageAbout, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
@@ -2233,7 +2244,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9574,6 +9703,11 @@
+@@ -9574,6 +9704,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -2245,7 +2256,7 @@
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9756,6 +9890,18 @@
+@@ -9756,6 +9891,18 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);

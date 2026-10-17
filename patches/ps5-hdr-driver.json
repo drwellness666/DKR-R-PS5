@@ -1,0 +1,9 @@
+{
+  "patch_sha256": "e8f34a86e0f181f207c5e169913d031dd814ec74eebdcf507d52cf56e2aee6ad",
+  "files": {
+    "src/vulkan/wsi/wsi_common_videoout.c": {
+      "original_sha256": "b43942cd3b44ff2ed2d3ccdaa780482293f7e81139ece3028001064aefb8085b",
+      "patched_sha256": "08aaffd95207ebc5a258a8e38e52768329530be09328e52b71290524907b1c2c"
+    }
+  }
+}

@@ -1,0 +1,107 @@
+diff --git a/src/contrib/plume/plume_vulkan.cpp b/src/contrib/plume/plume_vulkan.cpp
+--- a/src/contrib/plume/plume_vulkan.cpp
++++ b/src/contrib/plume/plume_vulkan.cpp
+@@ -14,6 +14,7 @@
+ #include "plume_ps5_display.h"
+ #if defined(DKR_PS5_GAME_DISPLAY)
+ #include "ps5_diagnostics.h"
++#include "ps5_hdr_options.h"
+ #endif
+ extern "C" VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstanceProcAddr(VkInstance, const char *);
+ #endif
+@@ -36,6 +37,9 @@
+ // - Fix resource pools.
+ 
+ namespace plume {
++#if defined(__PROSPERO__) && defined(DKR_PS5_GAME_DISPLAY)
++    static unsigned ps5HdrPresentCount=0,ps5HdrProbeLimit=180;
++#endif
+     // Backend constants.
+ 
+     // Required buffer alignment for acceleration structures.
+@@ -72,6 +76,9 @@
+     };
+ 
+     static const std::unordered_set<std::string> OptionalInstanceExtensions = {
++#if defined(__PROSPERO__)
++        VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME,
++#endif
+ #   if defined(__APPLE__)
+         // Tells the system Vulkan loader to enumerate portability drivers, if supported.
+         VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+@@ -157,6 +164,10 @@
+             return VK_FORMAT_R8G8B8A8_SNORM;
+         case RenderFormat::R8G8B8A8_SINT:
+             return VK_FORMAT_R8G8B8A8_SINT;
++#if defined(__PROSPERO__)
++        case RenderFormat::R10G10B10A2_UNORM:
++            return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
++#endif
+         case RenderFormat::B8G8R8A8_UNORM:
+             return VK_FORMAT_B8G8R8A8_UNORM;
+         case RenderFormat::R16G16_TYPELESS:
+@@ -2224,6 +2235,13 @@
+         // Check if the format we requested is part of the supported surface formats.
+         std::vector<VkSurfaceFormatKHR> compatibleSurfaceFormats;
+         VkFormat requestedFormat = toVk(desc.format);
++#if defined(__PROSPERO__) && defined(DKR_PS5_GAME_DISPLAY)
++        if(dkrr_ps5_hdr_requested() && dkrr_ps5_hdr_status().output!=3){
++            const auto hdr=std::find_if(surfaceFormats.begin(),surfaceFormats.end(),[](const auto& f){return f.format==VK_FORMAT_A2B10G10R10_UNORM_PACK32 && f.colorSpace==VK_COLOR_SPACE_HDR10_ST2084_EXT;});
++            if(hdr!=surfaceFormats.end())requestedFormat=hdr->format;
++            else dkrr_ps5_hdr_report(3,1);
++        }
++#endif
+         for (uint32_t i = 0; i < surfaceFormatCount; i++) {
+             if (surfaceFormats[i].format == requestedFormat) {
+                 compatibleSurfaceFormats.emplace_back(surfaceFormats[i]);
+@@ -2326,6 +2344,17 @@
+ 
+ #if defined(__PROSPERO__) && defined(DKR_PS5_GAME_DISPLAY)
+         dkrr_diag_present();
++        if(pickedSurfaceFormat.format==VK_FORMAT_A2B10G10R10_UNORM_PACK32 && ps5HdrPresentCount<ps5HdrProbeLimit){
++            ++ps5HdrPresentCount;
++            if(ps5HdrPresentCount==ps5HdrProbeLimit/3 || ps5HdrPresentCount==ps5HdrProbeLimit){
++                const int hdr=dkrr_ps5_hdr_probe_native();
++                if(hdr==1){dkrr_ps5_hdr_report(2,0);ps5HdrPresentCount=ps5HdrProbeLimit;}
++                else if(ps5HdrPresentCount==ps5HdrProbeLimit){
++                    dkrr_ps5_hdr_report(3,3);
++                    return false; // owner loop drains and recreates the SDR swapchain.
++                }
++            }
++        }
+ #endif
+         return true;
+     }
+@@ -2360,6 +2389,13 @@
+         width = std::clamp(width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);
+         height = std::clamp(height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
+ 
++#if defined(__PROSPERO__) && defined(DKR_PS5_GAME_DISPLAY)
++        if(dkrr_ps5_hdr_status().output==3 && pickedSurfaceFormat.format==VK_FORMAT_A2B10G10R10_UNORM_PACK32)
++            pickedSurfaceFormat={VK_FORMAT_B8G8R8A8_UNORM,VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
++#endif
++#if defined(__PROSPERO__) && defined(DKR_PS5_GAME_DISPLAY)
++        desc.format=pickedSurfaceFormat.format==VK_FORMAT_A2B10G10R10_UNORM_PACK32?RenderFormat::R10G10B10A2_UNORM:RenderFormat::B8G8R8A8_UNORM;
++#endif
+         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+         createInfo.surface = surface;
+         createInfo.minImageCount = std::max(desc.textureCount, surfaceCapabilities.minImageCount);
+@@ -2383,6 +2419,18 @@
+         createInfo.oldSwapchain = vk;
+ 
+         VkResult res = vkCreateSwapchainKHR(commandQueue->device->vk, &createInfo, nullptr, &vk);
++#if defined(__PROSPERO__) && defined(DKR_PS5_GAME_DISPLAY)
++        if(res!=VK_SUCCESS && pickedSurfaceFormat.format==VK_FORMAT_A2B10G10R10_UNORM_PACK32){
++            dkrr_ps5_hdr_report(3,2);
++            pickedSurfaceFormat={VK_FORMAT_B8G8R8A8_UNORM,VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
++            desc.format=RenderFormat::B8G8R8A8_UNORM;
++            createInfo.imageFormat=pickedSurfaceFormat.format;createInfo.imageColorSpace=pickedSurfaceFormat.colorSpace;
++            res=vkCreateSwapchainKHR(commandQueue->device->vk,&createInfo,nullptr,&vk);
++        }
++        if(res==VK_SUCCESS && pickedSurfaceFormat.format==VK_FORMAT_A2B10G10R10_UNORM_PACK32){
++            ps5HdrPresentCount=0;ps5HdrProbeLimit=std::max(60u,(ps5RefreshMilliHz+999)/1000)*3;dkrr_ps5_hdr_report(1,0);
++        }
++#endif
+         if (res != VK_SUCCESS) {
+             fprintf(stderr, "vkCreateSwapchainKHR failed with error code 0x%X.\n", res);
+             return false;

@@ -1,0 +1,116 @@
+diff --git a/src/hle/rt64_present_queue.cpp b/src/hle/rt64_present_queue.cpp
+--- a/src/hle/rt64_present_queue.cpp
++++ b/src/hle/rt64_present_queue.cpp
+@@ -4,6 +4,9 @@
+ 
+ #include "performance_trace.hpp"
+ #include "rt64_present_queue.h"
++#if defined(__PROSPERO__)
++#include "ps5_hdr_presenter.hpp"
++#endif
+ 
+ #include "common/rt64_thread.h"
+ #include "rhi/rt64_render_hooks.h"
+@@ -11,6 +14,9 @@
+ #include "rt64_workload_queue.h"
+ 
+ namespace RT64 {
++#if defined(__PROSPERO__)
++    static thread_local std::unique_ptr<Ps5HdrPresenter> ps5HdrPresenter;
++#endif
+     // PresentQueue
+ 
+     PresentQueue::PresentQueue() {
+@@ -261,6 +267,16 @@
+             }
+         }
+ 
++#if defined(__PROSPERO__)
++        const auto hdrState=dkrr_ps5_hdr_status();
++        const bool hdrOutput=hdrState.output==1 || hdrState.output==2;
++        if(hdrOutput){
++            if(!ps5HdrPresenter)ps5HdrPresenter=std::make_unique<Ps5HdrPresenter>();
++            if(!ps5HdrPresenter->prepare(ext.device,ext.swapChain->getWidth(),ext.swapChain->getHeight())){
++                dkrr_ps5_hdr_report(3,4);swapChainValid=false;return;
++            }
++        }
++#endif
+         // Create the framebuffers if necessary.
+         if (swapChainFramebuffers.empty()) {
+             uint32_t textureCount = ext.swapChain->getTextureCount();
+@@ -345,7 +361,11 @@
+                     }
+                 }
+                 
++#if defined(__PROSPERO__)
++                commandList->setFramebuffer(hdrOutput?ps5HdrPresenter->beginScene(commandList):swapChainFramebuffer);
++#else
+                 commandList->setFramebuffer(swapChainFramebuffer);
++#endif
+                 commandList->clearColor();
+ 
+                 if (renderParams.texture != nullptr) {
+@@ -353,9 +373,14 @@
+                     viRenderer->render(renderParams);
+                 }
+ 
++#if defined(__PROSPERO__)
++                RenderFramebuffer* uiFramebuffer=hdrOutput?ps5HdrPresenter->beginUi(commandList):swapChainFramebuffer;
++#else
++                RenderFramebuffer* uiFramebuffer=swapChainFramebuffer;
++#endif
+                 RenderHookDraw *drawHook = GetRenderHookDraw();
+                 if (drawHook != nullptr) {
+-                    drawHook(commandList, swapChainFramebuffer);
++                    drawHook(commandList, uiFramebuffer);
+                 }
+ 
+                 {
+@@ -364,6 +389,9 @@
+                         inspector->draw(commandList);
+                     }
+                     
++#if defined(__PROSPERO__)
++                    if(hdrOutput)ps5HdrPresenter->finish(commandList,swapChainFramebuffer);
++#endif
+                     commandList->barriers(RenderBarrierStage::NONE, RenderTextureBarrier(swapChainTexture, RenderTextureLayout::PRESENT));
+                     commandList->end();
+                     const RenderCommandList *commandList = ext.presentGraphicsWorker->commandList.get();
+@@ -490,6 +518,9 @@
+                     ext.presentGraphicsWorker->wait();
+                     swapChainValid = ext.swapChain->resize();
+                     swapChainFramebuffers.clear();
++#if defined(__PROSPERO__)
++                    ps5HdrPresenter.reset();
++#endif
+ 
+                     if (swapChainValid) {
+                         ext.sharedResources->setSwapChainSize(ext.swapChain->getWidth(), ext.swapChain->getHeight());
+@@ -549,6 +580,9 @@
+             }
+         }
+ 
++#if defined(__PROSPERO__)
++        ps5HdrPresenter.reset();
++#endif
+         // Transition the active swap chain render target out of the present state to avoid live references to the resource.
+         uint32_t swapChainIndex = 0;
+         if (!ext.swapChain->isEmpty() && ext.swapChain->acquireTexture(acquiredSemaphore.get(), &swapChainIndex)) {
+diff --git a/src/gui/rt64_inspector.cpp b/src/gui/rt64_inspector.cpp
+--- a/src/gui/rt64_inspector.cpp
++++ b/src/gui/rt64_inspector.cpp
+@@ -124,7 +124,13 @@
+ 
+             vulkanContext = std::make_unique<VulkanContext>();
+             vulkanContext->device = interfaceDevice->vk;
+-            vulkanContext->renderPass = VulkanGraphicsPipeline::createRenderPass(interfaceDevice, &interfaceSwapChain->pickedSurfaceFormat.format, 1, VK_FORMAT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT);
++#if defined(__PROSPERO__)
++            // PS5 composes UI into the established BGRA8 layer before HDR encoding.
++            const VkFormat uiFormat=VK_FORMAT_B8G8R8A8_UNORM;
++#else
++            const VkFormat uiFormat=interfaceSwapChain->pickedSurfaceFormat.format;
++#endif
++            vulkanContext->renderPass = VulkanGraphicsPipeline::createRenderPass(interfaceDevice, &uiFormat, 1, VK_FORMAT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT);
+ 
+             // ImGui's font occupies one combined-image descriptor. Keep a
+             // bounded pool of additional descriptors for application-owned UI

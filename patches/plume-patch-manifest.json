@@ -3,7 +3,7 @@
   "files": {
     "plume_render_interface_types.h": {
       "original_sha256": "9ff137103bbfa63c66f1f23a926f7efad6aaebbafb0554df9966e1978246d17b",
-      "patched_sha256": "0207a4e8b3e4a3795aac59c54aa563095c6201da5db798e95e4ae4649abcb641"
+      "patched_sha256": "f7c4ea4df67429d898c22cf90fbb76e01dd4ba4010b86e9916adf3b6cb8872f4"
     },
     "plume_vulkan.h": {
       "original_sha256": "ca8f3abc3507e61da6e85e7acc30168ec6cc41adf7a368db1947cb6995554977",
@@ -14,5 +14,5 @@
       "patched_sha256": "0b4cc63f14ee7bb12b5339cc7297a2ffa00a8a996cb4bbe8fd413d3ac4eb9545"
     }
   },
-  "patch_sha256": "2306b783d5726f14e22ea86a9c5ebd20dfe9d70690991ef7446abeb3eef80349"
+  "patch_sha256": "234cfe690a039f2854c853fdd162d6f796c951e8b33f3a8d207e8af3d3a0bff7"
 }

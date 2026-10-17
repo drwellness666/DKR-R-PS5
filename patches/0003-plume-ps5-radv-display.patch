@@ -9,6 +9,36 @@
  #elif defined(__ANDROID__)
      typedef ANativeWindow* RenderWindow;
  #elif defined(PLUME_SDL_VULKAN_ENABLED)
+@@ -160,6 +162,9 @@
+         BC7_TYPELESS,
+         BC7_UNORM,
+         BC7_UNORM_SRGB,
++#if defined(__PROSPERO__)
++        R10G10B10A2_UNORM,
++#endif
+         MAX
+     };
+ 
+@@ -539,6 +544,9 @@
+         case RenderFormat::R8G8B8A8_UINT:
+         case RenderFormat::R8G8B8A8_SNORM:
+         case RenderFormat::R8G8B8A8_SINT:
++#if defined(__PROSPERO__)
++        case RenderFormat::R10G10B10A2_UNORM:
++#endif
+         case RenderFormat::B8G8R8A8_UNORM:
+         case RenderFormat::R16G16_TYPELESS:
+         case RenderFormat::R16G16_FLOAT:
+@@ -622,6 +630,9 @@
+         case RenderFormat::R8G8B8A8_UINT:
+         case RenderFormat::R8G8B8A8_SNORM:
+         case RenderFormat::R8G8B8A8_SINT:
++#if defined(__PROSPERO__)
++        case RenderFormat::R10G10B10A2_UNORM:
++#endif
+         case RenderFormat::B8G8R8A8_UNORM:
+         case RenderFormat::R16G16_TYPELESS:
+         case RenderFormat::R16G16_FLOAT:
 --- a/plume_vulkan.h
 +++ b/plume_vulkan.h
 @@ -226,6 +226,10 @@

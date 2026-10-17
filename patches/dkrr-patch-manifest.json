@@ -4,7 +4,7 @@
   "files": {
     "runtime-recomp/CMakeLists.txt": {
       "original_sha256": "c7a186e2b13f8a3d66ef3f98cba82548c503d24f7448077ccd5765d25103f3b7",
-      "patched_sha256": "ca117dfdeb3e79d455c1fa4b00b7311e4810255ac3e5a5d1ada7c664bf6871ed"
+      "patched_sha256": "b390199db04849a5341d74c99c2734a88283b28df2ab9aee91e4f3aba077d073"
     },
     "runtime-recomp/src/game/game_main.cpp": {
       "original_sha256": "aa56151f96a050fc85d612b450db3b5192b0c80a626b79d5ce24af64ab128733",
@@ -96,7 +96,7 @@
     },
     "runtime-recomp/src/game/runtime_ui.cpp": {
       "original_sha256": "efa6e5618e46e379c5787f51b67d138d999f99a13ceab02f81cb955e0fa0c86d",
-      "patched_sha256": "d1536bc4b22eabee99fe55fd6bd10c9ba556e8579b11ac1614944bd9c43f7fcb"
+      "patched_sha256": "2fedcc4678d9d68b8b25f60b86fea5f63f5eacacf9039067326a4f47bdc641e4"
     },
     "runtime-recomp/src/game/runtime_ui_paddock.inl": {
       "original_sha256": "3958334961f6a6b91be789b5c84a0e8a1168bef804650a354bad741a1a581099",
@@ -127,5 +127,5 @@
       "patched_sha256": "485d238d7004f5eb404cd285e151656c54ddac67baec60d84f60a1ba9636125a"
     }
   },
-  "patch_sha256": "e77b7c0e16b78c2be2d954fddc3063e50d4473f6b2cf7074b17d7f054c7c4be0"
+  "patch_sha256": "e3042706c17501339a06cb96be2f9ec709892c032cfa421124045a6280cd7adb"
 }
