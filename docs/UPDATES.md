@@ -13,13 +13,17 @@ Optional launch checks are off by default. Installing an update always waits
 for your choice. Your usual jailbreak/homebrew environment is still required
 to run the game after a console restart.
 
-Upgrading from Beta 3.3 or earlier? Install the new **DKRR-Update.elf once** to
-add the native installer and prepare access to DKR-R's own program folder.
-Subsequent Internet updates happen entirely inside the game.
-
 Downloads require this project's public GitHub releases. A private repository
 is unavailable to the game; no GitHub credentials are stored on the PS5.
 [Current test status](VALIDATION.md).
+
+## Older betas
+
+The 1.0 candidate adds HDR capability to the title declaration. Installers
+currently refuse to replace an older registered title with different metadata.
+The supported transition from earlier betas must be completed before 1.0;
+sending the current update ELF does not bypass that check. Keep your existing
+installation and `/data/dkrr` data. No save-helper program is required by 1.0.
 
 ## Manual or offline update
 

@@ -14,7 +14,7 @@ These names retain the existing profile layout. Do not rename the folders to
 switch game revision; use **Touchpad → Play** instead. Recompiled does not
 provide a shared emulator-style save-state file across the two revisions.
 
-Beta 3 handles saving inside the game. No PC service or additional save-helper
+The current version handles saving inside the game. No PC service or additional save-helper
 ELF is part of this version. Saves are checked and written through temporary
 files with backups retained. Installers and updates do not replace save data.
 

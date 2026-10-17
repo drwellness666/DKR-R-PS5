@@ -58,12 +58,11 @@ inside the payload; installation still writes and verifies every target file.
 Rendering, output rate and original game simulation remain separate. No global
 water/interpolation change or forced shader-cache policy is used to conceal
 unexplained stutters. Tracks-preview water and sustained frame pacing still
-need measured console reproduction. HDR and broader loader/display support
-remain separate work.
+need measured console reproduction. Optional HDR10 is integrated; broader loader/display qualification remains open.
 
 These are implemented candidate mechanisms, not physical-console acceptance.
 Shared binaries require the matching source/licence package and a component
-review. Beta 3 includes ROM-free installer/update ELFs with matching source.
+review. The planned 1.0 downloads are ROM-free installer/update ELFs with matching source.
 [Validation](VALIDATION.md).
 
 ## Further native features
@@ -80,7 +79,8 @@ verified app tree only. No parent homebrew/system folder is made writable.
 
 Preparation verifies the installed manifest, every public package file and
 retained private controller sounds. The title metadata and libc runtime must
-remain byte-identical; ABI migrations use the manual installer. The worker
+remain byte-identical. Runtime changes require a separately qualified manual
+upgrade; a title-metadata change is currently refused by both update paths. The worker
 prepares complete new files and verified old copies in a process-owned 0700
 folder. The game then follows its existing save/shutdown path and joins its I/O,
 controller and update workers. The same installation lease is upgraded to an
@@ -114,8 +114,14 @@ The manual ELF route remains available. The signing key is kept outside source;
 `tools/sign_update_channel.py` refuses a key that does not match the client's
 public key. Newer upstream DKR-R versions still need reviewed port integration.
 
-HDR needs a 10-bit presentation path, correct color transfer, UI brightness
-and SDR fallback. This target currently presents 8-bit SDR. Public
-[PS5 HDR presenter research](https://github.com/blackbearreloaded/ps5-hardware-video-decoding-research/blob/main/docs/implementation.md)
-provides a possible VideoOut direction; integration into the
-[PS5 Vulkan driver](https://github.com/mihawk-99/PS5_Vulkan) and RT64 is separate work.
+The optional HDR10 path retains SDR scene/UI rendering, composes separate
+brightness layers and converts to 10-bit BT.2020/PQ for native VideoOut. SDR
+allocates no HDR layers. Calibration snapshots are coherent and lock-free;
+preference I/O cannot block the present worker. Display, HDR and revision
+preferences reserve new temporary entries, preserve interrupted/unknown ones,
+atomically replace the validated target and synchronize its parent directory.
+
+The HDR title declaration changes earlier beta metadata. A supported registered-
+title migration is still required before that upgrade can ship. Physical HDR
+brightness, SDR fallback and coexistence with VRR/120 Hz remain console checks.
+See [Display](DISPLAY.md) and the [pre-release review](PRE_RELEASE_REVIEW.md).

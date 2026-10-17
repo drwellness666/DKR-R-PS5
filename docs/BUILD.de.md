@@ -7,7 +7,7 @@ Der neue Installer braucht noch seine Konsolenabnahme.
 
 Für Entwickler stehen die [Build-Befehle](BUILD.md) einschließlich ROM-freier
 ELF-Paketierung bereit. Alternativ startet Windows `Start-Windows.cmd`, Linux
-`bash Start-Linux.sh`. Dieser ältere Assistent benötigt beide eigenen US-Dumps
+`bash Start-Linux.sh`. Dieser lokale Assistent benötigt beide eigenen US-Dumps
 und erzeugt einen privaten ROM-haltigen Installer, der nicht weitergegeben
 werden darf. Er bietet fehlende PC-Pakete vorher an. [Windows-Einrichtung](WINDOWS.md).
 

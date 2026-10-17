@@ -2,8 +2,9 @@
 
 ## Automated checks
 
-The automated checks include **18 installer/update cases** with injected write, synchronization and activation
-failures, stale registration snapshots and occupied temporary slots. Tests also cover shared settings, both language bridges, menu layout,
+The automated checks include **20 installer/update cases** with injected write, synchronization and activation
+failures, stale registration snapshots, occupied temporary slots, crowded earlier
+USB drives and header-only rejection of unrelated same-size files. Tests also cover shared settings, both language bridges, menu layout,
 controller adapters, direct save handling and diagnostics. Menu tests exercise
 the real ImGui section selector at narrow and wide widths, D-pad traversal,
 Cross selection and Circle cancellation. Speaker tests check cue reuse and
@@ -34,6 +35,13 @@ The native PS5 game and all three universal payloads compile and link with the p
 homebrew SDK. Every one of the **37** embedded program files was read back from
 each ELF and matched the app. ROMs and extracted controller PCM are excluded.
 The exact source gate is [source-check.yml](../.github/workflows/source-check.yml).
+
+All three native preference adapters also exercise interrupted legacy/numbered
+writes, occupied slots, preserved symlinks, failed directory synchronization and
+nonblocking rejection of named pipes.
+
+The [pre-release review](PRE_RELEASE_REVIEW.md) records remaining release gates
+and the scope of the source audit.
 
 ## Original typography and HDR
 

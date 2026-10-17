@@ -2,7 +2,7 @@
 
 The [universal ELF route](INSTALLER.md) needs an ordinary ELF sender and USB ROMs;
 it needs neither WSL nor a compiler. The instructions below are the optional
-**developer source build** and the older private build assistant.
+**developer source build** and its optional local build assistant.
 
 Use an **x86-64 Windows 10 build 19041+ or Windows 11** PC. Extract this version's
 source ZIP, then double-click **Start-Windows.cmd**. Windows Python is not needed.
