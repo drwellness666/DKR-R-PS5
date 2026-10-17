@@ -3,6 +3,9 @@
 #define DKRR_INSTALL_H
 #include <stddef.h>
 #include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define DKRR_ROM_SIZE (12U*1024U*1024U)
 #define DKRR_MAX_FILES 128
 #define DKRR_PATH 512
@@ -26,4 +29,7 @@ int dkrr_rom_find(const char *usb,const char *owned,struct dkrr_rom out[2]);
 int dkrr_rom_install(const char *owned,const struct dkrr_rom inputs[2]);
 int dkrr_register_source(const char *root,const char *app);
 int dkrr_audio_prepare(const unsigned char *rom,size_t size,unsigned revision,const char *destination);
+#ifdef __cplusplus
+}
+#endif
 #endif

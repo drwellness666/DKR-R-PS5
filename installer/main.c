@@ -101,6 +101,30 @@ static int ensure_parent(const char *root,const char *relative) {
  for(size_t i=start;i<n;++i)if(path[i]=='/'){path[i]=0;int r=dkrr_mkdir(path,0755);path[i]='/';if(r<0)return -1;}
  return 0;
 }
+/* A native title runs as uid 1. Grant directory-entry replacement only in
+ * this verified app tree; never chmod /data, /homebrew or another title.
+ * File contents, saved games and system metadata are not permission targets.
+ * The in-game updater can then perform its own atomic file replacements. */
+static int native_update_access(const char *app) {
+#ifdef DKRR_HOST_TEST
+ const uid_t app_uid=getuid();
+#else
+ const uid_t app_uid=1;
+#endif
+ for(size_t i=0;i<=sizeof(release_files)/sizeof(release_files[0]);++i){
+  char path[DKRR_PATH];
+  if(i==sizeof(release_files)/sizeof(release_files[0])){if(strlen(app)>=sizeof(path))return -1;strcpy(path,app);}
+  else if(join(path,app,release_files[i].path)<0)return -1;
+  size_t start=strlen(app);
+  for(size_t at=start;at<=strlen(path);++at)if(at==start||(path[at]=='/'&&at>start)){
+   char saved=path[at];path[at]=0;
+   int fd=open(path,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);struct stat st;
+   int good=fd>=0&&fstat(fd,&st)==0&&S_ISDIR(st.st_mode)&&fchmod(fd,0755)==0&&fchown(fd,app_uid,(gid_t)-1)==0&&fsync(fd)==0;
+   if(fd>=0&&close(fd)<0)good=0;path[at]=saved;if(!good)return -1;
+  }
+ }
+ return 0;
+}
 static int space_available(int app_required) {
  struct statvfs fs;unsigned long long required=app_required?24ULL*1024*1024:0;
  if(app_required)for(size_t i=0;i<sizeof(release_files)/sizeof(release_files[0]);++i)required+=(unsigned long long)(release_files[i].end-release_files[i].start);
@@ -183,6 +207,12 @@ int main(void) {
  if(leased<0){if(lock>=0)close(lock);status("DKR-R is running or another install is active. Close it first.");return 2;}
  if(fchmod(lock,0666)<0){close(lock);return 2;}
  if(recover()<0){status("Interrupted installation needs inspection; existing files preserved.");close(lock);return 3;}
+ {
+  char pending[DKRR_PATH];
+  if(join(pending,data,"preferences/update-client-1/native-install")<0){close(lock);return 3;}
+  int found=exists_dir(pending);
+  if(found!=0){status("An in-game update is pending. Start and close DKR-R once to finish recovery before using this installer.");close(lock);return 3;}
+ }
  had_live=exists_dir(live);static struct dkrr_manifest old,new;
  if(!had_live&&DKRR_UPDATE_ONLY){status("No existing DKR-R installation. Use the installer ELF first.");close(lock);return 1;}
  if(had_live==1&&known_at(live,&old)<0){status("Existing app differs from its record; nothing will be replaced.");close(lock);return 3;}
@@ -197,11 +227,13 @@ int main(void) {
    const struct release_file *f=&release_files[i];if(join(path,live,f->path)<0||dkrr_hash_file(path,hash,&n)<0||n!=(unsigned long long)(f->end-f->start)||strcmp(hash,f->sha1))matches=0;
   }
   if(!matches){status("Recorded build identity has different package files; refusing an ambiguous update.");close(lock);return 3;}
+  if(native_update_access(live)<0){status("App verified; native update permissions could not be prepared.");close(lock);return 9;}
   if(dkrr_register_source(DKRR_INSTALL_ROOT,live)<0){status("App verified; ShadowMountPlus registration pending. Start it and rerun this ELF.");close(lock);return 9;}
   status("This version is already installed and verified.");puts(DKRR_UPDATE_ONLY?"DKRR UNIVERSAL UPDATE PASS.":"DKRR UNIVERSAL INSTALL PASS.");close(lock);return 0;
  }
  status("Preparing app and controller sounds from your ROMs.");
  if(prepare_stage(&new)<0){status("Staging verification failed. Existing game is preserved; staged files kept for diagnosis.");close(lock);return 5;}
+ if(native_update_access(stage)<0){status("Native update access could not be prepared; existing game is preserved.");close(lock);return 5;}
  // Require identical native metadata on upgrades: no shell-cache migration.
  if(had_live){char a[DKRR_PATH],b[DKRR_PATH],x[41],y[41];unsigned long long nx,ny;
   if(join(a,live,"sce_sys/param.json")<0||join(b,stage,"sce_sys/param.json")<0||dkrr_hash_file(a,x,&nx)<0||dkrr_hash_file(b,y,&ny)<0||nx!=ny||strcmp(x,y)){status("Title metadata change requires a qualified migration; old app preserved.");close(lock);return 6;}
