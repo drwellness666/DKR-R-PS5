@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Own ROM-version preference only. No system services, saves or migrations.
 #include "ps5_revision_selection.h"
+#include "ps5_preference_io.hpp"
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -21,7 +22,7 @@ namespace {
 constexpr const char* choice_directory=DKR_REVISION_DATA_ROOT "/preferences";
 constexpr const char* preference=DKR_REVISION_DATA_ROOT "/preferences/boot-revision.txt";
 constexpr const char* legacy_preference=DKR_REVISION_DATA_ROOT "/boot-revision.txt";
-constexpr const char* temporary=DKR_REVISION_DATA_ROOT "/preferences/boot-revision.txt.next";
+constexpr const char* temporary_prefix=DKR_REVISION_DATA_ROOT "/preferences/boot-revision.txt.next";
 constexpr const char* rom77=DKR_REVISION_DATA_ROOT "/roms/dkr.us.v77.z64";
 constexpr const char* rom80=DKR_REVISION_DATA_ROOT "/roms/dkr.us.v80.z64";
 constexpr unsigned compiled=(DKR_PAYLOAD_V77_ENABLED?1U:0U)|(DKR_PAYLOAD_V80_ENABLED?2U:0U);
@@ -31,7 +32,7 @@ bool ordinary_rom(const char* path){struct stat st={};return lstat(path,&st)==0&
 unsigned available(){return (ordinary_rom(rom77)?1U:0U)|(ordinary_rom(rom80)?2U:0U);}
 // Exact legacy revision IDs remain accepted; new choices are human-readable.
 unsigned read_preference(const char* path=preference){
- int fd=open(path,O_RDONLY|O_NOFOLLOW);if(fd<0)return 0;
+ int fd=open(path,O_RDONLY|O_NOFOLLOW|O_NONBLOCK);if(fd<0)return 0;
  struct stat st={};char value[8]={};size_t size=0;
  bool ok=fstat(fd,&st)==0&&S_ISREG(st.st_mode)&&st.st_size>0&&st.st_size<8;
  while(ok&&size<sizeof(value)){ssize_t n=read(fd,value+size,sizeof(value)-size);if(n<0&&errno==EINTR)continue;if(n<0){ok=false;break;}if(!n)break;size+=static_cast<size_t>(n);}
@@ -67,7 +68,7 @@ extern "C" int dkrr_ps5_choose_revision(unsigned revision){
  struct stat old={};const bool existed=lstat(preference,&old)==0;
  if(existed){if(!S_ISREG(old.st_mode)||!read_preference()){errno=EINVAL;return -1;}}
  else if(errno!=ENOENT)return -1;
- int fd=open(temporary,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW,0644);if(fd<0)return -1;
+ char temporary[512];int fd=dkrr::preferences::reserve(temporary_prefix,temporary);if(fd<0)return -1;
  const char* value=revision==77?"1.0\n":"1.1\n";size_t position=0;bool ok=true;
  while(position<4){ssize_t n=write(fd,value+position,4-position);if(n<0&&errno==EINTR)continue;if(n<=0){ok=false;break;}position+=static_cast<size_t>(n);}
  if(fchmod(fd,0644)||fsync(fd))ok=false;
@@ -78,6 +79,7 @@ extern "C" int dkrr_ps5_choose_revision(unsigned revision){
  else if(errno!=ENOENT||existed)ok=false;
  if(!ok){unlink(temporary);errno=EIO;return -1;}
  if(rename(temporary,preference)){unlink(temporary);return -1;}
+ if(dkrr::preferences::sync_parent(preference))return -1;
  if(read_preference()!=revision){errno=EIO;return -1;}
  return 0;
 }

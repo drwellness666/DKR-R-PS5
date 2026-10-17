@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Own, next-launch display preference. No system settings or game saves.
 #include "ps5_display_options.h"
+#include "ps5_preference_io.hpp"
 #include <atomic>
 #include <cerrno>
 #include <cstdio>
@@ -18,7 +19,7 @@
 namespace {
 constexpr const char *directory = DKR_DISPLAY_DATA_ROOT "/preferences";
 constexpr const char *preference = DKR_DISPLAY_DATA_ROOT "/preferences/display-output.txt";
-constexpr const char *temporary = DKR_DISPLAY_DATA_ROOT "/preferences/display-output.txt.next";
+constexpr const char *temporary_prefix = DKR_DISPLAY_DATA_ROOT "/preferences/display-output.txt.next";
 std::atomic<unsigned> boot_resolution{1080}, boot_refresh{60};
 std::atomic<unsigned> active_width{0}, active_height{0}, active_refresh{0}, active_fallback{0};
 bool valid(dkrr_ps5_display_choice c) {
@@ -83,7 +84,8 @@ extern "C" int dkrr_ps5_choose_display(dkrr_ps5_display_choice choice) {
     dkrr_ps5_display_choice prior{};
     if (existed) { if (!S_ISREG(old.st_mode) || read_choice(&prior) != 1) { errno = EINVAL; return -1; } }
     else if (errno != ENOENT) return -1;
-    const int fd = open(temporary, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0644);
+    char temporary[512];
+    const int fd = dkrr::preferences::reserve(temporary_prefix,temporary);
     if (fd < 0) return -1;
     char text[65];
     const size_t bytes = size_t(std::snprintf(text, sizeof(text), "resolution=%up\nrefresh=%u\n", choice.resolution, choice.refresh));
@@ -102,6 +104,7 @@ extern "C" int dkrr_ps5_choose_display(dkrr_ps5_display_choice choice) {
     } else if (errno != ENOENT || existed) ok = false;
     if (!ok) { unlink(temporary); errno = EIO; return -1; }
     if (rename(temporary, preference)) { unlink(temporary); return -1; }
+    if (dkrr::preferences::sync_parent(preference)) return -1;
     if (read_choice(&prior) != 1 || prior.resolution != choice.resolution || prior.refresh != choice.refresh) {
         errno = EIO; return -1;
     }

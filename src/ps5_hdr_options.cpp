@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ps5_hdr_policy.hpp"
+#include "ps5_preference_io.hpp"
 #include <atomic>
 #include <chrono>
 #include <cerrno>
@@ -16,7 +17,7 @@
 namespace {
 constexpr char directory[]=DKR_DISPLAY_DATA_ROOT "/preferences";
 constexpr char path[]=DKR_DISPLAY_DATA_ROOT "/preferences/hdr-output.txt";
-constexpr char next[]=DKR_DISPLAY_DATA_ROOT "/preferences/hdr-output.txt.next";
+constexpr char next_prefix[]=DKR_DISPLAY_DATA_ROOT "/preferences/hdr-output.txt.next";
 std::mutex mutex;
 // Render snapshots never wait on preference reads, writes or fsync. One word
 // publishes a complete validated choice, so readers cannot see mixed fields.
@@ -58,7 +59,7 @@ extern "C" int dkrr_ps5_choose_hdr(dkrr_ps5_hdr_choice c){
     struct stat old{},now{};const bool existed=!lstat(path,&old);
     if((existed&&!S_ISREG(old.st_mode))||(!existed&&errno!=ENOENT)){errno=EINVAL;return -1;}
     dkrr_ps5_hdr_choice prior{};if(existed&&read_choice(&prior)!=1){errno=EINVAL;return -1;}
-    int fd=open(next,O_CREAT|O_EXCL|O_WRONLY|O_NOFOLLOW,0644);if(fd<0)return -1;
+    char next[512];int fd=dkrr::preferences::reserve(next_prefix,next);if(fd<0)return -1;
     char text[128];const int length=format(text,c);size_t at=0;bool ok=true;
     while(at<size_t(length)){const ssize_t n=write(fd,text+at,size_t(length)-at);if(n<0&&errno==EINTR)continue;if(n<=0){ok=false;break;}at+=size_t(n);}
     if(fchmod(fd,0644)||fsync(fd))ok=false;if(close(fd))ok=false;
@@ -66,7 +67,6 @@ extern "C" int dkrr_ps5_choose_hdr(dkrr_ps5_hdr_choice c){
     if((!found&&(!existed||!S_ISREG(now.st_mode)||now.st_ino!=old.st_ino||now.st_mtime!=old.st_mtime||now.st_size!=old.st_size))||
        (found&&(existed||errno!=ENOENT)))ok=false;
     if(!ok||rename(next,path)){unlink(next);errno=EIO;return -1;}
-    fd=open(directory,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);if(fd<0)return -1;
-    const int synced=fsync(fd);close(fd);if(synced)return -1;
+    if(dkrr::preferences::sync_parent(path))return -1;
     calibration.store(pack(c),std::memory_order_release);return 0;
 }
