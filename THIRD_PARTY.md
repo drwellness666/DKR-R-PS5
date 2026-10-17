@@ -61,9 +61,7 @@ private item PCM on the console; ROMs and generated sounds are excluded from
 shared installer packages.
 Source: [VADPCM decode.c](https://github.com/depp/vadpcm/blob/main/codec/decode.c).
 
-The PS5 UI uses unmodified Microsoft Selawik Regular/Semibold under SIL OFL 1.1.
-The licence is `licenses/DKR-R-Selawik-OFL.txt`. Racing Banana and Jumpman are not
-linked by this PS5 target. Upstream UI assets retain their separate terms.
+The current development target uses upstream Racing Banana for the main face and signs, with unmodified Microsoft Selawik Regular/Semibold as Unicode fallback and reading faces (SIL OFL 1.1). Racing Banana provenance and the outstanding public redistribution confirmation are recorded in `licenses/Racing-Banana-NOTICE.md`. Jumpman is not linked; its upstream EULA permits software embedding and does not justify a blanket prohibition. Beta 3.4 used Selawik alone.
 
 The title recipe fetches the original DKR-R icon and README header. Sources,
 hashes and attribution are in `TITLE_ART_SOURCES.json` and
@@ -94,4 +92,16 @@ Monocypher dependency (BSD-2-Clause / CC0-1.0), and SHA-256 uses the already pin
 Mbed TLS dependency (Apache-2.0). Their full licence notices are retained in `licenses/Monocypher.md` and
 `licenses/Mbed-TLS.md`, and copied into the installed app.
 No additional proprietary SDK, network service library or private release key is
-shipped. The in-game updater uses the console's existing ELF receiver over loopback.
+shipped. The new in-game updater installs a signed data package in its own process and never contacts an ELF receiver. Only the older Beta 3.3 migration client retains the legacy route.
+
+## HDR output references
+
+The optional PS5 HDR10 scanout uses the public packed-format contract from
+[ProsperoLight](https://github.com/blackbearreloaded/ProsperoLight/blob/b1b2c5d8cde17347419091b95c30fa95f22fedd0/include/ps5_videoout_formats.h),
+GPL-3.0-or-later, by BlackBearReloaded. The public 48-byte output-status ABI is
+documented by [Kodi PS5](https://github.com/VivaLaVent/kodi-ps5/blob/main/overlay/xbmc/platform/ps5/VideoOutInfo.cpp),
+Team Kodi, GPL-2.0-or-later. Our shader, calibration and bounded WSI adaptation
+are supplied as source; no Sony SDK implementation or system module is copied.
+The original component licence/copyright texts copied from the pinned build
+inputs are retained in `licenses/COMPONENT-NOTICES.txt`, with source hashes in
+`licenses/COMPONENT-NOTICES.json`.

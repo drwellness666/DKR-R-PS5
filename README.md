@@ -7,7 +7,8 @@ An unofficial PS5 port of [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R).
 
 [📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇩🇪 Deutsch](README.de.md) · [📖 Help](docs/README.md) · [🐛 Report a problem](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Beta 3.4 candidate.** In-game Internet updates without a running ELF receiver.
+**Beta 3.4.** In-game Internet updates without a running ELF receiver.
+The development source also adds optional HDR10 and restores Racing Banana. These additions are not part of the published Beta 3.4 downloads.
 Gameplay was tested on PS5; new features are covered by the [validation report](docs/VALIDATION.md).
 
 ## 🎮 What this port adds
@@ -58,7 +59,7 @@ links for its community texture pack. Import it under **Textures** and use
 
 - Brief water flicker when entering a **Tracks preview**; Adventure water was reported stable.
 - Occasional **microstutters**, especially with heavier graphics settings or texture packs.
-- HDR is unavailable. Compatibility and experimental-feature details are in the [validation report](docs/VALIDATION.md).
+- HDR10 is a development feature, absent from Beta 3.4 downloads. Compatibility and experimental-feature details are in the [validation report](docs/VALIDATION.md).
 
 [Known issues and compatibility](docs/KNOWN_ISSUES.md).
 

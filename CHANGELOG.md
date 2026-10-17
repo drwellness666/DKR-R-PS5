@@ -1,6 +1,20 @@
 # Changelog
 
-## Beta 3.4 candidate
+## Development — Beta 3.5
+
+- Restore Racing Banana for interface headings and labels, with Selawik for missing characters and reading text.
+- Add optional HDR10 under Graphics → Display, with paper white, peak brightness, highlight expansion and a calibration pattern. SDR remains the default.
+- Keep interface brightness separate from scene highlights and compose both into a 10-bit PQ output.
+- Fall back to SDR when HDR buffers or HDMI output are unavailable; retain the existing 60/120-Hz and VRR paths.
+- Validate the embedded shaders by actual off-screen Vulkan pixel readback; add native-format registration and font-atlas regression checks.
+- Include original component notices with the source and installed app.
+
+These changes are in development source and are not included in the published
+Beta 3.4 downloads. PS5 HDR qualification, safe migration of existing title
+metadata and font/artwork redistribution review remain open. Tracks-preview
+water flicker and occasional microstutters are not claimed fixed.
+
+## Beta 3.4
 
 - Install Internet updates inside DKR-R, without a running ELF receiver or separately started helper.
 - Download a signed data-only package; no downloaded installer code is executed.
