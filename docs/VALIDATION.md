@@ -14,11 +14,13 @@ owner’s two ROMs. New tests exercise actual US77/US80 sound wrappers, native
 player/context gating and compact binding UI. The bounded CSeq decoder also
 passes 8,000 malformed-input cases under address/undefined-behavior sanitizers.
 
-Signed-update tests exercise the actual native worker with 13 service scenarios,
+Signed-update tests exercise the actual native worker with 14 service scenarios,
 all manifest truncations and byte mutations, 10,000 malformed inputs, wrong
 signatures/digests, redirects, cancellation and missing receiver. The network
 installer is tested before commit, across partial commit messages and while the
-game retains its lease.
+game retains its lease. Update-preference tests also reproduce the native
+zero-link-count metadata and check repeated save/load without changing an
+existing inode.
 
 The native PS5 game and all three universal payloads compile and link with the public
 homebrew SDK. Every one of the **37** embedded program files was read back from
