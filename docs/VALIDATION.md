@@ -34,10 +34,18 @@ Update preference and recovery-marker FIFOs are rejected without blocking or
 removing those entries. Storage checks also cover exact capacity, a shortage before download, unavailable
 and invalid telemetry, overflow saturation and the block-size fallback.
 
-The native PS5 game and all three universal payloads compile and link with the public
+The native PS5 game and both universal ELF payloads compile and link with the public
 homebrew SDK. Every one of the **37** embedded program files was read back from
 each ELF and matched the app. ROMs and extracted controller PCM are excluded.
 The exact source gate is [source-check.yml](../.github/workflows/source-check.yml).
+
+The native diagnostics reader also rejects FIFO, symlink, directory, oversized
+and malformed entries without blocking or partially enabling flags.
+
+The actual PS5 audio scratch setup and delivery operations run with a counted
+allocator under sanitizers. Accepted block sizes do not grow either conversion
+vector, including custom-music zeroing and rate changes. The old setup fails
+this check. This is not a whole-callback allocation or console frame-rate claim.
 
 All three native preference adapters also exercise interrupted legacy/numbered
 writes, occupied slots, preserved symlinks, failed directory synchronization and
@@ -69,9 +77,9 @@ rumble, balloon light colors, icon/background and launch-image handoff.
 
 - The new universal ELF's complete install/update and app registration on PS5.
 - Native HTTPS reachability, the one-time app-directory permission grant and a complete receiver-free update/restart on PS5.
-- New native save handling after a complete reboot, without the old preview's helper.
+- Native save handling after a complete reboot, with no external helper.
 - Physical gyro, adaptive L2 and controller-speaker behavior.
-- Development HDR title migration, HDR/SDR HDMI output, brightness/UI composition, HDR with VRR/120 Hz and GPU cost.
+- HDR/SDR HDMI output, brightness/UI composition, HDR with VRR/120 Hz and GPU cost.
 - More tracks, Paks, mods, online modes, displays and a complete Windows/WSL2 build.
 
 These are final qualification items for version 1.0. Host checks do not prove

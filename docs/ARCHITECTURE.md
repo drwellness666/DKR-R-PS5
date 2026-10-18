@@ -20,11 +20,11 @@ page and default off. A short installer uses PS5 notifications and the receiver
 log; it creates no graphical launcher or background service.
 
 Each managed program includes a bounded file manifest and a monotonic release
-sequence. Updates verify the installed files on the console. Known early builds
-have explicit migration inventories; unknown or modified installations are
-preserved. ROMs, progress, Paks and settings are outside the program replacement.
-A shared game lease prevents an installer from replacing a cooperating running
-version. Always close older releases before their first migration.
+sequence. Updates verify the installed files on the console. The first public
+baseline is a fresh 1.0 installation; private previews are not supported upgrade
+targets. Unknown or modified installations are preserved. ROMs, progress, Paks
+and settings are outside program replacement. A shared game lease prevents an
+installer from replacing a cooperating running version.
 
 The new app is prepared in a release-specific staging directory, outside
 ShadowMountPlus scan paths. Exact known partial staging writes can resume.
@@ -104,9 +104,9 @@ it. Unknown files, symlinks, hardlinks, mismatched files and downgrades are refu
 
 Checks, downloads, verification and staging run on a joined worker. Checks at
 launch are optional, default off and shared by both ROM revisions. There is no
-resident service, child installer process, kernel backend or PC agent. Legacy
-Beta 3.3 clients keep their separate signed ELF channel for migration; new clients
-only read `updates/native-channel.txt` and never contact port 9021.
+resident service, child installer process, kernel backend or PC agent. The 1.0
+client only reads `updates/native-channel.txt` and never contacts port 9021.
+The release builder does not produce the old private-preview network ELF.
 
 Private GitHub releases cannot be fetched anonymously. No token is embedded;
 the public channel becomes reachable only when the owner opens the repository.
@@ -125,9 +125,9 @@ unknown ones, atomically replace the validated target and synchronize its parent
 The native update card estimates space for download, stage, recovery and rollback;
 a measured shortage is refused before downloading. Unknown telemetry is explicit.
 
-The HDR title declaration changes earlier beta metadata. A supported registered-
-title migration is still required before that upgrade can ship. Physical HDR
-brightness, SDR fallback and coexistence with VRR/120 Hz remain console checks.
+The first public installation includes the final HDR title declaration. Private
+preview migration is outside the release scope. Physical HDR brightness, SDR
+fallback and coexistence with VRR/120 Hz remain console checks.
 See [Display](DISPLAY.md) and the [pre-release review](PRE_RELEASE_REVIEW.md).
-The [architecture review](CONCEPTUAL_REVIEW.md) records the migration and update
+The [architecture review](CONCEPTUAL_REVIEW.md) records the fresh-install baseline and update
 contract decisions.

@@ -17,13 +17,11 @@ Downloads require this project's public GitHub releases. A private repository
 is unavailable to the game; no GitHub credentials are stored on the PS5.
 [Current test status](VALIDATION.md).
 
-## Older betas
+## First release
 
-The 1.0 candidate adds HDR capability to the title declaration. Installers
-currently refuse to replace an older registered title with different metadata.
-The supported transition from earlier betas must be completed before 1.0;
-sending the current update ELF does not bypass that check. Keep your existing
-installation and `/data/dkrr` data. No save-helper program is required by 1.0.
+Version 1.0 is the first public installation baseline. Private development
+previews do not need a migration path. Updates described here apply to compatible
+installations made with the 1.0 installer or a later supported version.
 
 ## Manual or offline update
 
@@ -43,7 +41,7 @@ A measured shortage stops before downloading. If the console cannot report free
 space, the card says so; ordinary verification and recovery still apply.
 
 **DKRR-Update.dkru** is the signed data package downloaded by the game. It is not
-an ELF and does not execute downloaded installer code. **DKRR-Network-Update.elf**
-is kept only for older Beta 3.3 clients; new clients never use it.
+an ELF and does not execute downloaded installer code. No separate network
+updater ELF is included in the 1.0 downloads.
 
 [Install](INSTALLER.md) · [Technical design](ARCHITECTURE.md).

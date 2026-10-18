@@ -15,7 +15,7 @@ for this review.
 | Game-version selection could block on a named pipe | Preference reads are nonblocking and require a regular file. |
 | A crowded earlier USB drive stopped discovery of ROMs on later drives | A bounded search miss continues to the next drive; the `DKRR` folder remains the recommended location. |
 | Unrelated 12-MiB files were read in full during ROM search | Validate the four-byte byte-order header before allocation and bulk reads; checksum verification remains mandatory. |
-| Documentation contradicted the implemented HDR path and promised an unqualified older-beta upgrade | Player guides and architecture now describe the actual implementation and the metadata upgrade limitation. |
+| Private preview migration was treated as a public-release dependency | The first public 1.0 uses a fresh installation. Private previews are outside supported upgrades; conflicting-title safeguards remain. |
 | CI used a deprecated Node runtime and retained checkout credentials unnecessarily | Pin checkout v7.0.1 by full commit, disable credential persistence and bound job duration. |
 
 Regression tests exercise the actual adapters/installer. The new preference test
@@ -29,9 +29,8 @@ evidence, not proof against all races or hardware failures.
 
 | Priority | Open item | Required outcome |
 |---|---|---|
-| Release blocker | Older registered beta → HDR-capable 1.0 title metadata | Define and qualify an app-specific migration through the supported registration path. Both installers deliberately refuse conflicting registered metadata today. Do not bypass that guard or edit app databases/cache files by hand. |
 | Release blocker | Distribution of fonts, title images and combined program | Complete the matching-source/component review and record the applicable redistribution terms. Original DKR-R typography remains unchanged; a project-code licence alone is not an artwork/font permission. |
-| Release blocker | Final physical-console qualification | One exact build must cover fresh installation, upgrade/recovery, restart saves, output modes and the optional controller features. Earlier gameplay confirmation does not cover later installer/HDR changes. |
+| Release blocker | Final physical-console qualification | One exact build must cover fresh installation, compatible update/recovery, restart saves, output modes and the optional controller features. Earlier gameplay confirmation does not cover later installer/HDR changes. |
 | Before publishing | Signed channel and downloadable assets | Freeze one build, source archive, notices and checksums. Sign its exact sequence/tag/package only after qualification; publish the channel after its matching assets. Keep signing keys outside the repository. |
 
 ## Questions for the conceptual audit

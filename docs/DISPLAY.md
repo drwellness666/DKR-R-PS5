@@ -77,8 +77,7 @@ The original game is SDR. This is an explicit SDR-to-HDR expansion into a real
 pipelines and game logic are retained. The extra two image layers and final
 pass are allocated only for HDR; their GPU cost still needs console measurement.
 
-The current build declares the HDR title capability. Earlier beta updaters
-reject a changed title declaration; an existing installation needs a qualified
-metadata migration before the new build can replace it. Do not remove
-that safeguard or overwrite registered metadata by hand. HDR/VRR/120-Hz
-coexistence and display brightness remain to verify on PS5.
+The first public installer declares HDR capability from the start. No upgrade
+from private preview metadata is required. Later updates preserve the registered
+title declaration; conflicting titles are refused. HDR/VRR/120-Hz coexistence
+and display brightness remain to verify on PS5.

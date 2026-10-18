@@ -1,7 +1,8 @@
 # Install DKR-R on PS5 📦
 
 These steps describe the upcoming **1.0 installer**. Its downloads appear after
-final verification. For an existing older beta, see [upgrade status](UPDATES.md#older-betas).
+final verification. Version 1.0 starts with a fresh installation; private
+development previews are not supported upgrade targets.
 
 ## What you need
 
@@ -38,7 +39,8 @@ recover a staged update. Do not delete save folders to fix an installation.
 The receiver's success marker is `DKRR UNIVERSAL INSTALL PASS.`. It confirms
 installed files, not that the PS5 shell has finished discovering the icon.
 
-If the installer reports a title-metadata conflict, stop and keep the existing
-app and `/data/dkrr` data. Repeatedly sending the ELF will not resolve that conflict.
+If the title ID is already used by a different app or private preview, the
+installer preserves it and stops. Repeatedly sending the ELF cannot resolve
+that conflict. Use a fresh target for the first 1.0 installation.
 
 [Updates](UPDATES.md) · [Controls](CONTROLS.md) · [Test status](VALIDATION.md).

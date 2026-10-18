@@ -54,8 +54,8 @@ python3 tools/send_elf.py YOUR_PS5_LAN_IP "$DKR_GAME_WORK/private/universal/DKRR
 Supply both owned ROMs in `USB/DKRR`; require `DKRR UNIVERSAL INSTALL PASS.`.
 ShadowMountPlus discovers the registered source; launch the installed PS5 icon.
 The sibling `DKRR-Update.elf` uses console-side installation records; no previous
-PC work is needed. Early unmanaged versions require explicit verified
-`--migration APP RECEIPT` inputs when packaging. Before a new published release,
+PC work is needed. The first public release supports fresh installation, not
+upgrades from private development previews. Before a new published release,
 increase `installer_sequence` in `PORT_RELEASE.json`; never reuse one sequence
 for different program builds. Use a new output directory for each package.
 

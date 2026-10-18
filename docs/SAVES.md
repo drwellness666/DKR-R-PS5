@@ -10,7 +10,7 @@ between US 1.0 and 1.1 does not convert or overwrite the other revision's progre
 | US 1.1 progress and Controller Paks | Existing save folders inside `profile-us-v80` |
 | Owned ROMs | `/data/dkrr/roms` |
 
-These names retain the existing profile layout. Do not rename the folders to
+These names match the upstream profile layout. Do not rename the folders to
 switch game revision; use **Touchpad → Play** instead. Recompiled does not
 provide a shared emulator-style save-state file across the two revisions.
 
@@ -20,4 +20,4 @@ files with backups retained. Installers and updates do not replace save data.
 
 Save/reload was confirmed on both revisions in earlier sessions. The new native
 backend passes host failure tests; a full console restart followed by save/load
-without the old preview's helper has not yet been verified. [Test status](VALIDATION.md).
+with the new installation remains to verify. [Test status](VALIDATION.md).

@@ -19,34 +19,24 @@ The storage estimate is a preflight, not a reservation. Other programs can consu
 space afterward; existing transaction recovery still handles write failures.
 Both staging and recovery paths are on the installation's internal storage.
 
-## Registered title metadata
+## First public installation
 
-**An automatic older-beta → HDR-title migration is not implemented or qualified.**
-The current refusal remains in both update routes. Exports in an SDK stub library
-establish symbol names; they do not establish safe parameter layouts, completion
-semantics or compatibility with every loader/firmware.
+**Version 1.0 starts with a fresh installation.** Nothing has been publicly
+released, so private development previews do not require an upgrade or metadata
+migration. The complete installer, ROM import, generated controller sounds,
+registration and first launch are the final installation test path.
 
-The reviewed ShadowMountPlus 1.7 sources distinguish app registration, metadata
-staging and remounting. A normal remount can keep existing app metadata. On
-firmware 12+ registration uses its ShellCore bridge rather than simply calling
-the older direct registration export. Its public API documents uninstall as
-asynchronous; request acceptance does not mean the old registration is gone.
+The 1.0 app declares its HDR capability from the beginning. Future compatible
+updates keep that declaration unchanged. Keep the existing refusal when the
+same title ID belongs to different registered metadata or modified files;
+first-release scope is not a reason to overwrite another installation.
 
-A qualified migration therefore needs a separate, durable installer transaction:
-verify the exact old app and caches; retain an independent recovery copy; stage
-and verify the complete new app; hold the own-app lease; use the supported
-app-specific registration lifecycle; observe completion; verify the registered
-metadata and discoverable title before retiring the migration journal. Recovery
-must work after interruption at every transition. The behavior of uninstall on
-the external source folder and `/data/dkrr` must be established first.
-
-Do not substitute direct edits to `app.db`, cache-file replacement, a private
-ShadowMount socket or a broad library scan for this transaction. No such action
-is performed by the current code. Until the transition is qualified, player help
-must retain the older-beta limitation.
+No preview migration work is a release gate. Direct `app.db` edits, broad cache
+replacement and private registration sockets are not part of the installation.
+The reviewed ShadowMountPlus registration behavior remains relevant only if a
+future release intentionally changes title metadata.
 
 Sources: [registration implementation](https://github.com/drakmor/ShadowMountPlus/blob/1.7/src/sm_install.c),
-[platform imports](https://github.com/drakmor/ShadowMountPlus/blob/1.7/include/sm_platform.h),
 [public API](https://github.com/drakmor/ShadowMountPlus/blob/1.7/docs/api.md).
 
 ## Update compatibility
@@ -57,6 +47,13 @@ Changes outside that contract need a separately reviewed installer/protocol
 transition. Never sign an incompatible package as a routine native update or
 relax the old client's allowlist through untrusted manifest fields. A future
 protocol should declare its minimum compatible client before downloading.
+
+## Recompiled-project comparison
+
+The [comparison](RECOMP_COMPARISON.md) records pinned Zelda64Recomp, BanjoRecomp
+and Snap64Recomp sources. Audio scratch reservation is applied before playback;
+saved renderer settings already precede setup. Shader-list prewarming needs a
+separate DKR/renderer integration and is not silently enabled.
 
 ## Lifecycle and performance
 
