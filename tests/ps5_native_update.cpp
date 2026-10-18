@@ -78,17 +78,29 @@ extern "C" int __real_closedir(DIR*);
 struct OrderedEntries {bool read=false;std::size_t at=0;std::vector<dirent> entries;};
 static std::map<DIR*,OrderedEntries> ordered_entries;
 extern "C" struct dirent* __wrap_readdir(DIR* dir) {
-    if(!std::getenv("ORDER_JOURNAL_FIRST"))return __real_readdir(dir);
+    const char* read_failure=std::getenv("FAIL_READDIR");
+    if(!std::getenv("ORDER_JOURNAL_FIRST")&&!read_failure)return __real_readdir(dir);
     char link[64],path[1024];std::snprintf(link,sizeof(link),"/proc/self/fd/%d",dirfd(dir));auto n=readlink(link,path,sizeof(path)-1);
     if(n<0)return __real_readdir(dir);path[n]=0;std::string full=path;
-    if(!full.ends_with("/native-install"))return __real_readdir(dir);
+    const bool root=full.ends_with("/native-install");
+    const bool inject=read_failure&&((!std::strcmp(read_failure,"root")&&root)||(!std::strcmp(read_failure,"nested")&&full.ends_with("/native-install/old")));
+    if(!root&&!inject)return __real_readdir(dir);
     auto& state=ordered_entries[dir];
     if(!state.read){while(auto* entry=__real_readdir(dir))state.entries.push_back(*entry);state.read=true;
         const auto priority=[](const dirent& e){return !std::strcmp(e.d_name,"old.manifest")?0:!std::strcmp(e.d_name,"applying")?2:1;};
         std::stable_sort(state.entries.begin(),state.entries.end(),[&](const auto& a,const auto& b){return priority(a)<priority(b);});}
+    if(inject&&state.at==1){errno=EIO;return nullptr;}
     if(state.at==state.entries.size()){errno=0;return nullptr;}return &state.entries[state.at++];
 }
-extern "C" int __wrap_closedir(DIR* dir){ordered_entries.erase(dir);return __real_closedir(dir);}
+extern "C" int __wrap_closedir(DIR* dir){
+    bool inject=false;
+    if(std::getenv("FAIL_CLOSEDIR_ROOT")){
+        char link[64],path[1024];std::snprintf(link,sizeof(link),"/proc/self/fd/%d",dirfd(dir));auto n=readlink(link,path,sizeof(path)-1);
+        if(n>=0){path[n]=0;inject=std::string(path).ends_with("/native-install");}
+    }
+    ordered_entries.erase(dir);int result=__real_closedir(dir);
+    if(inject&&result==0){errno=EIO;return -1;}return result;
+}
 int main(int argc,char** argv) {
     assert(argc==7);char error[192]{};std::string action=argv[1];
     test_lease_path=argv[5];

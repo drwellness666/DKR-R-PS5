@@ -27,6 +27,15 @@ int main(){
  assert(failure.update(true,held,300,true,fail)==-1);
  for(unsigned t=301;t<310;++t)assert(failure.update(true,held,t,true,fail)==0);
  assert(calls==1);assert(failure.update(false,{},311,false,send)==1&&commands.back()==0);
+ assert(failure.update(true,held,312,true,send)==1&&commands.back()==1);
+ assert(failure.update(false,{},313,false,send)==1&&commands.back()==0);
+ Output retry;calls=0;
+ assert(retry.update(true,held,320,true,fail)==-1&&calls==1);
+ assert(retry.update(false,{},321,false,fail)==0&&calls==2);
+ for(unsigned t=322;t<922;++t)assert(retry.update(false,{},t,false,fail)==0);
+ assert(calls==2);
+ assert(retry.update(true,held,923,true,send)==1&&commands.back()==1);
+ assert(retry.update(false,{},924,false,send)==1&&commands.back()==0);
  Output release;
  assert(release.update(true,held,400,true,send)==1);
  assert(release.update(true,spent,408,false,send)==1&&commands.back()==2);
@@ -34,5 +43,5 @@ int main(){
  Mailbox box;std::array<Item,4> items{};items[0]=held;items[1]=other;
  box.publish(items,0xFFFFF0);assert(box.read(0,0x1000010,false).quantity==2);
  assert(!box.read(0,0x1000200,false).valid&&!box.read(4,0x1000010,false).valid&&!box.read(0,0x1000010,true).valid);
- puts("PASS item feedback: consumption edge, short pulse, resistance, per-racer reset, release/pause/disable cleanup, deduplicated bounded failures and mailbox expiry/wrap");
+ puts("PASS item feedback: consumption edge, short pulse, resistance, per-racer reset, release/pause/disable cleanup, deduplicated bounded failures, explicit-toggle recovery after failed reset, and mailbox expiry/wrap");
 }

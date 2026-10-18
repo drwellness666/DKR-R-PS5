@@ -115,9 +115,11 @@ int main() {
     for (int frame=0;frame<600;++frame)assert(out.update(true,palette[2],send)==0);
     assert(calls==6);
     returned=0;assert(out.update(false,{},send)==1 && calls==7 && !out.owned);
-    Output fresh;attached=false;
-    assert(fresh.update(true,palette[1],send)==-1 && calls==7);
-    assert(fresh.update(true,palette[2],send)==0 && calls==7);
+    assert(out.update(true,palette[4],send)==1 && calls==8);
+    assert(out.update(false,{},send)==1 && calls==9);
+    const auto fresh_calls=calls;Output fresh;attached=false;
+    assert(fresh.update(true,palette[1],send)==-1 && calls==fresh_calls);
+    assert(fresh.update(true,palette[2],send)==0 && calls==fresh_calls);
     static constexpr char command[]="DKRR-RESET-LIGHTBAR-1";
     attached=true;const auto before_calls=calls;
     assert(PS5_JoystickSendEffect(&pad,nullptr,sizeof(command))==-1);
@@ -139,6 +141,20 @@ int main() {
     effect.mode=1;effect.strength=6;assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==-1);
     effect.strength=3;effect.reserved[0]=1;assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==-1);
     assert(trigger_calls==3);
+    // A transient transport failure is retried only after explicit disable.
+    Output retry;returned=-17;
+    assert(retry.update(true,palette[1],send)==-1);
+    const auto retry_calls=calls;
+    assert(retry.update(true,palette[2],send)==0 && calls==retry_calls);
+    assert(retry.update(false,{},send)==0);
+    returned=0;assert(retry.update(true,palette[2],send)==1);
+    returned=-17;assert(retry.update(true,palette[1],send)==-1);
+    assert(retry.update(false,{},send)==0); // Failed reset still ends ownership.
+    const auto disabled_calls=calls;
+    for(unsigned i=0;i<600;++i)assert(retry.update(false,{},send)==0);
+    assert(calls==disabled_calls);
+    returned=0;assert(retry.update(true,palette[4],send)==1);
+    assert(retry.update(false,{},send)==1);
     std::puts("PASS bounded native L2 packet, weapon/pulse/off modes and malformed packet refusal; R2 untouched");
-    std::puts("PASS both actual US address tables, read-only guest inventory, bounds/owner/menu/pause guards, atomic expiry, actual SDL/ScePad colors and system reset, exact command refusal, deduplication, failure suppression and disable cleanup");
+    std::puts("PASS both actual US address tables, read-only guest inventory, bounds/owner/menu/pause guards, atomic expiry, actual SDL/ScePad colors and system reset, exact command refusal, deduplication, failure suppression, disable cleanup and explicit-toggle recovery");
 }
