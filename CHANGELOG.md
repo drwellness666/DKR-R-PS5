@@ -2,12 +2,15 @@
 
 ## 1.0 — in preparation
 
+- Reserve audio conversion scratch buffers before playback; accepted blocks no longer grow those vectors during delivery.
+- Keep optional diagnostic-file reads nonblocking at startup.
+
 - Save TV resolution, refresh rate and HDR together; import valid older settings on first save without changing their files.
 - Show estimated update space, including recovery copies; stop before downloading when measured space is insufficient.
 - Reject pipe-shaped update preferences and recovery markers without blocking startup or removing unexpected entries.
 - Recover preference changes after interrupted display, HDR or version-selection writes; synchronize the directory and reject named pipes without blocking.
 - Continue ROM discovery on later USB drives when an earlier root is crowded; reject unrelated same-size files from their headers before bulk reads.
-- Correct older-beta upgrade guidance and consolidate the pre-release implementation review.
+- Establish fresh installation as the first public 1.0 baseline; exclude private-preview migration and the old network-updater ELF from release requirements.
 - Keep DKR-R’s original typography unchanged: Racing Banana menu faces, Jumpman headings and digits, Selawik reading text and the original fallback policy.
 - Add optional HDR10 under Graphics → Display, with paper white, peak brightness, highlight expansion and a calibration pattern. SDR remains the default.
 - Keep interface brightness separate from scene highlights and compose both into a 10-bit PQ output.
@@ -19,22 +22,27 @@
 - Reject an unallocated HDR descriptor set before GPU commands are recorded.
 - Publish coherent HDR brightness snapshots without making the present worker wait for preference reads, writes or filesystem synchronization.
 
-Version 1.0 is not released yet. PS5 HDR qualification, safe migration of existing
-title metadata and font/artwork redistribution review remain open. Tracks-preview
+Version 1.0 is not released yet. Final fresh-install/PS5 qualification and
+font/artwork redistribution review remain open. Tracks-preview
 water flicker and occasional microstutters are not claimed fixed.
 
-## Beta 3.4
+## Private development history
+
+The entries below describe unpublished preview milestones, not public releases.
+They are not supported migration baselines for 1.0.
+
+### Preview 3.4
 
 - Install Internet updates inside DKR-R, without a running ELF receiver or separately started helper.
 - Download a signed data-only package; no downloaded installer code is executed.
 - Prepare app-specific directory access during installation; leave system and other app directories unchanged.
 - Save and join game workers before replacing program files, keeping the installed app folder in place.
 - Restore interrupted native transactions at startup. Keep old copies intact until recovery completes; avoid rewriting already restored files when filesystem access is denied.
-- Keep the legacy Beta 3.3 channel for one-time migration and the manual ELF route for offline use.
+- Retain the manual ELF route for offline updates.
 - Keep unchanged runtime/metadata files in place; synchronize journal ancestry, retire completed transactions before cleanup and fail closed on metadata read errors.
 - Add sanitizer tests for every replacement cut, repeated recovery, interrupted cleanup, partial markers, invalid packages and filesystem failures.
 
-## Beta 3.3
+### Preview 3.3
 
 - Signed Internet-update check and download under About DKR-R. Optional launch checks are off by default.
 - Native ready/commit handoff to the console's existing ELF receiver; installation waits for the game to finish all file access.
@@ -44,7 +52,7 @@ water flicker and occasional microstutters are not claimed fixed.
 - Avoid a disabled performance report's clock read and the duplicate clock read during active generic captures. Periodic rollback diagnostics now require explicit profiling.
 - Tracks-preview water, reported microstutters and HDR remain open.
 
-## Beta 3.2 — controller experience
+### Preview 3.2 — controller experience
 
 - Show current per-player bindings on an original vector controller diagram.
 - Replace the long mapping list with an action selector; keep alternate bindings and restore/copy actions under More binding options.
@@ -56,7 +64,7 @@ water flicker and occasional microstutters are not claimed fixed.
 - Extend the automated checks for real game-call routing, live mapping geometry and malformed compressed sequences.
 
 
-## Beta 3.1 — console menu refinements
+### Preview 3.1 — console menu refinements
 
 - Put Controls, Graphics, Sound and Textures next to Play; preserve existing settings and page identities.
 - Replace overflowing horizontal subsection tabs with one full-width section selector, using Cross to open/select and Circle to cancel.
@@ -66,9 +74,9 @@ water flicker and occasional microstutters are not claimed fixed.
 - Recommend the optional DKR REMASTERED pack by sr.gu, with its official community link.
 
 This candidate does not claim a fix for Tracks-preview water flicker or measured
-FPS gains. The published Beta 3 package remains available unchanged.
+FPS gains. Earlier private preview artifacts remain archived locally.
 
-## Beta 3 — universal installation and native PS5 extras
+### Preview 3 — universal installation and native PS5 extras
 
 - One ROM-free installer ELF: import both owned US ROMs from USB on PS5.
 - One update ELF: retain ROMs, settings, progress, Paks and texture packs; no previous PC build needed.
@@ -82,12 +90,12 @@ FPS gains. The published Beta 3 package remains available unchanged.
 The new install/save/controller paths are experimental. Native builds and 53
 host check commands pass; their full console verification remains open.
 
-## Beta 2.1
+### Preview 2.1
 
 Shorter documentation, Windows/WSL2 instructions and clarification of the old
 save-support startup dependency. Gameplay code unchanged from Beta 2.
 
-## Beta 2
+### Preview 2
 
 Dual-US selection, shared settings/textures with separate progress, original
 EN/FR/DE game text, classic controls, balloon lights, 4K menu scaling, experimental

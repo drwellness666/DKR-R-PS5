@@ -59,7 +59,6 @@ links for its community texture pack. Import it under **Textures** and use
 
 - Brief water flicker when entering a **Tracks preview**; Adventure water was reported stable.
 - Occasional **microstutters**, especially with heavier graphics settings or texture packs.
-- Upgrading an older registered beta to the new HDR-capable title is still being prepared. Keep your existing installation and saves.
 - HDR10 and the newest installation, update and controller features still need their final PS5 checks. See [test status](docs/VALIDATION.md).
 
 [Known issues and compatibility](docs/KNOWN_ISSUES.md).

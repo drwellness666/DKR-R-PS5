@@ -63,7 +63,6 @@ des Autors angeboten. [Paket-Hilfe](docs/CONTROLS.md#texture-packs-and-mods).
 
 - Kurzes Wasserflackern beim Einstieg in eine **Tracks-Vorschau**; Adventure-Wasser wurde als stabil gemeldet.
 - Gelegentliche **Mikroruckler**, besonders bei aufwendigen Grafikeinstellungen oder Texturpaketen.
-- Das Upgrade einer bereits registrierten älteren Beta auf den neuen HDR-fähigen Titel ist noch in Vorbereitung. Vorhandene Installation und Spielstände behalten.
 - HDR10 und die neuesten Installations-, Update- und Controller-Funktionen brauchen noch ihre abschließenden PS5-Tests. Siehe [Teststand](docs/VALIDATION.md).
 
 [Bekannte Fehler und Kompatibilität](docs/KNOWN_ISSUES.md).
