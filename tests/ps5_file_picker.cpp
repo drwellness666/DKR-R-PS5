@@ -11,10 +11,13 @@
 #include <thread>
 using namespace dkrr::files;
 namespace fs = std::filesystem;
-static std::atomic<int> read_fault = 0, close_fault = 0;
+static std::atomic<int> read_fault = 0, close_fault = 0, throw_read = 0,
+                        closed = 0;
 extern "C" struct dirent *__real_readdir(DIR *);
 extern "C" int __real_closedir(DIR *);
 extern "C" struct dirent *__wrap_readdir(DIR *dir) {
+  if (throw_read.exchange(0))
+    throw std::bad_alloc();
   if (read_fault.exchange(0)) {
     errno = EIO;
     return nullptr;
@@ -22,6 +25,7 @@ extern "C" struct dirent *__wrap_readdir(DIR *dir) {
   return __real_readdir(dir);
 }
 extern "C" int __wrap_closedir(DIR *dir) {
+  ++closed;
   const int rc = __real_closedir(dir);
   if (close_fault.exchange(0)) {
     errno = EIO;
@@ -129,6 +133,20 @@ int main(int argc, char **argv) {
     assert(p.act(v.generation, Action::Cancel));
     assert(finish(a).path.empty());
   }
+  // Model an allocation exception during enumeration, with a directory already
+  // open. The handle must close and a subsequent request must remain usable.
+  a = start(p);
+  const int before_exception = closed;
+  throw_read = 1;
+  assert(p.act(p.view().generation, Action::Enter, root.string()));
+  assert(a.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
+  bool threw = false;
+  try {
+    a.get();
+  } catch (const std::bad_alloc &) {
+    threw = true;
+  }
+  assert(threw && !p.view().active && closed == before_exception + 1);
   a = start(p);
   v = enter(p, root.string(), root.string());
   fs::remove(root / "pack.ZIP");
@@ -143,7 +161,8 @@ int main(int argc, char **argv) {
   assert(!ui.run(Mode::Open, "", "").error.empty());
   Picker invalid({root.string()});
   assert(!invalid.run(Mode::Save, "bin", "../escape.bin").error.empty());
-  std::puts("PASS native picker navigation, filtering, literal labels, root "
-            "boundaries, symlinks, unavailable USB, non-overwriting exports, "
-            "I/O failure, cancellation and shutdown");
+  std::puts(
+      "PASS native picker navigation, filtering, literal labels, root "
+      "boundaries, symlinks, unavailable USB, non-overwriting exports, "
+      "I/O failure, exception resource cleanup, cancellation and shutdown");
 }
