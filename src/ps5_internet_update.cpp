@@ -105,7 +105,7 @@ bool update_directory(char (&folder)[160]) {
 bool load_automatic_check() {
     char folder[160],path[240],text[2];if(!update_directory(folder))return false;
     std::snprintf(path,sizeof(path),"%s/auto-check",folder);
-    int fd=open(path,O_RDONLY|O_NOFOLLOW);if(fd<0)return false;struct stat st{};
+    int fd=open(path,O_RDONLY|O_NOFOLLOW|O_NONBLOCK);if(fd<0)return false;struct stat st{};
     // Native PS5 stat may report zero for unavailable link-count metadata.
     // Read-only access and atomic entry replacement never mutate that inode;
     // match the existing native-save policy without fabricating a link count.

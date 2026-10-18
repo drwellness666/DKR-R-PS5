@@ -78,7 +78,7 @@ bool touch(const Path& path,const char* text) {
     return dkrr_write_new(path.c_str(),text,std::strlen(text),0600)==0;
 }
 bool marker(const Path& path,const char* text) {
-    int fd=open(path.c_str(),O_RDONLY|O_NOFOLLOW);if(fd<0)return false;
+    int fd=open(path.c_str(),O_RDONLY|O_NOFOLLOW|O_NONBLOCK);if(fd<0)return false;
     struct stat st{};char data[16];const auto size=std::strlen(text);
     bool ok=size<sizeof(data)&&fstat(fd,&st)==0&&S_ISREG(st.st_mode)&&st.st_nlink<=1&&st.st_uid==getuid()&&st.st_size==static_cast<off_t>(size)&&read_all(fd,data,size)&&!std::memcmp(data,text,size);
     close(fd);return ok;
