@@ -7,6 +7,7 @@
 #include <cstring>
 #include <dirent.h>
 #include <functional>
+#include <memory>
 #include <sys/stat.h>
 #include <utility>
 
@@ -96,7 +97,7 @@ std::vector<Entry> list(const std::string &directory, Mode mode,
             "location.";
     return result;
   }
-  DIR *dir = opendir(directory.c_str());
+  std::unique_ptr<DIR, int (*)(DIR *)> dir(opendir(directory.c_str()), closedir);
   if (!dir) {
     error = "This folder could not be opened.";
     return result;
@@ -107,7 +108,7 @@ std::vector<Entry> list(const std::string &directory, Mode mode,
     if (cancelled())
       break;
     errno = 0;
-    const auto *entry = readdir(dir);
+    const auto *entry = readdir(dir.get());
     if (!entry) {
       if (errno)
         failed = true;
@@ -133,7 +134,7 @@ std::vector<Entry> list(const std::string &directory, Mode mode,
     }
     result.push_back({name, is_dir});
   }
-  if (closedir(dir) != 0)
+  if (closedir(dir.release()) != 0)
     failed = true;
   if (failed) {
     result.clear();
