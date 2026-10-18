@@ -9,9 +9,11 @@
 using namespace dkrr;
 static std::atomic<int> opens{0},outputs{0},closes{0},active{0},loaded{-1},fail_open{0};
 static std::atomic<unsigned> load_calls{0},loaded_revision{0};
+static std::atomic<bool> delay_open{false},open_entered{false},open_release{false};
 extern "C" int sceAudioOutOpen(int user,int type,int index,unsigned length,unsigned hz,unsigned format) {
     assert(user==42&&type==4&&index==0&&length==256&&hz==48000&&format==0);
-    ++opens;if(fail_open)return -77;++active;return 17;
+    ++opens;if(delay_open.exchange(false)){open_entered=true;while(!open_release.load())std::this_thread::yield();return -77;}
+    if(fail_open)return -77;++active;return 17;
 }
 extern "C" int sceAudioOutOutput(int h,const void*p) {
     assert(h==17);
@@ -20,6 +22,11 @@ extern "C" int sceAudioOutOutput(int h,const void*p) {
 }
 extern "C" int sceAudioOutClose(int h){assert(h==17);++closes;--active;return 0;}
 static std::vector<std::int16_t> load(unsigned rev,unsigned clip){assert((rev==77||rev==80)&&clip<ps5_sounds::count);++load_calls;loaded_revision=rev;loaded=static_cast<int>(clip);return std::vector<std::int16_t>(24000,12000);}
+static std::atomic<bool> delayed_load{true},load_entered{false},load_release{false};
+static std::vector<std::int16_t> delayed(unsigned rev,unsigned clip){
+ if(delayed_load.exchange(false)){load_entered=true;while(!load_release.load())std::this_thread::yield();return {};}
+ return load(rev,clip);
+}
 template<class Test>static void wait(Test test){for(int i=0;i<1000&&!test();++i)std::this_thread::sleep_for(std::chrono::milliseconds(1));assert(test());}
 int main(){
     ps5_items::Item held{0x80401100,0,1,true,0},spent=held;spent.quantity=0;
@@ -68,5 +75,27 @@ int main(){
         std::this_thread::sleep_for(std::chrono::milliseconds(8));assert(loaded==during);
         speaker.update(false,42,{},630,false,0.25F,77);wait([]{return active.load()==0;});
     }
-    puts("PASS actual controller audio worker: all five item types/levels, release-use edge, no invented pickup/loss event, real non-item cues and item priority, no port while disabled/idle, correct native user/route/format, bounded gain, pause cancellation, failure isolation and shutdown close");
+    {
+        // A cancelled load belongs to the old generation. Its missing-file
+        // result must not disable a newer request after an off/on transition.
+        ps5_speaker::Speaker speaker(delayed);const auto before=opens.load();
+        speaker.update(true,42,held,800,true,0.25F,77);
+        speaker.update(true,42,spent,820,false,0.25F,77);wait([]{return load_entered.load();});
+        speaker.update(false,42,{},830,false,0.25F,77);
+        speaker.update(true,42,held,840,true,0.25F,77);
+        speaker.update(true,42,spent,860,false,0.25F,77);load_release=true;
+        wait([&]{return opens.load()>before;});wait([]{return active.load()==0;});
+        assert(speaker.status()==1);
+    }
+    {
+        ps5_speaker::Speaker speaker(load);const auto before=opens.load();delay_open=true;
+        speaker.update(true,42,held,900,true,0.25F,77);
+        speaker.update(true,42,spent,920,false,0.25F,77);wait([]{return open_entered.load();});
+        speaker.update(false,42,{},930,false,0.25F,77);
+        speaker.update(true,42,held,940,true,0.25F,77);
+        speaker.update(true,42,spent,960,false,0.25F,77);open_release=true;
+        wait([&]{return opens.load()>before+1;});wait([]{return active.load()==0;});
+        assert(speaker.status()==1);
+    }
+    puts("PASS actual controller audio worker: all five item types/levels, release-use edge, no invented pickup/loss event, real non-item cues and item priority, no port while disabled/idle, correct native user/route/format, bounded gain, pause cancellation, failure isolation, cancelled load/open errors cannot disable newer requests, and shutdown close");
 }

@@ -31,6 +31,7 @@ static void frame(bool focus=false) {
 static void press(ImGuiKey key) {
  auto& io=ImGui::GetIO();io.AddKeyEvent(key,true);frame();frame();io.AddKeyEvent(key,false);frame();frame();
 }
+void run_ps5_update_ui_tests();
 int main() {
  assert(StepSidebarSelection(0,1)==3&&StepSidebarSelection(3,-1)==0);
  int at=0;std::array<bool,11> seen{};
@@ -48,5 +49,5 @@ int main() {
   assert(current==1&&changes==1&&GImGui->OpenPopupStack.Size==0); // Circle cancels.
   disabled=true;frame(true);frame();press(ImGuiKey_GamepadFaceDown);assert(current==1&&changes==1);disabled=false;
  }
- ImGui::DestroyContext();puts("PASS actual PS5 section selector: bounded narrow/wide geometry, D-pad order, Cross selection, Circle cancellation, disabled state; native visual and shoulder page order agree");
+ ImGui::DestroyContext();run_ps5_update_ui_tests();puts("PASS actual PS5 section selector: bounded narrow/wide geometry, D-pad order, Cross selection, Circle cancellation, disabled state; native visual and shoulder page order agree");
 }
