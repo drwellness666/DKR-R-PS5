@@ -35,7 +35,7 @@ int main() {
     fs::create_directories(folder);fs::create_directory(root/"roms");
     std::ofstream(root/"roms/dkr.us.v77.z64").close();fs::resize_file(root/"roms/dkr.us.v77.z64",12*1024*1024);
     const auto unrelated=root/"unrelated";std::ofstream(unrelated)<<"keep unrelated data";
-    const char* names[]={"display-output.txt","hdr-output.txt","boot-revision.txt"};
+    const char* names[]={"tv-output.txt","tv-output.txt","boot-revision.txt"};
     for(unsigned kind=0;kind<3;++kind) {
         const auto file=folder/names[kind],legacy=fs::path(file.string()+".next");
         std::ofstream(legacy)<<"partial legacy write";

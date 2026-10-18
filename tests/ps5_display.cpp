@@ -102,7 +102,7 @@ static VkResult surface(unsigned expected_h, unsigned expected_hz) {
     return rc;
 }
 int main() {
-    const fs::path root(DKR_DISPLAY_DATA_ROOT), pref = root / "preferences/display-output.txt", temp = root / "preferences/display-output.txt.next";
+    const fs::path root(DKR_DISPLAY_DATA_ROOT), pref = root / "preferences/tv-output.txt", temp = root / "preferences/tv-output.txt.next";
     fs::create_directories(pref.parent_path()); write(root / "save-fixture", "preserve progress");
     dkrr_ps5_initialize_hdr();
     dkrr_ps5_display_choice c{}; assert(dkrr_ps5_read_display_choice(&c) == 0 && c.resolution == 1080 && c.refresh == 60);

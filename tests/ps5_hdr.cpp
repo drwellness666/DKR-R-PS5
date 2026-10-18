@@ -63,7 +63,7 @@ int main(){
     dkrr_ps5_hdr_calibration_pattern(1);assert(dkrr_ps5_hdr_pattern());dkrr_ps5_hdr_calibration_pattern(0);assert(!dkrr_ps5_hdr_pattern());
     dkrr_ps5_hdr_report(3,2);assert(dkrr_ps5_hdr_status().output==3&&dkrr_ps5_hdr_status().reason==2);
     snapshot_during_save();
-    auto file=root/"preferences/hdr-output.txt";fs::remove(file);fs::create_symlink(root/"outside",file);
+    auto file=root/"preferences/tv-output.txt";fs::remove(file);fs::create_symlink(root/"outside",file);
     assert(dkrr_ps5_read_hdr_choice(&c)==-1&&!c.enabled);assert(dkrr_ps5_choose_hdr({1,200,800,35})==-1&&!fs::exists(root/"outside"));
     fs::remove(file);std::ofstream(file)<<"hdr=1\npaper_white=200\npeak=800\nexpansion=35\nextra=1\n";
     assert(dkrr_ps5_read_hdr_choice(&c)==-1&&!c.enabled);assert(dkrr_ps5_choose_hdr({1,200,800,35})==-1);

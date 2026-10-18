@@ -54,6 +54,11 @@ int sceHttpReadData(int id,void* data,std::size_t size){
 
 }
 namespace dkrr::updates::native {
+bool storage_budget(std::uint64_t bytes,Space& space,char* error,std::size_t capacity) {
+    assert(bytes==256);space={16*1024*1024,mode=="space-low"?1024U:64U*1024*1024,mode!="space-unknown"};
+    if(mode=="space-low"){std::snprintf(error,capacity,"Not enough free space; nothing downloaded.");return false;}
+    return true;
+}
 bool prepare(int fd,const Offer& offer,char* error,std::size_t capacity) {
     ++preparations;assert(offer.native_package&&payload_digest(fd,offer));
     std::string readback(payload.size(),'\0');assert(read(fd,readback.data(),readback.size())==static_cast<ssize_t>(readback.size())&&readback==payload);
@@ -81,7 +86,7 @@ int main(int argc,char** argv){
         assert(state==State::Available);dkrr::updates::install();
         if(mode=="cancel"){wait([]{return dkrr::updates::view().received>0;});dkrr::updates::cancel();}
         wait([]{auto s=dkrr::updates::view().state;return s==State::Closing||s==State::Failed;});
-        const bool good=mode=="good"||mode=="redirect"||automatic;
+        const bool good=mode=="good"||mode=="redirect"||mode=="space-unknown"||automatic;
         assert(dkrr::updates::close_requested()==good);
         if(good){assert(dkrr::updates::view().state==State::Closing&&preparations==1);}
         else assert(dkrr::updates::view().state==State::Failed);
@@ -91,5 +96,6 @@ int main(int argc,char** argv){
     assert(!dkrr::updates::automatic_check());
     if(mode=="digest"||mode=="oversize"||mode=="signature"||mode=="offline"||mode=="current"||mode=="cancel"||mode=="bad-redirect")assert(preparations==0);
     if(mode=="prepare-fail")assert(preparations==1&&!dkrr::updates::close_requested());
+    if(mode=="space-low")assert(preparations==0&&connections==1&&dkrr::updates::view().received==0);
     assert(connections>=1);std::printf("PASS native update worker: %s\n",mode.c_str());
 }

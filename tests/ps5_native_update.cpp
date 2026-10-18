@@ -16,6 +16,7 @@
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <unistd.h>
 static const char* test_lease_path;
 #define DKRR_GAME_LEASE_PATH test_lease_path
@@ -36,6 +37,12 @@ extern "C" int __wrap_lstat(const char* p,struct stat* st){
 extern "C" int __wrap_fstat(int fd,struct stat* st){int r=__real_fstat(fd,st);if(!r&&std::getenv("ZERO_LINKS"))st->st_nlink=0;return r;}
 extern "C" int __real_rename(const char*,const char*);
 static unsigned replacements;
+extern "C" int __real_statvfs(const char*,struct statvfs*);
+extern "C" int __wrap_statvfs(const char* path,struct statvfs* out) {
+    if(std::getenv("SPACE_UNAVAILABLE")){errno=ENOSYS;return -1;}
+    if(std::getenv("SPACE_LOW")){std::memset(out,0,sizeof(*out));out->f_frsize=4096;out->f_bavail=1;return 0;}
+    return __real_statvfs(path,out);
+}
 extern "C" int __wrap_rename(const char* from,const char* to) {
     if(std::getenv("FAIL_APP_RENAMES")&&std::strstr(to,DKRR_NATIVE_APP)){errno=EPERM;return -1;}
     if(std::strstr(from,"/native-install/new/")&&std::strstr(to,DKRR_NATIVE_APP)) {
@@ -87,7 +94,16 @@ int main(int argc,char** argv) {
     test_lease_path=argv[5];
     int lease=dkrr_runtime_installation_lease();assert(lease>=0);
     int result;
-    if(action=="prepare") {
+    if(action=="space") {
+        auto text=file(argv[2]),key=file(argv[3]);assert(key.size()==32);
+        dkrr::updates::Offer offer{};assert(dkrr::updates::verify_offer(text.data(),text.size(),reinterpret_cast<const unsigned char*>(key.data()),offer));
+        dkrr::updates::native::Space space{};
+        result=dkrr::updates::native::storage_budget(offer.bytes,space,error,sizeof(error))?0:-1;
+        assert(space.required>=2*offer.bytes+16*1024*1024);
+        assert(space.known==!bool(std::getenv("SPACE_UNAVAILABLE")));
+        if(std::getenv("SPACE_LOW"))assert(space.available==4096&&space.required>space.available);
+    }
+    else if(action=="prepare") {
         auto text=file(argv[2]),key=file(argv[3]);assert(key.size()==32);
         dkrr::updates::Offer offer{};assert(dkrr::updates::verify_offer(text.data(),text.size(),reinterpret_cast<const unsigned char*>(key.data()),offer));
         int fd=open(argv[4],O_RDONLY|O_NOFOLLOW);assert(fd>=0);
