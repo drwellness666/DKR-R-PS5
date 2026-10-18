@@ -2,9 +2,10 @@
 
 Normal installation uses the [ROM-free ELF installer](INSTALLER.md).
 This page is for developers and users who want to compile their own copy. The
-optional **Start-Windows.cmd** / **bash Start-Linux.sh** assistant still creates a
-private ROM-containing installer; do not share that file. The first build
-downloads public sources and needs several GB of free space. [Windows setup](WINDOWS.md).
+optional **Start-Windows.cmd** / **bash Start-Linux.sh** assistant builds the same
+ROM-free universal installer and update files as the release route. Supply both
+ROMs through USB for the first installation. The first build downloads public
+sources and needs several GB of free space. [Windows setup](WINDOWS.md).
 
 ## ROMs and console
 
@@ -59,6 +60,7 @@ upgrades from private development previews. Before a new published release,
 increase `installer_sequence` in `PORT_RELEASE.json`; never reuse one sequence
 for different program builds. Use a new output directory for each package.
 
-These two universal ELFs exclude ROMs and extracted controller PCM. Keep the private full app, CANDIDATE.json and matching debug ELF locally. Share
-only reviewed ROM-free packages with matching source and original notices.
+All three universal files exclude ROMs and extracted controller audio. Keep
+the private full app, CANDIDATE.json and matching debug ELF locally. Share only
+reviewed ROM-free packages with matching source and original notices.
 [Developer guide](DEVELOPMENT.md) · [Licences](LICENSES.md).
