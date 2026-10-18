@@ -7,6 +7,8 @@ An unofficial PS5 port of [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R), th
 
 [📦 Downloads](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇩🇪 Deutsch](README.de.md) · [📖 Help](docs/README.md) · [❤️ Credits](CREDITS.md) · [🐛 Report a bug](https://github.com/drwellness666/DKR-R-PS5/issues)
 
+**A free, open-source hobby project for the community.** Source for the PS5 integration, installer, updater and build tools is included under [GPL-3.0-or-later](LICENSE).
+
 **Version 1.0 is in preparation.** The final installer and update downloads are not available yet.
 
 ## 🎮 Made for PS5
@@ -53,6 +55,6 @@ This port depends on the work of **[ThatGuyMcd / DKR-R](https://github.com/ThatG
 
 **AI-assisted / vibe-coded:** this PS5 port was developed with AI assistance. This describes the PS5 integration, not the authorship of the original DKR-R or its dependencies.
 
-The PS5 integration is [GPL-3.0-or-later](LICENSE); other components retain their own terms. Supply your own lawfully usable ROMs. No ROMs, extracted controller audio or texture packs are included in shared downloads. This fan project is not affiliated with or endorsed by Nintendo, Rare, Microsoft or Sony.
+Dependencies, fonts and artwork retain their own terms. Supply your own lawfully usable ROMs. No ROMs, extracted controller audio or texture packs are included in shared downloads. This fan project is not affiliated with or endorsed by Nintendo, Rare, Microsoft or Sony.
 
 Want to compile or contribute? [Developer guide](docs/DEVELOPMENT.md).
