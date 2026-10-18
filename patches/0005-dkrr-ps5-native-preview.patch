@@ -1459,7 +1459,24 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
          for (std::size_t i = 0; i < sample_count; i += 2) {
              // RDRAM's 32-bit word swap leaves each native stereo pair in R,L
              // order. Restore conventional L,R order before sending it to SDL.
-@@ -2436,9 +2506,61 @@
+@@ -2396,6 +2466,16 @@
+         return;
+     }
+     g_audio_frequency = static_cast<std::uint32_t>(obtained.freq);
++#if defined(__PROSPERO__)
++    // Reserve both conversion buffers while the newly opened device is paused.
++    // The queue accepts at most this many samples; later valid blocks, including
++    // custom-music blocks, cannot grow these vectors in the delivery path.
++    // SDL's own queue storage and decoder allocations are independent.
++    const std::size_t maximum_scratch_samples =
++        static_cast<std::size_t>(std::max(g_audio_frequency, 48000U)) * 2U;
++    g_audio_swap_buffer.reserve(maximum_scratch_samples);
++    g_custom_music_buffer.reserve(maximum_scratch_samples);
++#endif
+     g_audio_callback_frames = obtained.samples;
+     g_audio_playback_started = false;
+     g_audio_nominal_block_frames = 0U;
+@@ -2436,9 +2516,61 @@
      }
      const bool blocked = dkr::runtime::ui::overlay_visible();
      const bool window_focused = g_window != nullptr &&
@@ -1521,7 +1538,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      const int configured_keyboard_player =
          dkr::runtime::input::keyboard_player();
      const std::size_t online_profile = std::min(
-@@ -2687,6 +2809,98 @@
+@@ -2687,6 +2819,98 @@
  #endif
  }
  
@@ -1620,7 +1637,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
  bool dkr::runtime::platform::gyro_available(std::size_t player) {
  #if DKR_RUNTIME_HAS_RT64
      std::scoped_lock lock(g_platform_mutex);
-@@ -3320,3 +3534,39 @@
+@@ -3320,3 +3544,39 @@
      (void)assignments;
  #endif
  }
