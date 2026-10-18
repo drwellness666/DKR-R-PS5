@@ -4,6 +4,7 @@
 
 - Save TV resolution, refresh rate and HDR together; import valid older settings on first save without changing their files.
 - Show estimated update space, including recovery copies; stop before downloading when measured space is insufficient.
+- Reject pipe-shaped update preferences and recovery markers without blocking startup or removing unexpected entries.
 - Recover preference changes after interrupted display, HDR or version-selection writes; synchronize the directory and reject named pipes without blocking.
 - Continue ROM discovery on later USB drives when an earlier root is crowded; reject unrelated same-size files from their headers before bulk reads.
 - Correct older-beta upgrade guidance and consolidate the pre-release implementation review.
