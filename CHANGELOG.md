@@ -2,6 +2,8 @@
 
 ## 1.0 — in preparation
 
+- Browse USB drives and game files directly in the touchpad menu when importing textures, filters, saves or controller mappings. Export saves and mappings to a chosen folder; existing file names are kept.
+
 First PS5 release, based on **DKR-R 1.0.6**.
 
 - Native PS5 home-screen app with original DKR-R artwork.

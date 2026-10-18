@@ -3,6 +3,6 @@
   "upstream_version": "1.0.6",
   "source_only": false,
   "qualification": "Version 1.0 preparation: integrated current source; final console and distribution checks remain open.",
-  "installer_sequence": 9,
+  "installer_sequence": 10,
   "release_status": "unreleased"
 }
