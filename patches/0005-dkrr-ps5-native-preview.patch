@@ -1928,11 +1928,12 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  #include "runtime_ui.hpp"
  #include "runtime_portable.hpp"
  #include "render_power_policy.hpp"
-@@ -19,6 +22,14 @@
+@@ -19,6 +22,15 @@
  #include "generated/jumpman_font.h"
  #include "generated/racing_banana_font.h"
  #include "generated/selawik_font.h"
 +#if defined(__PROSPERO__)
++#include "ps5_file_picker.hpp"
 +#include "ps5_revision_selection.h"
 +#include "ps5_menu_layout.hpp"
 +#include "ps5_controller_diagram.hpp"
@@ -1943,7 +1944,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  #include "countdown_tone_policy.hpp"
  #include "custom_tracks.hpp"
  #include "launcher_render_policy.hpp"
-@@ -64,6 +75,9 @@
+@@ -64,6 +76,9 @@
  #include "startup_performance.hpp"
  #include "runtime_telemetry.hpp"
  #include "runtime_texture_packs.hpp"
@@ -1953,7 +1954,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  #include "save_manager.hpp"
  #include "runtime_save_routing.hpp"
  #include "texture_pack_browser_policy.hpp"
-@@ -477,7 +491,7 @@
+@@ -477,7 +492,7 @@
  }
  bool g_online_guide_do_not_show_again = true;
  bool g_online_guide_reopen_requested = false;
@@ -1962,7 +1963,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  RefreshRate g_modern_refresh_mode = RefreshRate::Display;
  #elif defined(__ANDROID__)
  // Conservative first-use defaults only. The settings loader restores all
-@@ -489,7 +503,7 @@
+@@ -489,7 +504,7 @@
  int g_modern_refresh_target = 60;
  #if defined(DKR_IOS)
  Resolution g_modern_resolution = Resolution::Original2x;
@@ -1971,7 +1972,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  Resolution g_modern_resolution = Resolution::Original2x;
  #else
  Resolution g_modern_resolution = Resolution::Auto;
-@@ -498,7 +512,7 @@
+@@ -498,7 +513,7 @@
  Antialiasing g_modern_antialiasing = Antialiasing::None;
  #if defined(DKR_IOS)
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
@@ -1980,7 +1981,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::Off;
  #else
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
-@@ -551,6 +565,7 @@
+@@ -551,6 +566,7 @@
  std::string g_texture_pack_manage_id;
  std::string g_texture_pack_remove_id;
  std::string g_texture_pack_remove_name;
@@ -1988,7 +1989,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  // Set when an action in Track Lab (import, arm, play) switched the presentation
  // profile to Modern on the player's behalf. Shown in Track Lab and Graphics,
  // cleared when the player changes the profile there by hand.
-@@ -680,7 +695,11 @@
+@@ -680,7 +696,11 @@
  constexpr int kPageTextures = 8;
  constexpr int kMenuPageCount = 9;
  // Stable page IDs, explicit visual order for both pointer and controller use.
@@ -2000,7 +2001,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  int StepSidebarSelection(int current,int direction) {
      const auto found=std::find(kSidebarOrder.begin(),kSidebarOrder.end(),current);
      const int index=found==kSidebarOrder.end()?0:static_cast<int>(found-kSidebarOrder.begin());
-@@ -707,7 +726,11 @@
+@@ -707,7 +727,11 @@
  bool g_capture_popup_pending = false;
  bool g_capture_finished = false;
  std::size_t g_selected_player = 0;
@@ -2012,7 +2013,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  constexpr int kShortcutCaptureAction = -2;
  constexpr int kAssignControllerCaptureAction = -3;
  constexpr std::size_t kShortcutActionCount = static_cast<std::size_t>(
-@@ -1533,6 +1556,10 @@
+@@ -1533,6 +1557,10 @@
  #if defined(__ANDROID__)
      // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
      dkr::runtime::mobile_graphics::apply_accurate_budget(config);
@@ -2023,7 +2024,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  #endif
  }
  
-@@ -1752,6 +1779,12 @@
+@@ -1752,6 +1780,12 @@
          output << "memory_pak=" << (dkr::runtime::pak::enabled() ? 1 : 0) << '\n';
          output << "rumble=" << (dkr::runtime::platform::rumble_enabled() ? 1 : 0) << '\n';
          output << "rumble_strength=" << dkr::runtime::platform::rumble_strength() << '\n';
@@ -2036,7 +2037,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          output << "stick_deadzone=" << dkr::runtime::input::stick_deadzone() << '\n';
          output << "stick_anti_deadzone=" << dkr::runtime::input::stick_anti_deadzone() << '\n';
          output << "stick_sensitivity=" << dkr::runtime::input::stick_sensitivity() << '\n';
-@@ -2424,6 +2457,14 @@
+@@ -2424,6 +2458,14 @@
                  dkr::runtime::pak::set_enabled(number != 0);
              } else if (key == "rumble") {
                  dkr::runtime::platform::set_rumble_enabled(number != 0);
@@ -2051,7 +2052,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
              } else if (key == "rumble_strength") {
                  dkr::runtime::platform::set_rumble_strength(std::stof(value));
              } else if (key == "stick_deadzone") {
-@@ -2513,6 +2554,16 @@
+@@ -2513,6 +2555,16 @@
      // still owns an open handle. Migration may call SaveSettings below, so
      // release the read handle before attempting that replacement.
      input.close();
@@ -2068,7 +2069,361 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      g_online_automatic_backend = dkr::runtime::netplay::experimental::migrated_automatic_backend(
          has_automatic_backend_setting, g_online_automatic_backend, has_legacy_backend_setting);
      for (std::size_t channel = 0; channel < kSoundChannelCount; ++channel) {
-@@ -4307,6 +4358,11 @@
+@@ -2930,6 +2982,44 @@
+     return true;
+ }
+ 
++bool StartDialogJob(std::function<std::function<void()>()> job);
++// The native picker is part of this ImGui frame. Its storage work belongs on
++// the dialog thread; only the selected action and UI state run on the UI thread.
++bool ChooseFileForAction(const nfdfilteritem_t* filters, nfdfiltersize_t count,
++    const char* filename, std::string& status,
++    std::function<bool(const std::filesystem::path&)> action) {
++    std::vector<std::pair<std::string,std::string>> copied;
++    for (nfdfiltersize_t i=0;i<count;++i) copied.emplace_back(filters[i].name,filters[i].spec);
++    const std::string name=filename?filename:"";
++    auto pick=[copied=std::move(copied),name]() {
++        std::pair<std::filesystem::path,std::string> answer;
++        if (NFD_Init()!=NFD_OKAY) {
++            answer.second="The file picker could not be initialized.";return answer;
++        }
++        std::vector<nfdfilteritem_t> items;
++        for (const auto& item:copied) items.push_back({item.first.c_str(),item.second.c_str()});
++        nfdu8char_t* result=nullptr;
++        const auto code=name.empty()?NFD_OpenDialogU8(&result,items.data(),static_cast<nfdfiltersize_t>(items.size()),nullptr):
++            NFD_SaveDialogU8(&result,items.data(),static_cast<nfdfiltersize_t>(items.size()),nullptr,name.c_str());
++        if (code==NFD_OKAY) { answer.first=std::filesystem::path(reinterpret_cast<const char8_t*>(result));NFD_FreePathU8(result); }
++        else if (code==NFD_ERROR) answer.second=NFD_GetError();
++        NFD_Quit();return answer;
++    };
++#if defined(__PROSPERO__)
++    return StartDialogJob([pick=std::move(pick),action=std::move(action),status=&status]() -> std::function<void()> {
++        auto [path,error]=pick();
++        return [path=std::move(path),error=std::move(error),action,status] {
++            if (!error.empty()) *status=error;
++            else if (!path.empty()) action(path);
++        };
++    });
++#else
++    const auto [path,error]=pick();
++    if (!error.empty()) status=error;
++    return !path.empty() && action(path);
++#endif
++}
++
+ bool SelectRomWithDialog(std::filesystem::path& selected,
+                          std::vector<RomCatalogEntry>& catalog,
+                          std::string& status) {
+@@ -2974,22 +3064,8 @@
+             "local filters folder before importing another.";
+         return false;
+     }
+-    if (NFD_Init() != NFD_OKAY) {
+-        g_crt_status = "The system file picker could not be initialized.";
+-        return false;
+-    }
+-    nfdu8char_t* result = nullptr;
+     const nfdfilteritem_t filters[] = {{"PNG image", "png"}};
+-    const nfdresult_t dialog = NFD_OpenDialogU8(&result, filters, 1, nullptr);
+-    if (dialog != NFD_OKAY) {
+-        if (dialog == NFD_ERROR) g_crt_status = NFD_GetError();
+-        NFD_Quit();
+-        return false;
+-    }
+-    const std::filesystem::path source = std::filesystem::u8path(result);
+-    NFD_FreePathU8(result);
+-    NFD_Quit();
+-
++    return ChooseFileForAction(filters,1,nullptr,g_crt_status,[](const std::filesystem::path& source) {
+     std::error_code error;
+     constexpr std::uintmax_t maximum_filter_bytes = 64U * 1024U * 1024U;
+     const std::uintmax_t size = std::filesystem::file_size(source, error);
+@@ -3028,6 +3104,7 @@
+     g_crt_status = "Imported " + destination.filename().string() + ".";
+     SaveSettings();
+     return true;
++    });
+ }
+ 
+ bool TexturePackImportRunning() {
+@@ -3128,13 +3205,13 @@
+ 
+ bool DialogJobRunning() {
+     std::scoped_lock lock(g_dialog_job_mutex);
+-    return g_dialog_job_running;
++    return g_dialog_job_running || static_cast<bool>(g_dialog_job_finish);
+ }
+ 
+ bool StartDialogJob(std::function<std::function<void()>()> job) {
+     {
+         std::scoped_lock lock(g_dialog_job_mutex);
+-        if (g_dialog_job_running) return false;
++        if (g_dialog_job_running || g_dialog_job_finish) return false;
+         g_dialog_job_running = true;
+     }
+     // A finished worker stays joinable until joined; retire it first.
+@@ -3176,6 +3253,10 @@
+ 
+ // A folder picker, for the dialog-job thread (which owns its own COM
+ // initialization). False with an empty error means the player cancelled.
++#if defined(__PROSPERO__)
++#include "ps5_file_picker_ui.inl"
++#endif
++
+ bool PickFolder(std::filesystem::path& chosen, std::string& error) {
+     if (NFD_Init() != NFD_OKAY) {
+         error = "The system folder picker could not be initialized.";
+@@ -3228,197 +3309,81 @@
+ 
+ void ImportLegacyModWithDialog() {
+     if (g_legacy_imports.snapshot().busy) return;
+-    if (NFD_Init() != NFD_OKAY) {
+-        g_legacy_import_status = "The system file picker could not be initialized.";
+-        return;
+-    }
+-    nfdu8char_t* result = nullptr;
+-    const nfdfilteritem_t filters[] = {{"Legacy DKR patch or archive", "xdelta,zip"}};
+-    const auto dialog = NFD_OpenDialogU8(&result, filters, 1, nullptr);
+-    std::filesystem::path source;
+-    if (dialog == NFD_OKAY) {
+-        source = std::filesystem::u8path(result);
+-        NFD_FreePathU8(result);
+-    } else if (dialog == NFD_ERROR) {
+-        g_legacy_import_status = NFD_GetError();
+-    }
+-    NFD_Quit();
+-    if (source.empty()) return;
+-    std::vector<std::filesystem::path> roms;
+-    for (const auto& entry : LoadRomCatalog()) {
+-        if (roms.size() == 8) break;
+-        roms.push_back(entry.path);
+-    }
+-    g_legacy_import_status.clear();
+-    g_legacy_imports.import_file(std::move(source), std::move(roms));
++    const nfdfilteritem_t filters[]={{"Legacy DKR patch or archive","xdelta,zip"}};
++    ChooseFileForAction(filters,1,nullptr,g_legacy_import_status,[](const std::filesystem::path& source) {
++        std::vector<std::filesystem::path> roms;
++        for (const auto& entry:LoadRomCatalog()) {
++            if (roms.size()==8) break;
++            roms.push_back(entry.path);
++        }
++        g_legacy_import_status.clear();
++        g_legacy_imports.import_file(source,std::move(roms));return true;
++    });
+ }
+ 
+ bool ImportAdventureWithDialog() {
+-    if (NFD_Init() != NFD_OKAY) {
+-        g_save_manager_status = "The system file picker could not be initialized.";
+-        return false;
+-    }
+-    nfdu8char_t* result = nullptr;
+-    const nfdfilteritem_t filters[] = {{"DKR Adventure save", "bin"}};
+-    const nfdresult_t dialog = NFD_OpenDialogU8(&result, filters, 1, nullptr);
+-    bool imported = false;
+-    if (dialog == NFD_OKAY) {
+-        const auto source = std::filesystem::u8path(result);
+-        NFD_FreePathU8(result);
++    const nfdfilteritem_t filters[]={{"DKR Adventure save","bin"}};
++    return ChooseFileForAction(filters,1,nullptr,g_save_manager_status,[](const std::filesystem::path& source) {
+         std::string error;
+-        imported = dkr::runtime::saves::import_adventure(source, error);
+-        if (imported) {
+-            InvalidateSaveManagerViewCache();
+-            g_save_builder_image.reset();
+-        }
+-        g_save_manager_status = imported
+-            ? "Adventure save imported. The previous save was backed up first."
+-            : error;
+-    } else if (dialog == NFD_ERROR) {
+-        g_save_manager_status = NFD_GetError();
+-    }
+-    NFD_Quit();
+-    return imported;
++        const bool imported=dkr::runtime::saves::import_adventure(source,error);
++        if (imported) { InvalidateSaveManagerViewCache();g_save_builder_image.reset(); }
++        g_save_manager_status=imported?"Adventure save imported. The previous save was backed up first.":error;
++        return imported;
++    });
+ }
+ 
+ bool ExportAdventureWithDialog(const std::filesystem::path& source = {},
+     dkr::runtime::saves::StoredSaveKind kind = dkr::runtime::saves::StoredSaveKind::Adventure) {
+-    if (NFD_Init() != NFD_OKAY) {
+-        g_save_manager_status = "The system file picker could not be initialized.";
+-        return false;
+-    }
+-    nfdu8char_t* result = nullptr;
+-    const bool pak = kind == dkr::runtime::saves::StoredSaveKind::ControllerPak;
+-    const nfdfilteritem_t filters[] = {{pak ? "DKR Controller Pak" : "DKR stored save", pak ? "mpk" : "bin"}};
+-    const nfdresult_t dialog = NFD_SaveDialogU8(
+-        &result, filters, 1, nullptr, pak ? "dkr-controller-pak.mpk" :
+-            kind == dkr::runtime::saves::StoredSaveKind::ExperimentalPaks ? "dkr-online-paks.bin" : "dkr-adventure-save.bin");
+-    bool exported = false;
+-    if (dialog == NFD_OKAY) {
+-        auto destination = std::filesystem::u8path(result);
+-        NFD_FreePathU8(result);
+-        if (destination.extension().empty()) {
+-            destination += pak ? ".mpk" : ".bin";
+-        }
++    const bool pak=kind==dkr::runtime::saves::StoredSaveKind::ControllerPak;
++    const nfdfilteritem_t filters[]={{pak?"DKR Controller Pak":"DKR stored save",pak?"mpk":"bin"}};
++    const char* name=pak?"dkr-controller-pak.mpk":kind==dkr::runtime::saves::StoredSaveKind::ExperimentalPaks?"dkr-online-paks.bin":"dkr-adventure-save.bin";
++    return ChooseFileForAction(filters,1,name,g_save_manager_status,[source,kind,pak](const std::filesystem::path& chosen) {
++        auto destination=chosen;
++        if (destination.extension().empty()) destination+=pak?".mpk":".bin";
+         std::string error;
+-        exported = dkr::runtime::saves::export_stored_save(source.empty()
+-            ? dkr::runtime::saves::adventure_info().path : source, destination, kind, error);
+-        g_save_manager_status = exported
+-            ? "Stored save exported successfully. The original was not changed."
+-            : error;
+-    } else if (dialog == NFD_ERROR) {
+-        g_save_manager_status = NFD_GetError();
+-    }
+-    NFD_Quit();
+-    return exported;
++        const bool exported=dkr::runtime::saves::export_stored_save(source.empty()?dkr::runtime::saves::adventure_info().path:source,destination,kind,error);
++        g_save_manager_status=exported?"Stored save exported successfully. The original was not changed.":error;
++        return exported;
++    });
+ }
+ 
+ bool ImportSaveBundleWithDialog() {
+-    if (NFD_Init() != NFD_OKAY) {
+-        g_save_manager_status = "The system file picker could not be initialized.";
+-        return false;
+-    }
+-    nfdchar_t* result = nullptr;
+-    const nfdfilteritem_t filters[] = {{"DKR-R save bundle", "dkrsave"}};
+-    const nfdresult_t dialog = NFD_OpenDialogU8(&result, filters, 1, nullptr);
+-    bool imported = false;
+-    if (dialog == NFD_OKAY) {
+-        const auto source = std::filesystem::u8path(result);
+-        NFD_FreePathU8(result);
++    const nfdfilteritem_t filters[]={{"DKR-R save bundle","dkrsave"}};
++    return ChooseFileForAction(filters,1,nullptr,g_save_manager_status,[](const std::filesystem::path& source) {
+         std::string error;
+-        imported = dkr::runtime::saves::import_bundle(source, error);
+-        if (imported) {
+-            InvalidateSaveManagerViewCache();
+-            g_save_builder_image.reset();
+-        }
+-        g_save_manager_status = imported
+-            ? "Adventure and Controller Pak saves returned safely to T.T.'s garage."
+-            : error;
+-    } else if (dialog == NFD_ERROR) {
+-        g_save_manager_status = NFD_GetError();
+-    }
+-    NFD_Quit();
+-    return imported;
++        const bool imported=dkr::runtime::saves::import_bundle(source,error);
++        if (imported) { InvalidateSaveManagerViewCache();g_save_builder_image.reset(); }
++        g_save_manager_status=imported?"Adventure and Controller Pak saves returned safely to T.T.'s garage.":error;
++        return imported;
++    });
+ }
+ 
+ bool ExportSaveBundleWithDialog() {
+-    if (NFD_Init() != NFD_OKAY) {
+-        g_save_manager_status = "The system file picker could not be initialized.";
+-        return false;
+-    }
+-    nfdchar_t* result = nullptr;
+-    const nfdfilteritem_t filters[] = {{"DKR-R save bundle", "dkrsave"}};
+-    const nfdresult_t dialog = NFD_SaveDialogU8(
+-        &result, filters, 1, nullptr, "dkr-port-save-garage.dkrsave");
+-    bool exported = false;
+-    if (dialog == NFD_OKAY) {
+-        auto destination = std::filesystem::u8path(result);
+-        NFD_FreePathU8(result);
+-        if (destination.extension().empty()) {
+-            destination += ".dkrsave";
+-        }
++    const nfdfilteritem_t filters[]={{"DKR-R save bundle","dkrsave"}};
++    return ChooseFileForAction(filters,1,"dkr-port-save-garage.dkrsave",g_save_manager_status,[](const std::filesystem::path& chosen) {
++        auto destination=chosen;
++        if (destination.extension().empty()) destination+=".dkrsave";
+         std::string error;
+-        exported = dkr::runtime::saves::export_bundle(destination, error);
+-        g_save_manager_status = exported
+-            ? "Complete save garage exported successfully."
+-            : error;
+-    } else if (dialog == NFD_ERROR) {
+-        g_save_manager_status = NFD_GetError();
+-    }
+-    NFD_Quit();
+-    return exported;
++        const bool exported=dkr::runtime::saves::export_bundle(destination,error);
++        g_save_manager_status=exported?"Complete save garage exported successfully.":error;
++        return exported;
++    });
+ }
+ 
+ bool ImportControllerMappingsWithDialog() {
+-    if (NFD_Init() != NFD_OKAY) {
+-        g_controller_mapping_status =
+-            "The system file picker could not be initialized.";
+-        return false;
+-    }
+-    nfdu8char_t* result = nullptr;
+-    const nfdfilteritem_t filters[] = {
+-        {"SDL controller mappings", "txt,db"},
+-    };
+-    const nfdresult_t dialog = NFD_OpenDialogU8(&result, filters, 1, nullptr);
+-    bool imported = false;
+-    if (dialog == NFD_OKAY) {
+-        const std::filesystem::path source = std::filesystem::u8path(result);
+-        NFD_FreePathU8(result);
+-        imported = dkr::runtime::platform::import_controller_mappings(
+-            source, g_controller_mapping_status);
+-    } else if (dialog == NFD_ERROR) {
+-        g_controller_mapping_status = NFD_GetError();
+-    }
+-    NFD_Quit();
+-    return imported;
++    const nfdfilteritem_t filters[]={{"SDL controller mappings","txt,db"}};
++    return ChooseFileForAction(filters,1,nullptr,g_controller_mapping_status,[](const std::filesystem::path& source) {
++        return dkr::runtime::platform::import_controller_mappings(source,g_controller_mapping_status);
++    });
+ }
+ 
+ bool ExportControllerMappingsWithDialog() {
+-    if (NFD_Init() != NFD_OKAY) {
+-        g_controller_mapping_status =
+-            "The system file picker could not be initialized.";
+-        return false;
+-    }
+-    nfdu8char_t* result = nullptr;
+-    const nfdfilteritem_t filters[] = {
+-        {"SDL controller mappings", "txt"},
+-    };
+-    const nfdresult_t dialog = NFD_SaveDialogU8(
+-        &result, filters, 1, nullptr, "dkr-r-controller-mappings.txt");
+-    bool exported = false;
+-    if (dialog == NFD_OKAY) {
+-        std::filesystem::path destination = std::filesystem::u8path(result);
+-        NFD_FreePathU8(result);
+-        if (destination.extension().empty()) {
+-            destination += ".txt";
+-        }
+-        exported = dkr::runtime::platform::export_controller_mappings(
+-            destination, g_controller_mapping_status);
+-    } else if (dialog == NFD_ERROR) {
+-        g_controller_mapping_status = NFD_GetError();
+-    }
+-    NFD_Quit();
+-    return exported;
++    const nfdfilteritem_t filters[]={{"SDL controller mappings","txt"}};
++    return ChooseFileForAction(filters,1,"dkr-r-controller-mappings.txt",g_controller_mapping_status,[](const std::filesystem::path& chosen) {
++        auto destination=chosen;
++        if (destination.extension().empty()) destination+=".txt";
++        return dkr::runtime::platform::export_controller_mappings(destination,g_controller_mapping_status);
++    });
+ }
+ 
+ void DrawRaceBadge(const char* label, const ImVec4& color, float width = 0.0F);
+@@ -4307,6 +4272,11 @@
  }
  
  void DrawSidebarCurrentStripe() {
@@ -2080,7 +2435,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      const ImVec2 minimum = ImGui::GetItemRectMin();
      const ImVec2 maximum = ImGui::GetItemRectMax();
      ImDrawList* draw = ImGui::GetWindowDrawList();
-@@ -4322,6 +4378,7 @@
+@@ -4322,6 +4292,7 @@
      draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
                          std::max(rounding - 1.0F, 0.0F));
      draw->PopClipRect();
@@ -2088,7 +2443,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -6352,12 +6409,18 @@
+@@ -6352,12 +6323,18 @@
          "HIDE FROM LIST keeps DKR-R's managed copy on disk. Choose Hidden "
          "from the Visibility filter to restore it later.");
      ImGui::Dummy({0.0F, 8.0F});
@@ -2107,7 +2462,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      ImGui::Dummy({0.0F, 12.0F});
      const float available = std::max(ImGui::GetContentRegionAvail().x, 1.0F);
      const float gap = ImGui::GetStyle().ItemSpacing.x;
-@@ -6375,11 +6438,13 @@
+@@ -6375,11 +6352,13 @@
      }
      if (!compact) ImGui::SameLine();
      ImGui::PushStyleColor(ImGuiCol_Button, {0.45F, 0.09F, 0.10F, 1.0F});
@@ -2121,7 +2476,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      ImGui::PopStyleColor();
      ImGui::EndPopup();
  }
-@@ -6456,6 +6521,10 @@
+@@ -6456,6 +6435,10 @@
              ImGui::TextWrapped("%s", value.c_str());
          };
          detail_row("TYPE", dkr::runtime::texture_packs::format_name(pack.format));
@@ -2132,7 +2487,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          detail_row("PRIORITY", std::to_string(pack.priority) +
                     (pack.priority == 1U ? " (highest)" : " (lower number wins)"));
          detail_row("MANAGED SIZE",
-@@ -6519,6 +6588,11 @@
+@@ -6519,6 +6502,11 @@
      if (ImGui::Button("REMOVE PACK...", {action_width, 42.0F})) {
          g_texture_pack_remove_id = pack.id;
          g_texture_pack_remove_name = pack.name;
@@ -2144,7 +2499,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          request_removal = true;
          ImGui::CloseCurrentPopup();
      }
-@@ -8053,6 +8127,15 @@
+@@ -8053,6 +8041,15 @@
      if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
          return false;
      }
@@ -2160,7 +2515,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      if (g_capture_action == kShortcutCaptureAction) {
          if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
              event->key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-@@ -8166,6 +8249,11 @@
+@@ -8166,6 +8163,11 @@
  
  void DrawOverlayContent(float content_width) {
      if (g_overlay_page == kPagePlay) {
@@ -2172,7 +2527,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          DrawPageHeading("PLAY");
          ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
          ImGui::TextWrapped("Taj has paused the race. The island is waiting whenever you are ready.");
-@@ -8173,12 +8261,19 @@
+@@ -8173,12 +8175,19 @@
          ImGui::Dummy({0.0F, 18.0F});
          DrawStartingLights(true);
          ImGui::Dummy({0.0F, 12.0F});
@@ -2192,7 +2547,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      } else if (g_overlay_page == kPageGraphics) {
          DrawGraphicsPage(content_width, true);
      } else if (g_overlay_page == kPageSound) {
-@@ -8991,6 +9086,11 @@
+@@ -8991,6 +9000,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -2204,7 +2559,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          LauncherSidebarButton("PLAY", 0, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("DKR-R ONLINE", kPageOnlineMp, page, sidebar_selection,
-@@ -9009,6 +9109,7 @@
+@@ -9009,6 +9023,7 @@
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("ABOUT DKR-R", kPageAbout, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
@@ -2212,7 +2567,17 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9335,6 +9436,9 @@
+@@ -9139,6 +9154,9 @@
+         }
+         ImGui::End();
+         PumpDialogJob();
++#if defined(__PROSPERO__)
++        DrawPs5FilePicker();
++#endif
+         DrawTexturePackImportModal();
+         DrawPaddockLegacyModImportModal();
+         DrawModLaunchModal();
+@@ -9335,6 +9353,9 @@
  }
  
  void dkr::runtime::ui::draw(RT64::Application& application) {
@@ -2222,7 +2587,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      // Publish only an atomic value; the raster worker snapshots it into the
      // next pass's push constants. No GPU resources or samplers are rebuilt.
      // Keep this before visibility checks so closing the overlay or changing
-@@ -9408,6 +9512,9 @@
+@@ -9408,6 +9429,9 @@
      }
  #endif
      inspector->newFrame(application.framebufferGraphicsWorker.get());
@@ -2232,7 +2597,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      if (auto* hud_window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window())) {
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
-@@ -9461,7 +9568,8 @@
+@@ -9461,7 +9485,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -2242,7 +2607,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9494,6 +9602,11 @@
+@@ -9494,6 +9519,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -2254,7 +2619,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          SidebarButton("PLAY", 0, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
          SidebarButton("DKR-R ONLINE", kPageOnlineMp, sidebar_selection, nav_inner_width,
-@@ -9512,6 +9625,7 @@
+@@ -9512,6 +9542,7 @@
                        sidebar_layout.button_height);
          SidebarButton("ABOUT DKR-R", kPageAbout, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
@@ -2262,7 +2627,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9574,6 +9688,11 @@
+@@ -9574,6 +9605,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -2274,7 +2639,17 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9756,6 +9875,18 @@
+@@ -9628,6 +9664,9 @@
+         // or the game HUD. These dialogs render outside the content child.
+         const PaddockLauncherTypographyScope modal_typography(show_overlay);
+         PumpDialogJob();
++#if defined(__PROSPERO__)
++        DrawPs5FilePicker();
++#endif
+         DrawTexturePackImportModal();
+         DrawPaddockLegacyModImportModal();
+         DrawTextEntryKeyboard();
+@@ -9756,6 +9795,18 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -2293,6 +2668,20 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      // RT64's ImGui backend owns normal pointer, keyboard and gamepad event
      // delivery. Do not turn those events into page-focus requests: ImGui must
      // be allowed to retain the item selected by the previous event so the
+@@ -9876,3 +9927,13 @@
+     return true;
+ }
+ #endif
++
++#if defined(__PROSPERO__)
++extern "C" void dkrr_ps5_shutdown_dialogs() {
++    dkrr_ps5_cancel_file_picker();
++    if (g_dialog_job_worker.joinable()) g_dialog_job_worker.join();
++    std::scoped_lock lock(g_dialog_job_mutex);
++    g_dialog_job_finish=nullptr;
++    g_dialog_job_running=false;
++}
++#endif
 diff --git a/runtime-recomp/src/game/runtime_ui_paddock.inl b/runtime-recomp/src/game/runtime_ui_paddock.inl
 --- a/runtime-recomp/src/game/runtime_ui_paddock.inl
 +++ b/runtime-recomp/src/game/runtime_ui_paddock.inl
