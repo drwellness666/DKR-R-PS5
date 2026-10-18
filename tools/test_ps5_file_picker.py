@@ -8,7 +8,7 @@ p=argparse.ArgumentParser();p.add_argument('game_work',nargs='?',type=pathlib.Pa
 with tempfile.TemporaryDirectory(prefix='dkrr-picker-') as folder:
  t=pathlib.Path(folder)
  flags=['clang++','-std=c++20','-O1','-g','-pthread','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-fno-omit-frame-pointer','-I'+str(r/'src')]
- subprocess.run(flags+[str(r/'tests/ps5_file_picker.cpp'),str(r/'src/ps5_file_picker.cpp'),'-Wl,--wrap=readdir,--wrap=closedir','-o',str(t/'core')],check=True)
+ subprocess.run(flags+[str(r/'tests/ps5_file_picker.cpp'),str(r/'src/ps5_file_picker.cpp'),'-Wl,--wrap=readdir,--wrap=closedir,--wrap=lstat','-o',str(t/'core')],check=True)
  subprocess.run([str(t/'core'),str(t/'storage')],check=True,timeout=30)
  if a.game_work is None:
   a.game_work=t/'inputs';cmd=['python3',str(r/'tools/prepare_controller_test_sources.py'),str(a.game_work)]
