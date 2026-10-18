@@ -61,7 +61,7 @@ private item PCM on the console; ROMs and generated sounds are excluded from
 shared installer packages.
 Source: [VADPCM decode.c](https://github.com/depp/vadpcm/blob/main/codec/decode.c).
 
-The port keeps DKR-R's original interface typography: Racing Banana for menu text and signs; Jumpman for headings and digits; Selawik Regular/Semibold for reading text (SIL OFL 1.1); and upstream's default/monospace fallbacks. Font data, loading policy, sizing and glyph ranges are unchanged. Racing Banana provenance and the outstanding redistribution confirmation are recorded in `licenses/Racing-Banana-NOTICE.md`. Jumpman's original EULA permits software embedding and is included in the component notices.
+The port keeps DKR-R's original interface typography: Racing Banana for menu text and signs; Jumpman for headings and digits; Selawik Regular/Semibold for reading text (SIL OFL 1.1); and upstream's default/monospace fallbacks. Font data, loading policy, sizing and glyph ranges are unchanged. Racing Banana provenance and the maintainer-confirmed redistribution scope are recorded in `licenses/Racing-Banana-NOTICE.md`. Jumpman's original EULA permits software embedding and is included in the component notices.
 
 The title recipe fetches the original DKR-R icon and README header. Sources,
 hashes and attribution are in `TITLE_ART_SOURCES.json` and
@@ -92,7 +92,7 @@ Monocypher dependency (BSD-2-Clause / CC0-1.0), and SHA-256 uses the already pin
 Mbed TLS dependency (Apache-2.0). Their full licence notices are retained in `licenses/Monocypher.md` and
 `licenses/Mbed-TLS.md`, and copied into the installed app.
 No additional proprietary SDK, network service library or private release key is
-shipped. The new in-game updater installs a signed data package in its own process and never contacts an ELF receiver. Only the older Beta 3.3 migration client retains the legacy route.
+shipped. The new in-game updater installs a signed data package in its own process and never contacts an ELF receiver. The first public release uses this native route.
 
 ## HDR output references
 
@@ -105,3 +105,16 @@ are supplied as source; no Sony SDK implementation or system module is copied.
 The original component licence/copyright texts copied from the pinned build
 inputs are retained in `licenses/COMPONENT-NOTICES.txt`, with source hashes in
 `licenses/COMPONENT-NOTICES.json`.
+
+## Exact notice verification
+
+The original component bundle contains 57 sections. It includes PS5 Mesa,
+platform/public SDK and native-tooling terms, re-spirv and both zlib versions.
+The source-wide C-family catalogues retain original comments, including optional
+and unlinked files; their presence does not mean every listed licence applies
+to the executable. Source members and byte offsets are recorded in
+[PLATFORM-NOTICE-SOURCES.json](licenses/PLATFORM-NOTICE-SOURCES.json).
+
+Build checks verify every section's length and SHA-256 and refuse stale installed
+copies. [Content permission confirmation](licenses/CONTENT-PERMISSIONS.json)
+records the maintainer's scope for Racing Banana and title graphics.

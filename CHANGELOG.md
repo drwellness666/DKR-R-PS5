@@ -2,6 +2,9 @@
 
 ## 1.0 — in preparation
 
+- Bind copied licences, title-art provenance, staged assets and the actual native runtime/tool to the build fingerprint.
+- Verify exact component-notice bytes and reject stale application copies before packaging; include the platform/source notices and maintainer-confirmed font/artwork scope.
+
 - Keep update-preference errors visible until a successful retry; explain a disabled install button when storage is insufficient.
 - Open controller sounds through bounded, nonblocking descriptor reads; reject special files and incomplete clips without holding up worker shutdown.
 - Ignore stale controller-speaker load/open/output results after cancellation, so toggling the feature back on can play a new cue.
@@ -27,9 +30,9 @@
 - Reject an unallocated HDR descriptor set before GPU commands are recorded.
 - Publish coherent HDR brightness snapshots without making the present worker wait for preference reads, writes or filesystem synchronization.
 
-Version 1.0 is not released yet. Final fresh-install/PS5 qualification and
-font/artwork redistribution review remain open. Tracks-preview
-water flicker and occasional microstutters are not claimed fixed.
+Version 1.0 is not released yet. Final fresh-install/PS5 qualification and the
+matching source/package review remain open. Tracks-preview water flicker and
+occasional microstutters are not claimed fixed.
 
 ## Private development history
 
