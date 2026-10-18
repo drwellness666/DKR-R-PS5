@@ -3,6 +3,8 @@
 """Exercise exact notice verification and stale application refusal."""
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from verify_component_notices import verify, verify_app
@@ -70,6 +72,14 @@ with tempfile.TemporaryDirectory(prefix='dkrr-notice-') as folder:
     # The staged copy can be valid text yet omit the newly supplied notices.
     destination.write_bytes(expected[:expected.index(b'# Original component notices')])
     refuses(lambda: verify_app(root, app))
+    # The independent update-package command must reject this before opening
+    # even the receipt or creating output. No SDK or game binary is required.
+    output = Path(folder) / 'must-not-exist.dkru'
+    result = subprocess.run([sys.executable, str(ROOT / 'tools/build_native_update_package.py'),
+        str(app), str(Path(folder) / 'missing-receipt.json'), str(output), '--sequence', '8'],
+        capture_output=True, text=True)
+    assert result.returncode and 'Application component notices are stale or incomplete' in result.stderr
+    assert not output.exists()
     destination.unlink()
     backing = Path(folder) / 'notice.txt'
     backing.write_bytes(expected)

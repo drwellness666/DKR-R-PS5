@@ -4,6 +4,7 @@
 import argparse,hashlib,json,pathlib,re,struct
 from build_universal_installer import PUBLIC_FILES,release_files
 from build_native_game_bundle_updater import inventory,inventory_hash
+from verify_component_notices import verify_app
 
 def build(app,receipt,sequence,output):
     if not 1<=sequence<=2147483647 or output.exists() or output.is_symlink():raise ValueError('Use a new package path and valid sequence')
@@ -29,6 +30,11 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for n in ('app','receipt','output'):p.add_argument(n,type=pathlib.Path)
     p.add_argument('--sequence',required=True,type=int);a=p.parse_args()
-    try:result=build(a.app,a.receipt,a.sequence,a.output)
+    try:
+        # The low-level writer also serves synthetic transaction fixtures.
+        # The standalone release command must enforce the same notice check
+        # as the universal packager before producing an update download.
+        verify_app(pathlib.Path(__file__).resolve().parents[1],a.app)
+        result=build(a.app,a.receipt,a.sequence,a.output)
     except (OSError,ValueError,KeyError) as error:p.error(str(error))
     print(json.dumps(result,indent=2))
