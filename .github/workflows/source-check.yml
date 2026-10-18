@@ -15,6 +15,7 @@ jobs:
           persist-credentials: false
       - run: python3 tools/check_public_source.py .
       - run: sha256sum --quiet -c SHA256SUMS
+      - run: python3 tools/test_component_notices.py
       - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libsdl2-dev glslang-tools spirv-tools libvulkan-dev mesa-vulkan-drivers pkg-config
       - run: python3 tools/test_controller_presets.py
       - run: python3 tools/test_ps5_controller_lights.py
