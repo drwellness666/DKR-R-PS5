@@ -25,6 +25,7 @@
 #include "ps5_native_update.hpp"
 
 int dkrr_game_main(int, char **);
+extern "C" void dkrr_ps5_shutdown_dialogs();
 extern "C" unsigned dkrr_report_missing_imports(void (*)(const char *));
 extern "C" int sceKernelSendNotificationRequest(int,void*,size_t,int) __attribute__((weak));
 extern "C" int sceKernelOpen(const char *,int,int);
@@ -178,6 +179,7 @@ int main() {
         catch(const std::exception &e) { report("runtime exception: %s",e.what());status=2; }
         if(status==0 && runtime_error_reported.load(std::memory_order_relaxed))status=5;
     }
+    dkrr_ps5_shutdown_dialogs();
     struct ps5_heap_stats stats={};ps5_heap_stats(&stats);
     dkrr::updates::shutdown();
     report("completed status=%d revision=%u heap-peak=%zu heap-libc-fallbacks=%llu",status,revision,stats.peak_bytes,stats.libc_fallbacks);
