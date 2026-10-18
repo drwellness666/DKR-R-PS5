@@ -1,27 +1,13 @@
-# Windows
+# Windows source builds
 
-The [universal ELF route](INSTALLER.md) needs an ordinary ELF sender and USB ROMs;
-it needs neither WSL nor a compiler. The instructions below are the optional
-**developer source build** and its optional local build assistant.
+**Installing a release does not require WSL, Python or a compiler.** Use the [installer ELF](INSTALLER.md) with an ordinary ELF sender. These instructions are only for compiling your own copy.
 
-Use an **x86-64 Windows 10 build 19041+ or Windows 11** PC. Extract this version's
-source ZIP, then double-click **Start-Windows.cmd**. Windows Python is not needed.
+1. On **x86-64 Windows 10 build 19041+ or Windows 11**, extract the source ZIP and double-click **Start-Windows.cmd**.
+2. If needed, accept Microsoft's **Ubuntu 24.04 / WSL2** setup. Complete any restart and Ubuntu account prompts, then start the file again. This is the only step requiring administrator access.
+3. Review missing Linux build packages, then use the local browser assistant to select both US ROMs and build your private installer.
 
-The starter uses **Ubuntu 24.04 in WSL2**. If missing, it offers Microsoft's WSL
-installation; only that step requests administrator access. Follow any Windows
-restart and Ubuntu user-creation prompts, then start the same file again. It does
-not change your default WSL distribution or build as root.
+Keep the terminal open while building. If the browser does not open, use the local address printed there. Windows Python is not needed: compilation runs inside WSL2. Sources are staged in its Linux filesystem for build speed; ROMs are not uploaded.
 
-Verified public sources are staged in the Linux home filesystem for build speed;
-ROMs and previous work are excluded from that copy. Missing Linux build packages
-are listed and installed only after confirmation. The local browser assistant
-then takes **both US ROMs**, builds one private installer and sends it to your PS5.
-If no browser opens, use the local address printed in the terminal.
+The generated ROM-containing installer is for your own console and must not be shared. The complete Windows/WSL2 build route has [limited test coverage](KNOWN_ISSUES.md#feature-status). Windows ARM and macOS are outside this version's scope.
 
-Full Windows/WSL2 build-to-console acceptance remains pending. PowerShell syntax
-or a Linux build alone cannot establish that result. Windows ARM and macOS are
-outside this version's scope.
-
-Microsoft: [WSL installation](https://learn.microsoft.com/en-us/windows/wsl/install),
-[command reference](https://learn.microsoft.com/en-us/windows/wsl/basic-commands),
-[Linux filesystem guidance](https://learn.microsoft.com/en-us/windows/wsl/filesystems).
+[Manual build commands](BUILD.md) · [Microsoft WSL installation](https://learn.microsoft.com/en-us/windows/wsl/install) · [WSL filesystem guidance](https://learn.microsoft.com/en-us/windows/wsl/filesystems)

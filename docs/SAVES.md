@@ -1,23 +1,17 @@
-# Settings and save data
+# Save data
 
-**Settings and textures are shared; progress and Paks stay separate.** Switching
-between US 1.0 and 1.1 does not convert or overwrite the other revision's progress.
+**Settings and texture packs are shared. Progress and Controller Paks stay separate for US 1.0 and US 1.1.** Changing revision does not convert or overwrite the other revision's progress.
 
-| Data | Internal storage |
+Use the game's **Save Manager** to inspect saves. Close the game normally before making a file backup. Installers and updates do not replace save data, but a separate backup is still recommended.
+
+| Data | PS5 location |
 |---|---|
-| Shared controls, graphics, audio, HUD and texture library | `/data/dkrr/profile-us-v77` |
-| US 1.0 progress and Controller Paks | Existing save folders inside `profile-us-v77` |
-| US 1.1 progress and Controller Paks | Existing save folders inside `profile-us-v80` |
-| Owned ROMs | `/data/dkrr/roms` |
+| Shared settings, texture library and US 1.0 profile | `/data/dkrr/profile-us-v77` |
+| US 1.1 progress and Paks | `/data/dkrr/profile-us-v80` |
+| Your imported ROMs | `/data/dkrr/roms` |
 
-These names match the upstream profile layout. Do not rename the folders to
-switch game revision; use **Touchpad → Play** instead. Recompiled does not
-provide a shared emulator-style save-state file across the two revisions.
+Keep the folder names; use **Touchpad → Play** to switch revision. Saves within each profile also follow the original DKR-R separation for offline, online and modded play. The port does not provide shared emulator-style save states.
 
-The current version handles saving inside the game. No PC service or additional save-helper
-ELF is part of this version. Saves are checked and written through temporary
-files with backups retained. Installers and updates do not replace save data.
+Saving is built into the game. No PC service or separate save-helper ELF is required.
 
-Save/reload was confirmed on both revisions in earlier sessions. The new native
-backend passes host failure tests; a full console restart followed by save/load
-with the new installation remains to verify. [Test status](VALIDATION.md).
+[Updates](UPDATES.md) · [Compatibility](KNOWN_ISSUES.md)

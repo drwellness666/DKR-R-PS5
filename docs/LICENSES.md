@@ -1,52 +1,23 @@
 # Licences and content
 
-## Code
+## Software
 
-The PS5 adapters are **GPL-3.0-or-later**. DKR-R's original project code is MIT;
-its combined runtime includes GPL components. Exact source revisions, notices
-and build recipes are supplied with the port. [Component inventory](../THIRD_PARTY.md).
+The PS5 integration is **[GPL-3.0-or-later](../LICENSE)**. Original DKR-R project code is MIT; its linked runtime also includes GPL components. Each dependency retains its own copyright and licence. Matching source and pinned build recipes accompany the universal ELF downloads.
 
-Universal ELF downloads must accompany the matching integration source and
-recipes for the pinned dependencies. A root LICENSE does not replace component
-notices or grant rights to the original game. Public homebrew SDK sources are
-used; licensed Sony SDK files and Sony system modules are not distributed.
+**[Credits and project links](../CREDITS.md)** · **[Component inventory](../THIRD_PARTY.md)** · **[Complete original notices](../licenses/COMPONENT-NOTICES.txt)**
 
-## Game data
+The full notices are retained with the source and installed app. They are not replaced by this overview. Only public homebrew SDKs are used; no licensed Sony SDK or Sony system modules are distributed.
 
-Users supply both legally usable US ROM dumps locally. Shared packages exclude
-ROMs, extracted controller audio, saves, Paks and third-party texture packs.
-Generated CPU source trees and private ROM-containing installers stay off GitHub.
-The universal installer creates its private controller audio on the console.
+## Your game data
+
+Supply both of your own lawfully usable US ROM dumps. Shared downloads exclude ROMs, extracted controller audio, saves and third-party texture packs. Controller sounds are prepared locally from your ROMs. A software licence does not grant rights to the original game or its content.
 
 ## Fonts and artwork
 
-The interface uses DKR-R's original, unchanged font setup: **Racing Banana**
-for menu text and signs, **Jumpman** for headings and digits, and **Selawik** for
-reading text, including upstream's existing fallback behavior. Font data,
-loading code, glyph ranges, sizes and metrics are kept identical.
+The port retains DKR-R's original **Racing Banana**, **Jumpman** and **Selawik** typography. Selawik's SIL OFL 1.1 and Jumpman's original embedding terms are included. The maintainer confirmed permission for Racing Banana and the title graphics in this port, its installer and updates; the [recorded scope](../licenses/CONTENT-PERMISSIONS.json) is not a standalone font or artwork licence.
 
-Selawik's SIL OFL 1.1 and copyright remain included. Jumpman's supplied EULA
-expressly permits software embedding; its original terms are included in the
-component notices. Racing Banana is not extracted from the ROM. Upstream asks
-public distributors to confirm redistribution rights. The maintainer confirmed
-permission for this port, its installer and updates on 18 October 2026; the
-[recorded scope](../licenses/CONTENT-PERMISSIONS.json) is not a general font licence. [Font notice](../licenses/Racing-Banana-NOTICE.md).
+The original icon is by **[POOTERMAN](https://www.deviantart.com/pooterman)**. Icon and header graphics retain their original attribution and terms. Texture packs are separate downloads under their authors' terms.
 
-Title graphics and interface images come from the pinned DKR-R project. Its
-application icon is credited to **POOTERMAN**. These images keep their original
-terms and attribution; this port does not relicense them or the original game's
-characters as its own work. The README links the upstream header directly.
-[Artwork provenance](../homebrew/DKR-R-Game/ARTWORK.md).
+[Font notice](../licenses/Racing-Banana-NOTICE.md) · [Artwork provenance](../homebrew/DKR-R-Game/ARTWORK.md) · [Original DKR-R licence](../licenses/DKR-R-LICENSE.md) · [Runtime notice](../licenses/DKR-R-COPYING-NOTICE.md) · [Upstream asset policy](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/docs/ASSET_POLICY.md)
 
-Texture packs must be obtained separately under their authors' terms. Nintendo,
-Rare, Microsoft and Sony do not endorse this project.
-
-Primary notices: [DKR-R runtime licence](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/runtime-recomp/COPYING-NOTICE.md) ·
-[asset policy](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/docs/ASSET_POLICY.md) ·
-[third-party notices](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/THIRD_PARTY.md).
-
-Original component texts: [notices](../licenses/COMPONENT-NOTICES.txt) · [source inventory](../licenses/COMPONENT-NOTICES.json).
-
-The exact component texts are checked before linking and packaging. A package
-with an outdated notice bundle is refused. This byte-level check preserves
-attribution; it does not broaden any component's licence.
+This fan project is not affiliated with or endorsed by Nintendo, Rare, Microsoft or Sony. Names and game content belong to their respective rights holders.

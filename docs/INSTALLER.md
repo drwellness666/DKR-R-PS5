@@ -1,46 +1,42 @@
-# Install DKR-R on PS5 📦
+# Install on PS5 📦
 
-These steps describe the upcoming **1.0 installer**. Its downloads appear after
-final verification. Version 1.0 starts with a fresh installation; private
-development previews are not supported upgrade targets.
+The final **1.0 installer** is in preparation. It installs the game on the console; no PC compilation is needed.
 
-## What you need
+## Before you start
 
-- A PS5 that already runs native homebrew, with an ELF receiver and ShadowMountPlus.
-- Both owned, clean **US 1.0 and US 1.1 / Rev A** ROM dumps.
-- A USB drive readable by the PS5. z64, n64 and v64 byte orders are supported; PAL is not.
+- Your PS5 must already run **native homebrew**, with an **ELF receiver** and **[ShadowMountPlus](https://github.com/drakmor/ShadowMountPlus)**.
+- Supply both of your own clean **US 1.0 and US 1.1 / Rev A** ROM dumps. `.z64`, `.n64` and `.v64` are accepted; PAL ROMs are not.
+- Use a USB drive readable by the PS5. Leave the ROMs uncompressed.
 
-## Four steps
+## Install
 
-1. Download **DKRR-Installer.elf** from this project's release.
-2. Copy both ROMs into **DKRR** at the root of the USB drive. Keep them as ordinary files, not inside a ZIP. Names do not matter.
-3. Connect the drive, start the normal homebrew environment and close DKR-R. Send the ELF using your usual sender on Windows or Linux.
-4. Wait for the completion notification and ShadowMountPlus' app discovery, then launch the PS5 icon.
+1. Get **DKRR-Installer.elf** from this project's [releases](https://github.com/drwellness666/DKR-R-PS5/releases).
+2. Create **DKRR** at the root of the USB drive and put both ROMs inside. File names do not matter.
+3. Connect the drive and close DKR-R. Send the ELF using your usual Windows or Linux ELF sender.
+4. Wait for the completion notification. Once ShadowMountPlus discovers the app, start **DKR-R** from its PS5 icon.
 
-The installer identifies the ROMs by checksum and copies them to internal
-storage. It generates controller sounds locally and registers the app folder.
-Already installed, valid ROMs are reused. Other USB drives are left untouched. The PC and USB are no longer needed
-for normal play or future in-game updates. An ELF receiver is only needed for the initial installation or a manual update; the usual homebrew environment is still required.
+The installer checks and imports both ROMs and prepares controller sounds locally. After installation, the PC, USB drive and ELF receiver are no longer needed for play or in-game updates. Start your usual homebrew environment again after a console restart.
 
-Optional Python sender, from an extracted source folder:
+<details>
+<summary>Optional Python sender for Windows or Linux</summary>
+
+From an extracted source download, with [Python](https://www.python.org/downloads/) installed:
 
 ```console
-python tools/send_elf.py YOUR_PS5_IP /path/to/DKRR-Installer.elf
+python tools/send_elf.py YOUR_PS5_IP DKRR-Installer.elf
 ```
 
-Use `python3` on Linux. Python is not required when using another ELF sender.
+Use `python3` on Linux. Another ELF sender works too.
 
-## If installation stops
+</details>
 
-A missing-ROM message means one of the two clean US revisions was not found.
-Unknown or changed installed files are preserved. After an interruption, rerun
-the same ELF before launching the game; it can resume known partial work and
-recover a staged update. Do not delete save folders to fix an installation.
-The receiver's success marker is `DKRR UNIVERSAL INSTALL PASS.`. It confirms
-installed files, not that the PS5 shell has finished discovering the icon.
+## If it stops
 
-If the title ID is already used by a different app or private preview, the
-installer preserves it and stops. Repeatedly sending the ELF cannot resolve
-that conflict. Use a fresh target for the first 1.0 installation.
+- **Missing ROM:** check that both clean US revisions are present as ordinary files in `USB/DKRR`.
+- **Interrupted installation:** rerun the same ELF before starting the game. Keep the USB drive connected until completion.
+- **Title conflict or changed installation:** the installer stops rather than replacing unfamiliar files. Report the exact message; do not delete saves.
+- **Completed, but no icon:** check ShadowMountPlus discovery. Its completion is separate from the ELF transfer. The installer log's completion marker is `DKRR UNIVERSAL INSTALL PASS.`.
 
-[Updates](UPDATES.md) · [Controls](CONTROLS.md) · [Test status](VALIDATION.md).
+Version 1.0 uses a fresh installation; old development previews are not supported update targets.
+
+[Controls](CONTROLS.md) · [Updates](UPDATES.md) · [Compatibility](KNOWN_ISSUES.md)

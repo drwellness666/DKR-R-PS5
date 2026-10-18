@@ -1,6 +1,6 @@
 # Developer build
 
-The planned normal installation uses the [ROM-free ELF installer](INSTALLER.md).
+Normal installation uses the [ROM-free ELF installer](INSTALLER.md).
 This page is for developers and users who want to compile their own copy. The
 optional **Start-Windows.cmd** / **bash Start-Linux.sh** assistant still creates a
 private ROM-containing installer; do not share that file. The first build
@@ -59,7 +59,6 @@ upgrades from private development previews. Before a new published release,
 increase `installer_sequence` in `PORT_RELEASE.json`; never reuse one sequence
 for different program builds. Use a new output directory for each package.
 
-These two universal ELFs exclude ROMs and extracted controller PCM. Public
-distribution still requires console acceptance and the matching source/licence
-review. Keep the private full app, CANDIDATE.json and matching debug ELF locally.
-[Controls](CONTROLS.md) · [Saves](SAVES.md) · [Validation limits](VALIDATION.md).
+These two universal ELFs exclude ROMs and extracted controller PCM. Keep the private full app, CANDIDATE.json and matching debug ELF locally. Share
+only reviewed ROM-free packages with matching source and original notices.
+[Developer guide](DEVELOPMENT.md) · [Licences](LICENSES.md).

@@ -1,16 +1,16 @@
 # Help 📖
 
-| I want to… | Read |
-|---|---|
-| Install the game | [USB + installer ELF](INSTALLER.md) |
-| Install a newer version | [Updates](UPDATES.md) |
-| Change controls, revision, language or textures | [Controls and content](CONTROLS.md) |
-| Find settings or save files | [Save data](SAVES.md) |
-| Configure 4K, HDR, 120 Hz or VRR | [Display](DISPLAY.md) |
-| Check a problem or report stutter | [Known issues](KNOWN_ISSUES.md), [diagnostics](DIAGNOSTICS.md) |
-| See what has been tested | [Test status](VALIDATION.md) |
-| Understand the repository and downloads | [Repository contents](FILES.md) |
+Start with [installation](INSTALLER.md). Normal play needs no PC build or extra save service.
 
-For developers: [build](BUILD.md) · [Windows/WSL2](WINDOWS.md) ·
-[architecture](ARCHITECTURE.md) · [review decisions](CONCEPTUAL_REVIEW.md) · [development](DEVELOPMENT.md) ·
-[graphics](GPU.md) · [RT64](RT64.md) · [licences](LICENSES.md).
+| What do you need? | Guide |
+|---|---|
+| Install or update | [Installation](INSTALLER.md) · [Updates](UPDATES.md) |
+| Buttons, languages, game version or textures | [Controls and content](CONTROLS.md) |
+| 4K, HDR, 120 Hz or VRR | [Display settings](DISPLAY.md) |
+| Save files and backups | [Save data](SAVES.md) |
+| A problem or performance report | [Known issues](KNOWN_ISSUES.md) · [Reporting bugs](DIAGNOSTICS.md) |
+| Credits and permissions | [Credits](../CREDITS.md) · [Licences](LICENSES.md) |
+
+[English](../README.md) · [Deutsch](../README.de.md) · [Planned improvements](ROADMAP.md)
+
+Compiling or contributing? Use the separate [developer guide](DEVELOPMENT.md).

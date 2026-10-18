@@ -1,47 +1,22 @@
-# Update the game
+# Updates
 
-## In the game
+## From the game
 
-Open **Touchpad → About DKR-R → PS5 updates** and choose **Check for updates**.
-Choose **Install update and close DKR-R** when a newer release is available.
-The game downloads and verifies the package, saves and closes, then replaces
-its own program files. Wait for the completion notification and start its PS5
-icon again.
+Open **Touchpad → About DKR-R → PS5 updates** and choose **Check for updates**. When a compatible release is available, choose **Install update and close DKR-R**. Wait for the completion notification, then start DKR-R again from its PS5 icon.
 
-**No ELF receiver, PC, USB drive or background helper is needed for this route.**
-Optional launch checks are off by default. Installing an update always waits
-for your choice. Your usual jailbreak/homebrew environment is still required
-to run the game after a console restart.
+The game downloads and verifies the update itself. **No PC, USB drive, ELF receiver or background helper is required.** Automatic checks at launch are optional and off by default; installation waits for your choice.
 
-Downloads require this project's public GitHub releases. A private repository
-is unavailable to the game; no GitHub credentials are stored on the PS5.
-[Current test status](VALIDATION.md).
-
-## First release
-
-Version 1.0 is the first public installation baseline. Private development
-previews do not need a migration path. Updates described here apply to compatible
-installations made with the 1.0 installer or a later supported version.
+Updates keep your ROMs, settings, progress, Paks and texture packs. Back up important saves before updating. If an in-game update is interrupted, recovery runs at the next launch; follow any restart notification.
 
 ## Manual or offline update
 
-Close DKR-R and send **DKRR-Update.elf** using the console's normal ELF receiver.
-Wait for its completion notification, then start DKR-R. This option works
-without Internet access on the console. Existing ROMs are reused.
+Close DKR-R and send **DKRR-Update.elf** to the console's ELF receiver. Wait for its completion notification, then start the game again. Your installed ROMs are reused. Rerun the same ELF if a manual update is interrupted.
 
-Both routes preserve controls, picture/sound settings, progress, Paks and texture
-packs. New in-game updates also retain the controller sounds already generated
-from your ROMs. An interrupted in-game update is recovered automatically when
-DKR-R next starts. If it restores the previous version, a notification asks you
-to start the game again. An interrupted manual ELF installation is recovered by
-rerunning that ELF. Do not delete save folders.
+## Common questions
 
-The update card shows estimated free space needed, including recovery copies.
-A measured shortage stops before downloading. If the console cannot report free
-space, the card says so; ordinary verification and recovery still apply.
+- **No update available?** Only published, compatible releases appear. A source-code change on GitHub is not an installable update.
+- **Private repository?** In-game downloads need public GitHub access. This version does not store GitHub credentials.
+- **Not enough space?** Free space for the download and recovery copies, then retry. Do not remove save folders.
+- **What is `DKRR-Update.dkru`?** The update data downloaded by the game. You do not need to open or send it yourself.
 
-**DKRR-Update.dkru** is the signed data package downloaded by the game. It is not
-an ELF and does not execute downloaded installer code. No separate network
-updater ELF is included in the 1.0 downloads.
-
-[Install](INSTALLER.md) · [Technical design](ARCHITECTURE.md).
+[Install](INSTALLER.md) · [Save data](SAVES.md) · [Known issues](KNOWN_ISSUES.md)

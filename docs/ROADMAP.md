@@ -1,14 +1,12 @@
-# Next improvements
+# Planned improvements
 
-Gyro steering, adaptive L2, controller item sounds, native saves and the universal
-installer/update are **implemented in the current 1.0 preparation**. Their remaining work is testing
-and fixing behavior on more consoles, not starting those features from scratch.
+The current version already includes the universal installer, native in-game updates, shared settings, optional gyro, adaptive L2, controller sounds and HDR. Their [feature status](KNOWN_ISSUES.md#feature-status) distinguishes implementation from remaining PS5 checks.
 
-- Fix the Tracks-preview water flash and reproducible frame-time spikes.
-- Broaden installer/update recovery, native-save and DualSense testing.
-- Test more displays, loaders, Controller Paks, online modes and compatible mods.
-- Complete the Windows/WSL2 developer-build walkthrough on Windows.
-- Qualify the receiver-free, in-process Internet installer and restart recovery on PS5.
-- Qualify the implemented HDR10 path, brightness calibration, SDR fallback and GPU cost.
+The next priorities are:
 
-[Known issues](KNOWN_ISSUES.md) · [Test status](VALIDATION.md).
+- Resolve the Tracks-preview water flash and reproducible stutters.
+- Broaden console, display, controller and update-recovery coverage.
+- Test more mods, online modes and ghost/Controller Pak saves.
+- Complete a Windows/WSL2 source-build walkthrough on Windows.
+
+No date or feature is guaranteed. [Report a problem or suggest an improvement](https://github.com/drwellness666/DKR-R-PS5/issues).

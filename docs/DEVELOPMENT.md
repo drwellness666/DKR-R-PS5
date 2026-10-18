@@ -1,30 +1,43 @@
-# Development
+# Developer guide
 
-DKR-R 1.0.6 and all build inputs are pinned in `GAME_SOURCES.json`,
-`RT64_SOURCES.json`, `VULKAN_SOURCES.json` and `TITLE_ART_SOURCES.json`.
-Keep platform changes in `src/` and reproducible patches. Regenerate selected
-CPU payloads through the normal pipeline; do not hand-edit generated functions.
+Players can use the [installer ELF](INSTALLER.md) without compiling anything. This page is for building, debugging or contributing.
 
-| Topic | Document |
+| Topic | Guide |
 |---|---|
-| Build / Windows | [Build](BUILD.md), [Windows](WINDOWS.md) |
-| Universal installer | [Installer](INSTALLER.md) |
-| Native saves | [Saves](SAVES.md) |
-| Renderer | [Graphics](GPU.md), [RT64](RT64.md) |
-| Debugging / updates | [Diagnostics](DIAGNOSTICS.md), [Updates](UPDATES.md) |
-| Distribution / tests | [Licences](LICENSES.md), [Validation](VALIDATION.md) |
+| Full source build | [Build commands](BUILD.md) · [Windows/WSL2](WINDOWS.md) |
+| Platform layout | [Architecture](ARCHITECTURE.md) |
+| Renderer builds | [PS5 graphics](GPU.md) · [RT64](RT64.md) |
+| Distribution | [Licences](LICENSES.md) · [Source inventory](../THIRD_PARTY.md) |
 
-The local build assistant is `setup.py` and `tools/setup_ui.html`. It binds to
-loopback, uses a per-run token, validates input ROMs and invokes the manual build
-recipes. It keeps build attempts separate and checks installer completion markers.
-It is not a runtime service required on the PC while playing.
+## Source and checks
 
-The source gate is `.github/workflows/source-check.yml`. Host tests cover adapters,
-source preparation, menu geometry, diagnostics and update refusal/recovery cases.
-They do not replace native display, controller or cold-boot save tests.
+`GAME_SOURCES.json`, `RT64_SOURCES.json`, `VULKAN_SOURCES.json` and `TITLE_ART_SOURCES.json` pin inputs. Keep PS5 changes in adapters and reproducible patches; regenerate CPU code through the build pipeline.
 
-The export is a positive allowlist from `tools/export_public_source.py`.
-`check_public_source.py` scans files and bundled archive members; `SHA256SUMS`
-records the complete export. Keep ROMs, extracted game assets, generated CPU
-payloads, game binaries, saves and raw console logs out of commits and issues.
-Imported licences and copyright notices must be retained.
+[GitHub Actions](../.github/workflows/source-check.yml) defines the automated source checks. They cover installation/update recovery, storage, controls, menus, output and provenance. Hardware behavior still requires PS5 testing; [feature status](KNOWN_ISSUES.md#feature-status) records its scope.
+
+`tools/export_public_source.py` exports an explicit allowlist. `tools/check_public_source.py` scans that export and its bundled archives for excluded data; `SHA256SUMS` records the files. Preserve matching source, build recipes and original notices when distributing binaries. Personal game data and working notes are excluded.
+
+## Debugging
+
+Keep the exact app, `$DKR_GAME_WORK/private/CANDIDATE.json` and `$DKR_GAME_WORK/native-link/llvm-pie.elf` together. For a manual build, record the receipt with:
+
+```bash
+python3 tools/record_native_build.py "$DKR_GAME_WORK"
+```
+
+Local game journals are under `/data/dkrr/diagnostics`. For optional PC capture, use an existing klog service or `tools/build_session_relay.sh SDK_ROOT`; do not run competing klog readers. The relay uses TCP 3232.
+
+```bash
+python3 tools/collect_session.py --capture --host YOUR_PS5_IP \
+  --output /ABSOLUTE/private/NEW_SESSION --build-id BUILD_ID --seconds 900
+python3 tools/analyze_session.py /ABSOLUTE/private/run.log \
+  /ABSOLUTE/private/CANDIDATE.json /ABSOLUTE/private/symbols.elf
+```
+
+Analysis checks matching symbols before attributing addresses. `report_diagnostic_session.py` combines saved evidence locally. If a file manager cannot read a protected journal, `build_journal_reader.py` creates a reader restricted to that journal and build; see its usage. Do not change save/log permissions broadly.
+
+## Publishing updates
+
+Increase `installer_sequence` in `PORT_RELEASE.json` for each new program build. Build a fresh package with matching source/notices and test installation/recovery. Sign its channel with `tools/sign_update_channel.py` using the private release key outside the repository. Publishing source alone does not make an in-game update available.
+
+The native updater requires compatible metadata, runtime and package paths. See the [architecture](ARCHITECTURE.md). Keep credentials, signing keys, ROMs, generated code, extracted audio and private builds out of commits.

@@ -1,10 +1,8 @@
-# Controls, versions and texture packs
+# Controls, game versions and content 🎮
 
-[Deutsch / Einstieg](../README.de.md) · [Save data](SAVES.md) · [Display](DISPLAY.md)
+## Classic controls
 
-## DualSense
-
-| Button | Action |
+| DualSense | Action |
 |---|---|
 | Cross | Accelerate; tapping works as in the original game |
 | Square | Brake / reverse |
@@ -14,64 +12,33 @@
 | Options | Original Start button |
 | Touchpad | Open or close Recompiled settings |
 
-In settings, L1/R1 change pages, D-pad/left stick move selection, Cross confirms
-and Circle goes back. Common settings come first: **Play → Controls → Graphics
-→ Sound → Textures → Save Manager**, followed by Mods / Hacks, Online and About.
-Use the full-width **SECTION** selector to choose a page's subsection with Cross
-and D-pad; Circle cancels. **Graphics** separates Display from HUD & Detail.
-**Controls → Button mapping** shows the current player’s controller layout. Choose
-an action, then **Change** to bind a button or trigger. **More binding options**
-contains alternate bindings, Classic restore and copying Player 1’s layout.
-Restoring a layout can be undone.
-The old trigger-driving preset was removed; custom mappings are preserved.
+In settings, use **L1/R1** to change pages, **D-pad / left stick** to move, **Cross** to confirm and **Circle** to go back. A page's **SECTION** selector opens its subsections.
 
-Normal vibration is available under **Controls → Device**. PS5-specific options
-are together under **Controls → PS5**:
+**Controls → Button mapping** shows the selected player's current layout. Choose an action and **Change** to rebind it. **More binding options** includes alternate buttons and restoring Classic controls.
 
-- **Match held balloon color:** the held item color, then normal system lighting.
-- **Adaptive L2 item feedback:** light resistance and an item-use impulse, including release-to-fire.
-- **Controller sounds:** one switch for all short original cues: all five item types, weapon-balloon pickups/upgrades, silver coins, gold balloons, your character’s horn and boost pads. Set their volume with **Controller volume**; TV sound stays active.
-- **Gyro steering:** enable per player, choose roll/yaw, sensitivity, deadzone, calibrate and recenter. Requires Modern presentation; stick steering remains available.
+## DualSense options
 
-All optional effects start off and save with the shared configuration. Sounds go
-to the local player’s controller, with item use taking priority and no growing
-sound queue. They stop while the game is paused or loading. The installer
-prepares them from your ROMs; no game audio is distributed. Gyro tuning stays
-under **Gyro tuning**. [Feature status](VALIDATION.md).
+Normal vibration is under **Controls → Device**. The extras under **Controls → PS5** are optional and off by default:
 
-## Choose the game revision and language
+| Option | Effect |
+|---|---|
+| Match held balloon color | Match the held item's color, then return to normal system lighting |
+| Adaptive L2 item feedback | Light resistance and an impulse when using an item |
+| Controller sounds | Original short item, balloon pickup, coin, gold-balloon, horn and boost-pad sounds on your controller; TV sound stays active |
+| Gyro steering | Tilt steering alongside the stick; requires Modern presentation |
 
-**Touchpad → Play → Game version** selects US 1.0 or US 1.1 for the next launch.
-Close the game normally and start it again; **Playing** shows the active version.
-The normal installer includes both supported revisions.
+Use **Controller volume** for the sounds and **Gyro tuning** for calibration, roll/yaw, sensitivity and deadzone. Effects follow the local player and stop during pause/loading. [Feature status](KNOWN_ISSUES.md#feature-status).
 
-The original game's **Options → Language** cycles English, French and German.
-This uses the text already present in the supported US dumps; a PAL ROM is not
-needed. The Recompiled settings interface is English.
+## Revision and language
 
-## Shared settings, separate progress
+Choose **Touchpad → Play → Game version**, close the game normally and start it again. **Playing** shows the active revision. Both US versions share controls, graphics, audio and texture choices; their progress and Paks stay separate.
 
-Both revisions share controls, graphics, audio, HUD and texture selection.
-Adventure progress and Controller Paks remain separate per revision. See
-[save data](SAVES.md) for paths and restart behavior.
-Virtual Memory Pak and Rumble Pak can be enabled together. Adventure save/reload
-and physical vibration were confirmed; dedicated ghost/Pak persistence needs
-more testing.
+In the original game's **Options → Language**, choose **English, French or German**. No PAL ROM is needed. The Recompiled settings menu is English.
 
 ## Texture packs and mods
 
-**Optional recommendation: DKR REMASTERED by sr.gu.** Version **0.2.7** was
-confirmed on both US revisions during PS5 sessions. Upstream directs players to
-the [official DKR-R Discord](https://discord.com/invite/AMWfXdBjNP) for its
-community texture pack; follow the author's current download there. See also
-[upstream texture-pack help](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/docs/TEXTURE_PACKS.md).
+**DKR REMASTERED by sr.gu** is an optional recommendation. Version **0.2.7** was used on both US revisions. Find the author's download through the [official DKR-R Discord](https://discord.com/invite/AMWfXdBjNP); it is not included here.
 
-Obtain compatible packs separately under the author's terms. Use DKR-R's existing
-**Textures** page and importer. Replacements require the **Modern** presentation
-profile. Keep the imported archive in the game's texture library; a selected
-archive is shared between US 1.0 and US 1.1.
+Import compatible packs through **Textures** and select **Modern** presentation. The selected packs are shared between US 1.0 and US 1.1. When packs overlap, a lower priority number takes precedence. Obtain packs and mods separately under their authors' terms.
 
-Existing US 1.1 archives can be discovered without duplicating them; a same-name
-entry in the common US 1.0 library takes precedence. The tested Remastered pack
-is not bundled or uploaded by this project. Arbitrary packs, mods and online
-play have not all been tested on PS5.
+[Upstream texture-pack guide](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/docs/TEXTURE_PACKS.md) · [Compatibility](KNOWN_ISSUES.md) · [Save data](SAVES.md)
