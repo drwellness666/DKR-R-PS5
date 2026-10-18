@@ -2,6 +2,11 @@
 
 ## 1.0 — in preparation
 
+- Keep update-preference errors visible until a successful retry; explain a disabled install button when storage is insufficient.
+- Open controller sounds through bounded, nonblocking descriptor reads; reject special files and incomplete clips without holding up worker shutdown.
+- Ignore stale controller-speaker load/open/output results after cancellation, so toggling the feature back on can play a new cue.
+- Read PS5 master gain once per audio block, including the equalizer/custom-music path; preserve the original mixer output at stable settings.
+
 - Reserve audio conversion scratch buffers before playback; accepted blocks no longer grow those vectors during delivery.
 - Keep optional diagnostic-file reads nonblocking at startup.
 
