@@ -5,11 +5,11 @@ commit c3eda4d368afbc729ed4a71312cce38d27f87c37. Upstream identifies its source
 SHA-256 as AEADA6E5FF1388D27CC5D29DE9C67B74C0F6D851D6C772EE35376AF4E288C896.
 It is an independent interface font, not extracted from the game ROM.
 
-Upstream says that public distributors must confirm redistribution permission.
-No separate general redistribution grant was found in the pinned source or its
-current third-party notice. This notice records provenance and is not itself
-a licence grant. The font is not relicensed under GPL by this port. The source
-repository includes the integration recipe, not a standalone font download.
+The project maintainer confirmed permission on 18 October 2026 for use and
+redistribution in DKR-R PS5, including its installer and updates. This is the
+maintainer's confirmation, not a general standalone-font licence or GPL
+relicensing. The original permission correspondence is not reproduced here.
+[Recorded scope and hashes](CONTENT-PERMISSIONS.json).
 
 The original DKR-R font loader is used unchanged: Racing Banana for menu text
 and signs, Jumpman for headings and digits, Selawik for reading text, and the

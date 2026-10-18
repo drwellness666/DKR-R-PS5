@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "confirmed_on": "2026-10-18",
+  "confirmation": "Project maintainer confirms permission for Racing Banana and title icon/background in this PS5 port, including its installer and updates.",
+  "basis": "Maintainer statement; the issuing party and original permission correspondence are not reproduced here.",
+  "scope": "Use and distribution as part of DKR-R PS5; no standalone font/artwork licence or relicensing is asserted.",
+  "racing_banana_sha256": "aeada6e5ff1388d27cc5d29de9c67b74c0f6d851d6c772ee35376af4e288c896",
+  "icon_sha256": "fde98b48a6590cf999fab9eec3d254a9d4298aad07e7f999c843ab7777d805fd",
+  "background_sha256": "213f02e7aba5a751fc6883a79c6f61312fce6f92954317bbe68197571affb7bd"
+}

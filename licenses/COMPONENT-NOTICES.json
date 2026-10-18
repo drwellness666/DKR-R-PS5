@@ -1,233 +1,416 @@
 {
-  "schema": 1,
+  "schema": 2,
   "scope": "Exact copied code/component notices; not a blanket font/artwork redistribution grant",
+  "source_notice_catalogue_sha256": "80affbd0c3b72f6d0bb297e24576fff139d58efe34808fa6836194e5af48e7a7",
   "files": [
     {
       "component": "DKR-R",
       "source": "DKR-R/LICENSE.md",
-      "revision": "c3eda4d368afbc729ed4a71312cce38d27f87c37",
-      "sha256": "892094a99ab18d0cea2d6a7c6db6015bac249c64c7e0cb0b742bd2805dd821f0"
+      "bytes": 1075,
+      "sha256": "892094a99ab18d0cea2d6a7c6db6015bac249c64c7e0cb0b742bd2805dd821f0",
+      "revision": "c3eda4d368afbc729ed4a71312cce38d27f87c37"
     },
     {
       "component": "N64Recomp",
       "source": "N64Recomp/LICENSE",
-      "revision": "81213c1831fab2521a6a5459c67b63437d67e253",
-      "sha256": "d439b523a90a07f87182b0cf8fab9b09e385642f9f573b7ae67306d3fb68af88"
+      "bytes": 1074,
+      "sha256": "d439b523a90a07f87182b0cf8fab9b09e385642f9f573b7ae67306d3fb68af88",
+      "revision": "81213c1831fab2521a6a5459c67b63437d67e253"
     },
     {
       "component": "N64ModernRuntime",
       "source": "N64ModernRuntime/COPYING",
-      "revision": "ae1ffbb909d9f93c88c41830deb539f7feef5ed2",
-      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+      "bytes": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "revision": "ae1ffbb909d9f93c88c41830deb539f7feef5ed2"
     },
     {
       "component": "Plume",
       "source": "rt64-game/src/contrib/plume/LICENSE",
-      "revision": "d890ac899e505fb30040e037a4037cdeca68f033",
-      "sha256": "761ecab744d5ed0528b5b794239abaa6f62bd5bd36fc1980b3cb98c48ce32868"
+      "bytes": 1083,
+      "sha256": "761ecab744d5ed0528b5b794239abaa6f62bd5bd36fc1980b3cb98c48ce32868",
+      "revision": "d890ac899e505fb30040e037a4037cdeca68f033"
     },
     {
       "component": "dkr-decomp",
       "source": "dkr-decomp/LICENSE.md",
-      "revision": "06cf09bab2e0a5f210d2a14a25cdf22c3c5b18c6",
-      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+      "bytes": 7048,
+      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "revision": "06cf09bab2e0a5f210d2a14a25cdf22c3c5b18c6"
     },
     {
       "component": "ELFIO",
       "source": "N64Recomp/lib/ELFIO/LICENSE.txt",
-      "revision": "ad8b641f9682b6091ba8b9f7c8152255c1a2c803",
-      "sha256": "54e2f5ccbae52ada660f9a38658cac957506b3fb94871fc0f056e9916c34aa2f"
+      "bytes": 1089,
+      "sha256": "54e2f5ccbae52ada660f9a38658cac957506b3fb94871fc0f056e9916c34aa2f",
+      "revision": "ad8b641f9682b6091ba8b9f7c8152255c1a2c803"
     },
     {
       "component": "fmt",
       "source": "N64Recomp/lib/fmt/LICENSE",
-      "revision": "407c905e45ad75fc29bf0f9bb7c5c2fd3475976f",
-      "sha256": "07580f2a3b35709ce703d523f447b242f6dfec7582a8c0df102c7fa2849375f8"
+      "bytes": 1431,
+      "sha256": "07580f2a3b35709ce703d523f447b242f6dfec7582a8c0df102c7fa2849375f8",
+      "revision": "407c905e45ad75fc29bf0f9bb7c5c2fd3475976f"
     },
     {
       "component": "rabbitizer",
       "source": "N64Recomp/lib/rabbitizer/LICENSE",
-      "revision": "e0d8003047938e2ec3697eaf8d61a84d11d17b43",
-      "sha256": "153ee8c5370552dcf673979821878f7f38f6503de1bf1b4b4dadc55b3fe726e3"
+      "bytes": 1073,
+      "sha256": "153ee8c5370552dcf673979821878f7f38f6503de1bf1b4b4dadc55b3fe726e3",
+      "revision": "e0d8003047938e2ec3697eaf8d61a84d11d17b43"
     },
     {
       "component": "sljit",
       "source": "N64Recomp/lib/sljit/LICENSE",
-      "revision": "f6326087b3404efb07c6d3deed97b3c3b8098c0c",
-      "sha256": "5f216505c0f6ea3273caec89e766eef93cdeb7bbb0c429f9360116d7c938feeb"
+      "bytes": 1444,
+      "sha256": "5f216505c0f6ea3273caec89e766eef93cdeb7bbb0c429f9360116d7c938feeb",
+      "revision": "f6326087b3404efb07c6d3deed97b3c3b8098c0c"
     },
     {
       "component": "tomlplusplus",
       "source": "N64Recomp/lib/tomlplusplus/LICENSE",
-      "revision": "1f7884e59165e517462f922e7b6de131bd9844f3",
-      "sha256": "529bc3900a9571e49db285b0df432397e70b881cc3bf48de6667ae74ff4b06d8"
+      "bytes": 1094,
+      "sha256": "529bc3900a9571e49db285b0df432397e70b881cc3bf48de6667ae74ff4b06d8",
+      "revision": "1f7884e59165e517462f922e7b6de131bd9844f3"
     },
     {
       "component": "miniz",
       "source": "N64ModernRuntime/thirdparty/miniz/LICENSE",
-      "revision": "8573fd7cd6f49b262a0ccc447f3c6acfc415e556",
-      "sha256": "0115478d567121238cf6cc1c0c361926cf07a49d9e4c9e66da97fac6a01646b3"
+      "bytes": 1184,
+      "sha256": "0115478d567121238cf6cc1c0c361926cf07a49d9e4c9e66da97fac6a01646b3",
+      "revision": "8573fd7cd6f49b262a0ccc447f3c6acfc415e556"
     },
     {
       "component": "o1heap",
       "source": "N64ModernRuntime/thirdparty/o1heap/LICENSE",
-      "revision": "a124b850791db2a33f7354d2b0aa7da821cef6f5",
-      "sha256": "9b853befdac9b2907131427795b66e0dbfdd0cfa8ecd25a58167893b8c1f0f4d"
+      "bytes": 1071,
+      "sha256": "9b853befdac9b2907131427795b66e0dbfdd0cfa8ecd25a58167893b8c1f0f4d",
+      "revision": "a124b850791db2a33f7354d2b0aa7da821cef6f5"
     },
     {
       "component": "xxHash",
       "source": "N64ModernRuntime/thirdparty/xxHash/LICENSE",
-      "revision": "ac3a25da3d957d9ef3e4114d9f8332d34ce83a46",
-      "sha256": "6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a"
+      "bytes": 1389,
+      "sha256": "6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a",
+      "revision": "ac3a25da3d957d9ef3e4114d9f8332d34ce83a46"
     },
     {
       "component": "gekkonet",
       "source": "DKR-R/extern/gekkonet/LICENSE",
-      "revision": "1704d86dab246073785d841b835c03f88f302112f11489f2de57abf230fc7d07",
-      "sha256": "fe84fc5014cff7e7ab63ad67787bf05710081dee1209c68c8e4136353a7105b1"
+      "bytes": 1305,
+      "sha256": "fe84fc5014cff7e7ab63ad67787bf05710081dee1209c68c8e4136353a7105b1",
+      "revision": "1704d86dab246073785d841b835c03f88f302112f11489f2de57abf230fc7d07"
     },
     {
       "component": "monocypher",
       "source": "DKR-R/extern/monocypher/LICENCE.md",
-      "revision": "7339f8a4729d5339ad6df61ba11937f8d5d163ba5a49edf5fdf3d8717b73d1a9",
-      "sha256": "a5781770269d2516e52ba4863f790c10a16da4089a1e81823aee19ff1e9026b0"
+      "bytes": 9256,
+      "sha256": "a5781770269d2516e52ba4863f790c10a16da4089a1e81823aee19ff1e9026b0",
+      "revision": "7339f8a4729d5339ad6df61ba11937f8d5d163ba5a49edf5fdf3d8717b73d1a9"
     },
     {
       "component": "mbedtls",
       "source": "DKR-R/extern/mbedtls/LICENSE",
-      "revision": "0f050462eabf814c7e3b37825efc4d8dd1caf6a3b3eeb350705ad818d6ca770a",
-      "sha256": "9b405ef4c89342f5eae1dd828882f931747f71001cfba7d114801039b52ad09b"
+      "bytes": 29852,
+      "sha256": "9b405ef4c89342f5eae1dd828882f931747f71001cfba7d114801039b52ad09b",
+      "revision": "0f050462eabf814c7e3b37825efc4d8dd1caf6a3b3eeb350705ad818d6ca770a"
     },
     {
       "component": "xz",
       "source": "xz/COPYING",
-      "revision": "bdbc23fbf9098843357e71e49685724fda2c320c29cb1b25fd90505f14bb0b3d",
-      "sha256": "616a3ad264ce29b8f1cb97e53037b139d406899ca8d1f799651e17bfa09830b8"
+      "bytes": 3119,
+      "sha256": "616a3ad264ce29b8f1cb97e53037b139d406899ca8d1f799651e17bfa09830b8",
+      "revision": "bdbc23fbf9098843357e71e49685724fda2c320c29cb1b25fd90505f14bb0b3d"
     },
     {
       "component": "GNU binutils",
       "source": "binutils-2.46.0/COPYING",
-      "revision": "d75a94f4d73e7a4086f7513e67e439e8fcdcbb726ffe63f4661744e6256b2cf2",
-      "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+      "bytes": 18002,
+      "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c",
+      "revision": "d75a94f4d73e7a4086f7513e67e439e8fcdcbb726ffe63f4661744e6256b2cf2"
     },
     {
       "component": "volk",
       "source": "rt64-game/src/contrib/plume/contrib/volk/LICENSE.md",
-      "revision": "be3dbd49bf77052665e96b6c7484af855e7e5f67",
-      "sha256": "33c831f76b79501665e66c23ac8f876020457c216d44526a8f747da897999b35"
+      "bytes": 1066,
+      "sha256": "33c831f76b79501665e66c23ac8f876020457c216d44526a8f747da897999b35",
+      "revision": "be3dbd49bf77052665e96b6c7484af855e7e5f67"
     },
     {
       "component": "VulkanMemoryAllocator",
       "source": "rt64-game/src/contrib/plume/contrib/VulkanMemoryAllocator/LICENSE.txt",
-      "revision": "29b35ea4232688c0f42cdff0c10848290760a417",
-      "sha256": "8d70e4cf2a9941f6454da71cd60e38484dd3e34810c824760d550e982af6d97a"
+      "bytes": 1099,
+      "sha256": "8d70e4cf2a9941f6454da71cd60e38484dd3e34810c824760d550e982af6d97a",
+      "revision": "29b35ea4232688c0f42cdff0c10848290760a417"
     },
     {
       "component": "Vulkan-Headers",
       "source": "rt64-game/src/contrib/plume/contrib/Vulkan-Headers/LICENSE.md",
-      "revision": "2fa203425eb4af9dfc6b03f97ef72b0b5bcb8350",
-      "sha256": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc"
+      "bytes": 458,
+      "sha256": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+      "revision": "2fa203425eb4af9dfc6b03f97ef72b0b5bcb8350"
     },
     {
       "component": "RT64",
       "source": "rt64-game/LICENSE",
-      "revision": "6f1c2d99a4ea571c139f449c326fd176ba8f3496",
-      "sha256": "03d52856ed09784f7f57694f690ab0093d3cd40db69f9a318d45062f130f7116"
+      "bytes": 1074,
+      "sha256": "03d52856ed09784f7f57694f690ab0093d3cd40db69f9a318d45062f130f7116",
+      "revision": "6f1c2d99a4ea571c139f449c326fd176ba8f3496"
     },
     {
       "component": "ddspp",
       "source": "rt64-game/src/contrib/ddspp/LICENSE",
-      "revision": "21ca0c4319dfd5a161c5f2a0c406e8f60194ea6c",
-      "sha256": "bec2b85d3040e8f9de15f52e26b29311959d978bfb03ff941b699d7642a17868"
+      "bytes": 1075,
+      "sha256": "bec2b85d3040e8f9de15f52e26b29311959d978bfb03ff941b699d7642a17868",
+      "revision": "21ca0c4319dfd5a161c5f2a0c406e8f60194ea6c"
     },
     {
       "component": "hlslpp",
       "source": "rt64-game/src/contrib/hlslpp/LICENSE",
-      "revision": "6f5274c66132e8f951c400103d897582b8f21491",
-      "sha256": "296a74cb0ec3974aa74fc77f547663e0a0c1a8e803d177ece3ce82a94188aa23"
+      "bytes": 1075,
+      "sha256": "296a74cb0ec3974aa74fc77f547663e0a0c1a8e803d177ece3ce82a94188aa23",
+      "revision": "6f5274c66132e8f951c400103d897582b8f21491"
     },
     {
       "component": "im3d",
       "source": "rt64-game/src/contrib/im3d/LICENSE",
-      "revision": "d03941725fd0bd08c78c46e3e5b0265526e9d060",
-      "sha256": "1f19ce7ee7da440b1ba52c753f299d76ff87052b219ef535c8aa40fbe9f04900"
+      "bytes": 1060,
+      "sha256": "1f19ce7ee7da440b1ba52c753f299d76ff87052b219ef535c8aa40fbe9f04900",
+      "revision": "d03941725fd0bd08c78c46e3e5b0265526e9d060"
     },
     {
       "component": "imgui",
       "source": "rt64-game/src/contrib/imgui/LICENSE.txt",
-      "revision": "277ae93c41314ba5f4c7444f37c4319cdf07e8cf",
-      "sha256": "0ebf8feb061536bdebd7c6a365b64808ae3479048b1c44113e19037680c5f2be"
+      "bytes": 1083,
+      "sha256": "0ebf8feb061536bdebd7c6a365b64808ae3479048b1c44113e19037680c5f2be",
+      "revision": "277ae93c41314ba5f4c7444f37c4319cdf07e8cf"
     },
     {
       "component": "implot",
       "source": "rt64-game/src/contrib/implot/LICENSE",
-      "revision": "f156599faefe316f7dd20fe6c783bf87c8bb6fd9",
-      "sha256": "38bd30c2111fe7e3d8fb86d8607491239659eff1df1b1004b9a8349e20a91967"
+      "bytes": 1068,
+      "sha256": "38bd30c2111fe7e3d8fb86d8607491239659eff1df1b1004b9a8349e20a91967",
+      "revision": "f156599faefe316f7dd20fe6c783bf87c8bb6fd9"
     },
     {
       "component": "stb",
       "source": "rt64-game/src/contrib/stb/LICENSE",
-      "revision": "ae721c50eaf761660b4f90cc590453cdb0c2acd0",
-      "sha256": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63"
+      "bytes": 2510,
+      "sha256": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+      "revision": "ae721c50eaf761660b4f90cc590453cdb0c2acd0"
     },
     {
       "component": "zstd",
       "source": "rt64-game/src/contrib/zstd/COPYING",
-      "revision": "0ff651dd876823b99fa5c5f53292be28381aee9b",
-      "sha256": "f9c375a1be4a41f7b70301dd83c91cb89e41567478859b77eef375a52d782505"
+      "bytes": 18091,
+      "sha256": "f9c375a1be4a41f7b70301dd83c91cb89e41567478859b77eef375a52d782505",
+      "revision": "0ff651dd876823b99fa5c5f53292be28381aee9b"
     },
     {
       "component": "zstd",
       "source": "rt64-game/src/contrib/zstd/LICENSE",
-      "revision": "0ff651dd876823b99fa5c5f53292be28381aee9b",
-      "sha256": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8"
+      "bytes": 1549,
+      "sha256": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8",
+      "revision": "0ff651dd876823b99fa5c5f53292be28381aee9b"
     },
     {
       "component": "SPIRV-Headers",
       "source": "rt64-game/src/contrib/re-spirv/external/SPIRV-Headers/LICENSE",
-      "revision": "f013f08e4455bcc1f0eed8e3dd5e2009682656d9",
-      "sha256": "ff04ae7e6a468587fe59434fee2e67c0e2a749b592c794b764ff80f30b94a084"
+      "bytes": 4812,
+      "sha256": "ff04ae7e6a468587fe59434fee2e67c0e2a749b592c794b764ff80f30b94a084",
+      "revision": "f013f08e4455bcc1f0eed8e3dd5e2009682656d9"
     },
     {
       "component": "DKR-R upstream notices",
       "source": "DKR-R/packaging/licenses/CRT-FILTERS-NOTICE.md",
+      "bytes": 652,
       "sha256": "a3049441dc17aaca3fa10c1313dcf856c49a253136a08fb9a4fd597acc9dcc65"
     },
     {
       "component": "DKR-R upstream notices",
       "source": "DKR-R/packaging/licenses/DXC-NOTICE.md",
+      "bytes": 2337,
       "sha256": "ee08a32273ad8c69738d781c144ad4ef6d0f100a0105bf270c4c8ac95709547b"
     },
     {
       "component": "DKR-R upstream notices",
       "source": "DKR-R/packaging/licenses/GOLDEN-BALLOON-NOTICE.txt",
+      "bytes": 2050,
       "sha256": "f71730e84adcbe34494d0465450043970d65860e3ea72ebdd8c87f37beff1e8f"
     },
     {
       "component": "DKR-R upstream notices",
       "source": "DKR-R/packaging/licenses/LEGACY-MODS-NOTICE.txt",
+      "bytes": 3641,
       "sha256": "e128fdfb738598973a675884d431fcb20a57c74816fee2a14f575d3758ed323a"
     },
     {
       "component": "DKR-R upstream notices",
       "source": "DKR-R/packaging/licenses/MONOCYPHER-LICENSE.txt",
+      "bytes": 1476,
       "sha256": "ee4a3f3e7d474f4dc6730184fa0a5243d560fdc7e00c1545f976c064a9c60c18"
     },
     {
       "component": "DKR-R upstream notices",
       "source": "DKR-R/packaging/licenses/SDL-GAMECONTROLLERDB-LICENSE.txt",
+      "bytes": 877,
       "sha256": "737fece95d2c7e0146fe81caa96788e3921605e874b426c95c51aae80f4f1187"
     },
     {
       "component": "DKR-R upstream notices",
       "source": "DKR-R/packaging/licenses/Selawik-OFL.txt",
+      "bytes": 4509,
       "sha256": "77b7c2506d4efb22e09c8ccf10159f4956eab3ef7c007fef95de136bcf45300c"
     },
     {
       "component": "DKR-R interface / Jumpman",
       "source": "DKR-R/packaging/licenses/Jumpman-LICENSE.txt",
-      "revision": "c3eda4d368afbc729ed4a71312cce38d27f87c37",
-      "sha256": "1b488aafb01a7f6427a759207f3cef2344dbb7d80afe1944d98945735a3c8215"
+      "bytes": 3431,
+      "sha256": "1b488aafb01a7f6427a759207f3cef2344dbb7d80afe1944d98945735a3c8215",
+      "revision": "c3eda4d368afbc729ed4a71312cce38d27f87c37"
+    },
+    {
+      "component": "PS5 Mesa",
+      "source": "PS5_Mesa/licenses/Apache-2.0",
+      "bytes": 10045,
+      "sha256": "7e4d3fba250d15e9e0afa380d4b611828fa2560cc8fdebe95bcf2f01a487de12",
+      "archive_sha256": "950e4a753036622a96cc2caa3cfc864d248e5685e955c466ed7ca9fa4b199881",
+      "revision": "47e9eb61ee7e1112194557e1e047178562827bc6"
+    },
+    {
+      "component": "PS5 Mesa",
+      "source": "PS5_Mesa/licenses/BSL-1.0",
+      "bytes": 1649,
+      "sha256": "9b9fea7520a816107fcac2598b7c0155222f16bc430e989706b22f4367f1df7d",
+      "archive_sha256": "950e4a753036622a96cc2caa3cfc864d248e5685e955c466ed7ca9fa4b199881",
+      "revision": "47e9eb61ee7e1112194557e1e047178562827bc6"
+    },
+    {
+      "component": "PS5 Mesa",
+      "source": "PS5_Mesa/licenses/GPL-1.0-or-later",
+      "bytes": 13047,
+      "sha256": "8ff76f1528e6e4e9400c0f6b1f2d19d4979aaac3bcc44bb707a55389132825c4",
+      "archive_sha256": "950e4a753036622a96cc2caa3cfc864d248e5685e955c466ed7ca9fa4b199881",
+      "revision": "47e9eb61ee7e1112194557e1e047178562827bc6"
+    },
+    {
+      "component": "PS5 Mesa",
+      "source": "PS5_Mesa/licenses/GPL-2.0-only",
+      "bytes": 18424,
+      "sha256": "6667ad4063569cd53b13500550d93fcd3dc11bcf82c5514296af013a0b720ba5",
+      "archive_sha256": "950e4a753036622a96cc2caa3cfc864d248e5685e955c466ed7ca9fa4b199881",
+      "revision": "47e9eb61ee7e1112194557e1e047178562827bc6"
+    },
+    {
+      "component": "PS5 Mesa",
+      "source": "PS5_Mesa/licenses/MIT",
+      "bytes": 1372,
+      "sha256": "323c587d0ccf10e376f8bf9a7f31fb4ca6078105194b42e0b1e0ee2bc9bde71f",
+      "archive_sha256": "950e4a753036622a96cc2caa3cfc864d248e5685e955c466ed7ca9fa4b199881",
+      "revision": "47e9eb61ee7e1112194557e1e047178562827bc6"
+    },
+    {
+      "component": "PS5 Mesa",
+      "source": "PS5_Mesa/licenses/SGI-B-2.0",
+      "bytes": 1822,
+      "sha256": "686bf035a1fd22076416fd3b90370ac67771e884bf57f55693d51f8ce7c710a7",
+      "archive_sha256": "950e4a753036622a96cc2caa3cfc864d248e5685e955c466ed7ca9fa4b199881",
+      "revision": "47e9eb61ee7e1112194557e1e047178562827bc6"
+    },
+    {
+      "component": "PS5 Mesa",
+      "source": "PS5_Mesa/docs/license.rst",
+      "bytes": 1816,
+      "sha256": "0d1a0472ecc81830e75c20d59b0ea02841e3db21255e0ebad97ab682c54d6615",
+      "archive_sha256": "950e4a753036622a96cc2caa3cfc864d248e5685e955c466ed7ca9fa4b199881",
+      "revision": "47e9eb61ee7e1112194557e1e047178562827bc6"
+    },
+    {
+      "component": "PS5 Mesa",
+      "source": "PS5_Mesa/C-family-source-notices",
+      "bytes": 1594307,
+      "sha256": "e88e0cfc0f9ed6879e1c5cd51ca5e0b2a56917977cf572fed90b8f872f370f06",
+      "archive_sha256": "950e4a753036622a96cc2caa3cfc864d248e5685e955c466ed7ca9fa4b199881",
+      "kind": "source-comment-catalogue",
+      "unique_notices": 1852
+    },
+    {
+      "component": "PS5 platform SDK",
+      "source": "PS5_PayloadSDK/LICENSE",
+      "bytes": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "archive_sha256": "bacc1da38a413ad19039ca666362e134076d5e9e0275a83557568d684979fbe2",
+      "revision": "b83202be73e930050e00de0f1b4d9ec46c0391bf"
+    },
+    {
+      "component": "PS5 platform SDK",
+      "source": "PS5_PayloadSDK/platform/src/regex/COPYRIGHT.musl",
+      "bytes": 6204,
+      "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
+      "archive_sha256": "bacc1da38a413ad19039ca666362e134076d5e9e0275a83557568d684979fbe2",
+      "revision": "b83202be73e930050e00de0f1b4d9ec46c0391bf"
+    },
+    {
+      "component": "PS5 platform SDK",
+      "source": "PS5_platform_SDK/C-family-source-notices",
+      "bytes": 2588586,
+      "sha256": "23f9bcbd0d415dba9fbf1bc89c83f214c95ece9d57fa31848ae0fc0ac66bf0fb",
+      "archive_sha256": "bacc1da38a413ad19039ca666362e134076d5e9e0275a83557568d684979fbe2",
+      "kind": "source-comment-catalogue",
+      "unique_notices": 1514
+    },
+    {
+      "component": "PS5 native tooling",
+      "source": "PS5_native_tooling/LICENSE",
+      "bytes": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "archive_sha256": "3d0e7bdd16dd71b4713a0e7cb36f9497501429f4144d36286a4cf501185a0596"
+    },
+    {
+      "component": "PS5 native tooling",
+      "source": "PS5_native_tooling/C-family-source-notices",
+      "bytes": 5768,
+      "sha256": "ac924c78f03a641ac058b9c324ffa56387a01512e1c2178cbe36be9e1ab4f865",
+      "archive_sha256": "3d0e7bdd16dd71b4713a0e7cb36f9497501429f4144d36286a4cf501185a0596",
+      "kind": "source-comment-catalogue",
+      "unique_notices": 13
+    },
+    {
+      "component": "PS5 payload SDK",
+      "source": "PS5_payload_SDK/LICENSE",
+      "bytes": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "archive_sha256": "e459701d0a8efa5eb1cf0457079c57508c4d1b3dfbd3396923526dd0f57b86e6"
+    },
+    {
+      "component": "PS5 payload SDK",
+      "source": "PS5_payload_SDK/C-family-source-notices",
+      "bytes": 179134,
+      "sha256": "b735a0ab34c9dd534ebc86cd574f069b9c8ab52201af52bf9f2ca2c2338b2894",
+      "archive_sha256": "e459701d0a8efa5eb1cf0457079c57508c4d1b3dfbd3396923526dd0f57b86e6",
+      "kind": "source-comment-catalogue",
+      "unique_notices": 1467
+    },
+    {
+      "component": "zlib",
+      "source": "zlib-1.3.1/LICENSE",
+      "bytes": 1002,
+      "sha256": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243",
+      "archive_sha256": "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23"
+    },
+    {
+      "component": "zlib",
+      "source": "zlib-1.3.2/LICENSE",
+      "bytes": 1002,
+      "sha256": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2",
+      "archive_sha256": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+    },
+    {
+      "component": "re-spirv",
+      "source": "rt64-game/src/contrib/re-spirv/LICENSE",
+      "bytes": 1083,
+      "sha256": "761ecab744d5ed0528b5b794239abaa6f62bd5bd36fc1980b3cb98c48ce32868",
+      "revision": "6f1c2d99a4ea571c139f449c326fd176ba8f3496 (bundled re-spirv)"
     }
   ]
 }
