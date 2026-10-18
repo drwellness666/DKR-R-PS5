@@ -22,4 +22,18 @@ with tempfile.TemporaryDirectory(prefix='dkrr-native-identity-') as tmp:
  header.unlink();assert current()['build_id']!=second['build_id']
  before=current()['build_id'];(root/'src/ps5_hdr.frag').write_text('authored HDR shader');assert current()['build_id']!=before
  before=current()['build_id'];(root/'tools/StagePS5HDR.cmake').write_text('changed HDR composition');assert current()['build_id']!=before
-print('PASS actual native identity: C++ header edits/additions/removal change the build ID; unrelated prose does not')
+ for relative in ('licenses/COMPONENT-NOTICES.txt','licenses/COMPONENT-NOTICES.json',
+                  'licenses/PLATFORM-NOTICE-SOURCES.json','THIRD_PARTY.md',
+                  'homebrew/DKR-R-Game/ARTWORK.md','TITLE_ART_SOURCES.json',
+                  'tools/prepare_title_art.sh','tools/prepare_upstream_title_art.py'):
+  f=root/relative;f.parent.mkdir(parents=True,exist_ok=True)
+  before=current()['build_id'];f.write_text('staged notice/art input');assert current()['build_id']!=before
+  before=current()['build_id'];f.write_text('changed staged notice/art input');assert current()['build_id']!=before
+  before=current()['build_id'];f.unlink();assert current()['build_id']!=before
+ for f in (game/'game-ps5/assets/filters/scanlines-soft.png',game/'private/title-art-paired/icon0.png',
+           support.parent/'native-title/libc.prx',support.parent/'native-title/ps5-native-tool',support/'sce_sys/param-radv.json'):
+  f.parent.mkdir(parents=True,exist_ok=True)
+  before=current()['build_id'];f.write_bytes(b'actual staged input');assert current()['build_id']!=before
+  before=current()['build_id'];f.write_bytes(b'changed staged input');assert current()['build_id']!=before
+  before=current()['build_id'];f.unlink();assert current()['build_id']!=before
+print('PASS actual native identity: adapter, shader, notice, title-art, staged asset and linked runtime/tool changes affect the fingerprint; unrelated prose does not')

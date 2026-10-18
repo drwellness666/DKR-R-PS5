@@ -5,7 +5,8 @@ import argparse,hashlib,json,pathlib
 def identify(root,game,sdl,support,high):
     groups={'source':root/'src','installer':root/'installer','patches':root/'patches','game':game/'game-ps5',
             'native':support/'tooling/native','sdl':sdl/'build/sdl',
-            'samplerate':sdl/'build/samplerate'}
+            'samplerate':sdl/'build/samplerate','licenses':root/'licenses',
+            'game-assets':game/'game-ps5/assets','title-assets':game/'private/title-art-paired'}
     rows=[]
     for name,folder in groups.items():
         for file in sorted(folder.rglob('*')):
@@ -16,7 +17,13 @@ def identify(root,game,sdl,support,high):
     for relative in ('VULKAN_SOURCES.json','PORT_RELEASE.json','tools/link_native_game.sh','tools/native_build_identity.py','tools/generate_native_import_check.py','tools/build_universal_installer.py','tools/StagePS5HDR.cmake','tools/build_hdr_shaders.py','tools/apply_ps5_hdr_driver.py','vendor/ps5-sdk-source.tar.gz'):
         file=root/relative;rows.append({'path':relative,'size':file.stat().st_size,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()})
     gpu=support.parent
-    dependencies=[gpu/'radv-build/src/amd/vulkan/libvulkan_radeon.a']+sorted((support/'.deps/native/ps5-payload-sdk/target/lib').glob('*'))
+    for relative in ('LICENSE','THIRD_PARTY.md','TITLE_ART_SOURCES.json','homebrew/DKR-R-Game/ARTWORK.md',
+                     'tools/verify_component_notices.py','tools/prepare_title_art.sh',
+                     'tools/prepare_upstream_title_art.py','tools/validate_title_art.py'):
+        file=root/relative
+        if file.is_file():rows.append({'path':relative,'size':file.stat().st_size,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()})
+    dependencies=[gpu/'radv-build/src/amd/vulkan/libvulkan_radeon.a',gpu/'native-title/libc.prx',
+                  gpu/'native-title/ps5-native-tool',support/'sce_sys/param-radv.json']+sorted((support/'.deps/native/ps5-payload-sdk/target/lib').glob('*'))
     for file in dependencies:
         if file.is_file():rows.append({'path':'gpu/'+str(file.relative_to(gpu)),'size':file.stat().st_size,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()})
     record={'schema':1,'high_refresh_build':high,'inputs':rows}

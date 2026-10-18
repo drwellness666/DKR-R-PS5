@@ -3,6 +3,7 @@
 """Prepare ROM-free installer/update candidates. Distribution review is separate."""
 import argparse,hashlib,json,pathlib,re,subprocess,tarfile
 from build_native_game_bundle_updater import inventory,inventory_hash
+from verify_component_notices import verify_app
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 PUBLIC_FILES=set(re.findall(r'^    "([^"]+)",$',(ROOT/'src/ps5_update_files.h').read_text(),re.M))
 if len(PUBLIC_FILES)!=37:raise ValueError('Unexpected reviewed application allowlist')
@@ -78,6 +79,7 @@ def build(sdk,app,receipt,output,migrations=()):
     if 'private' not in output.parts or output.exists():raise ValueError('Use a new private candidate output directory')
     record=json.loads(receipt.read_text());all_files=inventory(app)
     release_files(app,strict=True)
+    verify_app(ROOT,app)
     if record['files']!=all_files or record['app_manifest_sha256']!=inventory_hash(all_files):raise ValueError('Game differs from its native receipt')
     output.mkdir(parents=True,mode=0o700);work=output/'source';work.mkdir(mode=0o700)
     sequence=json.loads((ROOT/'PORT_RELEASE.json').read_text()).get('installer_sequence',3)

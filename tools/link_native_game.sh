@@ -7,6 +7,7 @@ gpu=$1
 game=$2
 [[ $gpu == /* && $game == /* ]] || exit 2
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+python3 "$root/tools/verify_component_notices.py" "$root"
 high_refresh=${DKR_PS5_HIGH_REFRESH_BUILD:-0}
 [[ $high_refresh == 0 || $high_refresh == 1 ]] || { echo 'DKR_PS5_HIGH_REFRESH_BUILD must be 0 or 1' >&2; exit 2; }
 sdl=${DKR_SDL_WORK:-$root/work/lowmem}
@@ -23,6 +24,7 @@ build="$game/native-link"
 target="$game/private/native/PPSA94678"
 mkdir -p "$build/obj" "$build/gen" "$build/stubs" "$target/sce_sys" "$target/sce_module"
 cc() { PS5_PAYLOAD_SDK="$sdk" sh "$support/tooling/prospero-clang18" -gline-tables-only "-ffile-prefix-map=$root=/src/dkrr-ps5" "$@"; }
+bash "$root/tools/prepare_title_art.sh" "$gpu" "$game"
 build_id=$(python3 "$root/tools/native_build_identity.py" "$root" "$game" "$sdl" "$support" "$build/native-inputs.json" --high-refresh "$high_refresh")
 profile="$game/game-ps5/dkr-ps5-profile.json"
 [[ -f $profile ]] || { echo 'Missing selected-revision CMake profile' >&2; exit 2; }
@@ -143,7 +145,6 @@ tool="$gpu/native-title/ps5-native-tool"
     --module-sdk 0x02000009 --companion-sdk 0x08050001 --file-name eboot.elf
 "$tool" self --sign --in "$build/eboot.elf" --out "$target/eboot.bin" --magic 0x1D3D154F
 cp "$gpu/native-title/libc.prx" "$target/sce_module/libc.prx"
-bash "$root/tools/prepare_title_art.sh" "$gpu" "$game"
 for image in icon0.png pic0.dds pic1.dds; do
     cp "$game/private/title-art-paired/$image" "$target/sce_sys/$image"
 done
