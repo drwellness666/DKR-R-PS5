@@ -47,6 +47,17 @@ allocator under sanitizers. Accepted block sizes do not grow either conversion
 vector, including custom-music zeroing and rate changes. The old setup fails
 this check. This is not a whole-callback allocation or console frame-rate claim.
 
+The actual mixer also matches the pinned upstream output for 96 combinations of
+gain, EQ, custom music, tones and sample rates. Varied block sizes and next-block
+gain changes are covered; PS5 gain is read once per submitted block.
+Speaker-file tests exercise short reads, interruptions, changed sizes and an
+ordinary-file-to-FIFO replacement before open. Unexpected entries are preserved
+and descriptors close on failure. Delayed cue-load/native-open failures after
+cancellation cannot disable a newer request; both off/on races are exercised. The actual update card runs with real ImGui
+gamepad events: failed preference writes stay visible, successful retries clear
+the message, idle frames do not write, and a storage shortage disables install
+with a reason. Check/install/cancel controls remain navigable.
+
 All three native preference adapters also exercise interrupted legacy/numbered
 writes, occupied slots, preserved symlinks, failed directory synchronization and
 nonblocking rejection of named pipes.
