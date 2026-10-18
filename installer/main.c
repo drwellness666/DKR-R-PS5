@@ -4,6 +4,7 @@
  */
 #include "dkrr_install.h"
 #include "../src/ps5_controller_audio_bank.h"
+#include "../src/ps5_storage_budget.h"
 #include <errno.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -12,8 +13,6 @@
 #include <string.h>
 #include <sys/file.h>
 #include <sys/stat.h>
-#include <sys/statvfs.h>
-extern int statvfs(const char*,struct statvfs*) __attribute__((weak));
 #include <unistd.h>
 #include "release_files.h"
 #ifndef DKRR_INSTALL_ROOT
@@ -126,15 +125,15 @@ static int native_update_access(const char *app) {
  return 0;
 }
 static int space_available(int app_required) {
- struct statvfs fs;unsigned long long required=app_required?24ULL*1024*1024:0;
+ unsigned long long required=app_required?24ULL*1024*1024:0;
  if(app_required)for(size_t i=0;i<sizeof(release_files)/sizeof(release_files[0]);++i)required+=(unsigned long long)(release_files[i].end-release_files[i].start);
  for(unsigned i=0;i<2;++i){char p[DKRR_PATH];snprintf(p,sizeof(p),"%s/dkr.us.v%u.z64",owned,i?80:77);if(dkrr_regular(p,1)==0)required+=DKRR_ROM_SIZE+8*1024*1024;}
  if(!required)return 1;
- if(statvfs&&statvfs(DKRR_INSTALL_ROOT,&fs)==0){
-  unsigned long unit=fs.f_frsize?fs.f_frsize:fs.f_bsize;
-  if(unit>=512&&unit<=16*1024*1024&&fs.f_bavail<required/unit+1)return 0;
- }
- return 1;
+ uint64_t available=0;const int checked=dkrr_space_check(DKRR_INSTALL_ROOT,required,&available);
+ if(checked){printf("DKRR INSTALL: estimated free space needed=%llu MiB; available=%llu MiB\n",
+  (required+1024*1024-1)/(1024*1024),(unsigned long long)(available/(1024*1024)));}
+ else puts("DKRR INSTALL: available-space telemetry unavailable; write failures remain guarded.");
+ return checked>=0;
 }
 static int prepare_stage(struct dkrr_manifest *m) {
  int present=exists_dir(stage);if(present<0)return -1;
