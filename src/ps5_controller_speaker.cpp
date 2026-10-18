@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Optional app-owned speaker worker. No separate payload/process or TV reroute.
 #include "ps5_controller_speaker.hpp"
+#include "ps5_pcm_reader.hpp"
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -8,8 +9,6 @@
 #include <condition_variable>
 #include <cmath>
 #include <cstdio>
-#include <filesystem>
-#include <fstream>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -36,16 +35,14 @@ struct Speaker::Worker {
     ~Worker(){ {std::lock_guard lock(mutex);quit=true;++generation;}wake.notify_one();if(thread.joinable())thread.join(); }
     std::vector<std::int16_t> load(unsigned rev,unsigned index) {
         if(loader)return loader(rev,index);
-        std::vector<std::int16_t> data;
         for(const char*root:{"/app0/assets/controller-audio","/data/homebrew/PPSA94678/assets/controller-audio"}) {
-            const auto p=std::filesystem::path(root)/("us-v"+std::to_string(rev))/(std::to_string(index)+".pcm");
-            std::error_code ec;const auto n=std::filesystem::file_size(p,ec);
-            if(ec||!n||n%2||n>48000U*2U*4U||!std::filesystem::is_regular_file(p,ec)||std::filesystem::is_symlink(p,ec))continue;
-            std::ifstream f(p,std::ios::binary);data.resize(n/2);
-            if(f.read(reinterpret_cast<char*>(data.data()),static_cast<std::streamsize>(n)))return data;
-            data.clear();
+            char path[192];
+            const int n=std::snprintf(path,sizeof(path),"%s/us-v%u/%u.pcm",root,rev,index);
+            if(n<0||static_cast<std::size_t>(n)>=sizeof(path))continue;
+            auto data=read_pcm(path);
+            if(!data.empty())return data;
         }
-        return data;
+        return {};
     }
     const std::vector<std::int16_t>& cue(unsigned rev,unsigned index) {
         // Only the audio worker owns this bounded cache. Repeated item use
@@ -64,6 +61,13 @@ struct Speaker::Worker {
         }
         return data;
     }
+    bool publish_result(unsigned expected,int value) {
+        std::lock_guard lock(mutex);
+        // Disable/re-enable or a new user can overtake slow file/native I/O.
+        // A cancelled request must not overwrite the newer request's status.
+        if(quit||!enabled||generation!=expected)return false;
+        result.store(value);return true;
+    }
     void run() {
         int& handle=output_handle;int open_user=-1;unsigned seen=0;std::unique_lock lock(mutex);
         while(!quit) {
@@ -75,22 +79,25 @@ struct Speaker::Worker {
             playing=true;active_priority=ps5_sounds::priority(unsigned(requested));
             lock.unlock();
             const auto& data=cue(rev,static_cast<unsigned>(requested));
-            if(data.empty()){result.store(-2);std::fprintf(stderr,"[input][speaker] private PCM unavailable\n");lock.lock();playing=false;continue;}
+            lock.lock();
+            if(quit||!enabled||generation!=seen){playing=false;continue;}
+            lock.unlock();
+            if(data.empty()){if(publish_result(seen,-2))std::fprintf(stderr,"[input][speaker] private PCM unavailable\n");lock.lock();playing=false;continue;}
             if(handle>=0&&open_user!=id){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}
             if(handle<0) {
                 // Public AudioOut ABI: PADSPK=4, S16 mono=0, 48 kHz. Route is
                 // experimental on native PS5 until audibly checked on hardware.
                 handle=sceAudioOutOpen(id,4,0,256,48000,0);open_user=id;
-                if(handle<0){result.store(-1);std::fprintf(stderr,"[input][speaker] native open failed rc=0x%08x\n",unsigned(handle));lock.lock();playing=false;continue;}
+                if(handle<0){if(publish_result(seen,-1))std::fprintf(stderr,"[input][speaker] native open failed rc=0x%08x\n",unsigned(handle));lock.lock();playing=false;continue;}
             }
-            result.store(1);std::array<std::int16_t,256> block{};
+            publish_result(seen,1);std::array<std::int16_t,256> block{};
             for(std::size_t pos=0;pos<data.size();pos+=block.size()) {
                 lock.lock();const bool cancelled=quit||!enabled||generation!=seen;const float gain=volume;lock.unlock();
                 if(cancelled)break;
                 block.fill(0);
                 for(std::size_t i=0;i<block.size()&&pos+i<data.size();++i)block[i]=static_cast<std::int16_t>(float(data[pos+i])*gain);
                 const int rc=sceAudioOutOutput(handle,block.data());
-                if(rc<0){result.store(-1);std::fprintf(stderr,"[input][speaker] native output failed rc=0x%08x\n",unsigned(rc));break;}
+                if(rc<0){if(publish_result(seen,-1))std::fprintf(stderr,"[input][speaker] native output failed rc=0x%08x\n",unsigned(rc));break;}
             }
             // Drain/close after each short cue; never retain a silent speaker port.
             if(handle>=0){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}

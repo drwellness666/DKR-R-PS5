@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 DetailCard(width,{22.0F,22.0F},[&](float inner) {
+    static std::string preference_status;
     const auto update=dkrr::updates::view();
     using UpdateState=dkrr::updates::State;
     DetailHeading("PS5 UPDATES",inner,kSetWarm);
     bool automatic=dkrr::updates::automatic_check();
-    if(ImGui::Checkbox("Check for updates at launch",&automatic)&&!dkrr::updates::set_automatic_check(automatic))
-        DetailText("The update preference could not be saved.",inner);
+    if(ImGui::Checkbox("Check for updates at launch",&automatic))
+        preference_status=dkrr::updates::set_automatic_check(automatic)?"":
+            "The update preference could not be confirmed saved. Try again.";
+    if(!preference_status.empty())DetailText(preference_status.c_str(),inner);
     PaddockGap(12.0F);
-    DetailText(update.message[0]?update.message:"Updates are checked once each launch.",inner);
+    DetailText(update.message[0]?update.message:"Check for updates to download and install directly on this PS5.",inner);
     if(update.state==UpdateState::Downloading&&update.bytes)
         ImGui::ProgressBar(float(double(update.received)/double(update.bytes)),{inner,0.0F});
     const bool waiting=update.state==UpdateState::Checking||update.state==UpdateState::Downloading||
@@ -25,7 +28,9 @@ DetailCard(width,{22.0F,22.0F},[&](float inner) {
                 (unsigned long long)((update.space_required+mib-1)/mib));
             DetailText(storage,inner,kSetMuted);
         }
-        ImGui::BeginDisabled(update.space_known&&update.space_available<update.space_required);
+        const bool storage_shortage=update.space_known&&update.space_available<update.space_required;
+        if(storage_shortage)DetailText("Not enough free space. Free storage, then check for updates again.",inner,kSetMuted);
+        ImGui::BeginDisabled(storage_shortage);
         if(DetailRaceButton("INSTALL UPDATE AND CLOSE DKR-R",inner))dkrr::updates::install();
         ImGui::EndDisabled();
         DetailText("Downloads on this PS5, then closes the game before installation. Progress, settings and texture packs are kept. Start DKR-R again after the completion notification.",inner,kSetMuted);
