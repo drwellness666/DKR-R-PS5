@@ -2,7 +2,9 @@
 
 ## Software
 
-The PS5 integration is **[GPL-3.0-or-later](../LICENSE)**. Original DKR-R project code is MIT; its linked runtime also includes GPL components. Each dependency retains its own copyright and licence. Matching source and pinned build recipes accompany the universal ELF downloads.
+The PS5 integration is **[GPL-3.0-or-later](../LICENSE)**. This is a free hobby project for the community. The complete PS5-specific source is included: game integration, controller/display/save adapters, installer, updater and build/packaging tools. You may study, modify, rebuild and redistribute the code under its applicable open-source licences.
+
+Original DKR-R project code is MIT; its linked runtime also includes GPL components. Each dependency retains its own copyright and licence. Matching source and pinned build recipes accompany the universal ELF downloads.
 
 **[Credits and project links](../CREDITS.md)** · **[Component inventory](../THIRD_PARTY.md)** · **[Complete original notices](../licenses/COMPONENT-NOTICES.txt)**
 
