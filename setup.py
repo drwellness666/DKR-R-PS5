@@ -14,8 +14,8 @@ class Assistant:
     def __init__(self,root=ROOT,run=None,validate=check_rom,history=None):
         self.root=pathlib.Path(root);self.work=self.root/'work/assistant';self.validate=validate
         self.game=self.work/'game';self.token=secrets.token_urlsafe(32);self.lock=threading.RLock();self.runner=run or self.run
-        self.state={'busy':False,'stage':'Ready','error':'','roms':{},'log':[],'built':False,'installed':False,'previous_builds':[]}
-        self.inputs={};self.completed=None;self.previous={}
+        self.state={'busy':False,'stage':'Ready','error':'','roms':{},'log':[],'built':False,'installed':False}
+        self.inputs={};self.completed=None
         history_path=(pathlib.Path.home()/'.local/state/dkrr-ps5/assistant.json' if self.root==ROOT else self.work/'private/history.json')
         self.history=History(history or history_path)
         self.recover()
@@ -25,16 +25,16 @@ class Assistant:
         except (OSError,ValueError,TypeError) as e:
             self.note('Saved build history not reused: '+str(e));return
         for row in rows:
+            # Only current-source builds can be restored. Older outputs stay
+            # in history without rehashing their large app/package files.
+            if row.get('source_sha256')!=source:continue
             try:verified=inspect_build(row)
             except (OSError,ValueError,KeyError,TypeError):
                 self.note('A previous build is incomplete or changed; it remains preserved and is not reused.');continue
-            key=row['receipt_sha256']
-            if key in self.previous:continue
-            self.previous[key]=verified
-            self.state['previous_builds'].append({'id':key,'label':verified['spec']['build_id']+' · '+verified['game'].name})
             if self.completed is None and row['source_sha256']==source:
                 self.completed=row;self.game=verified['game'];self.inputs=verified['roms']
                 self.state.update(built=True,roms={r:{'revision':'US 1.0' if r=='77' else 'US 1.1 / Rev A','sha1':ROM_HASHES[int(r)]} for r in self.inputs},stage='Verified completed build restored — ready to install')
+                break
         # Recovered state does not claim that a console installation succeeded.
     def note(self,line):
         with self.lock:self.state['log']=(self.state['log']+[str(line).rstrip()])[-400:]
@@ -90,40 +90,31 @@ class Assistant:
         source_before=source_identity(self.root)
         env=self.environment(jobs);game=self.game
         sdk=self.work/'sdl/sdk/ps5-payload-sdk'
-        steps=[('Build SDL / SDK',['bash','build.sh']),('Build graphics driver',['bash','build_gpu.sh']),('Build RT64',['bash','build_rt64.sh']),('Build DKR-R',['bash','build_integrated.sh']),('Record build',[sys.executable,'tools/record_native_build.py',str(game)]),('Create game installer',[sys.executable,'tools/build_native_game_installer.py',str(sdk),str(game),'--with-owned-roms'])]
+        steps=[('Build SDL / SDK',['bash','build.sh']),('Build graphics driver',['bash','build_gpu.sh']),('Build RT64',['bash','build_rt64.sh']),('Build DKR-R',['bash','build_integrated.sh']),('Record build',[sys.executable,'tools/record_native_build.py',str(game)]),('Create universal installer and update',[sys.executable,'tools/build_universal_installer.py',str(sdk),str(game/'private/native/PPSA94678'),str(game/'private/CANDIDATE.json'),str(game/'private/universal')])]
         for label,argv in steps:
             with self.lock:self.state['stage']=label
             self.runner(argv,env)
-        required=[game/'private/dkrr-install.elf',game/'private/CANDIDATE.json']
+        required=[game/'private/CANDIDATE.json',game/'private/universal/CANDIDATE.json',*[game/'private/universal'/name for name in ('DKRR-Installer.elf','DKRR-Update.elf','DKRR-Update.dkru')]]
         if not all(p.is_file() for p in required):raise RuntimeError('Build returned without all required outputs; installation stays disabled.')
         entry=completed_entry(self.root,game)
         if entry['source_sha256']!=source_before:raise RuntimeError('Source changed during compilation; outputs preserved but not enabled for installation.')
-        verified=inspect_build(entry)
-        self.history.remember(entry);self.completed=entry;self.previous[entry['receipt_sha256']]=verified
+        inspect_build(entry)
+        self.history.remember(entry);self.completed=entry
         with self.lock:
-            self.state['previous_builds']=[{'id':key,'label':v['spec']['build_id']+' · '+v['game'].name} for key,v in self.previous.items()]
             self.state.update(built=True,stage='Build complete — ready to install',error='')
-    def install(self,host,closed,previous_id=''):
+    def install(self,host,closed,mode='install'):
         address=ipaddress.ip_address(host)
         if address.version!=4 or not address.is_private or address.is_loopback or address.is_unspecified or address.is_multicast:raise ValueError('Enter your PS5 private LAN IPv4 address.')
         if closed is not True:raise ValueError('Confirm DKR-R is completely closed before installing.')
+        if mode not in ('install','update'):raise ValueError('Choose Install or Update.')
         if not self.state['built'] or self.completed is None:raise ValueError('Build DKR-R or reopen a verified completed build before installing.')
+        if source_identity(self.root)!=self.completed['source_sha256']:raise ValueError('Source or licence inputs changed. Build again before installing.')
         # Recheck actual bytes just before deployment; a prior receipt or a UI
         # boolean cannot authorize a changed native executable or installer.
         current=inspect_build(self.completed)
-        env=self.environment(4);payload=self.game/'private/dkrr-install.elf';marker='DKR-R INSTALL PASS.'
-        if previous_id:
-            if previous_id not in self.previous:raise ValueError('Choose a verified previous local build.')
-            previous=inspect_build(self.previous[previous_id]['entry'])
-            env.update(DKR_GPU_WORK=str(current['game'].parent/'gpu'))
-            output=self.game/'private'/('update-'+secrets.token_hex(8))/'dkrr-update.elf'
-            with self.lock:self.state['stage']='Prepare one guarded app and asset update'
-            self.runner([sys.executable,'tools/build_native_game_deployer.py',str(current['game'].parent/'sdl/sdk/ps5-payload-sdk'),
-                         str(previous['game']/'private/native/PPSA94678'),str(current['game']),str(output),
-                         '--expected-previous-manifest-sha256',previous['spec']['app_manifest_sha256']],env)
-            if not output.is_file() or output.is_symlink():raise RuntimeError('Update builder returned without its private ELF; nothing sent.')
-            payload=output;marker='DKR-R UPDATE PASS.'
-        with self.lock:self.state.update(installed=False,stage='Update DKR-R' if previous_id else 'Install DKR-R and both ROMs')
+        env=self.environment(4);payload=current['payloads']['DKRR-Installer.elf' if mode=='install' else 'DKRR-Update.elf']
+        marker='DKRR UNIVERSAL INSTALL PASS.' if mode=='install' else 'DKRR UNIVERSAL UPDATE PASS.'
+        with self.lock:self.state.update(installed=False,stage='Update DKR-R' if mode=='update' else 'Install DKR-R — both ROMs must be on USB in DKRR')
         output=self.runner([sys.executable,'tools/send_elf.py',str(address),str(payload)],env)
         if marker not in output:raise RuntimeError('No authoritative installer success marker. Inspect the console log before trying again.')
         with self.lock:self.state.update(installed=True,stage='Files verified. Scan /data/homebrew with ShadowMountPlus if needed and launch the PS5 icon. No PC or resident save service is required by this candidate.')
@@ -134,7 +125,7 @@ class Assistant:
         def task():
             try:
                 if operation=='build':self.build(int(args.get('jobs',4)))
-                elif operation=='install':self.install(args.get('host',''),args.get('closed'),args.get('previous_build',''))
+                elif operation=='install':self.install(args.get('host',''),args.get('closed'),args.get('mode','install'))
                 else:raise ValueError('Unknown operation.')
             except Exception as e:
                 with self.lock:self.state.update(error=str(e),stage='Stopped')
