@@ -92,7 +92,7 @@ class Tests(unittest.TestCase):
     self.assertEqual(before,len(self.commands));p.write_bytes(old)
  def test_source_and_licences_disable_restore_and_send(self):
   self.prepared();history=self.app.history.path.read_bytes()
-  for relative in ('build_game.sh','LICENSE','THIRD_PARTY.md','licenses/COMPONENT-NOTICES.txt','licenses/CONTENT-PERMISSIONS.json'):
+  for relative in ('build_game.sh','installer/main.c','LICENSE','THIRD_PARTY.md','licenses/COMPONENT-NOTICES.txt','licenses/CONTENT-PERMISSIONS.json'):
    with self.subTest(relative=relative):
     p=self.root/relative;p.parent.mkdir(parents=True,exist_ok=True);p.write_text('changed build input')
     with patch.object(module,'inspect_build',side_effect=AssertionError('Unrelated large build should not be read')):
