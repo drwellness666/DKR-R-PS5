@@ -28,7 +28,7 @@ def ordinary(path):
 def source_identity(root):
     digest=hashlib.sha256()
     paths=[]
-    for folder in ('src','patches','tools','vendor','homebrew','licenses'):
+    for folder in ('src','installer','patches','tools','vendor','homebrew','licenses'):
         base=root/folder
         if base.is_dir():paths.extend(p for p in base.rglob('*') if p.is_file() and '__pycache__' not in p.parts)
     paths.extend(p for p in root.iterdir() if p.is_file() and (p.suffix in {'.sh','.json'} or p.name in {'setup.py','CMakeLists.txt','LICENSE','THIRD_PARTY.md'}))
