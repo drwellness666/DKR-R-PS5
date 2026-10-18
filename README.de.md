@@ -2,82 +2,57 @@
 
 ![Diddy Kong Racing Recompiled — Grafik des Originalprojekts](https://github.com/user-attachments/assets/c913bee2-029c-4e29-9921-0f6abe7a3bf1)
 
-**Diddy Kong Racing Recompiled läuft nativ auf PlayStation 5.**
-Ein inoffizieller PS5-Port von [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R).
+**Diddy Kong Racing Recompiled, nativ auf PlayStation 5.**
+Ein inoffizieller Port von [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R), entwickelt von **ThatGuyMcd und den Mitwirkenden des Projekts**.
 
-[📦 Releases](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇬🇧 English](README.md) · [📖 Hilfe](docs/README.md) · [🐛 Fehler melden](https://github.com/drwellness666/DKR-R-PS5/issues)
+[📦 Downloads](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇬🇧 English](README.md) · [📖 Hilfe](docs/README.md) · [❤️ Mitwirkende](CREDITS.md) · [🐛 Fehler melden](https://github.com/drwellness666/DKR-R-PS5/issues)
 
-**Version 1.0 ist in Vorbereitung.** Dieser Branch enthält alle aktuellen Änderungen.
-Installer und Update für 1.0 erscheinen nach der abschließenden Prüfung.
-[Fortschritt und Teststand](docs/VALIDATION.md).
+**Version 1.0 ist in Vorbereitung.** Die endgültigen Installer- und Update-Downloads sind noch nicht verfügbar.
 
-## 🎮 Was dieser Port ergänzt
+## 🎮 Für die PS5 angepasst
 
-| PS5-Erweiterung | Funktion |
-|---|---|
-| Native PS5-App | Start über ein PS5-Icon, mit passendem Hintergrund und Startgrafik. |
-| Beide US-Revisionen | Unter **Touchpad → Play** zwischen **US 1.0 und US 1.1 / Rev A** für den nächsten Start wählen. |
-| Gemeinsame Einrichtung | Steuerung, Bild, Ton und Texturauswahl beim Versionswechsel behalten. Fortschritt und Controller Paks bleiben getrennt. |
-| Controllerfreundliche Menüs | Originale DKR-R-Typografie, vollgroße Oberfläche bei 4K, klare Versionskarten, eine Controller-Grafik mit aktueller Belegung und kompakte Tastenzuordnung. Klassisches Gasgeben mit Kreuz erhält das Gas-Antippen. |
-| DualSense-Extras | Optionale Ballon-Lichtfarben, Gyrosteuerung, L2-Item-Effekte und Item-, Sammel-, Münz-, Hupen- und Boostfeld-Töne über den Controller-Lautsprecher. Gemeinsam unter **Controls → PS5**. |
-| TV-Ausgabe | Wahlweise 1080p, 1440p und **4K**, optionales **HDR10** und experimentelle **120 Hz / VRR**. Match display folgt der aktiven Ausgabe; die tatsächlichen FPS hängen von Szene und Einstellungen ab. |
-| Installation und Updates | Eine ROM-freie Installer-ELF. Spätere Updates werden im Spiel heruntergeladen oder als Update-ELF gesendet. ROM-Import und Controller-Töne werden auf der PS5 vorbereitet. |
-| Integriertes Speichern und Diagnose | Direkte native Speicherfunktion, lokale Fehlerprotokolle und eine Bildzeitmessung. Ein zusätzlicher Save-Helper gehört nicht zu dieser Version. |
+- Start vom PS5-Hauptmenü mit dem originalen DKR-R-Icon und Wolkenhintergrund.
+- Zwischen **US 1.0 und US 1.1 / Rev A** wechseln. Einstellungen und Texturpakete werden gemeinsam verwendet; Spielstände bleiben getrennt.
+- Klassische Steuerung und controllerfreundliche Menüs mit einer Grafik der aktuellen Tastenbelegung.
+- Optionale **DualSense-Ballonfarben, Gyrosteuerung, adaptive L2-Effekte und Controller-Töne** unter **Controls → PS5**.
+- Bis zu **4K**, optionales **HDR10** und experimentelle **120 Hz / VRR**. [Bildeinstellungen](docs/DISPLAY.md).
+- Einmal installieren und auf der Konsole spielen. Spätere Updates lassen sich im Spiel installieren.
 
-Modern/Accurate-Darstellung, HD-Texturpakete, Mods, Online-Funktionen und
-englische/französische/deutsche Spieltexte stammen aus **DKR-R**. Sie bleiben
-erhalten; nicht jedes Paket, jeder Mod und jeder Online-Modus wurde auf PS5
-getestet. Die Einstellungsoberfläche ist Englisch.
+Modern/Accurate-Darstellung, Texturpakete, Mods, Online-Funktionen und englische/französische/deutsche Spieltexte stammen aus DKR-R. Das Einstellungsmenü ist Englisch. Hinweise zur Kompatibilität stehen in den [bekannten Fehlern](docs/KNOWN_ISSUES.md).
 
 ## 📦 Installieren
 
-Benötigt werden eine PS5 mit eingerichteter **nativer Homebrew**, ein
-**ELF-Empfänger**, **ShadowMountPlus** und beide eigenen sauberen
-**US-ROM-Dumps 1.0 und 1.1**. PAL-ROMs werden nicht unterstützt. Testsitzungen
-nutzten Firmware 13.60, Relapse / WebKit Autoloader 0.6.1, kstuff-lite und
-ShadowMountPlus mit einem LG C1.
+Benötigt werden eine PS5 mit eingerichteter **nativer Homebrew**, **ShadowMountPlus**, ein **ELF-Empfänger** und eigene saubere **US-ROM-Dumps 1.0 und 1.1**. PAL-ROMs werden nicht unterstützt.
 
 1. **DKRR-Installer.elf** aus dem passenden Release herunterladen.
-2. Beide ROMs auf einen USB-Stick in den Ordner **DKRR** direkt im Hauptverzeichnis legen. Die Dateinamen sind egal.
-3. Stick anschließen, DKR-R schließen und den Installer an den ELF-Empfänger senden. Auf die Abschlussmeldung warten.
-4. Sobald ShadowMountPlus die App erkannt hat, **DKR-R** über das PS5-Icon starten.
+2. Beide ROM-Dateien auf einen USB-Stick in den Ordner **DKRR** direkt im Hauptverzeichnis legen. Die Dateinamen sind egal.
+3. Stick anschließen, DKR-R schließen und den Installer mit dem gewohnten Windows- oder Linux-Sender an den ELF-Empfänger der PS5 senden.
+4. Auf die Abschlussmeldung und die Erkennung durch ShadowMountPlus warten. Anschließend **DKR-R** über sein PS5-Icon starten.
 
-Nach der Installation sind zum Spielen und für Internet-Updates weder PC,
-USB-Stick noch laufender ELF-Empfänger nötig. Die übliche Homebrew-Einrichtung
-bleibt nach einem Konsolenneustart erforderlich. Updates unter **Touchpad →
-About DKR-R → PS5 updates** aufrufen oder das Spiel schließen und
-**DKRR-Update.elf** einmal senden. Einstellungen, Fortschritt und Texturpakete
-bleiben auf der Konsole. Für diesen ELF-Weg ist keine eigene Kompilation nötig.
-[Installationshilfe](docs/INSTALLER.md) · [Updates](docs/UPDATES.md).
+**Eine Kompilation ist nicht nötig.** Nach der Installation brauchen das Spiel und seine Internet-Updates weder PC noch USB-Stick noch laufenden ELF-Empfänger. Nach einem Konsolenneustart bleibt die übliche Homebrew-Einrichtung erforderlich.
+
+[Installationshilfe](docs/INSTALLER.md) · [Updates](docs/UPDATES.md) · [Steuerung und Sprachen](docs/CONTROLS.md)
 
 ## 🎨 Optionales Texturpaket
 
-**DKR REMASTERED von sr.gu** ist eine optionale Empfehlung; **v0.2.7** war in
-unseren PS5-Sitzungen auf beiden US-Revisionen sichtbar. Die Bezugsquelle ist der
-[offizielle DKR-R-Discord](https://discord.com/invite/AMWfXdBjNP), den auch das
-Originalprojekt für sein Community-Texturpaket verlinkt. Unter **Textures**
-importieren und **Modern** verwenden. Das Paket wird separat zu den Bedingungen
-des Autors angeboten. [Paket-Hilfe](docs/CONTROLS.md#texture-packs-and-mods).
+**DKR REMASTERED von sr.gu** ist eine separate Empfehlung. Bezugsquelle ist der [offizielle DKR-R-Discord](https://discord.com/invite/AMWfXdBjNP). Unter **Textures** importieren und **Modern** wählen. Version 0.2.7 wurde auf beiden US-Revisionen verwendet. Das Paket ist hier nicht enthalten. [Paket-Hilfe](docs/CONTROLS.md#texture-packs-and-mods).
 
 ## ⚠️ Bekannte Fehler
 
-- Kurzes Wasserflackern beim Einstieg in eine **Tracks-Vorschau**; Adventure-Wasser wurde als stabil gemeldet.
+- Beim Einstieg in eine **Tracks-Vorschau** kann das Wasser kurz aufblitzen.
 - Gelegentliche **Mikroruckler**, besonders bei aufwendigen Grafikeinstellungen oder Texturpaketen.
-- HDR10 und die neuesten Installations-, Update- und Controller-Funktionen brauchen noch ihre abschließenden PS5-Tests. Siehe [Teststand](docs/VALIDATION.md).
+- HDR, der neueste Installer/Updater und neuere Controller-Funktionen brauchen noch ihre abschließenden PS5-Tests. Mods, Online-Spiel und andere Homebrew-Setups sind nur begrenzt geprüft.
 
-[Bekannte Fehler und Kompatibilität](docs/KNOWN_ISSUES.md).
+[Kompatibilität und Funktionsstand](docs/KNOWN_ISSUES.md) · [Geplante Verbesserungen](docs/ROADMAP.md)
 
-## 🛠️ Selbst bauen, Mitwirkende und Lizenzen
+## ❤️ Mitwirkende und Lizenzen
 
-Lieber selbst kompilieren? [Linux / Windows mit WSL2](docs/BUILD.md).
-[Welche Dateien ins Repository gehören](docs/FILES.md).
+Dieser Port baut auf **[ThatGuyMcd / DKR-R](https://github.com/ThatGuyMcd/DKR-R)**, **[DavidSM64s Dekompilierung](https://github.com/DavidSM64/Diddy-Kong-Racing)**, **[N64Recomp](https://github.com/N64Recomp)**, **[RT64](https://github.com/rt64/rt64)** und der **öffentlichen PS5-Homebrew-Community** auf. Das originale Icon stammt von **[POOTERMAN](https://www.deviantart.com/pooterman)**.
 
-Danke an **ThatGuyMcd und die DKR-R-Mitwirkenden**, N64Recomp/N64ModernRuntime,
-RT64 sowie die öffentlichen PS5-SDK- und PS5-Vulkan/Mesa/RADV-Projekte. Das
-Titelbild ist aus DKR-R verlinkt; dessen App-Icon wird **POOTERMAN** zugeschrieben.
+**[Alle Credits und Projektlinks →](CREDITS.md)** · [Originale Lizenzen und Hinweise](docs/LICENSES.md)
 
-Die Adapter des Ports stehen unter [GPL-3.0-or-later](LICENSE); Abhängigkeiten
-behalten ihre [eigenen Lizenzen](THIRD_PARTY.md). ROMs, extrahierte Controller-
-Geräusche, Spielstände und fremde Texturpakete sind in geteilten Downloads nicht
-enthalten. Nintendo, Rare, Microsoft und Sony unterstützen dieses Projekt nicht
-offiziell. [Lizenzdetails](docs/LICENSES.md).
+**Mit KI-Unterstützung entwickelt / Vibe Coding:** Dieser Hinweis bezieht sich auf unsere PS5-Portierung, nicht auf die Urheberschaft des ursprünglichen DKR-R oder seiner Abhängigkeiten.
+
+Die PS5-Integration steht unter [GPL-3.0-or-later](LICENSE); andere Bestandteile behalten ihre eigenen Bedingungen. Eigene, rechtmäßig nutzbare ROMs sind erforderlich. Geteilte Downloads enthalten keine ROMs, extrahierten Controller-Geräusche oder Texturpakete. Dieses Fanprojekt ist nicht mit Nintendo, Rare, Microsoft oder Sony verbunden und wird von ihnen nicht unterstützt.
+
+Selbst kompilieren oder mitarbeiten? [Entwicklerübersicht](docs/DEVELOPMENT.md).
