@@ -11,11 +11,10 @@ void DrawPs5DisplayFields(float width, bool entered) {
     auto &ui = g_ps5_display_ui;
     const auto active = dkrr_ps5_display_status();
     if (entered || !ui.loaded) {
-        dkrr_ps5_display_choice c{};
-        const int rc = dkrr_ps5_read_display_choice(&c);
+        dkrr_ps5_display_choice c{};dkrr_ps5_hdr_choice hdr{};
+        const int rc = dkrr_ps5_read_output(&c,&hdr);
         ui.resolution = c.resolution == 2160 ? 2 : c.resolution == 1440 ? 1 : 0;
         ui.refresh = c.refresh == 120 && active.high_refresh_build ? 1 : 0;
-        dkrr_ps5_hdr_choice hdr{};dkrr_ps5_read_hdr_choice(&hdr);
         ui.hdr_mode=int(hdr.enabled);ui.paper_white=int(hdr.paper_white);ui.peak=int(hdr.peak);ui.expansion=int(hdr.expansion);
         ui.loaded = true;
         ui.status = rc < 0 ? "The saved TV output choice could not be read. The safe default was used." : "";
@@ -53,15 +52,14 @@ void DrawPs5DisplayFields(float width, bool entered) {
     if (SettingsRaceButton("APPLY TV OUTPUT FOR NEXT START", false)) {
         const unsigned resolution = ui.resolution == 2 ? 2160 : ui.resolution == 1 ? 1440 : 1080;
         const dkrr_ps5_display_choice c{resolution, ui.refresh == 1 ? 120U : 60U};
-        const bool display_saved=dkrr_ps5_choose_display(c)==0;
-        const bool hdr_saved=dkrr_ps5_choose_hdr({unsigned(ui.hdr_mode),unsigned(ui.paper_white),unsigned(ui.peak),unsigned(ui.expansion)})==0;
-        ui.status = display_saved && hdr_saved
+        const bool saved=dkrr_ps5_choose_output(c,{unsigned(ui.hdr_mode),unsigned(ui.paper_white),unsigned(ui.peak),unsigned(ui.expansion)})==0;
+        ui.status = saved
             ? "TV output saved. Close DKR-R and launch it again to apply. Current game and progress stay unchanged."
-            : "Some output settings could not be saved. Current output is unchanged; reopen this page to check the saved choices.";
+            : "TV output could not be confirmed saved. Current output is unchanged; reopen this page to check the saved choice.";
     }
     PaddockGap(6.0F);
     if (SettingsRaceButton("RESTORE 1080p / 60 Hz FOR NEXT START", false)) {
-        if (dkrr_ps5_choose_display({1080, 60}) == 0 && dkrr_ps5_choose_hdr({0,200,800,35}) == 0) {
+        if (dkrr_ps5_choose_output({1080,60},{0,200,800,35}) == 0) {
             ui.resolution = ui.refresh = ui.hdr_mode = 0;ui.hdr_pattern=false;
             dkrr_ps5_hdr_calibration_pattern(0);
             ui.status = "1080p / 60 Hz saved for the next start.";

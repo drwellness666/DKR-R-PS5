@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #pragma once
 #include <stdint.h>
+#include "ps5_hdr_options.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,7 +12,10 @@ struct dkrr_ps5_display_status {
 /* Resolution is buffer height, not the TV's HDMI signal resolution.
  * Defaults: 1080p / 60 Hz. A 120 Hz choice requires an opt-in title build. */
 int dkrr_ps5_read_display_choice(struct dkrr_ps5_display_choice *);
+int dkrr_ps5_read_output(struct dkrr_ps5_display_choice *, struct dkrr_ps5_hdr_choice *);
 int dkrr_ps5_choose_display(struct dkrr_ps5_display_choice);
+/* One atomic next-launch record: output size/rate and HDR never split. */
+int dkrr_ps5_choose_output(struct dkrr_ps5_display_choice, struct dkrr_ps5_hdr_choice);
 void dkrr_ps5_initialize_display(void);
 struct dkrr_ps5_display_choice dkrr_ps5_boot_display_choice(void);
 struct dkrr_ps5_display_status dkrr_ps5_display_status(void);

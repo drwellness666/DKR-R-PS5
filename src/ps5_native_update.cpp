@@ -3,6 +3,7 @@
 // kernel access or writes outside this installation and its private journal.
 #include "ps5_native_update.hpp"
 #include "ps5_update_files.h"
+#include "ps5_storage_budget.h"
 #include "../installer/dkrr_install.h"
 #include <algorithm>
 #include <array>
@@ -225,7 +226,7 @@ bool prepare_impl(Context& c,int fd,const Offer& offer) {
         if(bytes>payload_limit||mode!=expected_mode)return c.fail("Invalid native file size or permissions.");
         auto* entry=const_cast<dkrr_file*>(find(next,name));const auto* previous=find(old,name);if(!entry||!previous)return false;
         entry->size=bytes;entry->mode=unsigned(mode);dkrr_hex(row+172,entry->sha1);
-        if((!std::strcmp(name,"sce_sys/param.json")||!std::strcmp(name,"sce_module/libc.prx"))&&(previous->size!=bytes||previous->mode!=mode||std::strcmp(previous->sha1,entry->sha1)))return c.fail("This update changes the title identity or runtime ABI. Use the installer for that migration.");
+        if((!std::strcmp(name,"sce_sys/param.json")||!std::strcmp(name,"sce_module/libc.prx"))&&(previous->size!=bytes||previous->mode!=mode||std::strcmp(previous->sha1,entry->sha1)))return c.fail("This update changes registered title metadata or the runtime ABI and needs a qualified migration. The installed game is unchanged.");
         if(!parents(c.root+"/new",name)||!copy_stream(fd,c.root+"/new/"+name,bytes,unsigned(mode))||!matches(c.root+"/new/"+name,*entry))return c.fail("The staged update file failed verification.");
         if(!std::strcmp(name,"eboot.bin")) {
             int executable=open((c.root+"/new/eboot.bin").c_str(),O_RDONLY|O_NOFOLLOW);unsigned char magic[4];
@@ -284,6 +285,33 @@ bool apply_impl(Context& c,int lease) {
     if(!ok){const bool restored=rollback(c,old);return c.fail(restored?"Update stopped; the previous version was restored.":"Update stopped. Start DKR-R again to complete recovery.");}
     CHECKPOINT("committed",0);return true;
 }
+}
+bool storage_budget(std::uint64_t package_bytes,Space& space,char* error,std::size_t capacity) {
+    space={};
+    try {
+        Context c{.error=error,.capacity=capacity};
+        if(!package_bytes||package_bytes>payload_limit)return c.fail("Invalid update storage estimate.");
+        auto old=std::make_unique<dkrr_manifest>();
+        if(!ordinary_directory(c.app)||dkrr_manifest_read((c.app+"/dkrr-install.manifest").c_str(),old.get())<0||
+           old->sequence!=DKRR_RELEASE_SEQUENCE||!valid_inventory(*old))
+            return c.fail("The installation record could not be read. Run the current installer once.");
+        std::uint64_t previous=0,largest=0;
+        for(auto* name:dkrr_public_files) {
+            const auto* entry=find(*old,name);
+            if(!entry||entry->size>payload_limit)return c.fail("Invalid installed-file size in update record.");
+            previous+=entry->size;largest=std::max(largest,std::uint64_t(entry->size));
+        }
+        space.required=2*package_bytes+previous+largest+16ULL*1024*1024;
+        const int result=dkrr_space_check(DKRR_UPDATE_ROOT,space.required,&space.available);
+        space.known=result!=0;
+        if(result<0) {
+            constexpr std::uint64_t mib=1024*1024;
+            std::snprintf(error,capacity,"Update needs about %llu MiB free; %llu MiB available. Nothing was downloaded.",
+                (unsigned long long)((space.required+mib-1)/mib),(unsigned long long)(space.available/mib));
+            return false;
+        }
+        return true;
+    } catch(...) {std::snprintf(error,capacity,"Update storage could not be checked. The installed game is unchanged.");return false;}
 }
 bool prepare(int fd,const Offer& offer,char* error,std::size_t capacity) {
     try {Context c{.error=error,.capacity=capacity};const bool ok=prepare_impl(c,fd,offer);if(!ok&&present(c.root)&&!present(c.root+"/applying"))cleanup(c);return ok;}

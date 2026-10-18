@@ -17,7 +17,17 @@ DetailCard(width,{22.0F,22.0F},[&](float inner) {
     ImGui::EndDisabled();
     if(update.state==UpdateState::Available){
         PaddockGap(12.0F);
+        if(update.space_required){
+            constexpr unsigned long long mib=1024*1024;char storage[180];
+            if(update.space_known)std::snprintf(storage,sizeof(storage),"Estimated free space needed: %llu MiB; available: %llu MiB.",
+                (unsigned long long)((update.space_required+mib-1)/mib),(unsigned long long)(update.space_available/mib));
+            else std::snprintf(storage,sizeof(storage),"Estimated free space needed: %llu MiB. Available space could not be read.",
+                (unsigned long long)((update.space_required+mib-1)/mib));
+            DetailText(storage,inner,kSetMuted);
+        }
+        ImGui::BeginDisabled(update.space_known&&update.space_available<update.space_required);
         if(DetailRaceButton("INSTALL UPDATE AND CLOSE DKR-R",inner))dkrr::updates::install();
+        ImGui::EndDisabled();
         DetailText("Downloads on this PS5, then closes the game before installation. Progress, settings and texture packs are kept. Start DKR-R again after the completion notification.",inner,kSetMuted);
     }
     if(update.state==UpdateState::Downloading){PaddockGap(12.0F);if(DetailRaceButton("CANCEL DOWNLOAD",inner))dkrr::updates::cancel();}

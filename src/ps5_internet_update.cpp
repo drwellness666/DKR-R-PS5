@@ -149,18 +149,22 @@ void run_check() {
     Offer result;if(stopping.load())return;
     if(Clock::now()>=deadline){state(State::Unavailable,"Update check timed out.");return;}
     if(!verify_offer(text,used,dkrr_update_public_key,result)||!result.native_package){state(State::Failed,"Update signature is invalid. Nothing was downloaded or installed.");return;}
-    {std::lock_guard lock(mutex);offer=result;current.sequence=result.sequence;current.bytes=result.bytes;current.received=0;}
+    native::Space space{};char storage_error[192]{};
+    if(result.sequence>DKRR_RELEASE_SEQUENCE)native::storage_budget(result.bytes,space,storage_error,sizeof(storage_error));
+    {std::lock_guard lock(mutex);offer=result;current.sequence=result.sequence;current.bytes=result.bytes;current.received=0;
+        current.space_required=space.required;current.space_available=space.available;current.space_known=space.known;}
     state(result.sequence>DKRR_RELEASE_SEQUENCE?State::Available:State::Current,result.sequence>DKRR_RELEASE_SEQUENCE?"A verified update is available.":"You have the latest available version.");
 }
 void run_install() {
     Offer release;{std::lock_guard lock(mutex);release=offer;}
     if(release.sequence<=DKRR_RELEASE_SEQUENCE){state(State::Failed,"No newer verified release is selected.");return;}
+    native::Space space{};char error[192]{};
+    if(!native::storage_budget(release.bytes,space,error,sizeof(error))){state(State::Failed,error);return;}
     Services services;int fd=temporary_file();
     struct Close {int fd;~Close(){if(fd>=0)close(fd);}} close_file{fd};
     if(fd<0||!services.start()||!download(services,release,fd)){state(State::Failed,"Download cancelled or verification failed. The installed game is unchanged.");return;}
     if(stopping.load())return;
     state(State::HandingOff,"Preparing installation on this PS5...");
-    char error[192]{};
     if(!native::prepare(fd,release,error,sizeof(error))){state(State::Failed,error[0]?error:"The native update could not be prepared. The installed game is unchanged.");return;}
     state(State::Closing,"Saving and closing DKR-R. The game installs this update itself.");
     exit_ready.store(true,std::memory_order_release);
