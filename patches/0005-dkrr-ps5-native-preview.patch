@@ -1441,7 +1441,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      if (g_window == nullptr) {
  #if defined(DKR_IOS)
          // Desktop fullscreen, as on the Mac. Real fullscreen makes SDL restore
-@@ -2194,6 +2253,17 @@
+@@ -2194,10 +2253,27 @@
              dkr::runtime::custom_music::render(g_custom_music_buffer.data(),
                                                 sample_count / 2U, g_audio_frequency);
          }
@@ -1449,17 +1449,27 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
 +        // Exact neutral stereo conversion avoids floating point rounding and
 +        // per-sample atomic loads. All enhanced/non-neutral paths keep the
 +        // original mixer, queue priming and emulated AI timing unchanged.
++        // One gain snapshot also serves the equalizer/custom-music path.
++        // A slider change takes effect at the next submitted block.
++        const float block_volume = g_master_volume.load(std::memory_order_relaxed);
 +        const bool copied_neutral_audio = dkrr_ps5_neutral_audio(
 +            g_audio_swap_buffer.data(), samples, sample_count,
-+            g_audio_equalizer.neutral(),
-+            g_master_volume.load(std::memory_order_relaxed), custom_music_active,
++            g_audio_equalizer.neutral(), block_volume, custom_music_active,
 +            g_ui_tone_frames_remaining != 0U);
 +        if (!copied_neutral_audio)
 +#endif
          for (std::size_t i = 0; i < sample_count; i += 2) {
              // RDRAM's 32-bit word swap leaves each native stereo pair in R,L
              // order. Restore conventional L,R order before sending it to SDL.
-@@ -2396,6 +2466,16 @@
++#if defined(__PROSPERO__)
++            const float volume = block_volume;
++#else
+             const float volume = g_master_volume.load(std::memory_order_relaxed);
++#endif
+             const auto filtered = g_audio_equalizer.process(
+                 static_cast<float>(samples[i + 1]) + (custom_music_active ? g_custom_music_buffer[i] : 0.0F),
+                 static_cast<float>(samples[i]) + (custom_music_active ? g_custom_music_buffer[i + 1] : 0.0F));
+@@ -2396,6 +2472,16 @@
          return;
      }
      g_audio_frequency = static_cast<std::uint32_t>(obtained.freq);
@@ -1476,7 +1486,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      g_audio_callback_frames = obtained.samples;
      g_audio_playback_started = false;
      g_audio_nominal_block_frames = 0U;
-@@ -2436,9 +2516,61 @@
+@@ -2436,9 +2522,61 @@
      }
      const bool blocked = dkr::runtime::ui::overlay_visible();
      const bool window_focused = g_window != nullptr &&
@@ -1538,7 +1548,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      const int configured_keyboard_player =
          dkr::runtime::input::keyboard_player();
      const std::size_t online_profile = std::min(
-@@ -2687,6 +2819,98 @@
+@@ -2687,6 +2825,98 @@
  #endif
  }
  
@@ -1637,7 +1647,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
  bool dkr::runtime::platform::gyro_available(std::size_t player) {
  #if DKR_RUNTIME_HAS_RT64
      std::scoped_lock lock(g_platform_mutex);
-@@ -3320,3 +3544,39 @@
+@@ -3320,3 +3550,39 @@
      (void)assignments;
  #endif
  }
