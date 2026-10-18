@@ -78,14 +78,16 @@ struct Output {
     Color last{};
     bool owned=false, failed=false;
     // Returns -1 on the first backend failure, 1 on a send, 0 on no work.
-    // Suppress retries after failure; closing/disabling still tries one reset.
+    // Suppress retries after failure until explicit disable. Closing/disabling
+    // still tries one reset, then re-arms the next enabled session.
     template<class Send> int update(bool enabled,Color color,Send send) {
+        const bool first_error=!failed;
+        if (!enabled) failed=false;
         if ((enabled && failed) || (!enabled && !owned)) return 0;
         const Color target=enabled?color:palette[0];
         if (enabled && owned && target==last) return 0;
-        const bool first_error=!failed;
         if (send(target)!=0) {
-            failed=true;
+            failed=enabled;
             if (!enabled) owned=false;
             return first_error?-1:0;
         }

@@ -147,17 +147,21 @@ bool collect_cleanup(const Path& root,const Path& relative,std::vector<Path>& fi
     const auto path=relative.empty()?root:root+"/"+relative;
     if(!private_directory(path))return false;
     DIR* dir=opendir(path.c_str());if(!dir)return false;bool ok=true;
-    while(auto* entry=readdir(dir)){
+    for(;;){
+        // A null entry is also returned for I/O errors. Reset errno at each
+        // call: metadata checks and recursive walks can change it meanwhile.
+        errno=0;auto* entry=readdir(dir);
+        if(!entry){if(errno)ok=false;break;}
         if(!std::strcmp(entry->d_name,".")||!std::strcmp(entry->d_name,".."))continue;
         Path name=relative.empty()?entry->d_name:relative+"/"+entry->d_name,full=root+"/"+name;struct stat st{};
         if(lstat(full.c_str(),&st)<0||st.st_uid!=getuid()){ok=false;break;}
         if(S_ISDIR(st.st_mode)){if(!allowed_cleanup(name,true)||!collect_cleanup(root,name,files,directories)){ok=false;break;}directories.push_back(full);}
         else if(S_ISREG(st.st_mode)&&st.st_nlink<=1&&allowed_cleanup(name,false))files.push_back(full);
         else {ok=false;break;}
-    }closedir(dir);return ok;
+    }if(closedir(dir)<0)ok=false;return ok;
 }
 bool cleanup(Context& c) {
-    std::vector<Path> files,dirs;if(!collect_cleanup(c.root,"",files,dirs))return c.fail("Unrecognized update recovery files were preserved for inspection.");
+    std::vector<Path> files,dirs;if(!collect_cleanup(c.root,"",files,dirs))return c.fail("Update recovery data could not be fully checked. It was kept for the next recovery attempt.");
     // Callers with an active transaction have verified a complete old or new
     // installation. Retire that transaction durably before destroying either
     // journal or backup. Directory enumeration order is unspecified; a crash

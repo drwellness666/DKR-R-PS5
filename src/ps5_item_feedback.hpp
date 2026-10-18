@@ -49,6 +49,8 @@ class Output {
     bool owned=false,failed=false,had_pull=false;
 public:
     template<class Send> int update(bool enabled,Item item,std::uint64_t ms,bool pulled,Send send) {
+        const bool first_error=!failed;
+        if(!enabled)failed=false;
         if(!enabled||!item.valid) { item={};until=0;had_pull=false; }
         if(item.valid&&pulled){last_pull=ms;had_pull=true;}
         // DKR consumes weapons on Z release. Keep that confirmed item-use
@@ -64,7 +66,7 @@ public:
         }
         if((failed&&enabled&&mode!=0)||(mode==0&&!owned)||(owned&&mode==last))return 0;
         Command cmd;cmd.mode=mode;
-        if(send(cmd)!=0) { const bool first=!failed;failed=true;owned=mode!=0;last=mode;return first?-1:0; }
+        if(send(cmd)!=0) { failed=enabled;owned=mode!=0;last=mode;return first_error?-1:0; }
         owned=mode!=0;last=mode;return 1;
     }
 };
