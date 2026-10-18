@@ -12,6 +12,10 @@ selection/launch images. It does not repaint characters or use extracted ROM
 models/textures. The launch overlay clears after the first game presentation.
 Icon, selected-title background and launch handoff were confirmed on the test PS5.
 
+The maintainer confirmed permission for the icon/background in this PS5 port,
+its installer and updates on 18 October 2026.
+[Scope and hashes](../../licenses/CONTENT-PERMISSIONS.json).
+
 The repository includes the recipe and provenance; graphics are fetched as
 verified local build inputs. Upstream/artist terms continue to apply. These
 images are not assigned CC0 by the port, and a project-code licence does not
