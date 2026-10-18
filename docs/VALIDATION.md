@@ -14,7 +14,7 @@ owner’s two ROMs. New tests exercise actual US77/US80 sound wrappers, native
 player/context gating and compact binding UI. The bounded CSeq decoder also
 passes 8,000 malformed-input cases under address/undefined-behavior sanitizers.
 
-Signed-update tests exercise the actual native worker with 14 service scenarios,
+Signed-update tests exercise the actual native worker with 15 service scenarios,
 all manifest truncations and byte mutations, 10,000 malformed inputs, wrong
 signatures/digests, redirects, cancellation and failed native preparation. No ELF socket API is supplied in the worker test, so a receiver dependency would fail to link. The legacy network
 installer is tested before commit, across partial commit messages and while the
@@ -22,7 +22,7 @@ game retains its lease. Update-preference tests also reproduce the native
 zero-link-count metadata and check repeated save/load without changing an
 existing inode.
 
-The in-process installer is exercised in **226 subprocess operations** under
+The in-process installer is exercised in **229 subprocess operations** under
 address/undefined-behavior sanitizers: cuts after every public-file step and the
 manifest, repeated recovery, write/rename failures and malformed signed tables.
 Cases also cover persistent write denial, partial activation markers, interrupted
@@ -30,7 +30,8 @@ cleanup with reordered directory entries, metadata errors, journal-directory
 synchronization and upgrading the actual game lease. Owner data and the app's
 directory identity are retained; an old executable mapping remains valid during
 replacement.
-Storage checks also cover exact capacity, a shortage before download, unavailable
+Update preference and recovery-marker FIFOs are rejected without blocking or
+removing those entries. Storage checks also cover exact capacity, a shortage before download, unavailable
 and invalid telemetry, overflow saturation and the block-size fallback.
 
 The native PS5 game and all three universal payloads compile and link with the public
