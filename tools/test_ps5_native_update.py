@@ -11,6 +11,9 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('game_work',nargs='?',type=pathlib.Path);parser.add_argument('--cache',action='append',type=pathlib.Path,default=[]);parser.add_argument('--permission-regression-only',action='store_true');parser.add_argument('--cleanup-regression-only',action='store_true');parser.add_argument('--marker-regression-only',action='store_true');parser.add_argument('--stat-regression-only',choices=('root','marker'));parser.add_argument('--ancestry-regression-only',action='store_true');a=parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='dkrr-native-update-') as folder:
+        budget=pathlib.Path(folder)/'budget'
+        subprocess.run(['clang++','-std=c++20','-O1','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-Wl,--wrap=statvfs','-I'+str(ROOT/'src'),str(ROOT/'tests/ps5_storage_budget.cpp'),'-o',str(budget)],check=True)
+        subprocess.run([str(budget)],check=True,env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'))
         t=pathlib.Path(folder);deps=dependencies(a.game_work,a.cache,t);app=t/'data/homebrew/PPSA94678';root=t/'data/dkrr';prefs=root/'preferences';client=prefs/f'update-client-{os.getuid()}';lease=root/'app.lock'
         client.mkdir(parents=True,mode=0o700);key=t/'key.pem'
         with key.open('wb') as out:subprocess.run(['openssl','genpkey','-algorithm','ED25519'],stdout=out,check=True)
@@ -40,7 +43,7 @@ def main():
         for source in (deps/'monocypher/src/monocypher.c',deps/'monocypher/src/optional/monocypher-ed25519.c',deps/'mbedtls/library/sha256.c',deps/'mbedtls/library/platform_util.c',ROOT/'installer/files.c',t/'hash.c'):
             obj=t/(source.name+'.o');subprocess.run(['clang','-std=c11','-D_GNU_SOURCE',*flags,'-c',str(source),'-o',str(obj)],check=True);objects.append(str(obj))
         binary=t/'native-test'
-        subprocess.run(['clang++','-std=c++20',*flags,'-Wall','-Wextra','-Werror','-DDKRR_RELEASE_SEQUENCE=7','-DDKRR_NATIVE_TEST_HOOK','-DDKRR_UPDATE_ROOT="'+str(root)+'"','-DDKRR_NATIVE_APP="'+str(app)+'"','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-Wl,--wrap=rename','-Wl,--wrap=write','-Wl,--wrap=unlink','-Wl,--wrap=readdir','-Wl,--wrap=closedir','-Wl,--wrap=fsync',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_native_update.cpp'),str(ROOT/'tests/ps5_native_update.cpp'),*objects,'-o',str(binary)],check=True)
+        subprocess.run(['clang++','-std=c++20',*flags,'-Wall','-Wextra','-Werror','-DDKRR_RELEASE_SEQUENCE=7','-DDKRR_NATIVE_TEST_HOOK','-DDKRR_UPDATE_ROOT="'+str(root)+'"','-DDKRR_NATIVE_APP="'+str(app)+'"','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-Wl,--wrap=rename','-Wl,--wrap=write','-Wl,--wrap=unlink','-Wl,--wrap=readdir','-Wl,--wrap=closedir','-Wl,--wrap=fsync','-Wl,--wrap=statvfs',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_native_update.cpp'),str(ROOT/'tests/ps5_native_update.cpp'),*objects,'-o',str(binary)],check=True)
         env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1');runs=[]
         def run(action,expected=0,cut=None,index=0,zero=False,**failure):
             extra={} if cut is None else dict(CUT_EVENT=cut,CUT_INDEX=str(index))
@@ -63,6 +66,7 @@ def main():
             reset();run('prepare');run('apply',-1,FAIL_APP_RENAMES='1');unchanged();run('recover',FAIL_APP_RENAMES='1');unchanged()
             print('PASS denied app-directory replacements: unchanged files require no restore writes, and the next start recovers')
             return
+        reset();run('space');unchanged();run('space',-1,SPACE_LOW='1');unchanged();run('space',SPACE_UNAVAILABLE='1');unchanged()
         if a.ancestry_regression_only:
             reset();trace=t/'sync-trace';trace.unlink(missing_ok=True);run('prepare',FSYNC_TRACE=str(trace))
             assert str(prefs) in trace.read_text().splitlines(), 'Private journal parent entry was not synchronized'

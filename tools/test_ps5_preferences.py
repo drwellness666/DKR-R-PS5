@@ -14,3 +14,13 @@ with tempfile.TemporaryDirectory(prefix='dkrr-preferences-') as name:
         '-o',str(output)],check=True)
     subprocess.run([str(output)],check=True,timeout=30,
         env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'))
+    output=work/'output-transaction'
+    subprocess.run(['clang++','-std=c++20','-O1','-Wall','-Wextra','-Werror',
+        '-fsanitize=address,undefined','-pthread','-Wl,--wrap=fsync',
+        '-Wl,--wrap=rename','-Wl,--wrap=write','-DDKR_PS5_HIGH_REFRESH_BUILD=1',
+        f'-DDKR_DISPLAY_DATA_ROOT="{work}/output-data"','-I'+str(root/'src'),
+        str(root/'tests/ps5_output_transaction.cpp'),
+        *[str(root/'src'/f'ps5_{name}.cpp') for name in ('display_options','hdr_options')],
+        '-o',str(output)],check=True)
+    subprocess.run([str(output)],check=True,timeout=30,
+        env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'))
