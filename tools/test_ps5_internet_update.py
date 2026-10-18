@@ -59,8 +59,8 @@ def main():
         manifest.write_bytes(signed(7,True));(t/'current.txt').write_bytes(signed(6,True))
         data_root=t/'data/dkrr';(data_root/'preferences').mkdir(parents=True)
         subprocess.run(cpp+['-pthread','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-DDKRR_RELEASE_SEQUENCE=6','-DDKRR_UPDATE_KEY_HEADER="fixture_key.h"','-DDKRR_UPDATE_ROOT="'+str(data_root)+'"',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_internet_update.cpp'),str(ROOT/'tests/ps5_update_worker.cpp'),*objects,'-o',str(t/'worker')],check=True)
-        for mode in ('good','offline','current','signature','digest','oversize','prepare-fail','cancel','redirect','bad-redirect','auto','zero-links','space-low','space-unknown'):
+        for mode in ('good','offline','current','signature','digest','oversize','prepare-fail','cancel','redirect','bad-redirect','auto','zero-links','space-low','space-unknown','fifo-setting'):
             subprocess.run([str(t/'worker'),mode,str(manifest),str(t/'current.txt'),str(payload)],env=env,check=True,timeout=20)
         assert not list(data_root.rglob('*.elf'))
-        print('PASS actual native update worker: 14 service scenarios, shortage refused before download, unavailable-space fallback, zero ELF-loader socket APIs, native zero-link metadata, shared opt-in auto-check, verified data-only preparation')
+        print('PASS actual native update worker: 15 service scenarios, nonblocking FIFO preference refusal, shortage refused before download, unavailable-space fallback, zero ELF-loader socket APIs, native zero-link metadata, shared opt-in auto-check, verified data-only preparation')
 if __name__=='__main__':main()

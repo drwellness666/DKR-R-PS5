@@ -92,6 +92,9 @@ def main():
             print('PASS interrupted cleanup: transaction retired durably before deleting journals or backups')
             return
         # Complete update: directory inode and already mapped executable survive;
+        reset();run('prepare');marker=client/'native-install/ready';marker.unlink();os.mkfifo(marker,0o600)
+        run('apply',-1);unchanged();run('recover',-1);unchanged()
+        assert marker.is_fifo(), 'Unknown recovery entry was changed'
         # full next manifest includes retained private sounds, no embedded ROM.
         reset();inode=app.stat().st_ino;stable_inodes={n:(app/n).stat().st_ino for n in ('sce_module/libc.prx','sce_sys/param.json')};run('prepare');unchanged();run('apply');assert app.stat().st_ino==inode
         assert all((app/n).stat().st_ino==v for n,v in stable_inodes.items())
