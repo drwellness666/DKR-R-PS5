@@ -43,6 +43,7 @@ jobs:
       - run: python3 tools/test_ps5_internet_update.py
       - run: python3 tools/test_ps5_native_update.py
       - run: python3 tools/test_ps5_diagnostics.py
+      - run: python3 tools/test_ps5_startup_diagnostics.py
       - run: python3 tools/test_native_game_installer.py
       - run: python3 tools/test_native_game_deployer.py
       - run: python3 tests/test_universal_installer.py
