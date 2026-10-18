@@ -74,6 +74,8 @@ int main(int argc,char** argv){
     const auto wait=[&](auto predicate){auto end=std::chrono::steady_clock::now()+std::chrono::seconds(5);while(std::chrono::steady_clock::now()<end){if(predicate())return;std::this_thread::sleep_for(std::chrono::milliseconds(2));}assert(false);};
     const bool automatic=mode=="auto"||mode=="zero-links";
     assert(dkrr::updates::set_automatic_check(automatic));
+    const std::string auto_path=std::string(DKRR_UPDATE_ROOT)+"/preferences/update-client-"+std::to_string(unsigned(getuid()))+"/auto-check";
+    if(mode=="fifo-setting"){assert(!unlink(auto_path.c_str()));assert(!mkfifo(auto_path.c_str(),0600));}
     dkrr::updates::initialize();
     assert(dkrr::updates::automatic_check()==automatic);
     if(!automatic)dkrr::updates::check();
@@ -86,12 +88,13 @@ int main(int argc,char** argv){
         assert(state==State::Available);dkrr::updates::install();
         if(mode=="cancel"){wait([]{return dkrr::updates::view().received>0;});dkrr::updates::cancel();}
         wait([]{auto s=dkrr::updates::view().state;return s==State::Closing||s==State::Failed;});
-        const bool good=mode=="good"||mode=="redirect"||mode=="space-unknown"||automatic;
+        const bool good=mode=="good"||mode=="redirect"||mode=="space-unknown"||mode=="fifo-setting"||automatic;
         assert(dkrr::updates::close_requested()==good);
         if(good){assert(dkrr::updates::view().state==State::Closing&&preparations==1);}
         else assert(dkrr::updates::view().state==State::Failed);
     }
     dkrr::updates::shutdown();
+    if(mode=="fifo-setting"){assert(!dkrr::updates::set_automatic_check(false));assert(!unlink(auto_path.c_str()));}
     assert(dkrr::updates::set_automatic_check(false));
     assert(!dkrr::updates::automatic_check());
     if(mode=="digest"||mode=="oversize"||mode=="signature"||mode=="offline"||mode=="current"||mode=="cancel"||mode=="bad-redirect")assert(preparations==0);
