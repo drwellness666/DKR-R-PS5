@@ -186,6 +186,8 @@ Result Picker::run(Mode mode, const std::string &extensions,
     };
     show_roots();
     auto done = [&](Result result) {
+      if (pending_ && action_ == Action::Cancel)
+        result = {};
       view_.active = false;
       view_.loading = false;
       view_.entries.clear();
@@ -291,7 +293,8 @@ View Picker::view() {
 bool Picker::act(std::uint64_t generation, Action action,
                  const std::string &name) {
   std::lock_guard lock(mutex_);
-  if (!view_.active || view_.generation != generation || pending_ ||
+  if (!view_.active || view_.generation != generation ||
+      (pending_ && action != Action::Cancel) ||
       (view_.loading && action != Action::Cancel))
     return false;
   action_ = action;
