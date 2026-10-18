@@ -9,10 +9,27 @@
 #include <fstream>
 #include <future>
 #include <thread>
+#include <sys/stat.h>
 using namespace dkrr::files;
 namespace fs = std::filesystem;
 static std::atomic<int> read_fault = 0, close_fault = 0, throw_read = 0,
                         closed = 0;
+static std::mutex pause_mutex;
+static std::condition_variable pause_changed;
+static std::string pause_path;
+static bool pause_reached = false, pause_release = false;
+extern "C" int __real_lstat(const char *, struct stat *);
+extern "C" int __wrap_lstat(const char *path, struct stat *output) {
+  {
+    std::unique_lock lock(pause_mutex);
+    if (!pause_path.empty() && pause_path == path) {
+      pause_reached = true;
+      pause_changed.notify_all();
+      pause_changed.wait(lock, [] { return pause_release; });
+    }
+  }
+  return __real_lstat(path, output);
+}
 extern "C" struct dirent *__real_readdir(DIR *);
 extern "C" int __real_closedir(DIR *);
 extern "C" struct dirent *__wrap_readdir(DIR *dir) {
@@ -133,6 +150,38 @@ int main(int argc, char **argv) {
     assert(p.act(v.generation, Action::Cancel));
     assert(finish(a).path.empty());
   }
+  // Cancel wins over a queued navigation command, including rapid inputs.
+  for (unsigned iteration = 0; iteration < 100; ++iteration) {
+    a = start(p);
+    const auto generation = p.view().generation;
+    assert(p.act(generation, Action::Roots));
+    assert(p.act(generation, Action::Cancel));
+    assert(finish(a).path.empty());
+  }
+  // Cancel must also win while a chosen export destination is being checked.
+  a = start(p, Mode::Save);
+  v = enter(p, root.string(), root.string());
+  {
+    std::lock_guard lock(pause_mutex);
+    pause_path = (root / "export-1.bin").string();
+  }
+  assert(p.act(v.generation, Action::Accept));
+  {
+    std::unique_lock lock(pause_mutex);
+    assert(pause_changed.wait_for(lock, std::chrono::seconds(3),
+                                  [] { return pause_reached; }));
+  }
+  assert(p.act(v.generation, Action::Cancel));
+  {
+    std::lock_guard lock(pause_mutex);
+    pause_release = true;
+    pause_changed.notify_all();
+  }
+  assert(finish(a).path.empty());
+  {
+    std::lock_guard lock(pause_mutex);
+    pause_path.clear();
+  }
   // Model an allocation exception during enumeration, with a directory already
   // open. The handle must close and a subsequent request must remain usable.
   a = start(p);
@@ -161,8 +210,8 @@ int main(int argc, char **argv) {
   assert(!ui.run(Mode::Open, "", "").error.empty());
   Picker invalid({root.string()});
   assert(!invalid.run(Mode::Save, "bin", "../escape.bin").error.empty());
-  std::puts(
-      "PASS native picker navigation, filtering, literal labels, root "
-      "boundaries, symlinks, unavailable USB, non-overwriting exports, "
-      "I/O failure, exception resource cleanup, cancellation and shutdown");
+  std::puts("PASS native picker navigation, filtering, literal labels, root "
+            "boundaries, symlinks, unavailable USB, non-overwriting exports, "
+            "I/O failure, exception resource cleanup, rapid cancellation and "
+            "shutdown");
 }
