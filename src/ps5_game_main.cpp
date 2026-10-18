@@ -64,7 +64,7 @@ static bool ordinary_rom(const char *path) {
     return stat(path,&info)==0 && S_ISREG(info.st_mode) && info.st_size==12*1024*1024;
 }
 static void configure_render_diagnostics() {
-    int fd=open("/data/dkrr/render-diagnostics.txt",O_RDONLY|O_NOFOLLOW);
+    int fd=open("/data/dkrr/render-diagnostics.txt",O_RDONLY|O_NOFOLLOW|O_NONBLOCK);
     if(fd<0)return;
     struct stat info={};char text[513];size_t bytes=0;
     bool valid=fstat(fd,&info)==0 && S_ISREG(info.st_mode) && info.st_size>=0 && info.st_size<=512;
@@ -132,7 +132,7 @@ int main() {
         const char *path="/data/dkrr/profile-us-v77/saves/dkr.us.v77.bin.lock";
         struct stat info={};errno=0;int rc=stat(path,&info);
         report("own lock stat rc=%d errno=%d mode=%o nlink=%u dev=%llu ino=%llu",rc,errno,unsigned(info.st_mode),unsigned(info.st_nlink),(unsigned long long)info.st_dev,(unsigned long long)info.st_ino);
-        int fd=open(path,O_RDONLY|O_NOFOLLOW);
+        int fd=open(path,O_RDONLY|O_NOFOLLOW|O_NONBLOCK);
         if(fd>=0) {rc=fstat(fd,&info);close(fd);report("own lock fstat rc=%d mode=%o nlink=%u",rc,unsigned(info.st_mode),unsigned(info.st_nlink));}
         rc=sceKernelStat(path,&info);
         report("own lock SCE stat rc=0x%08x mode=%o nlink=%u",unsigned(rc),unsigned(info.st_mode),unsigned(info.st_nlink));
