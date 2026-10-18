@@ -9,7 +9,8 @@ from test_ps5_internet_update import dependencies
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('game_work',nargs='?',type=pathlib.Path);parser.add_argument('--cache',action='append',type=pathlib.Path,default=[]);parser.add_argument('--permission-regression-only',action='store_true');parser.add_argument('--cleanup-regression-only',action='store_true');parser.add_argument('--marker-regression-only',action='store_true');parser.add_argument('--stat-regression-only',choices=('root','marker'));parser.add_argument('--ancestry-regression-only',action='store_true');a=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('game_work',nargs='?',type=pathlib.Path);parser.add_argument('--cache',action='append',type=pathlib.Path,default=[]);parser.add_argument('--permission-regression-only',action='store_true');parser.add_argument('--cleanup-regression-only',action='store_true');parser.add_argument('--marker-regression-only',action='store_true');parser.add_argument('--stat-regression-only',choices=('root','marker'));parser.add_argument('--ancestry-regression-only',action='store_true')
+    parser.add_argument('--directory-regression-only',choices=('read-root','read-nested','close-root'));a=parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='dkrr-native-update-') as folder:
         budget=pathlib.Path(folder)/'budget'
         subprocess.run(['clang++','-std=c++20','-O1','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-Wl,--wrap=statvfs','-I'+str(ROOT/'src'),str(ROOT/'tests/ps5_storage_budget.cpp'),'-o',str(budget)],check=True)
@@ -62,6 +63,27 @@ def main():
         def unchanged():
             assert all((app/p.relative_to(old)).read_bytes()==p.read_bytes() for p in old.rglob('*') if p.is_file())
             assert (prefs/'controls.json').read_bytes()==b'KEEP controls' and (root/'profile-us-v77/saves/save.bin').read_bytes()==b'KEEP progress' and (root/'mods/textures.pack').read_bytes()==b'KEEP textures'
+        def directory_regressions(selected=None):
+            failures={'read-root':{'FAIL_READDIR':'root'},'read-nested':{'FAIL_READDIR':'nested'},'close-root':{'FAIL_CLOSEDIR_ROOT':'1'}}
+            for case,failure in failures.items():
+                if selected and case!=selected:continue
+                for committed in (False,True):
+                    reset();run('prepare')
+                    if committed:run('apply')
+                    else:run('apply',cut='replaced',index=8)
+                    transaction=client/'native-install'
+                    before={str(p.relative_to(transaction)):p.read_bytes() for p in transaction.rglob('*') if p.is_file()}
+                    run('recover',-1,**failure)
+                    after={str(p.relative_to(transaction)):p.read_bytes() for p in transaction.rglob('*') if p.is_file()}
+                    assert before==after, 'Directory I/O failure consumed recovery files: '+case
+                    run('recover',0 if committed else 1)
+                    if committed:assert (app/'dkrr-install.manifest').read_text()==new_manifest
+                    else:unchanged()
+                    run('recover');assert not transaction.exists()
+        if a.directory_regression_only:
+            directory_regressions(a.directory_regression_only)
+            print('PASS directory I/O failures preserve recovery data and allow the next launch to recover: '+a.directory_regression_only)
+            return
         if a.permission_regression_only:
             reset();run('prepare');run('apply',-1,FAIL_APP_RENAMES='1');unchanged();run('recover',FAIL_APP_RENAMES='1');unchanged()
             print('PASS denied app-directory replacements: unchanged files require no restore writes, and the next start recovers')
@@ -91,6 +113,7 @@ def main():
             assert (app/'dkrr-install.manifest').read_text()==new_manifest
             print('PASS interrupted cleanup: transaction retired durably before deleting journals or backups')
             return
+        directory_regressions()
         # Complete update: directory inode and already mapped executable survive;
         reset();run('prepare');marker=client/'native-install/ready';marker.unlink();os.mkfifo(marker,0o600)
         run('apply',-1);unchanged();run('recover',-1);unchanged()
