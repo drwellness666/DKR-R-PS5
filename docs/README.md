@@ -12,5 +12,5 @@
 | Understand the repository and downloads | [Repository contents](FILES.md) |
 
 For developers: [build](BUILD.md) · [Windows/WSL2](WINDOWS.md) ·
-[architecture](ARCHITECTURE.md) · [development](DEVELOPMENT.md) ·
+[architecture](ARCHITECTURE.md) · [review decisions](CONCEPTUAL_REVIEW.md) · [development](DEVELOPMENT.md) ·
 [graphics](GPU.md) · [RT64](RT64.md) · [licences](LICENSES.md).

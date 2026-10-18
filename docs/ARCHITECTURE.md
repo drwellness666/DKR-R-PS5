@@ -117,11 +117,17 @@ public key. Newer upstream DKR-R versions still need reviewed port integration.
 The optional HDR10 path retains SDR scene/UI rendering, composes separate
 brightness layers and converts to 10-bit BT.2020/PQ for native VideoOut. SDR
 allocates no HDR layers. Calibration snapshots are coherent and lock-free;
-preference I/O cannot block the present worker. Display, HDR and revision
-preferences reserve new temporary entries, preserve interrupted/unknown ones,
-atomically replace the validated target and synchronize its parent directory.
+preference I/O cannot block the present worker. Display size/rate and HDR share
+one versioned `tv-output.txt` transaction. Valid legacy files are imported on
+first save and preserved; an invalid current record never resurrects old choices.
+Output and revision writes reserve fresh temporary entries, preserve interrupted/
+unknown ones, atomically replace the validated target and synchronize its parent.
+The native update card estimates space for download, stage, recovery and rollback;
+a measured shortage is refused before downloading. Unknown telemetry is explicit.
 
 The HDR title declaration changes earlier beta metadata. A supported registered-
 title migration is still required before that upgrade can ship. Physical HDR
 brightness, SDR fallback and coexistence with VRR/120 Hz remain console checks.
 See [Display](DISPLAY.md) and the [pre-release review](PRE_RELEASE_REVIEW.md).
+The [architecture review](CONCEPTUAL_REVIEW.md) records the migration and update
+contract decisions.

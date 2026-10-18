@@ -14,7 +14,7 @@ owner’s two ROMs. New tests exercise actual US77/US80 sound wrappers, native
 player/context gating and compact binding UI. The bounded CSeq decoder also
 passes 8,000 malformed-input cases under address/undefined-behavior sanitizers.
 
-Signed-update tests exercise the actual native worker with 12 service scenarios,
+Signed-update tests exercise the actual native worker with 14 service scenarios,
 all manifest truncations and byte mutations, 10,000 malformed inputs, wrong
 signatures/digests, redirects, cancellation and failed native preparation. No ELF socket API is supplied in the worker test, so a receiver dependency would fail to link. The legacy network
 installer is tested before commit, across partial commit messages and while the
@@ -22,7 +22,7 @@ game retains its lease. Update-preference tests also reproduce the native
 zero-link-count metadata and check repeated save/load without changing an
 existing inode.
 
-The in-process installer is exercised in **223 subprocess operations** under
+The in-process installer is exercised in **226 subprocess operations** under
 address/undefined-behavior sanitizers: cuts after every public-file step and the
 manifest, repeated recovery, write/rename failures and malformed signed tables.
 Cases also cover persistent write denial, partial activation markers, interrupted
@@ -30,6 +30,8 @@ cleanup with reordered directory entries, metadata errors, journal-directory
 synchronization and upgrading the actual game lease. Owner data and the app's
 directory identity are retained; an old executable mapping remains valid during
 replacement.
+Storage checks also cover exact capacity, a shortage before download, unavailable
+and invalid telemetry, overflow saturation and the block-size fallback.
 
 The native PS5 game and all three universal payloads compile and link with the public
 homebrew SDK. Every one of the **37** embedded program files was read back from
@@ -39,6 +41,9 @@ The exact source gate is [source-check.yml](../.github/workflows/source-check.ym
 All three native preference adapters also exercise interrupted legacy/numbered
 writes, occupied slots, preserved symlinks, failed directory synchronization and
 nonblocking rejection of named pipes.
+Output/HDR tests additionally cover first-save legacy import without changing the
+old files, eight I/O/process-cut points, complete-record authority and retries.
+Physical storage power loss is not emulated by a host process exit.
 
 The [pre-release review](PRE_RELEASE_REVIEW.md) records remaining release gates
 and the scope of the source audit.

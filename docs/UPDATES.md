@@ -38,6 +38,10 @@ DKR-R next starts. If it restores the previous version, a notification asks you
 to start the game again. An interrupted manual ELF installation is recovered by
 rerunning that ELF. Do not delete save folders.
 
+The update card shows estimated free space needed, including recovery copies.
+A measured shortage stops before downloading. If the console cannot report free
+space, the card says so; ordinary verification and recovery still apply.
+
 **DKRR-Update.dkru** is the signed data package downloaded by the game. It is not
 an ELF and does not execute downloaded installer code. **DKRR-Network-Update.elf**
 is kept only for older Beta 3.3 clients; new clients never use it.

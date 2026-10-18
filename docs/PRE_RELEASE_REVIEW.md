@@ -2,8 +2,9 @@
 
 **The current source is preparation for 1.0, not a release approval.** This
 review checks implementation, failure handling, packaging and player guidance.
-The next conceptual audit should resolve the design items below before final
-console qualification and publication. No console installation was performed
+The follow-up [architecture review](CONCEPTUAL_REVIEW.md) records decisions and
+implemented fixes for the design items below before final console qualification
+and publication. No console installation was performed
 for this review.
 
 ## Findings fixed in this review
@@ -35,21 +36,20 @@ evidence, not proof against all races or hardware failures.
 
 ## Questions for the conceptual audit
 
-1. **One display transaction.** Output size/rate and HDR currently use separate
-   preference files. Each write is durable individually, but a later HDR write
-   failure can leave only the display part applied. Decide whether one compatible
-   combined record should replace this pair; preserve older preferences when
-   migrating.
+1. **One display transaction — implemented.** Output size/rate and HDR now use
+   one versioned record. Apply and Restore replace the full combination;
+   first-save migration preserves valid legacy preferences. Failure and
+   process-cut tests cover retry and refusal without stale fallback.
 2. **Update schema evolution.** Native updates intentionally accept exactly the
    reviewed 37 program paths plus the owner's 64 retained audio cues. New paths,
    removed files, runtime ABI changes and title metadata changes need a qualified
    upgrade route. Design that route before promising every future update can
    use the existing in-game client.
 3. **Storage budget and recovery retention.** Native updates hold the download,
-   staged files and recovery copies concurrently. Manual updates retain previous
-   versions; local session journals also accumulate. Add a useful space estimate
-   and deliberate retention policy. Do not silently delete saves, unknown files
-   or old recovery versions.
+   staged files and recovery copies concurrently. A space estimate is now shown
+   in the existing update card and a measured shortage stops before download.
+   Manual history and session journals are retained; no automatic deletion of
+   saves, unknown files or old recovery versions is introduced.
 4. **App lifecycle.** Native input uses a dummy SDL window and treats it as
    focused. Verify PS-menu, suspend/resume, controller reconnect and shutdown
    behavior before adding automatic pause or effect cancellation through public
