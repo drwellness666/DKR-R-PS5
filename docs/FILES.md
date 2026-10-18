@@ -12,4 +12,7 @@ The final 1.0 downloads are in preparation. Normal installation needs only the i
 
 The repository contains source, build recipes and required licences. Personal ROMs, saves, packs, logs, keys and local build/audit folders stay outside it.
 
+
+Import and export buttons open a file browser inside the game. Choose your USB drive or `/data/dkrr`, then the file or destination folder. Cross selects; Circle cancels. Only matching file types are shown, and exports use a new name if that name already exists.
+
 [Install](INSTALLER.md) · [Updates](UPDATES.md) · [Credits](../CREDITS.md)
