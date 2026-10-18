@@ -38,5 +38,5 @@ body:
   - type: textarea
     attributes:
       label: Relevant diagnostic excerpt
-      description: Optional: a short DKR-R error excerpt with private paths/addresses removed. A photo can help too.
+      description: An optional short DKR-R error excerpt, with private paths and addresses removed. A photo can help too.
       render: text
