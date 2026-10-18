@@ -8,8 +8,10 @@ First PS5 release, based on **DKR-R 1.0.6**.
 - Both US revisions in one app, shared settings and textures, separate progress.
 - Controller-friendly settings, readable 4K menus and a live button-layout diagram.
 - Classic driving controls and optional DualSense balloon colors, gyro, adaptive L2 and controller sounds.
+- Controller effects can be retried by toggling their option after a temporary output failure.
 - Optional 4K and HDR10 output; experimental 120 Hz with VRR.
 - One ROM-free installer using the owner's USB ROMs, native saves, in-game Internet updates and a manual update ELF.
+- Update recovery keeps its backup intact when directory access fails.
 - English and German player guides, linked credits and complete original component notices.
 - The optional PC build assistant creates the same ROM-free installer and update files, verifies completed builds before reuse and updates without a previous PC build.
 
