@@ -87,13 +87,13 @@ def build(sdk,app,receipt,output,migrations=()):
         obj=work/(source.name+'.o');flags=['-std=c11','-O2','-Wall','-Wextra','-Werror'] if source.parent==ROOT/'installer' else ['-O2']
         subprocess.run([cc,*flags,'-I',str(ROOT/'installer'),'-c',str(source),'-o',str(obj)],check=True);objects.append(obj)
     built={}
-    for edition in ('Installer','Update','Network-Update'):
+    for edition in ('Installer','Update'):
         target=output/('DKRR-'+edition+'.elf')
         subprocess.run([cc,'-std=c11','-O2','-Wall','-Wextra','-Werror',f'-DDKRR_UPDATE_ONLY={int(edition!="Installer")}',f'-DDKRR_NETWORK_UPDATE={int(edition=="Network-Update")}','-I',str(ROOT/'installer'),'-I',str(work),str(ROOT/'installer/main.c'),*[str(o) for o in objects],'-o',str(target)],check=True)
         subprocess.run([str(sdk/'bin/prospero-strip'),'--strip-debug',str(target)],check=True);target.chmod(0o600)
         built[target.name]=dict(size=target.stat().st_size,sha256=hashlib.sha256(target.read_bytes()).hexdigest())
-    # The installed game uses this data-only package directly. The legacy
-    # network ELF above exists only to migrate earlier Beta 3.3 clients.
+    # First public release: one installer, one offline update, one native data package.
+    # Private preview clients are not a supported upgrade target.
     from build_native_update_package import build as build_data_package
     native_package=output/'DKRR-Update.dkru'
     package=build_data_package(app,receipt,sequence,native_package)

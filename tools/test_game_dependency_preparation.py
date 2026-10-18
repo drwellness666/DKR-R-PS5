@@ -22,4 +22,5 @@ with tempfile.TemporaryDirectory(prefix='dkrr-real-dependencies-') as folder:
     subprocess.run(cmd,check=True) # Complete stamp/inputs/readback reuse check.
     subprocess.run(['python3',str(root/'tools/test_shared_texture_runtime.py'),str(work)],check=True)
     subprocess.run(['python3',str(root/'tools/test_ps5_shared_save_entry.py'),str(work)],check=True)
+    subprocess.run(['python3',str(root/'tools/test_ps5_audio_scratch.py'),str(work)],check=True)
     print('PASS actual 54 pinned dependency patches inside outer Git, required runtime ABI/snapshot prerequisites, mirrored compiler headers, outer Git preservation and complete source-stamp reuse')
