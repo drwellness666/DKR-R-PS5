@@ -15,10 +15,18 @@ output = Path(sys.argv[1])
 if not output.is_absolute() or output.exists():
     raise SystemExit('Use a new absolute export directory')
 output.mkdir(parents=True)
-files = ['.gitattributes','LICENSE','CMakeLists.txt','build.sh','build_gpu.sh','build_rt64.sh','build_game.sh','build_integrated.sh','setup.py','Start-Windows.cmd','Start-Linux.sh','README.md','README.de.md','CHANGELOG.md','PORT_RELEASE.json','GAME_SOURCES.json','RT64_SOURCES.json','VULKAN_SOURCES.json','TITLE_ART_SOURCES.json','CONTRIBUTING.md','THIRD_PARTY.md']
+files = ['.gitattributes','LICENSE','CMakeLists.txt','build.sh','build_gpu.sh','build_rt64.sh','build_game.sh','build_integrated.sh','setup.py','Start-Windows.cmd','Start-Linux.sh','README.md','README.de.md','CHANGELOG.md','PORT_RELEASE.json','GAME_SOURCES.json','RT64_SOURCES.json','VULKAN_SOURCES.json','TITLE_ART_SOURCES.json','CONTRIBUTING.md','THIRD_PARTY.md','CREDITS.md']
 for name in files:
     shutil.copy2(root / name, output / name)
-shutil.copytree(root / 'docs', output / 'docs')
+# Publish player help and the necessary contributor/build references only.
+# Working audits and private preview reports are deliberately not in this list.
+public_docs = ('README.md', 'INSTALLER.md', 'UPDATES.md', 'CONTROLS.md',
+               'DISPLAY.md', 'SAVES.md', 'KNOWN_ISSUES.md', 'DIAGNOSTICS.md',
+               'FILES.md', 'LICENSES.md', 'ROADMAP.md', 'DEVELOPMENT.md',
+               'BUILD.md', 'WINDOWS.md', 'ARCHITECTURE.md', 'GPU.md', 'RT64.md')
+(output / 'docs').mkdir()
+for name in public_docs:
+    shutil.copy2(root / 'docs' / name, output / 'docs' / name)
 (output / 'updates').mkdir()
 shutil.copy2(root / 'updates/channel.txt', output / 'updates/channel.txt')
 shutil.copy2(root / 'updates/native-channel.txt', output / 'updates/native-channel.txt')
