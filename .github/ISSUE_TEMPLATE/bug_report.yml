@@ -1,16 +1,16 @@
-name: Console bug
+name: Game or controller problem
 description: Report a problem with the PS5 port.
 body:
   - type: checkboxes
     attributes:
-      label: Private data
+      label: Before attaching files
       options:
-        - label: I will not attach ROMs, generated game code, binaries/installers, saves, packs or full console dumps.
+        - label: I will not attach ROMs, extracted game data, saves, packs or full console logs.
           required: true
   - type: input
     attributes:
       label: Port version
-      description: The port version from the download or the build ID in Graphics.
+      description: The version from the download or Graphics settings.
     validations:
       required: true
   - type: input
@@ -22,7 +22,7 @@ body:
   - type: input
     attributes:
       label: PS5 firmware and homebrew setup
-      description: Firmware, loader, kstuff and ShadowMount versions when known. For save issues, state whether this followed a full console reboot and which port build was used.
+      description: Firmware, loader, kstuff and ShadowMount versions, when known. For save problems, mention whether the console was restarted.
     validations:
       required: true
   - type: textarea
@@ -38,5 +38,5 @@ body:
   - type: textarea
     attributes:
       label: Relevant diagnostic excerpt
-      description: Short DKR-R-only excerpt with private addresses removed; not a full console log. State which diagnostic flags were enabled.
+      description: Optional: a short DKR-R error excerpt with private paths/addresses removed. A photo can help too.
       render: text
