@@ -28,8 +28,9 @@ loading code, glyph ranges, sizes and metrics are kept identical.
 Selawik's SIL OFL 1.1 and copyright remain included. Jumpman's supplied EULA
 expressly permits software embedding; its original terms are included in the
 component notices. Racing Banana is not extracted from the ROM. Upstream asks
-public distributors to confirm redistribution rights; that confirmation is
-not documented here yet. [Font notice](../licenses/Racing-Banana-NOTICE.md).
+public distributors to confirm redistribution rights. The maintainer confirmed
+permission for this port, its installer and updates on 18 October 2026; the
+[recorded scope](../licenses/CONTENT-PERMISSIONS.json) is not a general font licence. [Font notice](../licenses/Racing-Banana-NOTICE.md).
 
 Title graphics and interface images come from the pinned DKR-R project. Its
 application icon is credited to **POOTERMAN**. These images keep their original
@@ -45,3 +46,7 @@ Primary notices: [DKR-R runtime licence](https://github.com/ThatGuyMcd/DKR-R/blo
 [third-party notices](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/THIRD_PARTY.md).
 
 Original component texts: [notices](../licenses/COMPONENT-NOTICES.txt) · [source inventory](../licenses/COMPONENT-NOTICES.json).
+
+The exact component texts are checked before linking and packaging. A package
+with an outdated notice bundle is refused. This byte-level check preserves
+attribution; it does not broaden any component's licence.

@@ -29,7 +29,7 @@ evidence, not proof against all races or hardware failures.
 
 | Priority | Open item | Required outcome |
 |---|---|---|
-| Release blocker | Distribution of fonts, title images and combined program | Complete the matching-source/component review and record the applicable redistribution terms. Original DKR-R typography remains unchanged; a project-code licence alone is not an artwork/font permission. |
+| Before publishing | Matching source, notices and content scope | Original font/title-art permission was confirmed by the maintainer on 18 October. Verify the exact frozen source/package pair and checked component notices; retain original terms and attribution. |
 | Release blocker | Final physical-console qualification | One exact build must cover fresh installation, compatible update/recovery, restart saves, output modes and the optional controller features. Earlier gameplay confirmation does not cover later installer/HDR changes. |
 | Before publishing | Signed channel and downloadable assets | Freeze one build, source archive, notices and checksums. Sign its exact sequence/tag/package only after qualification; publish the channel after its matching assets. Keep signing keys outside the repository. |
 

@@ -105,3 +105,9 @@ runs its own host tests and native build checks without requiring a console.
 
 Sources: [SDK usage](https://github.com/ps5-payload-dev/sdk#usage),
 [bundled-version sample test target](https://github.com/ps5-payload-dev/sdk/blob/f5d40f02770e9b0001dd9e18056eca70b3da8b40/samples/hello_world/Makefile).
+
+Component-notice checks verify the exact byte counts and SHA-256 values of all
+57 sections and the provenance catalogue. Tests reject modified, truncated,
+duplicate, malformed or missing entries and stale/symlinked application copies.
+Build-identity tests also change and remove staged notices, title-art provenance,
+UI assets, the public runtime module and native converter; each changes the ID.
