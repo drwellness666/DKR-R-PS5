@@ -1647,7 +1647,30 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
  bool dkr::runtime::platform::gyro_available(std::size_t player) {
  #if DKR_RUNTIME_HAS_RT64
      std::scoped_lock lock(g_platform_mutex);
-@@ -3320,3 +3550,39 @@
+@@ -3272,11 +3502,18 @@
+         status = "No custom controller mappings have been created yet.";
+         return false;
+     }
+-    std::filesystem::copy_file(
+-        g_user_mapping_path, destination,
+-        std::filesystem::copy_options::overwrite_existing, error);
++    // The PS5 picker chooses an unused name. Refuse a destination that
++    // appeared afterward, including a symlink, instead of overwriting it.
++#if defined(__PROSPERO__)
++    constexpr auto options = std::filesystem::copy_options::none;
++#else
++    constexpr auto options = std::filesystem::copy_options::overwrite_existing;
++#endif
++    std::filesystem::copy_file(g_user_mapping_path, destination, options, error);
+     if (error) {
+-        status = "Could not export the controller mapping file.";
++        status = error == std::errc::file_exists
++            ? "A file already exists there. Choose the folder again to keep both files."
++            : "Could not export the controller mapping file.";
+         return false;
+     }
+     status = "Controller mappings exported.";
+@@ -3320,3 +3557,39 @@
      (void)assignments;
  #endif
  }
