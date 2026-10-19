@@ -2069,7 +2069,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      g_online_automatic_backend = dkr::runtime::netplay::experimental::migrated_automatic_backend(
          has_automatic_backend_setting, g_online_automatic_backend, has_legacy_backend_setting);
      for (std::size_t channel = 0; channel < kSoundChannelCount; ++channel) {
-@@ -2930,6 +2982,44 @@
+@@ -2930,6 +2982,46 @@
      return true;
  }
  
@@ -2097,13 +2097,15 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
 +        NFD_Quit();return answer;
 +    };
 +#if defined(__PROSPERO__)
-+    return StartDialogJob([pick=std::move(pick),action=std::move(action),status=&status]() -> std::function<void()> {
++    const bool started=StartDialogJob([pick=std::move(pick),action=std::move(action),status=&status]() -> std::function<void()> {
 +        auto [path,error]=pick();
 +        return [path=std::move(path),error=std::move(error),action,status] {
 +            if (!error.empty()) *status=error;
 +            else if (!path.empty()) action(path);
 +        };
 +    });
++    if (!started) status="The file picker could not start. Wait for other file operations to finish and try again.";
++    return started;
 +#else
 +    const auto [path,error]=pick();
 +    if (!error.empty()) status=error;
@@ -2114,7 +2116,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  bool SelectRomWithDialog(std::filesystem::path& selected,
                           std::vector<RomCatalogEntry>& catalog,
                           std::string& status) {
-@@ -2974,22 +3064,8 @@
+@@ -2974,22 +3066,8 @@
              "local filters folder before importing another.";
          return false;
      }
@@ -2138,7 +2140,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      std::error_code error;
      constexpr std::uintmax_t maximum_filter_bytes = 64U * 1024U * 1024U;
      const std::uintmax_t size = std::filesystem::file_size(source, error);
-@@ -3028,6 +3104,7 @@
+@@ -3028,6 +3106,7 @@
      g_crt_status = "Imported " + destination.filename().string() + ".";
      SaveSettings();
      return true;
@@ -2146,7 +2148,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  }
  
  bool TexturePackImportRunning() {
-@@ -3128,13 +3205,13 @@
+@@ -3128,38 +3207,44 @@
  
  bool DialogJobRunning() {
      std::scoped_lock lock(g_dialog_job_mutex);
@@ -2161,8 +2163,60 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
 +        if (g_dialog_job_running || g_dialog_job_finish) return false;
          g_dialog_job_running = true;
      }
-     // A finished worker stays joinable until joined; retire it first.
-@@ -3176,6 +3253,10 @@
+-    // A finished worker stays joinable until joined; retire it first.
+-    if (g_dialog_job_worker.joinable()) g_dialog_job_worker.join();
+-    g_dialog_job_worker = std::jthread([job = std::move(job)](std::stop_token) {
+-        std::function<void()> finish;
+-        try {
+-            finish = job();
+-        } catch (const std::exception& exception) {
+-            const std::string message =
+-                std::string("The picker stopped safely: ") + exception.what();
+-            finish = [message] {
+-                g_track_import_status = message;
+-                g_texture_pack_status = message;
+-            };
+-        } catch (...) {
+-            finish = [] {
+-                g_track_import_status = "The picker stopped safely.";
+-                g_texture_pack_status = "The picker stopped safely.";
+-            };
+-        }
++    try {
++        // A finished worker stays joinable until joined; retire it first.
++        if (g_dialog_job_worker.joinable()) g_dialog_job_worker.join();
++        g_dialog_job_worker = std::jthread([job = std::move(job)](std::stop_token) {
++            std::function<void()> finish;
++            try {
++                finish = job();
++            } catch (const std::exception& exception) {
++                const std::string message =
++                    std::string("The picker stopped safely: ") + exception.what();
++                finish = [message] {
++                    g_track_import_status = message;
++                    g_texture_pack_status = message;
++                };
++            } catch (...) {
++                finish = [] {
++                    g_track_import_status = "The picker stopped safely.";
++                    g_texture_pack_status = "The picker stopped safely.";
++                };
++            }
++            std::scoped_lock lock(g_dialog_job_mutex);
++            g_dialog_job_finish = std::move(finish);
++            g_dialog_job_running = false;
++        });
++    } catch (...) {
+         std::scoped_lock lock(g_dialog_job_mutex);
+-        g_dialog_job_finish = std::move(finish);
+         g_dialog_job_running = false;
+-    });
++        return false;
++    }
+     return true;
+ }
+ 
+@@ -3176,6 +3261,10 @@
  
  // A folder picker, for the dialog-job thread (which owns its own COM
  // initialization). False with an empty error means the player cancelled.
@@ -2173,7 +2227,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  bool PickFolder(std::filesystem::path& chosen, std::string& error) {
      if (NFD_Init() != NFD_OKAY) {
          error = "The system folder picker could not be initialized.";
-@@ -3228,197 +3309,81 @@
+@@ -3228,197 +3317,81 @@
  
  void ImportLegacyModWithDialog() {
      if (g_legacy_imports.snapshot().busy) return;
@@ -2423,7 +2477,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  }
  
  void DrawRaceBadge(const char* label, const ImVec4& color, float width = 0.0F);
-@@ -4307,6 +4272,11 @@
+@@ -4307,6 +4280,11 @@
  }
  
  void DrawSidebarCurrentStripe() {
@@ -2435,7 +2489,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      const ImVec2 minimum = ImGui::GetItemRectMin();
      const ImVec2 maximum = ImGui::GetItemRectMax();
      ImDrawList* draw = ImGui::GetWindowDrawList();
-@@ -4322,6 +4292,7 @@
+@@ -4322,6 +4300,7 @@
      draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
                          std::max(rounding - 1.0F, 0.0F));
      draw->PopClipRect();
@@ -2443,7 +2497,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -6352,12 +6323,18 @@
+@@ -6352,12 +6331,18 @@
          "HIDE FROM LIST keeps DKR-R's managed copy on disk. Choose Hidden "
          "from the Visibility filter to restore it later.");
      ImGui::Dummy({0.0F, 8.0F});
@@ -2462,7 +2516,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      ImGui::Dummy({0.0F, 12.0F});
      const float available = std::max(ImGui::GetContentRegionAvail().x, 1.0F);
      const float gap = ImGui::GetStyle().ItemSpacing.x;
-@@ -6375,11 +6352,13 @@
+@@ -6375,11 +6360,13 @@
      }
      if (!compact) ImGui::SameLine();
      ImGui::PushStyleColor(ImGuiCol_Button, {0.45F, 0.09F, 0.10F, 1.0F});
@@ -2476,7 +2530,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      ImGui::PopStyleColor();
      ImGui::EndPopup();
  }
-@@ -6456,6 +6435,10 @@
+@@ -6456,6 +6443,10 @@
              ImGui::TextWrapped("%s", value.c_str());
          };
          detail_row("TYPE", dkr::runtime::texture_packs::format_name(pack.format));
@@ -2487,7 +2541,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          detail_row("PRIORITY", std::to_string(pack.priority) +
                     (pack.priority == 1U ? " (highest)" : " (lower number wins)"));
          detail_row("MANAGED SIZE",
-@@ -6519,6 +6502,11 @@
+@@ -6519,6 +6510,11 @@
      if (ImGui::Button("REMOVE PACK...", {action_width, 42.0F})) {
          g_texture_pack_remove_id = pack.id;
          g_texture_pack_remove_name = pack.name;
@@ -2499,7 +2553,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          request_removal = true;
          ImGui::CloseCurrentPopup();
      }
-@@ -8053,6 +8041,15 @@
+@@ -8053,6 +8049,15 @@
      if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
          return false;
      }
@@ -2515,7 +2569,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      if (g_capture_action == kShortcutCaptureAction) {
          if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
              event->key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-@@ -8166,6 +8163,11 @@
+@@ -8166,6 +8171,11 @@
  
  void DrawOverlayContent(float content_width) {
      if (g_overlay_page == kPagePlay) {
@@ -2527,7 +2581,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          DrawPageHeading("PLAY");
          ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
          ImGui::TextWrapped("Taj has paused the race. The island is waiting whenever you are ready.");
-@@ -8173,12 +8175,19 @@
+@@ -8173,12 +8183,19 @@
          ImGui::Dummy({0.0F, 18.0F});
          DrawStartingLights(true);
          ImGui::Dummy({0.0F, 12.0F});
@@ -2547,7 +2601,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      } else if (g_overlay_page == kPageGraphics) {
          DrawGraphicsPage(content_width, true);
      } else if (g_overlay_page == kPageSound) {
-@@ -8991,6 +9000,11 @@
+@@ -8991,6 +9008,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -2559,7 +2613,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          LauncherSidebarButton("PLAY", 0, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("DKR-R ONLINE", kPageOnlineMp, page, sidebar_selection,
-@@ -9009,6 +9023,7 @@
+@@ -9009,6 +9031,7 @@
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("ABOUT DKR-R", kPageAbout, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
@@ -2567,7 +2621,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9139,6 +9154,9 @@
+@@ -9139,6 +9162,9 @@
          }
          ImGui::End();
          PumpDialogJob();
@@ -2577,7 +2631,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          DrawTexturePackImportModal();
          DrawPaddockLegacyModImportModal();
          DrawModLaunchModal();
-@@ -9335,6 +9353,9 @@
+@@ -9335,6 +9361,9 @@
  }
  
  void dkr::runtime::ui::draw(RT64::Application& application) {
@@ -2587,7 +2641,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      // Publish only an atomic value; the raster worker snapshots it into the
      // next pass's push constants. No GPU resources or samplers are rebuilt.
      // Keep this before visibility checks so closing the overlay or changing
-@@ -9408,6 +9429,9 @@
+@@ -9408,6 +9437,9 @@
      }
  #endif
      inspector->newFrame(application.framebufferGraphicsWorker.get());
@@ -2597,7 +2651,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      if (auto* hud_window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window())) {
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
-@@ -9461,7 +9485,8 @@
+@@ -9461,7 +9493,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -2607,7 +2661,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9494,6 +9519,11 @@
+@@ -9494,6 +9527,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -2619,7 +2673,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          SidebarButton("PLAY", 0, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
          SidebarButton("DKR-R ONLINE", kPageOnlineMp, sidebar_selection, nav_inner_width,
-@@ -9512,6 +9542,7 @@
+@@ -9512,6 +9550,7 @@
                        sidebar_layout.button_height);
          SidebarButton("ABOUT DKR-R", kPageAbout, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
@@ -2627,7 +2681,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9574,6 +9605,11 @@
+@@ -9574,6 +9613,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -2639,7 +2693,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9628,6 +9664,9 @@
+@@ -9628,6 +9672,9 @@
          // or the game HUD. These dialogs render outside the content child.
          const PaddockLauncherTypographyScope modal_typography(show_overlay);
          PumpDialogJob();
@@ -2649,7 +2703,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
          DrawTexturePackImportModal();
          DrawPaddockLegacyModImportModal();
          DrawTextEntryKeyboard();
-@@ -9756,6 +9795,18 @@
+@@ -9756,6 +9803,18 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -2668,7 +2722,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      // RT64's ImGui backend owns normal pointer, keyboard and gamepad event
      // delivery. Do not turn those events into page-focus requests: ImGui must
      // be allowed to retain the item selected by the previous event so the
-@@ -9775,6 +9826,15 @@
+@@ -9775,6 +9834,15 @@
  }
  
  void dkr::runtime::ui::toggle_overlay() {
@@ -2684,7 +2738,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  #if defined(__ANDROID__) || defined(DKR_IOS)
      dkr::runtime::mobile::clear();
  #endif
-@@ -9876,3 +9936,13 @@
+@@ -9876,3 +9944,13 @@
      return true;
  }
  #endif
