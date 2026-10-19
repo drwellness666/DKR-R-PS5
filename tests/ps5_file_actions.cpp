@@ -9,6 +9,7 @@
 #include <mutex>
 #include <nfd.h>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -36,6 +37,24 @@ nfdresult_t NFD_SaveDialogU8(nfdu8char_t **p, const nfdu8filteritem_t *filters,
   return NFD_OpenDialogU8(p, filters, count, initial);
 }
 }
+// Replace only thread construction in the extracted production queue. The
+// queue state, exception handling and retry remain the actual implementation.
+static bool fail_next_thread = false;
+struct FixtureDialogThread {
+  std::jthread thread;
+  FixtureDialogThread() = default;
+  FixtureDialogThread(FixtureDialogThread&&) = default;
+  FixtureDialogThread& operator=(FixtureDialogThread&&) = default;
+  template<class Function> explicit FixtureDialogThread(Function function) {
+    if (fail_next_thread) {
+      fail_next_thread = false;
+      throw std::system_error(std::make_error_code(std::errc::resource_unavailable_try_again));
+    }
+    thread = std::jthread(std::move(function));
+  }
+  bool joinable() const { return thread.joinable(); }
+  void join() { thread.join(); }
+};
 #include "file_actions.inc"
 static void await_worker() {
   for (int i = 0; i < 5000; ++i) {
@@ -52,6 +71,12 @@ int main() {
   const auto main = std::this_thread::get_id();
   std::string status;
   unsigned completions = 0;
+  nfdfilteritem_t initial_filter{"Archive", "zip"};
+  fail_next_thread = true;
+  assert(!ChooseFileForAction(&initial_filter, 1, nullptr, status,
+                             [](const std::filesystem::path&) { return true; }));
+  assert(!DialogJobRunning() && !status.empty());
+  status.clear();
   auto action = [&](const std::filesystem::path &p) {
     assert(std::this_thread::get_id() == main && p == "/tmp/chosen.zip");
     ++completions;
@@ -91,5 +116,5 @@ int main() {
     g_dialog_job_worker.join();
   std::puts("PASS actual picker action helper: worker isolation, copied "
             "filters, pending completion preservation, UI-thread actions, save "
-            "names, errors and cancellation");
+            "names, errors, cancellation and thread-start retry");
 }
