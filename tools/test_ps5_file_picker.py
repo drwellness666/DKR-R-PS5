@@ -29,6 +29,14 @@ with tempfile.TemporaryDirectory(prefix='dkrr-picker-') as folder:
  (t/'file_exports.inc').write_text(platform[begin:end])
  subprocess.run(flags+['-DDKR_RUNTIME_HAS_RT64=1','-D__PROSPERO__','-I'+str(t),str(r/'tests/ps5_file_exports.cpp'),'-o',str(t/'exports')],check=True)
  subprocess.run([str(t/'exports'),str(t/'export-storage')],check=True,timeout=30)
+ for name,first,last in (
+  ('mapping_reader.inc','std::vector<std::string> ReadMappingLines(','\nstd::string MappingLineKey('),
+  ('mapping_key.inc','std::string MappingLineKey(','\nbool WriteUserMappings('),
+  ('mapping_import.inc','bool dkr::runtime::platform::import_controller_mappings(','\nbool dkr::runtime::platform::export_controller_mappings(')):
+  begin=platform.index(first);end=platform.index(last,begin)
+  (t/name).write_text(platform[begin:end])
+ subprocess.run(flags+['-DDKR_RUNTIME_HAS_RT64=1','-D__PROSPERO__','-I'+str(t),str(r/'tests/ps5_mapping_file.cpp'),'-Wl,--wrap=open,--wrap=read,--wrap=fstat,--wrap=close','-o',str(t/'mapping-file')],check=True)
+ subprocess.run([str(t/'mapping-file'),str(t/'mapping-storage')],check=True,timeout=30)
  nfd=a.game_work/'source/rt64-game/src/contrib/nativefiledialog-extended/src/include'
  subprocess.run(flags+['-D__PROSPERO__','-I'+str(t),'-I'+str(nfd),str(r/'tests/ps5_file_actions.cpp'),'-o',str(t/'actions')],check=True)
  subprocess.run([str(t/'actions')],check=True,timeout=30)
