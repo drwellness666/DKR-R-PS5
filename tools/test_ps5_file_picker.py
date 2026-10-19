@@ -23,6 +23,8 @@ with tempfile.TemporaryDirectory(prefix='dkrr-picker-') as folder:
  subprocess.run(flags+['-D__PROSPERO__','-I'+str(t),'-I'+str(nfd),str(r/'tests/ps5_file_actions.cpp'),'-o',str(t/'actions')],check=True)
  subprocess.run([str(t/'actions')],check=True,timeout=30)
  subprocess.run(['clang','-std=c11','-D_POSIX_C_SOURCE=200809L','-O1','-g','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-I'+str(nfd),'-c',str(r/'src/ps5_nfd.c'),'-o',str(t/'nfd.o')],check=True)
- imgui=a.game_work/'source/rt64-game/src/contrib/imgui'
- subprocess.run(flags+imgui_warnings()+['-I'+str(nfd),'-I'+str(imgui),str(r/'tests/ps5_file_picker_ui.cpp'),str(r/'src/ps5_file_picker.cpp'),str(t/'nfd.o'),*[str(imgui/n) for n in ('imgui.cpp','imgui_draw.cpp','imgui_widgets.cpp','imgui_tables.cpp')],'-o',str(t/'ui')],check=True)
+ toggle=text[text.index('void dkr::runtime::ui::toggle_overlay() {'):text.index('bool dkr::runtime::ui::overlay_visible() {')]
+ (t/'overlay_toggle.inc').write_text(toggle)
+ imgui=a.game_work/'source/rt64-game/src/contrib/imgui' 
+ subprocess.run(flags+imgui_warnings()+['-I'+str(t),'-I'+str(nfd),'-I'+str(imgui),str(r/'tests/ps5_file_picker_ui.cpp'),str(r/'src/ps5_file_picker.cpp'),str(t/'nfd.o'),*[str(imgui/n) for n in ('imgui.cpp','imgui_draw.cpp','imgui_widgets.cpp','imgui_tables.cpp')],'-o',str(t/'ui')],check=True)
  subprocess.run([str(t/'ui')],check=True,timeout=30)
