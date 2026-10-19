@@ -26,6 +26,7 @@ jobs:
       - run: python3 tools/test_ps5_controller_diagram.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_game_audio_hooks.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_file_picker.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_ps5_texture_import_worker.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_crt_overlay.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_controls_page.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_native_save_storage.py "$PWD/work/controller-test-inputs"
