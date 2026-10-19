@@ -92,4 +92,16 @@ with tarfile.open(fetch(imgui_row)) as archive:
         out = imgui / parts[1]
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_bytes(archive.extractfile(member).read())
-print('PASS pinned public controller/ImGui test inputs; no ROM or game payload used')
+# The native picker exercises the real NFD ABI. ImGui's archive does not
+# contain that independently pinned dependency's header.
+nfd_row = next(row for row in json.loads((root / 'GAME_SOURCES.json').read_text())['sources']
+               if row['path'].endswith('/nativefiledialog-extended'))
+with tarfile.open(fetch(nfd_row)) as archive:
+    headers = [member for member in archive if member.isfile()
+               and '/'.join(PurePosixPath(member.name).parts[1:]) == 'src/include/nfd.h']
+    if len(headers) != 1:
+        raise SystemExit('Incomplete or duplicate pinned NFD test header')
+    target = args.work / 'source' / nfd_row['path'] / 'src/include/nfd.h'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(archive.extractfile(headers[0]).read())
+print('PASS pinned public controller/ImGui/NFD test inputs; no ROM or game payload used')
