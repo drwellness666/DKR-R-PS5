@@ -2,6 +2,7 @@
 
 ## 1.0 — in preparation
 
+- Read controller-mapping imports completely before applying them, with bounded USB input outside the input lock.
 - Keep existing controller-mapping exports if the destination changes after file selection.
 - Finish or cancel texture imports cleanly when closing DKR-R or installing an update.
 - Keep tiled CRT filters lightweight on PS5 by repeating their texture on one quad.
