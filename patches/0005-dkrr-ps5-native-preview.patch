@@ -1341,11 +1341,12 @@ diff --git a/runtime-recomp/src/game/runtime_input.hpp b/runtime-recomp/src/game
 diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/game/runtime_platform.cpp
 --- a/runtime-recomp/src/game/runtime_platform.cpp
 +++ b/runtime-recomp/src/game/runtime_platform.cpp
-@@ -1,5 +1,15 @@
+@@ -1,5 +1,16 @@
  #include "runtime_platform.hpp"
  #include "audio_equalizer.hpp"
 +#if defined(__PROSPERO__)
 +#include "ps5_neutral_audio.h"
++#include "ps5_mapping_file.hpp"
 +#include "ps5_controller_lights.hpp"
 +#include "ps5_item_feedback.hpp"
 +#include "ps5_controller_speaker.hpp"
@@ -1357,7 +1358,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
  #include "controller_snapshot.hpp"
  #include "controller_mapping_policy.hpp"
  #include "custom_music.hpp"
-@@ -82,6 +92,19 @@
+@@ -82,6 +93,19 @@
  std::atomic<std::uint32_t> g_ui_tone_duration_ms{0U};
  std::atomic<bool> g_rumble_enabled{true};
  std::atomic<float> g_rumble_strength{1.0F};
@@ -1377,7 +1378,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
  std::atomic<dkr::runtime::platform::InputBackend> g_requested_input_backend{
      dkr::runtime::platform::InputBackend::Automatic};
  std::atomic<dkr::runtime::platform::InputBackend> g_active_input_backend{
-@@ -104,6 +127,13 @@
+@@ -104,6 +128,13 @@
      bool rumble = false;
      bool gyro = false;
      bool mapped = false;
@@ -1391,7 +1392,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      std::string mapping_source;
  };
  std::vector<ControllerRecord> g_controller_devices;
-@@ -494,6 +524,19 @@
+@@ -494,6 +525,19 @@
  
  void CloseControllerRecord(ControllerRecord& record) {
      if (record.controller != nullptr) {
@@ -1411,7 +1412,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
          SDL_GameControllerClose(record.controller);
          record.controller = nullptr;
          record.joystick = nullptr;
-@@ -661,6 +704,9 @@
+@@ -661,6 +705,9 @@
  #endif
              record.gyro = SDL_GameControllerHasSensor(
                  record.controller, SDL_SENSOR_GYRO) == SDL_TRUE;
@@ -1421,7 +1422,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
              record.mapping_source = MappingSourceForGuid(guid);
          } else {
              record.joystick = SDL_JoystickOpen(index);
-@@ -1520,6 +1566,19 @@
+@@ -1520,6 +1567,19 @@
  
  #if DKR_RUNTIME_HAS_RT64
  ultramodern::renderer::WindowHandle dkr::runtime::platform::create_window() {
@@ -1441,7 +1442,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      if (g_window == nullptr) {
  #if defined(DKR_IOS)
          // Desktop fullscreen, as on the Mac. Real fullscreen makes SDL restore
-@@ -2194,10 +2253,27 @@
+@@ -2194,10 +2254,27 @@
              dkr::runtime::custom_music::render(g_custom_music_buffer.data(),
                                                 sample_count / 2U, g_audio_frequency);
          }
@@ -1469,7 +1470,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
              const auto filtered = g_audio_equalizer.process(
                  static_cast<float>(samples[i + 1]) + (custom_music_active ? g_custom_music_buffer[i] : 0.0F),
                  static_cast<float>(samples[i]) + (custom_music_active ? g_custom_music_buffer[i + 1] : 0.0F));
-@@ -2396,6 +2472,16 @@
+@@ -2396,6 +2473,16 @@
          return;
      }
      g_audio_frequency = static_cast<std::uint32_t>(obtained.freq);
@@ -1486,7 +1487,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      g_audio_callback_frames = obtained.samples;
      g_audio_playback_started = false;
      g_audio_nominal_block_frames = 0U;
-@@ -2436,9 +2522,61 @@
+@@ -2436,9 +2523,61 @@
      }
      const bool blocked = dkr::runtime::ui::overlay_visible();
      const bool window_focused = g_window != nullptr &&
@@ -1548,7 +1549,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      const int configured_keyboard_player =
          dkr::runtime::input::keyboard_player();
      const std::size_t online_profile = std::min(
-@@ -2687,6 +2825,98 @@
+@@ -2687,6 +2826,98 @@
  #endif
  }
  
@@ -1647,7 +1648,24 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
  bool dkr::runtime::platform::gyro_available(std::size_t player) {
  #if DKR_RUNTIME_HAS_RT64
      std::scoped_lock lock(g_platform_mutex);
-@@ -3272,11 +3502,18 @@
+@@ -3229,8 +3460,16 @@
+                  "Select it and restart DKR-R before importing.";
+         return false;
+     }
++#if defined(__PROSPERO__)
++    // Read external input completely before taking the input-state mutex.
++    std::string read_error;
++    const auto lines = dkrr::ps5_mappings::read(source, &read_error);
++    if (!read_error.empty()) { status = read_error; return false; }
++    std::scoped_lock lock(g_platform_mutex);
++#else
+     std::scoped_lock lock(g_platform_mutex);
+     const std::vector<std::string> lines = ReadMappingLines(source);
++#endif
+     std::vector<std::string> valid;
+     valid.reserve(lines.size());
+     for (const std::string& line : lines) {
+@@ -3272,11 +3511,18 @@
          status = "No custom controller mappings have been created yet.";
          return false;
      }
@@ -1670,7 +1688,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
          return false;
      }
      status = "Controller mappings exported.";
-@@ -3320,3 +3557,39 @@
+@@ -3320,3 +3566,39 @@
      (void)assignments;
  #endif
  }
