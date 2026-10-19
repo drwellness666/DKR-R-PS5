@@ -2,6 +2,7 @@
 
 ## 1.0 — in preparation
 
+- Keep existing controller-mapping exports if the destination changes after file selection.
 - Finish or cancel texture imports cleanly when closing DKR-R or installing an update.
 - Keep tiled CRT filters lightweight on PS5 by repeating their texture on one quad.
 - Browse USB drives and game files directly in the touchpad menu when importing textures, filters, saves or controller mappings. Export saves and mappings to a chosen folder; existing file names are kept.
