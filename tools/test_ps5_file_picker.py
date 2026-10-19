@@ -18,7 +18,11 @@ with tempfile.TemporaryDirectory(prefix='dkrr-picker-') as folder:
  text=source.read_text()
  helper=text[text.index('bool ChooseFileForAction('):text.index('bool SelectRomWithDialog(')]
  jobs=text[text.index('std::mutex g_dialog_job_mutex;'):text.index('// A folder picker, for the dialog-job thread')]
- (t/'file_actions.inc').write_text('bool StartDialogJob(std::function<std::function<void()>()> job);\n'+helper+jobs)
+ # Deterministic host fault at std::jthread construction; all production
+ # queue logic stays unchanged, and successful starts still use std::jthread.
+ if jobs.count('std::jthread') != 2:raise RuntimeError('Dialog thread test seam changed')
+ action_jobs=jobs.replace('std::jthread','FixtureDialogThread')
+ (t/'file_actions.inc').write_text('bool StartDialogJob(std::function<std::function<void()>()> job);\n'+helper+action_jobs)
  nfd=a.game_work/'source/rt64-game/src/contrib/nativefiledialog-extended/src/include'
  subprocess.run(flags+['-D__PROSPERO__','-I'+str(t),'-I'+str(nfd),str(r/'tests/ps5_file_actions.cpp'),'-o',str(t/'actions')],check=True)
  subprocess.run([str(t/'actions')],check=True,timeout=30)
