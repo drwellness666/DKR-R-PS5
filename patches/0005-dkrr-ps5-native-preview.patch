@@ -2969,3 +2969,28 @@ diff --git a/runtime-recomp/src/game/performance_capture.hpp b/runtime-recomp/sr
      std::lock_guard lock(mutex);
      if (!in_window(now, deadline_ns.load()) || now < started_ns) return;
      if (previous_ns != 0) {
+diff --git a/runtime-recomp/src/game/runtime_crt_overlay.cpp b/runtime-recomp/src/game/runtime_crt_overlay.cpp
+--- a/runtime-recomp/src/game/runtime_crt_overlay.cpp
++++ b/runtime-recomp/src/game/runtime_crt_overlay.cpp
+@@ -221,6 +221,13 @@
+     } else {
+         const float tile_width = std::max(1.0F, static_cast<float>(image.width));
+         const float tile_height = std::max(1.0F, static_cast<float>(image.height));
++#if defined(__PROSPERO__)
++        // The native Vulkan descriptor uses the WRAP sampler above. Repeat in
++        // texture coordinates, rather than building a CPU quad for every tile.
++        draw_list->AddImage(image.image_id, {0.0F, 0.0F}, display,
++                            {0.0F, 0.0F},
++                            {display.x / tile_width, display.y / tile_height}, tint);
++#else
+         for (float y = 0.0F; y < display.y; y += tile_height) {
+             for (float x = 0.0F; x < display.x; x += tile_width) {
+                 const ImVec2 end{std::min(x + tile_width, display.x),
+@@ -231,6 +238,7 @@
+                                     {0.0F, 0.0F}, uv_end, tint);
+             }
+         }
++#endif
+     }
+     return true;
+ }

@@ -125,7 +125,11 @@
     "runtime-recomp/src/game/performance_capture.hpp": {
       "original_sha256": "de3de8ea29e9ab2baf4ecf2477ac08f3419242167a6dbdca35887be7eadf06a8",
       "patched_sha256": "485d238d7004f5eb404cd285e151656c54ddac67baec60d84f60a1ba9636125a"
+    },
+    "runtime-recomp/src/game/runtime_crt_overlay.cpp": {
+      "original_sha256": "9af25c08cd67d4534d9c60661096514b2f413b6858886ddc85408b611c491ee1",
+      "patched_sha256": "35a194e222f3069b921052676259517b0726e9986a3daff0730fda1231fc32fc"
     }
   },
-  "patch_sha256": "a8acd0f88dcdea353ea0701a8c3958cadaa8e6f3d6e288aa37fc37a63c0bb86e"
+  "patch_sha256": "c83f699ba1f02ff987b44b26a931b0b14298fb71f62511611dd58aab99550e98"
 }
