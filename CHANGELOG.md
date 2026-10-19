@@ -2,6 +2,7 @@
 
 ## 1.0 — in preparation
 
+- Keep tiled CRT filters lightweight on PS5 by repeating their texture on one quad.
 - Browse USB drives and game files directly in the touchpad menu when importing textures, filters, saves or controller mappings. Export saves and mappings to a chosen folder; existing file names are kept.
 
 First PS5 release, based on **DKR-R 1.0.6**.
