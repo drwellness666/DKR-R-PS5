@@ -9,6 +9,15 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <thread>
+#include <atomic>
+namespace dkr::runtime::ui { void toggle_overlay(); }
+namespace dkr::runtime::hud::editor { bool active(){return false;} void request_back(){} }
+static std::atomic_bool g_overlay_visible{true},g_overlay_focus_requested{false};
+static std::atomic_int g_overlay_last_rendered_page{-1},g_overlay_sidebar_selection{0},g_overlay_sidebar_action{0};
+static int g_overlay_page=0;
+#define __PROSPERO__ 1
+#include "overlay_toggle.inc"
+#undef __PROSPERO__
 #include "ps5_file_picker_ui.inl"
 static void frame() {
   ImGui::NewFrame();
@@ -99,6 +108,11 @@ int main() {
   assert(
       dkrr::files::picker().act(state.generation, dkrr::files::Action::Cancel));
   closed(f);
+  // Exercise the real runtime toggle, used by Touchpad and Escape. It must
+  // dismiss this modal while keeping race input blocked, then resume normally.
+  f=request(dkrr::files::Mode::Open);frame();frame();
+  dkr::runtime::ui::toggle_overlay();assert(g_overlay_visible.load());closed(f);
+  dkr::runtime::ui::toggle_overlay();assert(!g_overlay_visible.load()&&g_overlay_page==0);
   io.DisplaySize = {640, 360};
   f = request(dkrr::files::Mode::Folder);
   frame();
@@ -113,5 +127,5 @@ int main() {
   std::puts(
       "PASS actual NFD C ABI and real ImGui picker modal, gamepad focus, "
       "Circle/Escape "
-      "cancellation, worker completion, reopening and small-screen bounds");
+      "cancellation, worker completion, reopening, Touchpad lifecycle and small-screen bounds");
 }
