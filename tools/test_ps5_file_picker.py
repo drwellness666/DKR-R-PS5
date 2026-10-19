@@ -23,6 +23,12 @@ with tempfile.TemporaryDirectory(prefix='dkrr-picker-') as folder:
  if jobs.count('std::jthread') != 2:raise RuntimeError('Dialog thread test seam changed')
  action_jobs=jobs.replace('std::jthread','FixtureDialogThread')
  (t/'file_actions.inc').write_text('bool StartDialogJob(std::function<std::function<void()>()> job);\n'+helper+action_jobs)
+ platform=(source.parent/'runtime_platform.cpp').read_text()
+ begin=platform.index('bool dkr::runtime::platform::export_controller_mappings(')
+ end=platform.index('\ndkr::runtime::controllers::DesiredAssignments',begin)
+ (t/'file_exports.inc').write_text(platform[begin:end])
+ subprocess.run(flags+['-DDKR_RUNTIME_HAS_RT64=1','-D__PROSPERO__','-I'+str(t),str(r/'tests/ps5_file_exports.cpp'),'-o',str(t/'exports')],check=True)
+ subprocess.run([str(t/'exports'),str(t/'export-storage')],check=True,timeout=30)
  nfd=a.game_work/'source/rt64-game/src/contrib/nativefiledialog-extended/src/include'
  subprocess.run(flags+['-D__PROSPERO__','-I'+str(t),'-I'+str(nfd),str(r/'tests/ps5_file_actions.cpp'),'-o',str(t/'actions')],check=True)
  subprocess.run([str(t/'actions')],check=True,timeout=30)

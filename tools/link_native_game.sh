@@ -196,7 +196,7 @@ tag=json.loads(pathlib.Path(sys.argv[3]).read_text())['tag']
 version=re.fullmatch(r'ps5-v([0-9]{1,2})\.([0-9]{1,3})\.([0-9]{1,3})',tag)
 if not version:raise SystemExit('Use a numeric PS5 release tag such as ps5-v1.0.0')
 # Shell registration stays stable across ordinary in-game updates.
-# The actual release version comes from PORT_RELEASE.json in the game and package.
+# PORT_RELEASE.json and the signed update channel carry each actual release tag.
 p.update(titleId='PPSA94678',conceptId='94678',contentId='UP9000-PPSA94678_00-DKRRNATIVE000001',contentVersion='01.000.000')
 p['localizedParameters']['en-US']['titleName']='DKR-R PS5'
 # Explicit experimental build only. The pinned VideoOut WSI reads 0x40;
