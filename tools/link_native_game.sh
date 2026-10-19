@@ -189,12 +189,16 @@ if old.exists() or old.is_symlink():
         old.rename(backup)
 PY
 
-python3 - "$support/sce_sys/param-radv.json" "$target/sce_sys/param.json" "$game/game-ps5/dkr-release.json" "$high_refresh" <<'PY'
-import json,pathlib,sys
+python3 - "$support/sce_sys/param-radv.json" "$target/sce_sys/param.json" "$root/PORT_RELEASE.json" "$high_refresh" <<'PY'
+import json,pathlib,re,sys
 p=json.loads(pathlib.Path(sys.argv[1]).read_text())
-p.update(titleId='PPSA94678',conceptId='94678',contentId='UP9000-PPSA94678_00-DKRRNATIVE000001',contentVersion='01.000.001')
-version=json.loads(pathlib.Path(sys.argv[3]).read_text())['version']
-p['localizedParameters']['en-US']['titleName']='DKR-R '+version+' PS5 Preview'
+tag=json.loads(pathlib.Path(sys.argv[3]).read_text())['tag']
+version=re.fullmatch(r'ps5-v([0-9]{1,2})\.([0-9]{1,3})\.([0-9]{1,3})',tag)
+if not version:raise SystemExit('Use a numeric PS5 release tag such as ps5-v1.0.0')
+# Shell registration stays stable across ordinary in-game updates.
+# The actual release version comes from PORT_RELEASE.json in the game and package.
+p.update(titleId='PPSA94678',conceptId='94678',contentId='UP9000-PPSA94678_00-DKRRNATIVE000001',contentVersion='01.000.000')
+p['localizedParameters']['en-US']['titleName']='DKR-R PS5'
 # Explicit experimental build only. The pinned VideoOut WSI reads 0x40;
 # its public source describes 0x40000 as the VRR-compatible declaration.
 # Runtime activation still requires a saved 120 Hz choice, positive native
