@@ -40,4 +40,4 @@ Analysis checks matching symbols before attributing addresses. `report_diagnosti
 
 Increase `installer_sequence` in `PORT_RELEASE.json` for each new program build. Build a fresh package with matching source/notices and test installation/recovery. Sign its channel with `tools/sign_update_channel.py` using the private release key outside the repository. Publishing source alone does not make an in-game update available.
 
-The native updater requires compatible metadata, runtime and package paths. See the [architecture](ARCHITECTURE.md). Keep credentials, signing keys, ROMs, generated code, extracted audio and private builds out of commits.
+The native updater requires compatible metadata, runtime and package paths. Keep the registered title name/version stable across normal updates; the in-game version and signed channel use the actual release tag. See the [architecture](ARCHITECTURE.md). Keep credentials, signing keys, ROMs, generated code, extracted audio and private builds out of commits.
