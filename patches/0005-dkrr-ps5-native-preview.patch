@@ -2668,7 +2668,23 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
      // RT64's ImGui backend owns normal pointer, keyboard and gamepad event
      // delivery. Do not turn those events into page-focus requests: ImGui must
      // be allowed to retain the item selected by the previous event so the
-@@ -9876,3 +9927,13 @@
+@@ -9775,6 +9826,15 @@
+ }
+ 
+ void dkr::runtime::ui::toggle_overlay() {
++#if defined(__PROSPERO__)
++    // Touchpad/Escape dismiss the native picker before resuming the race.
++    // Otherwise a still-open modal can outlive the overlay's input blocking.
++    const auto file_picker = dkrr::files::picker().view();
++    if (file_picker.active) {
++        dkrr::files::picker().act(file_picker.generation, dkrr::files::Action::Cancel);
++        return;
++    }
++#endif
+ #if defined(__ANDROID__) || defined(DKR_IOS)
+     dkr::runtime::mobile::clear();
+ #endif
+@@ -9876,3 +9936,13 @@
      return true;
  }
  #endif
