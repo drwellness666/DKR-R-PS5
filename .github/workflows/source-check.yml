@@ -17,16 +17,18 @@ jobs:
       - run: sha256sum --quiet -c SHA256SUMS
       - run: python3 tools/test_component_notices.py
       - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libsdl2-dev glslang-tools spirv-tools libvulkan-dev mesa-vulkan-drivers pkg-config
-      - run: python3 tools/test_controller_presets.py
+      - run: python3 tools/prepare_controller_test_sources.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_controller_presets.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_controller_lights.py
       - run: python3 tools/test_ps5_motion.py
       - run: python3 tools/test_ps5_item_feedback.py
       - run: python3 tools/test_ps5_controller_speaker.py
-      - run: python3 tools/test_ps5_controller_diagram.py
-      - run: python3 tools/test_ps5_game_audio_hooks.py
-      - run: python3 tools/test_ps5_file_picker.py
-      - run: python3 tools/test_ps5_controls_page.py
-      - run: python3 tools/test_ps5_native_save_storage.py
+      - run: python3 tools/test_ps5_controller_diagram.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_ps5_game_audio_hooks.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_ps5_file_picker.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_ps5_crt_overlay.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_ps5_controls_page.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_ps5_native_save_storage.py "$PWD/work/controller-test-inputs"
       - run: python3 tests/test_install_bootstrap.py
       - run: python3 tests/test_controller_audio_decode.py
       - run: python3 tools/test_ps5_shared_profiles.py
@@ -37,10 +39,10 @@ jobs:
       - run: python3 tools/test_ps5_preferences.py
       - run: python3 tools/build_hdr_shaders.py --check
       - run: python3 tools/test_ps5_hdr_vulkan.py
-      - run: python3 tools/test_console_fonts.py
-      - run: python3 tools/test_native_display_rate.py
-      - run: python3 tools/test_console_play_navigation.py
-      - run: python3 tools/test_ps5_menu_sections.py
+      - run: python3 tools/test_console_fonts.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_native_display_rate.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_console_play_navigation.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_ps5_menu_sections.py "$PWD/work/controller-test-inputs"
       - run: python3 tests/test_build_assistant.py
       - run: python3 tools/test_ps5_internet_update.py
       - run: python3 tools/test_ps5_native_update.py
