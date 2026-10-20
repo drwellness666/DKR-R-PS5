@@ -3617,3 +3617,42 @@ diff --git a/scripts/generate_recomp_config.py b/scripts/generate_recomp_config.
  
      manual = ", ".join(
          "{ name = %s, section = %s, vram = %s, size = %s }"
+diff --git a/runtime-recomp/src/game/shared_save_backend.inl b/runtime-recomp/src/game/shared_save_backend.inl
+--- a/runtime-recomp/src/game/shared_save_backend.inl
++++ b/runtime-recomp/src/game/shared_save_backend.inl
+@@ -66,7 +66,7 @@
+             } else {
+                 // An absent-before file is preserved in the recovery archive,
+                 // never deleted without an original. Fixed typed paths only.
+-                if(!storage::writable_path(dest,error))return false;
++                if(!storage::writable_path(dest,error,storage::FileAccess::AtomicReplace))return false;
+                 if(std::filesystem::exists(dest,ec)) {
+                     const auto retained=dir/(std::to_string(i)+".uncommitted");
+                     if(std::filesystem::exists(retained,ec)){error="A save recovery image already exists; originals were retained.";return false;}
+@@ -94,7 +94,7 @@
+     auto personal_owner=storage::acquire(root/"saves/dkr.us.v77.bin",error);if(!personal_owner)return false;
+     if(!recover_unlocked(error))return false;
+     const auto dir=root/"save-migration-v1";
+-    if(!storage::writable_path(dir/"manifest.json",error))return false;
++    if(!storage::writable_path(dir/"manifest.json",error,storage::FileAccess::AtomicReplace))return false;
+     Json existing;
+     if(std::filesystem::exists(dir/"manifest.json")) {
+         if(!read_json(dir/"manifest.json",existing)||existing.value("schema",0)!=1){error="The saved migration inventory is unreadable; original progress has not been replaced.";return false;}
+@@ -108,7 +108,7 @@
+         std::vector<std::uint8_t> bytes;
+         if(!storage::read_exact(record.info.path,record.info.size,bytes)){error="A save changed during the migration snapshot. No personal save was replaced.";return false;}
+         auto id=storage::content_id(bytes);auto image=dir/"images"/(id+".bin");
+-        std::string guard;if(!storage::writable_path(image,guard)){error=guard;return false;}
++        std::string guard;if(!storage::writable_path(image,guard,storage::FileAccess::AtomicReplace)){error=guard;return false;}
+         std::vector<std::uint8_t> prior;
+         if(std::filesystem::exists(image)&&(!storage::read_exact(image,bytes.size(),prior)||prior!=bytes))image=dir/"images"/(id+"-"+std::to_string(++storage::serial)+".bin");
+         if(!std::filesystem::exists(image)&&!storage::write_atomic(image,bytes,nullptr,error))return false;
+@@ -178,7 +178,7 @@
+     if(!ReadAdventure(target,verified)||verified!=bytes){error="The development copy failed read-back verification. Original saves were kept.";return false;}
+     if(refresh) {
+         auto archive=root/"save-recovery"/("applied-development-seed-"+Timestamp()+"-"+std::to_string(++storage::serial)+".bin");
+-        if(!storage::writable_path(pending,error)||!storage::writable_path(archive,error))return false;
++        if(!storage::writable_path(pending,error,storage::FileAccess::AtomicReplace)||!storage::writable_path(archive,error,storage::FileAccess::AtomicReplace))return false;
+         std::filesystem::create_directories(archive.parent_path(),ec);
+         if(!ec)std::filesystem::rename(pending,archive,ec);
+         if(ec){error="The development copy is safe, but its request could not be archived: "+ec.message();return false;}

@@ -170,7 +170,11 @@
     "scripts/generate_recomp_config.py": {
       "original_sha256": "94bd41d96616a8a2d4a12b05574bd9f06ee68c43eabe924c553b820a12466662",
       "patched_sha256": "5e631a53a958b0d82f38de96b113c976591f7e863152d537de5ba5c3261ae70c"
+    },
+    "runtime-recomp/src/game/shared_save_backend.inl": {
+      "original_sha256": "a99ccc67a4c867680141792a1db0c2236f9e5f228f29dbb88aa57ce906b34ba7",
+      "patched_sha256": "ccf5f2ec576823083fcd55a54fec57aec3ba1ab691b0597ddce49fc4c90d320b"
     }
   },
-  "patch_sha256": "85250b2751e595a57652400e9239b80f249c3e76108294d22ac1480ec97b0277"
+  "patch_sha256": "fe6c7e48de05ec8165323ffe68b1d969d21e33614314f17d9090fa5410740948"
 }
