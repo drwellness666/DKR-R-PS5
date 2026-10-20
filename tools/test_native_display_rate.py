@@ -16,7 +16,23 @@ game=a.game_work/'source/DKR-R/runtime-recomp/src/game'
 source=(game/'rt64_renderer.cpp').read_text()
 start=source.index('int DetectDisplayRate() {');end=source.index('\nvoid ApplyConfig(',start)
 with tempfile.TemporaryDirectory(prefix='dkrr-native-display-rate-') as folder:
-    folder=pathlib.Path(folder);(folder/'detect_display_rate.inc').write_text(source[start:end]);out=folder/'test'
+    folder=pathlib.Path(folder)
+    # Also exercise the actual lower-level RT64 window getter. The runtime's
+    # target alone cannot detect a second 60-Hz clamp in the present queue.
+    import tarfile
+    rt=folder/'rt64';rt.mkdir()
+    import json
+    manifest=json.loads((root/'patches/rt64-patch-manifest.json').read_text())
+    with tarfile.open(root/'vendor/RT64.tar.gz') as archive:
+        for name in manifest['files']:
+            member=next(m for m in archive if m.isfile() and (m.name==name or m.name.endswith('/'+name)))
+            dest=rt/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(archive.extractfile(member).read())
+    subprocess.run(['python3',str(root/'tools/apply_rt64_patch.py'),str(rt)],check=True)
+    window=(rt/'src/hle/rt64_application_window.cpp').read_text()
+    getter=window.index('    uint32_t ApplicationWindow::getRefreshRate() const {')
+    getter_end=window.index('\n    }',getter)+6
+    (folder/'native_window_rate.inc').write_text(window[getter:getter_end])
+    (folder/'detect_display_rate.inc').write_text(source[start:end]);out=folder/'test'
     ui=(game/'runtime_ui.cpp').read_text()
     default_start=ui.index('#if defined(DKR_IOS) || defined(__PROSPERO__)\nRefreshRate g_modern_refresh_mode')
     default_end=ui.index('#if defined(DKR_IOS)\nResolution g_modern_resolution',default_start)
