@@ -131,7 +131,7 @@ link_game() {
     "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/hdr_options.o" "$build/obj/hdr_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/import_check.o" \
     "$build/obj/controller_speaker.o" "$build/obj/file_picker.o" "$build/obj/game_audio_hooks.o" "$build/obj/internet_update.o" "$build/obj/native_update.o" "$build/obj/update_files.o" "$build/obj/update_sha1.o" "$build/obj/update_policy.o" "$build/obj/update_ed25519.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
     --start-group "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
-    "${radv_link_inputs[@]}" --no-as-needed "$sdk/target/lib/libSceHttp.so" "$sdk/target/lib/libSceSsl.so" "$sdk/target/lib/libSceNet.so" --as-needed "$sdk"/target/lib/*.so
+    "${radv_link_inputs[@]}" --no-as-needed "$sdk/target/lib/libSceHttp.so" "$sdk/target/lib/libSceSsl.so" "$sdk/target/lib/libSceNet.so" "$sdk/target/lib/libSceRandom.so" --as-needed "$sdk"/target/lib/*.so
 }
 # First pass obtains imports without introducing new library dependencies.
 printf 'unsigned dkrr_report_missing_imports(void (*emit)(const char *)){(void)emit;return 0;}\n' > "$build/gen/import_check.c"

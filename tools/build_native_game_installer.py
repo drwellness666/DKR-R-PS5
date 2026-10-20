@@ -82,12 +82,12 @@ header += '};\n'
 (work / 'native_game_files.h').write_text(header)
 cc = str(sdk / 'bin/prospero-clang')
 subprocess.run([cc, '-c', str(work / 'embedded.S'), '-o', str(work / 'embedded.o')], check=True)
-output = game / ('private/dkrr-install.elf' if with_roms else 'private/dkrr-install-diagnostics.elf' if diagnostics_only else 'private/dkrr-install-preferences.elf' if preferences_only else 'private/dkrr-install-game-1.0.6-preview.elf')
+output = game / ('private/dkrr-install.elf' if with_roms else 'private/dkrr-install-diagnostics.elf' if diagnostics_only else 'private/dkrr-install-preferences.elf' if preferences_only else 'private/dkrr-install-game-1.0.7-preview.elf')
 installer_source = root / 'src/install_native_game.c'
 if with_roms:
     installer_source = work / 'install_all.c'
     installer_source.write_text((root / 'src/install_native_game.c').read_text().replace(
-        'DKR-R 1.0.6 native preview installer (private build; no ROM included)',
+        'DKR-R 1.0.7 native preview installer (private build; no ROM included)',
         'PRIVATE DKR-R INSTALLER: game and both owned US ROMs; never share this ELF').replace(
         'NATIVE INSTALL PASS. Files staged only; mounting and gameplay untested.',
         'DKR-R INSTALL PASS. Both owned revisions installed; launch from the PS5 icon.'))

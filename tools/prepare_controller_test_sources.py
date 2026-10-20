@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import tarfile
 import urllib.request
+from compose_upstream_release import compose as compose_release
 
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description=__doc__)
@@ -60,24 +61,22 @@ wanted = set(manifest['files']) | {
     'runtime-recomp/src/game/generated/selawik_font.c',
     'runtime-recomp/src/game/generated/selawik_font.h',
 }
-found = set()
+game_config = json.loads((root / 'GAME_SOURCES.json').read_text())
 with tarfile.open(fetch(game_row)) as archive:
     for member in archive:
         parts = PurePosixPath(member.name).parts
-        name = '/'.join(parts[1:])
-        if not member.isfile() or name not in wanted:
+        if len(parts) < 2:
             continue
-        if name in found or '..' in parts:
-            raise SystemExit('Unsafe/duplicate test source path')
-        data = archive.extractfile(member).read()
-        if name in manifest['files'] and hashlib.sha256(data).hexdigest() != manifest['files'][name]['original_sha256']:
-            raise SystemExit('Pristine controller test input mismatch: ' + name)
-        out = game / name
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_bytes(data)
-        found.add(name)
-if found != wanted:
-    raise SystemExit('Incomplete pinned controller test inputs')
+        member.name = '/'.join(parts[1:])
+        archive.extract(member, game, filter='data')
+if game_config.get('release_layers'):
+    compose_release(game, game_config['release_layers']['sha256'])
+for name in wanted:
+    path = game / name
+    if not path.is_file():
+        raise SystemExit('Incomplete pinned controller input: ' + name)
+    if name in manifest['files'] and hashlib.sha256(path.read_bytes()).hexdigest() != manifest['files'][name]['original_sha256']:
+        raise SystemExit('Pristine effective controller test input mismatch: ' + name)
 subprocess.run(['patch', '--batch', '--fuzz=0', '-p1', '-d', str(game), '-i', str(patch)], check=True)
 for name, row in manifest['files'].items():
     if hashlib.sha256((game / name).read_bytes()).hexdigest() != row['patched_sha256']:

@@ -11,6 +11,7 @@ import subprocess
 import tarfile
 import urllib.request
 from apply_dependency_patch import apply_dependency_patch
+from compose_upstream_release import compose as compose_release
 
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description=__doc__)
@@ -40,7 +41,7 @@ def inventory():
               'patches/0003-plume-ps5-radv-display.patch',
               'patches/0004-rt64-ps5-build-platform.patch',
               'patches/0005-dkrr-ps5-native-preview.patch',
-              'patches/dkrr-patch-manifest.json', 'src/plume_ps5_display.h', 'src/ps5_display_options.h', 'src/ps5_diagnostics.h', 'src/ps5_hdr_options.h', 'src/ps5_hdr_presenter.hpp', 'src/ps5_hdr_shaders.h', 'tools/StagePS5HDR.cmake', 'patches/0007-rt64-ps5-hdr-present.patch', 'patches/0008-plume-ps5-hdr-swapchain.patch', 'patches/hdr-stage-manifest.json', 'tools/apply_dependency_patch.py']
+              'patches/dkrr-patch-manifest.json', 'src/plume_ps5_display.h', 'src/ps5_display_options.h', 'src/ps5_diagnostics.h', 'src/ps5_hdr_options.h', 'src/ps5_hdr_presenter.hpp', 'src/ps5_hdr_shaders.h', 'tools/StagePS5HDR.cmake', 'patches/0007-rt64-ps5-hdr-present.patch', 'patches/0008-plume-ps5-hdr-swapchain.patch', 'patches/hdr-stage-manifest.json', 'tools/apply_dependency_patch.py', 'tools/compose_upstream_release.py']
     return {'files': files, 'links': links, 'inputs': {name:digest(root/name) for name in inputs}}
 
 if stamp.exists():
@@ -103,6 +104,9 @@ for row in renderer['dxc']['files']:
         target.chmod(0o755)
 
 dk = source / 'DKR-R'
+if game.get('release_layers'):
+    layers = compose_release(dk, game['release_layers']['sha256'])
+    print('Reconstructed', layers['records_verified'], 'verified upstream release-layer records')
 targets = {'N64ModernRuntime': source / 'N64ModernRuntime',
            'N64Recomp': source / 'N64Recomp', 'sljit': source / 'N64Recomp/lib/sljit',
            'RT64': source / 'rt64-game', 'Plume': source / 'rt64-game/src/contrib/plume',

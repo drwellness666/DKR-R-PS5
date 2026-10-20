@@ -27,6 +27,7 @@ void quit(){++quits;}
 fs::path get_save_file_path(){return active_path;}
 void change_save_file(const std::u8string&,const std::u8string&){++mutable_changes;quit();}
 }
+namespace recomp {constexpr std::size_t mem_size=8*1024*1024;}
 namespace dkr::runtime {
 struct GamePayload{void(*entrypoint)(std::uint8_t*,recomp_context*);};
 void enter(std::uint8_t*,recomp_context*){++entries;}
@@ -36,6 +37,7 @@ namespace legacy{
 struct Prepared{bool session=true;fs::path save_subfolder,save_path;};
 std::shared_ptr<Prepared> mods;auto prepared_launch(){return mods;}
 }
+namespace code_mods {void boot(std::uint8_t*,std::size_t){}}
 namespace saves {
 struct Selection{bool online=false,host=false;std::uint64_t match=0,hash=0;} selection;
 struct Status{bool active=false,verified=false;std::uint64_t hash=0;fs::path path;};
@@ -68,12 +70,12 @@ int main(){
  reset();owned_path="/data/dkrr/profile-us-v80/saves/mods/fingerprint/dkr.us.v77.bin";active_path=owned_path;
  dkr::runtime::legacy::mods=std::make_shared<dkr::runtime::legacy::Prepared>();dkr::runtime::legacy::mods->save_path=owned_path;dkr::runtime::legacy::mods->save_subfolder="mods/fingerprint";
  RunDkrEntrypoint(nullptr,nullptr);assert(entries==1&&!quits&&!mutable_changes);
- entries=quits=0;dkr::runtime::legacy::mods->save_path="/data/dkrr/profile-us-v77/saves/mods/fingerprint/dkr.us.v77.bin";RunDkrEntrypoint(nullptr,nullptr);assert(!entries&&quits==1&&!mutable_changes);
+ entries=quits=0;dkr::runtime::legacy::mods->save_path="/data/dkrr/profile-us-v77/saves/mods/fingerprint/dkr.us.v77.bin";RunDkrEntrypoint(nullptr,nullptr);assert(entries==1&&!quits&&!mutable_changes); // Frozen context wins over a later mutable mod selection.
  reset();owned_path="/data/dkrr/profile-us-v80/saves/online/fixture/dkr.us.v77.bin";active_path=readback_path=owned_path;
  dkr::runtime::saves::selection={true,true,42,1234};g_context={true,true,true,42,1234,{}};
  RunDkrEntrypoint(nullptr,nullptr);assert(entries==1&&!quits&&!mutable_changes&&g_runtime_save_status.active&&g_runtime_save_status.verified);
  entries=quits=0;g_context.hash=999;RunDkrEntrypoint(nullptr,nullptr);assert(!entries&&quits==1&&net_failures==1&&!mutable_changes);
- puts("PASS actual native guest-entry and online route code: both US roots enter, wrong/unloaded/mod-mismatch contexts refuse, verified online context retained; no mutable route reconstructed from shared config");
+ puts("PASS actual native guest-entry and online route code: both US roots enter, wrong/unloaded contexts refuse, mutable mod selection cannot change the frozen save owner, verified online context retained; no mutable route reconstructed from shared config");
 }
 '''
 with tempfile.TemporaryDirectory(prefix='dkrr-shared-save-entry-') as tmp:

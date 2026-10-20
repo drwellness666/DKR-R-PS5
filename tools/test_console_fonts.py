@@ -45,7 +45,9 @@ with tempfile.TemporaryDirectory(prefix='dkrr-upstream-fonts-') as directory:
                    if member.isfile() and '/' in member.name}
 
         def original(name):
-            return upstream.extractfile(members['runtime-recomp/src/game/' + name]).read()
+            # The 1.0.7 release capsule canonically stores text with LF;
+            # this does not alter a single byte of the embedded font arrays.
+            return upstream.extractfile(members['runtime-recomp/src/game/' + name]).read().replace(b'\r\n', b'\n')
 
         actual_loader = launcher_function((game / 'runtime_ui.cpp').read_text())
         if actual_loader != launcher_function(original('runtime_ui.cpp').decode()):
@@ -64,7 +66,7 @@ constexpr bool kConsoleMenuLayout = false;
         for face in ('racing_banana', 'jumpman', 'selawik'):
             for suffix in ('c', 'h'):
                 name = f'generated/{face}_font.{suffix}'
-                if (game / name).read_bytes() != original(name):
+                if (game / name).read_bytes().replace(b'\r\n', b'\n') != original(name):
                     raise SystemExit('Font bytes differ from upstream: ' + name)
 
     (work / 'upstream_launcher_fonts.inl').write_text(actual_loader)

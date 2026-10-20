@@ -20,7 +20,7 @@ for line in symbols.splitlines():
 names=sorted(bindings)
 # Optional journal setup checks these addresses before use. A shared SDK stub
 # can promote the ELF binding to GLOBAL, so retain their policy explicitly.
-optional_names={'sigaction','sigemptyset','scePadSetMotionSensorState','scePadSetTriggerEffect'}
+optional_names={'sigaction','sigemptyset','scePadSetMotionSensorState','scePadSetTriggerEffect','sceRandomGetRandomNumber','sceHttpAddRequestHeader'}
 text='// SPDX-License-Identifier: GPL-3.0-or-later\n#include <stddef.h>\n'
 text+='typedef void (*Function)(void);\n'
 for index,name in enumerate(names):

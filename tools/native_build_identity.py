@@ -14,7 +14,7 @@ def identify(root,game,sdl,support,high):
             if name in ('game','sdl','samplerate') and file.suffix!='.a' and file.name not in ('dkr-ps5-profile.json','dkr-release.json'):continue
             if name in ('source','installer','patches','native') and file.suffix not in ('.c','.cpp','.h','.hpp','.inl','.patch','.json','.vert','.frag'):continue
             rows.append({'path':name+'/'+str(file.relative_to(folder)),'size':file.stat().st_size,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()})
-    for relative in ('VULKAN_SOURCES.json','PORT_RELEASE.json','tools/link_native_game.sh','tools/native_build_identity.py','tools/generate_native_import_check.py','tools/build_universal_installer.py','tools/StagePS5HDR.cmake','tools/build_hdr_shaders.py','tools/apply_ps5_hdr_driver.py','vendor/ps5-sdk-source.tar.gz'):
+    for relative in ('VULKAN_SOURCES.json','PORT_RELEASE.json','GAME_SOURCES.json','tools/compose_upstream_release.py','tools/prepare_camera_kernels.py','tools/StagePS5Release.cmake','tools/link_native_game.sh','tools/native_build_identity.py','tools/generate_native_import_check.py','tools/build_universal_installer.py','tools/StagePS5HDR.cmake','tools/build_hdr_shaders.py','tools/apply_ps5_hdr_driver.py','vendor/ps5-sdk-source.tar.gz'):
         file=root/relative;rows.append({'path':relative,'size':file.stat().st_size,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()})
     gpu=support.parent
     for relative in ('LICENSE','THIRD_PARTY.md','TITLE_ART_SOURCES.json','homebrew/DKR-R-Game/ARTWORK.md',
