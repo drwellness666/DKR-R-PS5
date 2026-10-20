@@ -4,11 +4,14 @@
 #include <string>
 #include <string_view>
 namespace dkrr::ps5_pad {
-inline constexpr unsigned action_count=20;
+inline constexpr unsigned action_count=30;
 inline constexpr std::array<const char*,action_count> action_names{
     "Steer up","Steer down","Steer left","Steer right","Accelerate","Brake / reverse",
     "Item / horn","Pause","D-pad up","D-pad down","D-pad left","D-pad right",
-    "N64 L","Drift / N64 R","C-Up","C-Down","C-Left","C-Right","Look back","Modern accelerate"};
+    "N64 L","Drift / N64 R","C-Up","C-Down","C-Left","C-Right","Look back","Modern accelerate",
+    "Camera orbit up","Camera orbit down","Camera orbit left","Camera orbit right",
+    "Recenter camera","Cycle camera","Camera zoom in","Camera zoom out",
+    "First-person camera","Recenter camera view"};
 struct Bindings {std::array<int,action_count> primary{},alternate{};};
 // SDL's stable logical source numbers, including axis direction encoding.
 inline constexpr std::array<int,14> sources{0,1,2,3,4,6,9,10,1009,1011,11,12,13,14};
