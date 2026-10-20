@@ -1,7 +1,7 @@
 # Racing Banana interface font
 
-The PS5 interface uses the unmodified Racing Banana supplied in DKR-R 1.0.7,
-commit 0368f51d769af4d89671a212e3ea8ac8078ce41b. Upstream identifies its source
+The PS5 interface uses the unmodified Racing Banana supplied in DKR-R 1.0.8,
+commit 34ed57ae97ef46759e5b23aa8d7a1e7ec89f3f56. Upstream identifies its source
 SHA-256 as AEADA6E5FF1388D27CC5D29DE9C67B74C0F6D851D6C772EE35376AF4E288C896.
 It is an independent interface font, not extracted from the game ROM.
 
@@ -21,4 +21,4 @@ Selawik's SIL OFL 1.1 and Jumpman's original EULA remain included. Jumpman's EUL
 expressly permits software embedding and distinguishes it from standalone font
 downloads.
 
-Source: https://github.com/ThatGuyMcd/DKR-R/blob/0368f51d769af4d89671a212e3ea8ac8078ce41b/THIRD_PARTY.md#fonts
+Source: https://github.com/ThatGuyMcd/DKR-R/blob/34ed57ae97ef46759e5b23aa8d7a1e7ec89f3f56/THIRD_PARTY.md#fonts

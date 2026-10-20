@@ -8,7 +8,7 @@
       "source": "DKR-R/LICENSE.md",
       "bytes": 1075,
       "sha256": "892094a99ab18d0cea2d6a7c6db6015bac249c64c7e0cb0b742bd2805dd821f0",
-      "revision": "0368f51d769af4d89671a212e3ea8ac8078ce41b"
+      "revision": "34ed57ae97ef46759e5b23aa8d7a1e7ec89f3f56"
     },
     {
       "component": "N64Recomp",
@@ -267,7 +267,7 @@
       "source": "DKR-R/packaging/licenses/Jumpman-LICENSE.txt",
       "bytes": 3431,
       "sha256": "1b488aafb01a7f6427a759207f3cef2344dbb7d80afe1944d98945735a3c8215",
-      "revision": "0368f51d769af4d89671a212e3ea8ac8078ce41b"
+      "revision": "34ed57ae97ef46759e5b23aa8d7a1e7ec89f3f56"
     },
     {
       "component": "PS5 Mesa",
