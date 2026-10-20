@@ -10,7 +10,7 @@
 
 ## Feature status
 
-**Version 1.0 is in preparation.** Earlier PS5 sessions confirmed gameplay picture/sound, both US revisions, save/reload, shared settings/textures, classic controls, vibration, balloon light colors, readable 4K menus and title artwork. Output at 4K/119.88 Hz with VRR Automatic was confirmed on an LG C1.
+**Version 1.0 is in preparation.** The current build is based on **DKR-R 1.0.7**. Earlier PS5 sessions used the 1.0.6-based port and confirmed gameplay picture/sound, both US revisions, save/reload, shared settings/textures, classic controls, vibration, balloon light colors, readable 4K menus and title artwork. Output at 4K/119.88 Hz with VRR Automatic was confirmed on an LG C1.
 
 Those sessions used **firmware 13.60, Relapse / WebKit Autoloader 0.6.1, kstuff-lite and ShadowMountPlus**. This is compatibility evidence, not a requirement to update your firmware.
 

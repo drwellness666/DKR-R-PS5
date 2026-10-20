@@ -41,4 +41,4 @@ In the original game's **Options → Language**, choose **English, French or Ger
 
 Import compatible packs through **Textures** and select **Modern** presentation. The selected packs are shared between US 1.0 and US 1.1. When packs overlap, a lower priority number takes precedence. Obtain packs and mods separately under their authors' terms.
 
-[Upstream texture-pack guide](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/docs/TEXTURE_PACKS.md) · [Compatibility](KNOWN_ISSUES.md) · [Save data](SAVES.md)
+[Upstream texture-pack guide](https://github.com/ThatGuyMcd/DKR-R/blob/0368f51d769af4d89671a212e3ea8ac8078ce41b/docs/TEXTURE_PACKS.md) · [Compatibility](KNOWN_ISSUES.md) · [Save data](SAVES.md)
