@@ -73,6 +73,7 @@ static bool SettingsDropdown(const char *, std::string_view label, int *, std::i
 static void PaddockGap(float) {}
 static void SettingsHelp(std::string_view, float) {}
 static bool SettingsRaceButton(const char *label, bool) { return clicked == label; }
+static bool SettingsButton(const char *label,float) { return clicked==label; }
 struct SettingsRangeValue { std::string number, unit; };
 static std::string changed_range;
 static bool SettingsDisclosure(const char *, std::string_view label, bool &open, float) {
@@ -161,6 +162,10 @@ int main() {
     changed_range="ps5-hdr-paper"; DrawPs5DisplayFields(800,false); changed_range.clear();
     assert(dkrr_ps5_hdr_calibration().paper_white==210);
     assert(dkrr_ps5_read_hdr_choice(&hdr)==1 && hdr.paper_white==180); // Preview is not a save.
+    g_ps5_display_ui.expansion=35;
+    clicked="Use neutral HDR mapping";DrawPs5DisplayFields(800,false);clicked.clear();
+    assert(g_ps5_display_ui.expansion==0&&dkrr_ps5_hdr_calibration().expansion==0);
+    assert(dkrr_ps5_read_hdr_choice(&hdr)==1&&hdr.paper_white==180); // Explicit apply still required.
     clicked="Show HDR brightness pattern"; DrawPs5DisplayFields(800,false); clicked.clear();
     assert(dkrr_ps5_hdr_pattern()==1);
     clicked="RESTORE 1080p / 60 Hz FOR NEXT START";DrawPs5DisplayFields(800, false);clicked.clear();

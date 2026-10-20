@@ -40,6 +40,12 @@ int main(){
  assert(release.update(true,held,400,true,send)==1);
  assert(release.update(true,spent,408,false,send)==1&&commands.back()==2);
  assert(release.update(true,spent,479,false,send)==1&&commands.back()==0);
+ for(unsigned type=0;type<5;++type){
+  Output each;Item a=held;a.type=type;Item b=a;b.quantity=0;
+  each.update(true,a,600,true,send);
+  assert(each.update(true,b,620,false,send)==1&&commands.back()==2);
+  assert(each.update(true,b,691,false,send)==1&&commands.back()==0);
+ }
  Mailbox box;std::array<Item,4> items{};items[0]=held;items[1]=other;
  box.publish(items,0xFFFFF0);assert(box.read(0,0x1000010,false).quantity==2);
  assert(!box.read(0,0x1000200,false).valid&&!box.read(4,0x1000010,false).valid&&!box.read(0,0x1000010,true).valid);

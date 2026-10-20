@@ -191,6 +191,36 @@ int main(int argc,char**argv){assert(argc==2);uid_t app=geteuid()+1;
     binary=work/'owner'
     subprocess.run(self.flags+['-Wall','-Wextra','-Werror','-I',str(ROOT/'installer'),str(code),str(self.base/'files.c.o'),str(self.base/'hash.c.o'),'-Wl,--wrap=fstat','-Wl,--wrap=fchown','-Wl,--wrap=rename','-o',str(binary)],check=True)
     subprocess.run([str(binary),str(work)],env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'),check=True)
+ def test_private_update_probe_restores_identity_and_distinguishes_errors(self):
+    source=(ROOT/'installer/main.c').read_text()
+    def function(name):
+     at=source.index('static int '+name+'(');begin=source.index('{',at);end=begin+1;depth=1
+     while depth:depth+=(source[end]=='{')-(source[end]=='}');end+=1
+     return source[at:end]
+    code=self.base/'private-state.c';binary=self.base/'private-state'
+    code.write_text(r"""#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+#include <assert.h>
+#include <string.h>
+static uid_t active;static int state,enter_fail,restore_fail,transitions;
+uid_t __wrap_geteuid(void){return active;}
+int __wrap_seteuid(uid_t uid){++transitions;if((uid==1&&enter_fail)||(uid==0&&restore_fail)){errno=EPERM;return -1;}active=uid;return 0;}
+int __wrap_lstat(const char*path,struct stat*st){assert(!strcmp(path,"/app/private/native-install"));if(active!=1){errno=EACCES;return -1;}memset(st,0,sizeof(*st));if(state<0){errno=EIO;return -1;}if(!state){errno=ENOENT;return -1;}st->st_mode=state==1?S_IFDIR|0700:S_IFLNK|0777;return 0;}
+"""+function('exists_dir')+'\n'+function('app_update_pending')+r"""
+int main(void){
+ assert(app_update_pending("/app/private/native-install")==0&&active==0&&transitions==2);
+ state=1;assert(app_update_pending("/app/private/native-install")==1&&active==0);
+ state=-1;assert(app_update_pending("/app/private/native-install")==-1&&errno==EIO&&active==0);
+ state=2;assert(app_update_pending("/app/private/native-install")==-1&&active==0);
+ state=0;enter_fail=1;assert(app_update_pending("/app/private/native-install")==-1&&errno==EPERM&&active==0);
+ enter_fail=0;restore_fail=1;assert(app_update_pending("/app/private/native-install")==-1&&errno==EPERM&&active==1);
+ restore_fail=0;transitions=0;assert(app_update_pending("/app/private/native-install")==0&&active==1&&transitions==0);
+}
+""")
+    subprocess.run(self.flags+['-Wall','-Wextra','-Werror',str(code),'-Wl,--wrap=geteuid','-Wl,--wrap=seteuid','-Wl,--wrap=lstat','-o',str(binary)],check=True)
+    subprocess.run([str(binary)],check=True,env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'))
  def test_network_disconnect_or_bad_commit_changes_nothing(self):
     for command in (b'',b'BADGO12\n'):
         p=self.network_process();self.assertFalse((self.data/'dkrr').exists())

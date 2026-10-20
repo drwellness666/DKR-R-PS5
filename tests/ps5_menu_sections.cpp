@@ -18,7 +18,7 @@ static ImGuiID selector=0,after=0;
 static void frame(bool focus=false) {
  ImGui::NewFrame();ImGui::SetNextWindowPos({0,0});ImGui::SetNextWindowSize({1100,600});
  ImGui::Begin("PS5 sections",nullptr,ImGuiWindowFlags_NoTitleBar);
- ImGui::PushID("graphics");selector=ImGui::GetID("##section");ImGui::PopID();
+ ImGui::PushID("graphics");ImGui::PushID(0);selector=ImGui::GetID("Display");ImGui::PopID();ImGui::PopID();
  if(focus)ImGui::SetKeyboardFocusHere();
  ImGui::BeginDisabled(disabled);
  int picked=DrawPs5SectionSelector("graphics",{"Display","HUD & Detail","Water"},current,width);
@@ -42,12 +42,15 @@ int main() {
  unsigned char* pixels;int w,h;io.Fonts->GetTexDataAsRGBA32(&pixels,&w,&h);
  for(float tested_width:{280.0F,640.0F,1000.0F}) {
   width=tested_width;current=0;changes=0;frame(true);frame();assert(GImGui->NavId==selector);
-  press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==after&&current==0&&changes==0);
-  frame(true);frame();press(ImGuiKey_GamepadFaceDown);assert(GImGui->OpenPopupStack.Size>0);
-  press(ImGuiKey_GamepadDpadDown);press(ImGuiKey_GamepadFaceDown);assert(current==1&&changes==1&&GImGui->OpenPopupStack.Size==0);
-  frame(true);frame();press(ImGuiKey_GamepadFaceDown);press(ImGuiKey_GamepadDpadDown);press(ImGuiKey_GamepadFaceRight);
-  assert(current==1&&changes==1&&GImGui->OpenPopupStack.Size==0); // Circle cancels.
-  disabled=true;frame(true);frame();press(ImGuiKey_GamepadFaceDown);assert(current==1&&changes==1);disabled=false;
+  for(int step=0;step<3&&GImGui->NavId!=after;++step)press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==after&&current==0&&changes==0);
+  frame(true);frame();press(ImGuiKey_GamepadDpadRight);press(ImGuiKey_GamepadFaceDown);
+  assert(current==1&&changes==1&&GImGui->OpenPopupStack.Size==0);
+  for(int step=0;step<3&&GImGui->NavId!=after;++step)press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==after);
+  press(ImGuiKey_GamepadR2);assert(current==2&&changes==2&&GImGui->NavId==after);
+  press(ImGuiKey_GamepadR2);assert(current==0&&changes==3); // Wrap without returning to top.
+  press(ImGuiKey_GamepadL2);assert(current==2&&changes==4);
+  disabled=true;frame();press(ImGuiKey_GamepadR2);assert(current==2&&changes==4);disabled=false;
+
  }
- ImGui::DestroyContext();run_ps5_update_ui_tests();puts("PASS actual PS5 section selector: bounded narrow/wide geometry, D-pad order, Cross selection, Circle cancellation, disabled state; native visual and shoulder page order agree");
+ ImGui::DestroyContext();run_ps5_update_ui_tests();puts("PASS actual PS5 section selector: visible bounded section buttons, D-pad/Cross selection, no popup, L2/R2 from page body, wrap and disabled state; native visual and shoulder page order agree");
 }

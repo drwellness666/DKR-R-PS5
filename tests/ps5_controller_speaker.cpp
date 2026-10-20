@@ -76,6 +76,22 @@ int main(){
         speaker.update(false,42,{},630,false,0.25F,77);wait([]{return active.load()==0;});
     }
     {
+        // An event starts against the TV backlog deadline. A same-priority
+        // repeated event cannot restart or clip it. Every original PCM block
+        // and the output tail must be delivered before closing.
+        ps5_speaker::Speaker speaker(load);
+        const auto before=outputs.load(),old_closes=closes.load();const auto old_loads=load_calls.load();
+        const auto at=std::chrono::steady_clock::now();
+        speaker.update(true,42,{},1000,false,0.25F,77,ps5_sounds::pickup,80);
+        wait([&]{return load_calls.load()>old_loads;});
+        std::this_thread::sleep_for(std::chrono::milliseconds(15));assert(outputs==before);
+        wait([&]{return outputs.load()>before;});
+        assert(std::chrono::steady_clock::now()-at>=std::chrono::milliseconds(70));
+        speaker.update(true,42,{},1001,false,0.25F,77,ps5_sounds::horn,80);
+        wait([&]{return closes.load()>old_closes;});
+        assert(load_calls==old_loads+1&&outputs==before+96); // ceil(24000/256) + 2 silence blocks.
+    }
+    {
         // A cancelled load belongs to the old generation. Its missing-file
         // result must not disable a newer request after an off/on transition.
         ps5_speaker::Speaker speaker(delayed);const auto before=opens.load();

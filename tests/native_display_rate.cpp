@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ps5_display_options.h"
 #include <cassert>
+#include <algorithm>
 #include <cstdio>
 #include "presentation_policy.hpp"
 static struct dkrr_ps5_display_status status{};
 extern "C" struct dkrr_ps5_display_status dkrr_ps5_display_status(void) { return status; }
 #include "detect_display_rate.inc"
+namespace RT64 { struct ApplicationWindow { unsigned refreshRate=60; uint32_t getRefreshRate() const; };
+#include "native_window_rate.inc"
+}
+
 namespace ultramodern::renderer { enum class RefreshRate { Original,Display,Manual }; }
 using ultramodern::renderer::RefreshRate;
 #include "native_rate_defaults.inc"
@@ -29,7 +34,9 @@ int main() {
     assert(g_modern_refresh_target==60); // remembered advanced value, inactive by default
     assert(DetectDisplayRate()==60); // native surface not created yet
     status={3840,2160,119880,0,1};assert(DetectDisplayRate()==120);
-    status.refresh_millihz=59940;status.fallback=1;assert(DetectDisplayRate()==60);
+    RT64::ApplicationWindow window;assert(window.getRefreshRate()==120);
+    assert(std::min(window.getRefreshRate(),120U)==120);
+    status.refresh_millihz=59940;status.fallback=1;assert(DetectDisplayRate()==60);assert(window.getRefreshRate()==60);
     status={2560,1440,120000,0,1};assert(DetectDisplayRate()==120);
     status={1920,1080,119880,0,1};assert(DetectDisplayRate()==120);
     for (unsigned rate:{0U,30000U,48000U,60000U,121001U,240000U,500000U}) {

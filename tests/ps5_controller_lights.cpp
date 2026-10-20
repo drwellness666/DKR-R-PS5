@@ -70,6 +70,9 @@ int main() {
         for (auto type:{0,1,2,3,4}) {
             byte(racer+0x172U,type);assert((sample(ram,addresses)&7U)==unsigned(type+1));
         }
+        byte(racer+0x1D8U,1);assert((sample(ram,addresses)&7U)==0); // Finished, balloon still held.
+        assert((sample(ram,addresses)&(7U<<3))!=0); // Other local racer still racing.
+        byte(racer+0x1D8U,0);assert((sample(ram,addresses)&7U)==5);
         byte(racer+0x172U,5);assert((sample(ram,addresses)&7U)==0);
         byte(racer+0x172U,0);
         for (auto quantity:{0,11,255}) {
@@ -134,7 +137,7 @@ int main() {
     assert(trigger_packet[0]==1 && trigger_packet[8]==2 && trigger_packet[16]==3 && trigger_packet[17]==6 && trigger_packet[18]==3);
     for(int i=64;i<120;++i)assert(trigger_packet[i]==0); // R2 never touched.
     effect.mode=2;assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==0);
-    assert(trigger_packet[8]==3 && trigger_packet[16]==2 && trigger_packet[17]==3 && trigger_packet[18]==50);
+    assert(trigger_packet[8]==3 && trigger_packet[16]==0 && trigger_packet[17]==3 && trigger_packet[18]==50);
     effect.mode=0;assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==0);
     assert(trigger_packet[0]==1);for(int i=1;i<120;++i)assert(trigger_packet[i]==0);
     effect.mode=3;assert(PS5_JoystickSendEffect(&pad,&effect,sizeof(effect))==-1);
