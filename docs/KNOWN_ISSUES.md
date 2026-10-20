@@ -23,6 +23,8 @@ The combined version still needs these final PS5 checks:
 
 The features are implemented and have automated checks; those do not establish physical behavior on every console. Controller sounds are short cues, not the full game's spatial audio mix. Normal TV sound stays available.
 
-Online play, arbitrary mods, ghosts/Paks, other loaders/displays and the complete Windows/WSL2 source-build route have limited coverage. Constant 120 rendered FPS is not guaranteed.
+Legacy ROM-patch ZIP mods cannot be imported on PS5. The new mod library is included, but a listed mod still needs PS5 compatibility.
+
+Online play, other mods, ghosts/Paks, other loaders/displays and the complete Windows/WSL2 source-build route have limited coverage. Constant 120 rendered FPS is not guaranteed.
 
 [Report a problem](https://github.com/drwellness666/DKR-R-PS5/issues) · [What to include](DIAGNOSTICS.md) · [Planned improvements](ROADMAP.md)
