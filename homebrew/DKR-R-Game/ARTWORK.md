@@ -22,5 +22,5 @@ images are not assigned CC0 by the port, and a project-code licence does not
 grant rights to Nintendo/Rare artwork. Review the actual packaged contents and
 preserve attribution before distributing an application.
 
-[Upstream README/credits](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/README.md)
+[Upstream README/credits](https://github.com/ThatGuyMcd/DKR-R/blob/0368f51d769af4d89671a212e3ea8ac8078ce41b/README.md)
 · [Display](../../docs/DISPLAY.md) · [Licences](../../docs/LICENSES.md)
