@@ -19,7 +19,12 @@ int test_connect(int a,const struct sockaddr*b,socklen_t c){(void)a;(void)b;(voi
 ssize_t test_send(int fd,const void*p,size_t n,int flags){(void)fd;(void)flags;const struct dkrr_metadata_request*r=p;assert(n==sizeof(*r)&&r->magic==0x444b5252&&dkrr_metadata_allowed(r->path));return n;}
 ssize_t test_recv(int fd,void*p,size_t n,int flags){(void)fd;(void)flags;struct dkrr_metadata_reply r={.magic=0x444b5252,.inode=metadata.st_ino,.bytes=metadata.st_size,.modified=metadata.st_mtime,.mode=metadata.st_mode,.uid=1,.gid=metadata.st_gid,.links=links};assert(n==sizeof(r));if(reply_kind==2)r.magic=0;if(reply_kind==3)r.status=1;if(reply_kind==4)r.inode++;if(reply_kind==5)r.bytes++;if(reply_kind==6)r.modified++;if(reply_kind==7)r.uid++;memcpy(p,&r,sizeof(r));return sizeof(r);}
 int test_close(int n){assert(n==22);return 0;}
-int main(void){struct rlimit limit={0,0};setrlimit(RLIMIT_CORE,&limit);assert(sizeof(struct dkrr_metadata_request)==516&&sizeof(struct dkrr_metadata_reply)==48);const char*owned="/data/dkrr/profile-us-v77/saves/dkr.us.v77.bin";
+int main(void){
+ const char* paths[]={"saves/custom-records-v1.bin","save-migration-v1/manifest.json","save-migration-v1/images/a.bin","save-transactions/20261020/manifest.json","pending-save-transaction/manifest.json","save-recovery/a.bin","pending-development-seed.bin"};
+ for(unsigned i=0;i<sizeof(paths)/sizeof(paths[0]);++i){char own[512];snprintf(own,sizeof(own),"/data/dkrr/profile-us-v77/%s",paths[i]);assert(dkrr_metadata_allowed(own));}
+ assert(!dkrr_metadata_allowed("/data/dkrr/profile-us-v77/save-recovery/../foreign"));
+ assert(!dkrr_metadata_allowed("/data/dkrr/preferences/save-recovery/file.bin"));
+struct rlimit limit={0,0};setrlimit(RLIMIT_CORE,&limit);assert(sizeof(struct dkrr_metadata_request)==516&&sizeof(struct dkrr_metadata_reply)==48);const char*owned="/data/dkrr/profile-us-v77/saves/dkr.us.v77.bin";
  assert(dkrr_metadata_allowed(owned));assert(dkrr_metadata_allowed("/data/dkrr/profile-us-v80/controller-pak-1.mpk"));
  assert(dkrr_metadata_allowed("/data/dkrr/profile-us-v77/save-backups/adventure-20261013.bin.lock"));
  assert(dkrr_metadata_allowed("/data/dkrr/profile-us-v80/save-history/controller-pak-1.mpk/previous.mpk"));

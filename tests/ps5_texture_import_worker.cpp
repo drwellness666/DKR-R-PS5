@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <functional>
+#include <future>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -19,6 +20,10 @@ struct FixtureThread {
 };
 static std::atomic_bool entered=false,finished=false,commit_released=false;
 static bool committing=false;
+namespace dkr::store {
+struct View{bool busy=false;};struct Installer{View state;const View* view()const{return &state;}};
+Installer& installations(){static Installer value;return value;}
+}
 namespace dkr::runtime::texture_packs {
 struct TrackPackOwner {};
 struct ImportProgress {float fraction=0;std::string stage;bool commit_started=false;};
@@ -39,9 +44,11 @@ namespace dkr::runtime::custom_tracks {void discard_install_temp(const std::file
 #include "texture_start.inc"
 std::jthread g_dialog_job_worker;std::mutex g_dialog_job_mutex;std::function<void()>g_dialog_job_finish;bool g_dialog_job_running=false;
 void dkrr_ps5_cancel_file_picker(){}
+std::future<void> g_shared_save_job;
 #include "texture_shutdown.inc"
 int main(int argc,char**argv){assert(argc==2);const std::string mode=argv[1];
  if(mode=="start"){
+  dkr::store::installations().state.busy=true;assert(!StartTexturePackImport("fixture.zip"));dkr::store::installations().state.busy=false;
   fail_next=true;
   try{assert(!StartTexturePackImport("fixture.zip"));}catch(const std::exception&e){printf("REPRODUCED thread-start exception; import busy=%d: %s\n",int(g_texture_import_state.running),e.what());return 3;}
   assert(!g_texture_import_state.running&&g_texture_import_state.finished&&!g_texture_import_state.succeeded);

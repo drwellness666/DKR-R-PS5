@@ -55,6 +55,8 @@ struct FixtureDialogThread {
   bool joinable() const { return thread.joinable(); }
   void join() { thread.join(); }
 };
+static bool shared_busy=false;
+bool SharedSaveBusy(){return shared_busy;}
 #include "file_actions.inc"
 static void await_worker() {
   for (int i = 0; i < 5000; ++i) {
@@ -68,6 +70,7 @@ static void await_worker() {
   assert(false);
 }
 int main() {
+  shared_busy=true;assert(DialogJobRunning());shared_busy=false;
   const auto main = std::this_thread::get_id();
   std::string status;
   unsigned completions = 0;

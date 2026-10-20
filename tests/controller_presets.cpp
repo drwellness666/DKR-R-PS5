@@ -42,7 +42,8 @@ static void reload_bindings(const std::string& records) {
 static void unique_sources(std::size_t player) {
     using namespace dkr::runtime::input;
     std::set<int> used;
-    for (std::size_t index = 0; index < action_count(); ++index) {
+    // Camera orbit deliberately shares the C-button stick in a different mode.
+    for (std::size_t index = 0; index <= static_cast<std::size_t>(Action::Accelerate); ++index) {
         auto action = static_cast<Action>(index);
         for (int source : {controller_binding(player, action), secondary_controller_binding(player, action)}) {
             if (source != kUnbound) assert(used.insert(source).second);
