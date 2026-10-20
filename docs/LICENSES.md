@@ -20,6 +20,6 @@ The port retains DKR-R's original **Racing Banana**, **Jumpman** and **Selawik**
 
 The original icon is by **[POOTERMAN](https://www.deviantart.com/pooterman)**. Icon and header graphics retain their original attribution and terms. Texture packs are separate downloads under their authors' terms.
 
-[Font notice](../licenses/Racing-Banana-NOTICE.md) · [Artwork provenance](../homebrew/DKR-R-Game/ARTWORK.md) · [Original DKR-R licence](../licenses/DKR-R-LICENSE.md) · [Runtime notice](../licenses/DKR-R-COPYING-NOTICE.md) · [Upstream asset policy](https://github.com/ThatGuyMcd/DKR-R/blob/0368f51d769af4d89671a212e3ea8ac8078ce41b/docs/ASSET_POLICY.md)
+[Font notice](../licenses/Racing-Banana-NOTICE.md) · [Artwork provenance](../homebrew/DKR-R-Game/ARTWORK.md) · [Original DKR-R licence](../licenses/DKR-R-LICENSE.md) · [Runtime notice](../licenses/DKR-R-COPYING-NOTICE.md) · [Upstream asset policy](https://github.com/ThatGuyMcd/DKR-R/blob/34ed57ae97ef46759e5b23aa8d7a1e7ec89f3f56/docs/ASSET_POLICY.md)
 
 This fan project is not affiliated with or endorsed by Nintendo, Rare, Microsoft or Sony. Names and game content belong to their respective rights holders.
