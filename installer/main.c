@@ -62,6 +62,21 @@ static int title_identity_available(void) {
  }return 1;
 }
 static int exists_dir(const char *p){struct stat st;if(lstat(p,&st)<0)return errno==ENOENT?0:-1;return S_ISDIR(st.st_mode)?1:-1;}
+/* The app owns update-client-1 with mode 0700. PS5 does not let a payload's
+ * euid 0 inspect that directory as if it owned it. Read only this state under
+ * the app identity, then restore the installer identity on every result. */
+static int app_update_pending(const char *path) {
+#ifdef DKRR_HOST_TEST
+ const uid_t app_uid=getuid();
+#else
+ const uid_t app_uid=1;
+#endif
+ const uid_t previous=geteuid();
+ if(previous!=app_uid&&seteuid(app_uid)<0)return -1;
+ const int found=exists_dir(path),saved=errno;
+ if(previous!=app_uid&&seteuid(previous)<0)return -1;
+ errno=saved;return found;
+}
 static int own_manifest(const char *app,struct dkrr_manifest *m) {
  char p[DKRR_PATH];if(join(p,app,"dkrr-install.manifest")<0)return -1;
  return dkrr_manifest_read(p,m)==0&&dkrr_manifest_check(app,m,1)==0?0:-1;
@@ -209,8 +224,9 @@ int main(void) {
  {
   char pending[DKRR_PATH];
   if(join(pending,data,"preferences/update-client-1/native-install")<0){close(lock);return 3;}
-  int found=exists_dir(pending);
-  if(found!=0){status("An in-game update is pending. Start and close DKR-R once to finish recovery before using this installer.");close(lock);return 3;}
+  int found=app_update_pending(pending);
+  if(found<0){printf("DKRR INSTALL: update-state inspection failed: errno=%d (%s)\n",errno,strerror(errno));status("The in-game update state could not be checked. Existing files were preserved.");close(lock);return 3;}
+  if(found>0){status("An in-game update is pending. Start and close DKR-R once to finish recovery before using this installer.");close(lock);return 3;}
  }
  had_live=exists_dir(live);static struct dkrr_manifest old,new;
  if(!had_live&&DKRR_UPDATE_ONLY){status("No existing DKR-R installation. Use the installer ELF first.");close(lock);return 1;}

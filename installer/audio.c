@@ -55,7 +55,9 @@ static int cue(struct reader *r,uint64_t bank,uint64_t samples,uint64_t instrume
   }free(pcm);index=kd[0]+(kd[2]&0xc0)*4;
  }
  if(!r->ok||!mixed)goto done;
- if(slot>=9){size_t cap=slot<19?21600:slot<22?19200:slot==22?43200:28800;if(mixed>cap)mixed=cap;}
+ /* Keep complete one-shot effects. The decoder's three-second source limit
+  * already bounds long looping effects; category-specific cuts clip horns,
+  * pickups and gold-balloon tails in the middle of the original sound. */
  int64_t peak=0;for(size_t i=0;i<mixed;++i){int64_t n=mix[i]<0?-mix[i]:mix[i];if(n>peak)peak=n;}if(!peak)goto done;
  double scale=min(1,30000.0/(double)peak);int16_t *out=malloc(mixed*2);if(!out)goto done;
  for(size_t i=0;i<mixed;++i)out[i]=(int16_t)nearbyint((double)mix[i]*scale*(slot<9?1:min(1,(double)(mixed-1-i)/240)));
