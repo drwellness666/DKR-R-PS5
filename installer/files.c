@@ -26,6 +26,31 @@ int dkrr_sync_parent(const char *path) {
  char p[DKRR_PATH];if(strlen(path)>=sizeof(p))return -1;strcpy(p,path);char *s=strrchr(p,'/');if(!s)return -1;if(s==p)s[1]=0;else *s=0;
  int fd=open(p,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);if(fd<0)return -1;int r=fsync(fd);if(close(fd)<0)r=-1;return r;
 }
+/* The PS5 checks write access to the moved directory when updating its '..'
+ * entry. A payload with euid 0 cannot move an app-owned 0755 directory across
+ * parents merely because it can write both parents. Keep the verified tree's
+ * modes private: claim only its top directory through an open descriptor for
+ * the rename, then restore its owner on that same descriptor on either result.
+ * Callers have already verified the complete app manifest and keep the journal
+ * until both parent directory entries are durable. No content is copied here.
+ */
+int dkrr_move_app_directory(const char *from,const char *to) {
+ if(parents(from)<0||parents(to)<0)return -1;
+ struct stat st;
+ if(lstat(to,&st)==0){errno=EEXIST;return -1;}if(errno!=ENOENT)return -1;
+ int fd=open(from,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);if(fd<0)return -1;
+ if(fstat(fd,&st)<0||!S_ISDIR(st.st_mode)||(st.st_mode&07000)){close(fd);errno=EINVAL;return -1;}
+ const uid_t installer_uid=geteuid();const int claimed=st.st_uid!=installer_uid;
+ if(claimed&&fchown(fd,installer_uid,(gid_t)-1)<0){int e=errno;close(fd);errno=e;return -1;}
+ int rc=rename(from,to);int saved=errno;
+ if(claimed&&fchown(fd,st.st_uid,(gid_t)-1)<0){
+  int e=errno;printf("DKRR INSTALL: directory owner restore failed after rename=%d: %s -> %s: errno=%d (%s)\n",rc,from,to,e,strerror(e));close(fd);errno=e;return -1;
+ }
+ if(fsync(fd)<0&&rc==0){rc=-1;saved=errno;}
+ if(close(fd)<0&&rc==0){rc=-1;saved=errno;}
+ if(rc<0)printf("DKRR INSTALL: directory move failed: %s -> %s: errno=%d (%s)\n",from,to,saved,strerror(saved));
+ errno=saved;return rc;
+}
 int dkrr_write_new(const char *p,const void *bytes,size_t size,unsigned mode) {
  if(parents(p)<0)return -1;
  const unsigned char *data=bytes;size_t at=0;int fd=-1;

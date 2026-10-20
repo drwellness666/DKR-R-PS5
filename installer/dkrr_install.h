@@ -20,6 +20,7 @@ int dkrr_mkdir(const char *path,unsigned mode);
 int dkrr_write_new(const char *path,const void *bytes,size_t size,unsigned mode);
 int dkrr_hash_file(const char *path,char out[41],unsigned long long *size);
 int dkrr_sync_parent(const char *path);
+int dkrr_move_app_directory(const char *from,const char *to);
 int dkrr_manifest_read(const char *path,struct dkrr_manifest *out);
 int dkrr_manifest_write(const char *path,const struct dkrr_manifest *value);
 int dkrr_manifest_check(const char *app,const struct dkrr_manifest *value,int reject_unknown);

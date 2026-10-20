@@ -88,7 +88,7 @@ static int recover(void) {
  char history[DKRR_PATH],name[128];snprintf(name,sizeof(name),"%s-r%u",old.build,old.sequence);if(join(history,install,"history")<0||join(backup,history,name)<0)return -1;
  int present=exists_dir(live),saved=exists_dir(backup);if(present<0||saved<0)return -1;
  if(saved==1&&dkrr_manifest_check(backup,&old,1)<0)return -1;
- if(present==0&&saved==1){if(rename(backup,live)<0||dkrr_sync_parent(live)<0||dkrr_sync_parent(backup)<0)return -1;status("Interrupted update: previous version restored.");}
+ if(present==0&&saved==1){if(dkrr_move_app_directory(backup,live)<0||dkrr_sync_parent(live)<0||dkrr_sync_parent(backup)<0)return -1;status("Interrupted update: previous version restored.");}
  else if(present==1&&saved==0){if(dkrr_manifest_check(live,&old,1)<0)return -1;}
  else if(present==1&&saved==1){if(own_manifest(live,&current)<0)return -1;}
  else return -1;
@@ -240,11 +240,11 @@ int main(void) {
   if(dkrr_manifest_check(live,&old,1)<0||exists_dir(backup)!=0){status("App changed or a previous recovery folder is still present; refusing replacement.");close(lock);return 6;}
   // Cross-directory moves need both directory entries durable. Keep the
   // journal if either sync fails, including after a successful rename.
-  if(dkrr_manifest_write(journal,&old)<0||rename(live,backup)<0||dkrr_sync_parent(backup)<0||dkrr_sync_parent(live)<0){close(lock);return 7;}
+  if(dkrr_manifest_write(journal,&old)<0||dkrr_move_app_directory(live,backup)<0||dkrr_sync_parent(backup)<0||dkrr_sync_parent(live)<0){close(lock);return 7;}
  }
  if(!had_live){char parent[DKRR_PATH];if(join(parent,DKRR_INSTALL_ROOT,"homebrew")<0||dkrr_mkdir(parent,0755)<0){close(lock);return 7;}}
- if(rename(stage,live)<0){
-  if(had_live&&rename(backup,live)==0){dkrr_sync_parent(live);dkrr_sync_parent(backup);}
+ if(dkrr_move_app_directory(stage,live)<0){
+  if(had_live&&dkrr_move_app_directory(backup,live)==0){dkrr_sync_parent(live);dkrr_sync_parent(backup);}
   status("Activation failed. Rerun this ELF for recovery.");close(lock);return 7;
  }
  if(dkrr_sync_parent(live)<0||dkrr_sync_parent(stage)<0||own_manifest(live,&new)<0){close(lock);return 8;}
