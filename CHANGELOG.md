@@ -2,6 +2,9 @@
 
 ## 1.0 — in preparation
 
+- Keep shared-save preparation working on first and subsequent PS5 starts when native link-count metadata is unavailable.
+
+- Fix PS5 installation and update activation while keeping app directory permissions private.
 - Read controller-mapping imports completely before applying them, with bounded USB input outside the input lock.
 - Keep existing controller-mapping exports if the destination changes after file selection.
 - Finish or cancel texture imports cleanly when closing DKR-R or installing an update.
