@@ -1,13 +1,13 @@
 {
-  "patch_sha256": "d7869f61663da4549a890eedd372404992ce3396b48159e0c58e964d34627694",
+  "patch_sha256": "cf7a1f153b88702780c0bd740ea4f271cbc554b3ecf145a88de1e1b6445a0f80",
   "files": {
     "src/joystick/ps5/SDL_ps5joystick.c": {
       "original": "e0c091da80f84a236e37764f60caa5f278e2a0caddbbc0924157550435f5819e",
-      "patched": "f2ce58bcad013d56de504b4673b62c6b66e366b41892df2fb395829cb9a18d37"
+      "patched": "f96b0cbf380ddcac2b03f552eed5771383a7a5d62c2f7da3a80c52305e6af968"
     },
     "src/joystick/ps5/SDL_ps5joystick.h": {
       "original": "16436774be2082a3fa4fd6ca4e9792ce45bbfcac64de676d5a56a7b0e6f1a706",
-      "patched": "53472a0d2b045ae407f60220161fc7befcceca37d449fda6931a8489637c63d2"
+      "patched": "cdafcd7dbe16957251d9856820a6084b35bf9886b718a78aa10483c8c928c421"
     },
     "src/video/ps5/SDL_ps5video.c": {
       "original": "25015e47346ac5723ec0b01fd623be2c859bd0d4062b53817813747b8699fc47",

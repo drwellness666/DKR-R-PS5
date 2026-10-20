@@ -9,19 +9,19 @@
  } PS5_PadContext;
  
  static PS5_PadContext pad_ctx[PS5_MAX_USERS];
-@@ -145,6 +147,12 @@
-     }
- 
+@@ -147,6 +149,12 @@
      return 0;
-+}
-+
+ }
+ 
 +/* App-private mapping, tied to the open joystick rather than login-list order. */
 +int dkrr_ps5_pad_user_id(void *joystick) {
 +    PS5_PadContext *ctx = PS5_JoystickGetPadContext((SDL_Joystick *)joystick);
 +    return ctx && ctx->handle >= 0 && ctx->pad.connected ? ctx->user_id : -1;
- }
- 
++}
++
  static const char *PS5_JoystickGetDeviceName(int device_index)
+ {
+     PS5_PadContext *ctx = PS5_JoystickGetDevice(device_index);
 @@ -229,6 +237,31 @@
          return;
      }
@@ -63,26 +63,24 @@
                  continue;
              }
              if (btn_change & btn_map[i]) {
-@@ -369,6 +402,12 @@
+@@ -369,6 +402,10 @@
      joystick->naxes = 6;
      joystick->nhats = 1;
      joystick->instance_id = ctx->instance_id;
 +    ctx->sensors_enabled = SDL_FALSE;
 +    ctx->sensor_timestamp = 0;
-+    if (scePadSetMotionSensorState) {
-+        SDL_PrivateJoystickAddSensor(joystick, SDL_SENSOR_GYRO, 250.0f);
-+        SDL_PrivateJoystickAddSensor(joystick, SDL_SENSOR_ACCEL, 250.0f);
-+    }
++    SDL_PrivateJoystickAddSensor(joystick, SDL_SENSOR_GYRO, 250.0f);
++    SDL_PrivateJoystickAddSensor(joystick, SDL_SENSOR_ACCEL, 250.0f);
  
      return 0;
  }
-@@ -382,6 +421,14 @@
+@@ -382,6 +419,14 @@
          return;
      }
  
-+    if (ctx->sensors_enabled && scePadSetMotionSensorState)
++    if (ctx->sensors_enabled)
 +        scePadSetMotionSensorState(ctx->handle, 0);
-+    if (scePadSetTriggerEffect) {
++    {
 +        struct { Uint8 mask, reserved[7]; Uint8 commands[112]; } off = {0};
 +        off.mask = 1;
 +        scePadSetTriggerEffect(ctx->handle, &off);
@@ -91,7 +89,7 @@
      err = scePadClose(ctx->handle);
      if (err != 0) {
          SDL_SetError("scePadClose: 0x%08x", err);
-@@ -478,16 +525,64 @@
+@@ -478,16 +523,64 @@
      return SDL_Unsupported();
  }
  
@@ -120,7 +118,7 @@
 +        err = scePadResetLightBar(ctx->handle);
 +        return err ? SDL_SetError("scePadResetLightBar: 0x%08x", err) : 0;
 +    }
-+    if (!data || size != (int)sizeof(PS5_ItemEffect) || !scePadSetTriggerEffect)
++    if (!data || size != (int)sizeof(PS5_ItemEffect))
 +        return SDL_Unsupported();
 +    PS5_ItemEffect effect;
 +    SDL_memcpy(&effect, data, sizeof(effect));
@@ -136,7 +134,7 @@
 +        native.command[0].data[2] = effect.strength;
 +    } else if (effect.mode == 2 && effect.strength) {
 +        native.command[0].mode = 3; /* brief motor-arm vibration */
-+        native.command[0].data[0] = 2;
++        native.command[0].data[0] = 0; /* impulse remains perceptible on release */
 +        native.command[0].data[1] = effect.strength;
 +        native.command[0].data[2] = 50;
 +    }
@@ -149,7 +147,7 @@
  {
 -    return SDL_Unsupported();
 +    PS5_PadContext *ctx = PS5_JoystickGetPadContext(joystick);
-+    if (!ctx || !scePadSetMotionSensorState) return SDL_Unsupported();
++    if (!ctx) return SDL_Unsupported();
 +    const int result = scePadSetMotionSensorState(ctx->handle, enabled ? 1 : 0);
 +    if (result) return SDL_SetError("scePadSetMotionSensorState: 0x%08x", result);
 +    ctx->sensors_enabled = enabled;
@@ -169,14 +167,16 @@
  int scePadSetVibrationMode(int handle, int mode);
  int scePadSetVibration(int handle, const PS5_PadVibration* vib);
  int scePadClose(int handle);
-@@ -113,3 +115,7 @@
+@@ -113,3 +115,9 @@
  int sceUserServiceInitialize(void *);
  int sceUserServiceGetLoginUserIdList(int userId[4]);
  int sceUserServiceGetUserName(int userId, char* name, size_t size);
 +
-+/* Optional native capabilities; absent imports must never be called. */
-+int scePadSetMotionSensorState(int handle, int enabled) __attribute__((weak));
-+int scePadSetTriggerEffect(int handle, const void *parameters) __attribute__((weak));
++/* Required native libScePad exports, supplied by the public PS5 SDK stub.
++ * Weak ELF imports may remain null in a native SCE title even when the module
++ * exports the function. Use the same required binding as ReadState/SetLED. */
++int scePadSetMotionSensorState(int handle, int enabled);
++int scePadSetTriggerEffect(int handle, const void *parameters);
 --- a/src/video/ps5/SDL_ps5video.c
 +++ b/src/video/ps5/SDL_ps5video.c
 @@ -24,6 +24,11 @@
@@ -205,17 +205,15 @@
  
 -    if (sceVideoOutSubmitFlip(device_data->handle, idx, 1, frame_id)) {
 -        return SDL_SetError("sceVideoOutSubmitFlip: %s", strerror(errno));
--    }
--
--    if (sceKernelWaitEqueue(device_data->evt_queue, &evt, 1, &junk, 0)) {
--        return SDL_SetError("sceKernelWaitEqueue: %s", strerror(errno));
 +    errno = 0;
 +    rc = sceVideoOutSubmitFlip(device_data->handle, idx, 1, frame_id);
 +    if (rc) {
 +        return SDL_SetError("sceVideoOutSubmitFlip: rc=0x%08x errno=%d (%s)",
 +                            (unsigned)rc, errno, strerror(errno));
-+    }
-+
+     }
+ 
+-    if (sceKernelWaitEqueue(device_data->evt_queue, &evt, 1, &junk, 0)) {
+-        return SDL_SetError("sceKernelWaitEqueue: %s", strerror(errno));
 +    errno = 0;
 +    rc = sceKernelWaitEqueue(device_data->evt_queue, &evt, 1, &junk, 0);
 +    if (rc) {
@@ -244,15 +242,13 @@
 -                                          &device_data->paddr)) {
 -        return SDL_SetError("sceKernelAllocateMainDirectMemory: %s",
 -                            strerror(errno));
--    }
++        return SDL_SetError("sceVideoOutOpen: rc=0x%08x errno=%d (%s)",
++                            (unsigned)device_data->handle, errno, strerror(errno));
+     }
 -
 -    if (sceKernelMapDirectMemory(&vaddr, device_data->memsize, 0x33, 0,
 -                                 device_data->paddr, 0x20000)) {
 -        return SDL_SetError("sceKernelMapDirectMemory: %s", strerror(errno));
--    }
-+        return SDL_SetError("sceVideoOutOpen: rc=0x%08x errno=%d (%s)",
-+                            (unsigned)device_data->handle, errno, strerror(errno));
-+    }
 +    /* Use the backend's tiled layout, then align each buffer to 128 KiB.
 +     * At 1920x1080 this requires 8.5 MiB per buffer, 17 MiB total. */
 +    buffer_size = (PS5_Tilemap_BufferSize(mode.w, mode.h) + 0x1ffff) & ~(size_t)0x1ffff;
@@ -274,7 +270,7 @@
 +    if (rc) {
 +        return SDL_SetError("sceKernelMapDirectMemory: rc=0x%08x errno=%d (%s)",
 +                            (unsigned)rc, errno, strerror(errno));
-+    }
+     }
 +    device_data->memory_mapped = 1;
  
      device_data->vbuf[0].data = vaddr;
@@ -328,10 +324,9 @@
  static void PS5_VideoQuit(_THIS)
  {
      PS5_DeviceData *device_data = (PS5_DeviceData *)_this->driverdata;
--
--    if (device_data->handle != 0) {
 +    int rc;
-+
+ 
+-    if (device_data->handle != 0) {
 +    if (device_data->evt_queue) {
 +        sceVideoOutDeleteFlipEvent(device_data->evt_queue, device_data->handle);
 +        sceKernelDeleteEqueue(device_data->evt_queue);
@@ -340,12 +335,11 @@
 +    if (device_data->handle >= 0) {
          sceVideoOutClose(device_data->handle);
 -        device_data->handle = 0;
--    }
++        device_data->handle = -1;
+     }
 -
 -    if (device_data->paddr) {
 -        sceKernelReleaseDirectMemory(device_data->paddr, device_data->memsize);
-+        device_data->handle = -1;
-+    }
 +    if (device_data->memory_mapped) {
 +        if (munmap(device_data->vbuf[0].data, device_data->memsize)) {
 +            fprintf(stderr, "ps5-video: munmap failed errno=%d (%s)\n", errno, strerror(errno));
@@ -360,27 +354,26 @@
 +        device_data->memory_allocated = 0;
          device_data->paddr = 0;
 -        device_data->memsize = 0;
--    }
+     }
 -    if (device_data->evt_queue) {
 -        sceKernelDeleteEqueue(device_data->evt_queue);
 -    }
 -
-+    }
 +    device_data->memsize = 0;
 +    SDL_FreeSurface(device_data->surface);
 +    device_data->surface = NULL;
      PS5_Tilemap_Destroy(device_data->tmap);
      device_data->tmap = NULL;
  }
-@@ -320,6 +372,8 @@
-         SDL_OutOfMemory();
+@@ -321,6 +373,8 @@
          return NULL;
      }
-+
-+    ((PS5_DeviceData *)device->driverdata)->handle = -1;
  
++    ((PS5_DeviceData *)device->driverdata)->handle = -1;
++
      PS5_Remote_Init();
      PS5_Keyboard_Init();
+     PS5_Keyboard_Open();
 --- a/src/video/ps5/SDL_ps5video.h
 +++ b/src/video/ps5/SDL_ps5video.h
 @@ -45,6 +45,8 @@

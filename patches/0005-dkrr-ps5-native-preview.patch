@@ -1,4 +1,3 @@
-diff --git a/patches/enhanced-water/dkr-ray-capabilities.patch b/patches/enhanced-water/dkr-ray-capabilities.patch
 --- a/patches/enhanced-water/dkr-ray-capabilities.patch
 +++ b/patches/enhanced-water/dkr-ray-capabilities.patch
 @@ -128,13 +128,21 @@
@@ -23,7 +22,6 @@ diff --git a/patches/enhanced-water/dkr-ray-capabilities.patch b/patches/enhance
  @@ -3896,11 +3902,27 @@
               featuresChain = &accelerationStructureFeatures;
           }
-diff --git a/runtime-recomp/CMakeLists.txt b/runtime-recomp/CMakeLists.txt
 --- a/runtime-recomp/CMakeLists.txt
 +++ b/runtime-recomp/CMakeLists.txt
 @@ -1,6 +1,11 @@
@@ -230,7 +228,6 @@ diff --git a/runtime-recomp/CMakeLists.txt b/runtime-recomp/CMakeLists.txt
 +if(PS5)
 +    include("${DKR_PS5_ADAPTERS_ROOT}/../tools/StagePS5Release.cmake")
 +endif()
-diff --git a/runtime-recomp/cmake/Updates.cmake b/runtime-recomp/cmake/Updates.cmake
 --- a/runtime-recomp/cmake/Updates.cmake
 +++ b/runtime-recomp/cmake/Updates.cmake
 @@ -34,6 +34,9 @@
@@ -243,7 +240,6 @@ diff --git a/runtime-recomp/cmake/Updates.cmake b/runtime-recomp/cmake/Updates.c
  find_package(Threads REQUIRED)
  add_library(DKRUpdateInstall STATIC src/game/updates/update_process.cpp src/game/updates/update_install.cpp)
  target_include_directories(DKRUpdateInstall PRIVATE "${DKR_MODERN_RUNTIME_SOURCE}/thirdparty")
-diff --git a/runtime-recomp/ps5-release/renderer/rt64_generated_mips.h b/runtime-recomp/ps5-release/renderer/rt64_generated_mips.h
 --- a/runtime-recomp/ps5-release/renderer/rt64_generated_mips.h
 +++ b/runtime-recomp/ps5-release/renderer/rt64_generated_mips.h
 @@ -9,7 +9,7 @@
@@ -255,7 +251,6 @@ diff --git a/runtime-recomp/ps5-release/renderer/rt64_generated_mips.h b/runtime
  
  namespace RT64::GeneratedMips {
      // Bound work per PNG and scratch retained by an entire native upload batch.
-diff --git a/runtime-recomp/src/game/game_main.cpp b/runtime-recomp/src/game/game_main.cpp
 --- a/runtime-recomp/src/game/game_main.cpp
 +++ b/runtime-recomp/src/game/game_main.cpp
 @@ -1,5 +1,8 @@
@@ -409,7 +404,6 @@ diff --git a/runtime-recomp/src/game/game_main.cpp b/runtime-recomp/src/game/gam
              if(!mod_failure.empty())dkr::runtime::ui::report_mod_error("Custom content stopped safely: "+mod_failure);
              std::fprintf(stderr,
                           "[boot][stop] game stopped; returning to launcher\n");
-diff --git a/runtime-recomp/src/game/game_payload.cpp b/runtime-recomp/src/game/game_payload.cpp
 --- a/runtime-recomp/src/game/game_payload.cpp
 +++ b/runtime-recomp/src/game/game_payload.cpp
 @@ -4,8 +4,18 @@
@@ -449,7 +443,6 @@ diff --git a/runtime-recomp/src/game/game_payload.cpp b/runtime-recomp/src/game/
      default:
          return nullptr;
      }
-diff --git a/runtime-recomp/src/game/game_registration.cpp b/runtime-recomp/src/game/game_registration.cpp
 --- a/runtime-recomp/src/game/game_registration.cpp
 +++ b/runtime-recomp/src/game/game_registration.cpp
 @@ -51,6 +51,15 @@
@@ -468,7 +461,6 @@ diff --git a/runtime-recomp/src/game/game_registration.cpp b/runtime-recomp/src/
      const auto online = dkr::runtime::saves::runtime_save_selection();
      if (
  #if defined(DKR_EXPERIMENTAL_RACE_TEST)
-diff --git a/runtime-recomp/src/game/mod_store.cpp b/runtime-recomp/src/game/mod_store.cpp
 --- a/runtime-recomp/src/game/mod_store.cpp
 +++ b/runtime-recomp/src/game/mod_store.cpp
 @@ -1,7 +1,11 @@
@@ -576,7 +568,6 @@ diff --git a/runtime-recomp/src/game/mod_store.cpp b/runtime-recomp/src/game/mod
      });
  }
  void Service::request_image(std::string url) {
-diff --git a/runtime-recomp/src/game/mod_store_install.cpp b/runtime-recomp/src/game/mod_store_install.cpp
 --- a/runtime-recomp/src/game/mod_store_install.cpp
 +++ b/runtime-recomp/src/game/mod_store_install.cpp
 @@ -1,3 +1,4 @@
@@ -637,7 +628,6 @@ diff --git a/runtime-recomp/src/game/mod_store_install.cpp b/runtime-recomp/src/
  }
  void InstallManager::Impl::run(std::stop_token stop) {
      for (;;) {
-diff --git a/runtime-recomp/src/game/mod_store_names.cpp b/runtime-recomp/src/game/mod_store_names.cpp
 --- a/runtime-recomp/src/game/mod_store_names.cpp
 +++ b/runtime-recomp/src/game/mod_store_names.cpp
 @@ -1,3 +1,4 @@
@@ -663,7 +653,6 @@ diff --git a/runtime-recomp/src/game/mod_store_names.cpp b/runtime-recomp/src/ga
          }
      }
      const auto value = Json(entries).dump();
-diff --git a/runtime-recomp/src/game/mods/legacy_mod_launch.cpp b/runtime-recomp/src/game/mods/legacy_mod_launch.cpp
 --- a/runtime-recomp/src/game/mods/legacy_mod_launch.cpp
 +++ b/runtime-recomp/src/game/mods/legacy_mod_launch.cpp
 @@ -1,4 +1,8 @@
@@ -707,7 +696,6 @@ diff --git a/runtime-recomp/src/game/mods/legacy_mod_launch.cpp b/runtime-recomp
          report("Custom mods ready");return out;
      };
      const auto root=config/"mods"/"legacy";
-diff --git a/runtime-recomp/src/game/mods/legacy_mod_process.cpp b/runtime-recomp/src/game/mods/legacy_mod_process.cpp
 --- a/runtime-recomp/src/game/mods/legacy_mod_process.cpp
 +++ b/runtime-recomp/src/game/mods/legacy_mod_process.cpp
 @@ -45,7 +45,7 @@
@@ -746,7 +734,6 @@ diff --git a/runtime-recomp/src/game/mods/legacy_mod_process.cpp b/runtime-recom
  #else
      if(!executable.is_absolute() || !request.is_absolute() || timeout.count()<=0)
          throw Error("Importer requires absolute private executable/request paths and a bounded timeout.");
-diff --git a/runtime-recomp/src/game/mods/online_mod_runtime.cpp b/runtime-recomp/src/game/mods/online_mod_runtime.cpp
 --- a/runtime-recomp/src/game/mods/online_mod_runtime.cpp
 +++ b/runtime-recomp/src/game/mods/online_mod_runtime.cpp
 @@ -15,7 +15,7 @@
@@ -769,7 +756,6 @@ diff --git a/runtime-recomp/src/game/mods/online_mod_runtime.cpp b/runtime-recom
  #else
      struct sysinfo memory{};
      if(sysinfo(&memory)!=0)return 0;
-diff --git a/runtime-recomp/src/game/netplay/datagram_socket.cpp b/runtime-recomp/src/game/netplay/datagram_socket.cpp
 --- a/runtime-recomp/src/game/netplay/datagram_socket.cpp
 +++ b/runtime-recomp/src/game/netplay/datagram_socket.cpp
 @@ -13,6 +13,7 @@
@@ -790,7 +776,6 @@ diff --git a/runtime-recomp/src/game/netplay/datagram_socket.cpp b/runtime-recom
      local.sin_family = AF_INET;
      local.sin_addr.s_addr = htonl(INADDR_ANY);
      local.sin_port = htons(port);
-diff --git a/runtime-recomp/src/game/netplay/network_interfaces.cpp b/runtime-recomp/src/game/netplay/network_interfaces.cpp
 --- a/runtime-recomp/src/game/netplay/network_interfaces.cpp
 +++ b/runtime-recomp/src/game/netplay/network_interfaces.cpp
 @@ -22,6 +22,7 @@
@@ -801,7 +786,6 @@ diff --git a/runtime-recomp/src/game/netplay/network_interfaces.cpp b/runtime-re
  #include <cerrno>
  #include <fcntl.h>
  #include <ifaddrs.h>
-diff --git a/runtime-recomp/src/game/performance_capture.hpp b/runtime-recomp/src/game/performance_capture.hpp
 --- a/runtime-recomp/src/game/performance_capture.hpp
 +++ b/runtime-recomp/src/game/performance_capture.hpp
 @@ -24,8 +24,10 @@
@@ -816,7 +800,6 @@ diff --git a/runtime-recomp/src/game/performance_capture.hpp b/runtime-recomp/sr
      std::lock_guard lock(mutex);
      if (!in_window(now, deadline_ns.load()) || now < started_ns) return;
      if (previous_ns != 0) {
-diff --git a/runtime-recomp/src/game/rt64_renderer.cpp b/runtime-recomp/src/game/rt64_renderer.cpp
 --- a/runtime-recomp/src/game/rt64_renderer.cpp
 +++ b/runtime-recomp/src/game/rt64_renderer.cpp
 @@ -2,6 +2,11 @@
@@ -893,7 +876,7 @@ diff --git a/runtime-recomp/src/game/rt64_renderer.cpp b/runtime-recomp/src/game
  #if defined(__ANDROID__)
      // Desktop path detection can select /data/.dkr-port on Android and throw
      // from RT64's constructor before its setup error handling is reached.
-@@ -477,10 +490,13 @@
+@@ -477,11 +490,14 @@
      }
  #endif
      auto config = ultramodern::renderer::get_graphics_config();
@@ -902,12 +885,13 @@ diff --git a/runtime-recomp/src/game/rt64_renderer.cpp b/runtime-recomp/src/game
      if (!dkr::runtime::enhancements::modern_presentation_enabled()) {
          dkr::runtime::mobile_graphics::apply_accurate_budget(config);
      }
-+#endif
+ #endif
 +#if defined(__PROSPERO__)
 +    config.api_option = ultramodern::renderer::GraphicsApi::Vulkan;
- #endif
++#endif
      const auto effective_anisotropy =
          static_cast<std::uint32_t>(
+ #if defined(__ANDROID__)
 @@ -505,6 +521,9 @@
          const auto application_started_at =
              dkr::runtime::startup_performance::Clock::now();
@@ -956,14 +940,14 @@ diff --git a/runtime-recomp/src/game/rt64_renderer.cpp b/runtime-recomp/src/game
          last_android_report_ = report_now;
          performance_trace::report();
          const auto metrics = dkr::runtime::telemetry::metrics();
-@@ -923,6 +956,7 @@
-             "vi=%.1f target=%d scale=%.1f\n",
+@@ -924,6 +957,7 @@
              metrics.presented_fps, metrics.simulation_hz, metrics.graphics_hz,
              metrics.vi_hz, g_effective_refresh_target, get_resolution_scale());
-+    }
      }
++    }
      if (present_count_ == 1 && !owned_mode_) {
          dkr::runtime::startup_performance::mark("first-vi-received");
+         std::fprintf(stderr, "[boot] VI initialized; starting recompiled DKR entrypoint\n");
 @@ -1361,14 +1395,18 @@
      workspace.reset();
      if(!mailbox.finish_decode(lease))throw std::runtime_error("Owned decoder lease could not retire its CPU readers.");
@@ -995,7 +979,6 @@ diff --git a/runtime-recomp/src/game/rt64_renderer.cpp b/runtime-recomp/src/game
  }
  void dkr::runtime::RT64Renderer::repeat_owned() {
      if(!owned_mode_||!application_)return;
-diff --git a/runtime-recomp/src/game/runtime_code_mods_ui.inl b/runtime-recomp/src/game/runtime_code_mods_ui.inl
 --- a/runtime-recomp/src/game/runtime_code_mods_ui.inl
 +++ b/runtime-recomp/src/game/runtime_code_mods_ui.inl
 @@ -33,21 +33,17 @@
@@ -1030,7 +1013,6 @@ diff --git a/runtime-recomp/src/game/runtime_code_mods_ui.inl b/runtime-recomp/s
  }
  void RequestCupCourses() {
      auto& editor=g_cup_editor;
-diff --git a/runtime-recomp/src/game/runtime_controls_ui.inl b/runtime-recomp/src/game/runtime_controls_ui.inl
 --- a/runtime-recomp/src/game/runtime_controls_ui.inl
 +++ b/runtime-recomp/src/game/runtime_controls_ui.inl
 @@ -38,6 +38,11 @@
@@ -1212,12 +1194,10 @@ diff --git a/runtime-recomp/src/game/runtime_controls_ui.inl b/runtime-recomp/sr
      int axis = static_cast<int>(input::gyro_axis(player));
      if (SettingsDropdown("motion-style", "Motion style", &axis,
                           {"Roll controller like a wheel", "Turn controller left and right"}, width)) {
-@@ -797,6 +890,31 @@
-     } else if (!available) {
-         ControlsNote("No motion sensor reported by Controller " + std::to_string(player + 1U) + ".", width);
+@@ -799,6 +892,31 @@
      }
-+}
-+
+ }
+ 
 +
 +void DrawControlsPs5(float width, bool live, const std::function<void()>& commit) {
 +    namespace platform=dkr::runtime::platform;
@@ -1241,9 +1221,11 @@ diff --git a/runtime-recomp/src/game/runtime_controls_ui.inl b/runtime-recomp/sr
 +    PaddockGap(12.0F);
 +    if(dkr::runtime::enhancements::modern_options_visible(dkr::runtime::enhancements::presentation_profile()))DrawControlsMotion(width,live,commit);
 +    else ControlsNote("Gyro steering requires Modern presentation.",width);
- }
- 
++}
++
  // ------------------------------------------------------------ shortcuts
+ 
+ void DrawControlsShortcuts(float width, const std::function<void()>& commit) {
 @@ -902,7 +1020,8 @@
                    dkr::runtime::input::action_label(static_cast<Action>(g_capture_action));
          help = g_capture_device == CaptureDevice::Keyboard
@@ -1290,7 +1272,7 @@ diff --git a/runtime-recomp/src/game/runtime_controls_ui.inl b/runtime-recomp/sr
      PaddockGap(20.0F);
      const int picked = SettingsSecondaryNav("controls-sections",
 -                                            {"Device", "Button mapping", "Stick response", "Motion", "Shortcuts"},
-+                                            {"Device", "Button mapping", "Stick response", kConsoleMenuLayout ? "PS5" : "Motion", "Shortcuts"},
++                                            {"Device", kConsoleMenuLayout ? "Mapping" : "Button mapping", kConsoleMenuLayout ? "Sticks" : "Stick response", kConsoleMenuLayout ? "PS5" : "Motion", "Shortcuts"},
                                              g_controls_section, width);
      if (picked >= 0) g_controls_section = picked;
      PaddockGap(22.0F);
@@ -1313,7 +1295,6 @@ diff --git a/runtime-recomp/src/game/runtime_controls_ui.inl b/runtime-recomp/sr
      } else {
          DrawControlsShortcuts(width, commit);
      }
-diff --git a/runtime-recomp/src/game/runtime_crt_overlay.cpp b/runtime-recomp/src/game/runtime_crt_overlay.cpp
 --- a/runtime-recomp/src/game/runtime_crt_overlay.cpp
 +++ b/runtime-recomp/src/game/runtime_crt_overlay.cpp
 @@ -221,6 +221,13 @@
@@ -1338,7 +1319,6 @@ diff --git a/runtime-recomp/src/game/runtime_crt_overlay.cpp b/runtime-recomp/sr
      }
      return true;
  }
-diff --git a/runtime-recomp/src/game/runtime_details_ui.inl b/runtime-recomp/src/game/runtime_details_ui.inl
 --- a/runtime-recomp/src/game/runtime_details_ui.inl
 +++ b/runtime-recomp/src/game/runtime_details_ui.inl
 @@ -588,6 +588,9 @@
@@ -1351,7 +1331,6 @@ diff --git a/runtime-recomp/src/game/runtime_details_ui.inl b/runtime-recomp/src
      PaddockGap(13.0F);
      DetailText("Diddy Kong Racing - Recompiled", width, kSetMuted, 0.0F);
      PaddockGap(24.0F);
-diff --git a/runtime-recomp/src/game/runtime_graphics_ui.inl b/runtime-recomp/src/game/runtime_graphics_ui.inl
 --- a/runtime-recomp/src/game/runtime_graphics_ui.inl
 +++ b/runtime-recomp/src/game/runtime_graphics_ui.inl
 @@ -9,9 +9,15 @@
@@ -1518,7 +1497,6 @@ diff --git a/runtime-recomp/src/game/runtime_graphics_ui.inl b/runtime-recomp/sr
 +    } // Display-only reset/undo
      ImGui::PopStyleVar();
  }
-diff --git a/runtime-recomp/src/game/runtime_hud_layout.cpp b/runtime-recomp/src/game/runtime_hud_layout.cpp
 --- a/runtime-recomp/src/game/runtime_hud_layout.cpp
 +++ b/runtime-recomp/src/game/runtime_hud_layout.cpp
 @@ -738,6 +738,9 @@
@@ -1531,7 +1509,6 @@ diff --git a/runtime-recomp/src/game/runtime_hud_layout.cpp b/runtime-recomp/src
      g_player_pass_active = BeginHudPass(rdram, context, 0x30);
  }
  
-diff --git a/runtime-recomp/src/game/runtime_input.cpp b/runtime-recomp/src/game/runtime_input.cpp
 --- a/runtime-recomp/src/game/runtime_input.cpp
 +++ b/runtime-recomp/src/game/runtime_input.cpp
 @@ -80,6 +80,7 @@
@@ -1602,12 +1579,10 @@ diff --git a/runtime-recomp/src/game/runtime_input.cpp b/runtime-recomp/src/game
              if (bindings[index].controller == source) {
                  bindings[index].controller = kUnbound;
              }
-@@ -621,6 +654,83 @@
-                                         std::size_t target_player) {
-     std::scoped_lock lock(g_binding_mutex);
+@@ -623,6 +656,83 @@
      g_bindings[PlayerIndex(target_player)] = g_bindings[PlayerIndex(source_player)];
-+}
-+
+ }
+ 
 +dkr::runtime::input::ControllerPreset dkr::runtime::input::controller_preset(
 +    std::size_t player) {
 +#if DKR_RUNTIME_HAS_RT64
@@ -1683,27 +1658,28 @@ diff --git a/runtime-recomp/src/game/runtime_input.cpp b/runtime-recomp/src/game
 +    (void)player;
 +    return false;
 +#endif
- }
- 
++}
++
  int dkr::runtime::input::keyboard_player() {
-diff --git a/runtime-recomp/src/game/runtime_input.hpp b/runtime-recomp/src/game/runtime_input.hpp
+     return g_keyboard_player.load(std::memory_order_acquire);
+ }
 --- a/runtime-recomp/src/game/runtime_input.hpp
 +++ b/runtime-recomp/src/game/runtime_input.hpp
-@@ -41,6 +41,14 @@
-     CameraRecenter, CameraCycle, CameraZoomIn, CameraZoomOut,
-     CameraFirstPerson, CameraXrRecenter,
+@@ -43,6 +43,14 @@
      Count,
-+};
-+
+ };
+ 
 +// Presets change only controller bindings for one player. Serialized bindings
 +// remain the source of truth. The removed PS5 preview layout is migrated only
 +// when every controller binding exactly matches that former preset.
 +enum class ControllerPreset : std::uint8_t {
 +    Custom,
 +    Classic,
- };
- 
++};
++
  enum class GyroAxis : std::uint8_t {
+     Roll = 0,
+     Yaw = 1,
 @@ -101,6 +109,9 @@
  void reset_defaults();
  void reset_defaults(std::size_t player);
@@ -1714,7 +1690,6 @@ diff --git a/runtime-recomp/src/game/runtime_input.hpp b/runtime-recomp/src/game
  int keyboard_player();
  void set_keyboard_player(int player);
  bool background_input_enabled(std::size_t player);
-diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/game/runtime_platform.cpp
 --- a/runtime-recomp/src/game/runtime_platform.cpp
 +++ b/runtime-recomp/src/game/runtime_platform.cpp
 @@ -1,6 +1,17 @@
@@ -1864,7 +1839,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      g_audio_callback_frames = obtained.samples;
      g_audio_playback_started = false;
      g_audio_nominal_block_frames = 0U;
-@@ -2441,9 +2528,61 @@
+@@ -2441,9 +2528,64 @@
      }
      const bool blocked = dkr::runtime::ui::overlay_visible() || dkr::runtime::camera::editor_open.load();
      const bool window_focused = g_window != nullptr &&
@@ -1914,7 +1889,10 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
 +            const bool sound_blocked=blocked || !window_focused || online_routing || !attached;
 +            const int game_clip=g_controller_sounds.take(unsigned(port),now,sound_blocked,record.speaker_event);
 +            record.speaker.update(speaker && !sound_blocked,dkrr_ps5_pad_user_id(record.joystick),item,now,pressed,
-+                g_speaker_volume.load(std::memory_order_acquire)*g_master_volume.load(std::memory_order_acquire)*dkr::runtime::audio::sound_effects_volume(),dkrr_ps5_active_revision(),game_clip);
++                g_speaker_volume.load(std::memory_order_acquire)*g_master_volume.load(std::memory_order_acquire)*dkr::runtime::audio::sound_effects_volume(),dkrr_ps5_active_revision(),game_clip,
++                g_audio_device && g_audio_frequency ? static_cast<unsigned>(std::min<std::uint64_t>(250,
++                    (std::uint64_t(SDL_GetQueuedAudioSize(g_audio_device)/(2U*sizeof(std::int16_t))) +
++                     g_audio_callback_frames + g_audio_nominal_block_frames)*1000U/g_audio_frequency)) : 0U);
 +            const bool pulled = SDL_GameControllerGetAxis(record.controller,SDL_CONTROLLER_AXIS_TRIGGERLEFT)>3276;
 +            const int result = record.item_effect.update(enabled,item,now,pulled,[&](const dkrr::ps5_items::Command& command) {
 +                return SDL_GameControllerSendEffect(record.controller,&command,sizeof(command));
@@ -1926,7 +1904,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      const int configured_keyboard_player =
          dkr::runtime::input::keyboard_player();
      const std::size_t online_profile = std::min(
-@@ -2702,6 +2841,98 @@
+@@ -2702,6 +2844,98 @@
  #endif
  }
  
@@ -2025,7 +2003,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
  bool dkr::runtime::platform::gyro_available(std::size_t player) {
  #if DKR_RUNTIME_HAS_RT64
      std::scoped_lock lock(g_platform_mutex);
-@@ -3244,8 +3475,16 @@
+@@ -3244,8 +3478,16 @@
                   "Select it and restart DKR-R before importing.";
          return false;
      }
@@ -2042,7 +2020,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
      std::vector<std::string> valid;
      valid.reserve(lines.size());
      for (const std::string& line : lines) {
-@@ -3287,11 +3526,18 @@
+@@ -3287,11 +3529,18 @@
          status = "No custom controller mappings have been created yet.";
          return false;
      }
@@ -2065,7 +2043,7 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
          return false;
      }
      status = "Controller mappings exported.";
-@@ -3335,3 +3581,39 @@
+@@ -3335,3 +3584,39 @@
      (void)assignments;
  #endif
  }
@@ -2105,7 +2083,6 @@ diff --git a/runtime-recomp/src/game/runtime_platform.cpp b/runtime-recomp/src/g
 +    }
 +}
 +#endif
-diff --git a/runtime-recomp/src/game/runtime_platform.hpp b/runtime-recomp/src/game/runtime_platform.hpp
 --- a/runtime-recomp/src/game/runtime_platform.hpp
 +++ b/runtime-recomp/src/game/runtime_platform.hpp
 @@ -76,6 +76,16 @@
@@ -2125,7 +2102,6 @@ diff --git a/runtime-recomp/src/game/runtime_platform.hpp b/runtime-recomp/src/g
  ultramodern::input::connected_device_info_t get_connected_device_info(int controller);
  
  struct ControllerSummary {
-diff --git a/runtime-recomp/src/game/runtime_portable.cpp b/runtime-recomp/src/game/runtime_portable.cpp
 --- a/runtime-recomp/src/game/runtime_portable.cpp
 +++ b/runtime-recomp/src/game/runtime_portable.cpp
 @@ -100,7 +100,7 @@
@@ -2137,7 +2113,6 @@ diff --git a/runtime-recomp/src/game/runtime_portable.cpp b/runtime-recomp/src/g
      return false; // signed bundle cannot hold portable.txt
  #elif defined(__ANDROID__)
      return false;
-diff --git a/runtime-recomp/src/game/runtime_save_routing.cpp b/runtime-recomp/src/game/runtime_save_routing.cpp
 --- a/runtime-recomp/src/game/runtime_save_routing.cpp
 +++ b/runtime-recomp/src/game/runtime_save_routing.cpp
 @@ -68,10 +68,12 @@
@@ -2153,7 +2128,6 @@ diff --git a/runtime-recomp/src/game/runtime_save_routing.cpp b/runtime-recomp/s
      const std::filesystem::path active_path =
          ultramodern::get_save_file_path().lexically_normal();
      if (active_path != expected_path.lexically_normal()) {
-diff --git a/runtime-recomp/src/game/runtime_saves_ui.inl b/runtime-recomp/src/game/runtime_saves_ui.inl
 --- a/runtime-recomp/src/game/runtime_saves_ui.inl
 +++ b/runtime-recomp/src/game/runtime_saves_ui.inl
 @@ -175,7 +175,7 @@
@@ -2220,7 +2194,6 @@ diff --git a/runtime-recomp/src/game/runtime_saves_ui.inl b/runtime-recomp/src/g
  }
  void DrawSavesTransfer(float width,float panel,const SaveManagerViewCache& view) {
      using namespace dkr::runtime::saves;
-diff --git a/runtime-recomp/src/game/runtime_settings_ui.inl b/runtime-recomp/src/game/runtime_settings_ui.inl
 --- a/runtime-recomp/src/game/runtime_settings_ui.inl
 +++ b/runtime-recomp/src/game/runtime_settings_ui.inl
 @@ -399,7 +399,7 @@
@@ -2265,10 +2238,9 @@ diff --git a/runtime-recomp/src/game/runtime_settings_ui.inl b/runtime-recomp/sr
  }
  
  // ------------------------------------------------------------ section signs
-diff --git a/runtime-recomp/src/game/runtime_support.cpp b/runtime-recomp/src/game/runtime_support.cpp
 --- a/runtime-recomp/src/game/runtime_support.cpp
 +++ b/runtime-recomp/src/game/runtime_support.cpp
-@@ -23,9 +23,11 @@
+@@ -23,10 +23,12 @@
  #elif defined(__APPLE__)
  #include <sys/sysctl.h>
  #include <unistd.h>
@@ -2276,11 +2248,12 @@ diff --git a/runtime-recomp/src/game/runtime_support.cpp b/runtime-recomp/src/ga
 +#elif defined(__linux__)
  #include <sys/sysinfo.h>
  #include <sys/utsname.h>
-+#include <unistd.h>
-+#else
  #include <unistd.h>
++#else
++#include <unistd.h>
  #endif
  
+ namespace dkr::runtime::support {
 @@ -266,6 +268,9 @@
          error = "Windows could not open that DKR-R support folder.";
          return false;
@@ -2307,7 +2280,6 @@ diff --git a/runtime-recomp/src/game/runtime_support.cpp b/runtime-recomp/src/ga
      result.operating_system = "Windows";
      result.cpu = WindowsCpuName();
      MEMORYSTATUSEX memory{};
-diff --git a/runtime-recomp/src/game/runtime_texture_packs.cpp b/runtime-recomp/src/game/runtime_texture_packs.cpp
 --- a/runtime-recomp/src/game/runtime_texture_packs.cpp
 +++ b/runtime-recomp/src/game/runtime_texture_packs.cpp
 @@ -7,6 +7,9 @@
@@ -2334,7 +2306,6 @@ diff --git a/runtime-recomp/src/game/runtime_texture_packs.cpp b/runtime-recomp/
              if (stop_token.stop_requested()) return;
              if (error) break;
              const bool is_directory = entry.is_directory(error);
-diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/runtime_ui.cpp
 --- a/runtime-recomp/src/game/runtime_ui.cpp
 +++ b/runtime-recomp/src/game/runtime_ui.cpp
 @@ -1,3 +1,6 @@
@@ -2439,17 +2410,17 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  constexpr int kShortcutCaptureAction = -2;
  constexpr int kAssignControllerCaptureAction = -3;
  constexpr std::size_t kShortcutActionCount = static_cast<std::size_t>(
-@@ -1567,6 +1593,10 @@
- #if defined(__ANDROID__)
+@@ -1568,6 +1594,10 @@
      // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
      dkr::runtime::mobile_graphics::apply_accurate_budget(config);
-+#endif
+ #endif
 +#if defined(__PROSPERO__)
 +    dkr::runtime::mobile_graphics::apply_accurate_budget(config);
 +    config.api_option = GraphicsApi::Vulkan;
- #endif
++#endif
  }
  
+ // The Sound page's volumes: Master, then the four-part island mix. A muted
 @@ -1786,6 +1816,12 @@
          output << "memory_pak=" << (dkr::runtime::pak::enabled() ? 1 : 0) << '\n';
          output << "rumble=" << (dkr::runtime::platform::rumble_enabled() ? 1 : 0) << '\n';
@@ -2580,10 +2551,61 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
  
 -    g_texture_import_cancel_requested.store(false, std::memory_order_release);
 -    {
+-        std::scoped_lock lock(g_texture_import_mutex);
+-        g_texture_import_state = {};
+-        g_texture_import_state.running = true;
+-        g_texture_import_state.modal_visible = true;
+-        g_texture_import_state.progress = 0.0F;
+-        g_texture_import_state.stage = "Preparing texture-pack import";
+-    }
+-
+-    g_texture_import_worker = std::jthread(
+-        [source, owner_copy, import_temp_copy](std::stop_token stop_token) {
+-            std::string status;
+-            const auto progress = [stop_token](
+-                                      const dkr::runtime::texture_packs::ImportProgress& update) {
+-                {
+-                    std::scoped_lock lock(g_texture_import_mutex);
+-                    g_texture_import_state.progress = update.fraction;
+-                    g_texture_import_state.stage = update.stage;
+-                    g_texture_import_state.commit_started = update.commit_started;
+-                }
+-                if (update.commit_started) return true;
+-                return !stop_token.stop_requested() &&
+-                    !g_texture_import_cancel_requested.load(
+-                        std::memory_order_acquire);
+-            };
+-            bool imported = false;
+-            try {
+-                imported = dkr::runtime::texture_packs::import_archive(
+-                    source, status, progress,
+-                    owner_copy ? &*owner_copy : nullptr);
+-            } catch (const std::exception& exception) {
+-                status = "Texture-pack import stopped safely: ";
+-                status += exception.what();
+-            } catch (...) {
+-                status = "Texture-pack import stopped safely because archive "
+-                         "processing raised an unknown error.";
+-            }
+-            if (!import_temp_copy.empty()) {
+-                dkr::runtime::custom_tracks::discard_install_temp(
+-                    import_temp_copy);
+-            }
 +    try {
 +        g_texture_import_cancel_requested.store(false, std::memory_order_release);
 +        {
-+            std::scoped_lock lock(g_texture_import_mutex);
+             std::scoped_lock lock(g_texture_import_mutex);
+-            g_texture_import_state.running = false;
+-            g_texture_import_state.finished = true;
+-            g_texture_import_state.succeeded = imported;
+-            g_texture_import_state.result = status;
+-            if (imported) {
+-                g_texture_import_state.progress = 1.0F;
+-                g_texture_import_state.stage = "Texture pack imported";
+-            } else if (g_texture_import_state.stage.empty()) {
+-                g_texture_import_state.stage = "Texture-pack import stopped";
+-            }
+-        });
 +            g_texture_import_state = {};
 +            g_texture_import_state.running = true;
 +            g_texture_import_state.modal_visible = true;
@@ -2636,58 +2658,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
 +                }
 +            });
 +    } catch (...) {
-         std::scoped_lock lock(g_texture_import_mutex);
--        g_texture_import_state = {};
--        g_texture_import_state.running = true;
--        g_texture_import_state.modal_visible = true;
--        g_texture_import_state.progress = 0.0F;
--        g_texture_import_state.stage = "Preparing texture-pack import";
--    }
--
--    g_texture_import_worker = std::jthread(
--        [source, owner_copy, import_temp_copy](std::stop_token stop_token) {
--            std::string status;
--            const auto progress = [stop_token](
--                                      const dkr::runtime::texture_packs::ImportProgress& update) {
--                {
--                    std::scoped_lock lock(g_texture_import_mutex);
--                    g_texture_import_state.progress = update.fraction;
--                    g_texture_import_state.stage = update.stage;
--                    g_texture_import_state.commit_started = update.commit_started;
--                }
--                if (update.commit_started) return true;
--                return !stop_token.stop_requested() &&
--                    !g_texture_import_cancel_requested.load(
--                        std::memory_order_acquire);
--            };
--            bool imported = false;
--            try {
--                imported = dkr::runtime::texture_packs::import_archive(
--                    source, status, progress,
--                    owner_copy ? &*owner_copy : nullptr);
--            } catch (const std::exception& exception) {
--                status = "Texture-pack import stopped safely: ";
--                status += exception.what();
--            } catch (...) {
--                status = "Texture-pack import stopped safely because archive "
--                         "processing raised an unknown error.";
--            }
--            if (!import_temp_copy.empty()) {
--                dkr::runtime::custom_tracks::discard_install_temp(
--                    import_temp_copy);
--            }
--            std::scoped_lock lock(g_texture_import_mutex);
--            g_texture_import_state.running = false;
--            g_texture_import_state.finished = true;
--            g_texture_import_state.succeeded = imported;
--            g_texture_import_state.result = status;
--            if (imported) {
--                g_texture_import_state.progress = 1.0F;
--                g_texture_import_state.stage = "Texture pack imported";
--            } else if (g_texture_import_state.stage.empty()) {
--                g_texture_import_state.stage = "Texture-pack import stopped";
--            }
--        });
++        std::scoped_lock lock(g_texture_import_mutex);
 +        g_texture_import_state.running = false;
 +        g_texture_import_state.finished = true;
 +        g_texture_import_state.succeeded = false;
@@ -3262,7 +3233,7 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
 +#if defined(__PROSPERO__)
 +        ImGui::SetCursorPos({overlay_margin, overlay_margin + overlay_height + 10.0F});
 +        const ControlFontScope console_hint_font;
-+        ImGui::TextUnformatted("L1 / R1: Pages    D-pad: Select    Cross: Confirm    Circle: Back    Touchpad: Resume");
++        ImGui::TextUnformatted("L1/R1: Pages    L2/R2: Sections    D-pad: Select    Cross: Confirm    Circle: Back    Touchpad: Resume");
 +#endif
  #endif
          if (request_quit_popup) {
@@ -3333,24 +3304,22 @@ diff --git a/runtime-recomp/src/game/runtime_ui.cpp b/runtime-recomp/src/game/ru
 +    g_dialog_job_running=false;
 +}
 +#endif
-diff --git a/runtime-recomp/src/game/runtime_ui_paddock.inl b/runtime-recomp/src/game/runtime_ui_paddock.inl
 --- a/runtime-recomp/src/game/runtime_ui_paddock.inl
 +++ b/runtime-recomp/src/game/runtime_ui_paddock.inl
-@@ -6,6 +6,13 @@
- // Sizes below are CSS pixels, as in tools/launcher-html. Dear ImGui sizes a face
+@@ -7,6 +7,13 @@
  // by its ascent - descent, CSS by its em square, so every face carries the
  // ratio between the two.
-+
+ 
 +// Console pages use one vertical flow so D-pad movement follows the reading order.
 +#if defined(__PROSPERO__)
 +constexpr bool kConsoleMenuLayout = true;
 +#else
 +constexpr bool kConsoleMenuLayout = false;
 +#endif
- 
++
  // ------------------------------------------------------------------ colour
  
-diff --git a/runtime-recomp/src/game/runtime_updates_ui.inl b/runtime-recomp/src/game/runtime_updates_ui.inl
+ constexpr ImU32 PaddockRgb(unsigned rgb, unsigned alpha = 255U) {
 --- a/runtime-recomp/src/game/runtime_updates_ui.inl
 +++ b/runtime-recomp/src/game/runtime_updates_ui.inl
 @@ -1,3 +1,8 @@
@@ -3368,7 +3337,6 @@ diff --git a/runtime-recomp/src/game/runtime_updates_ui.inl b/runtime-recomp/src
  }
 +
 +#endif
-diff --git a/runtime-recomp/src/game/save_storage.hpp b/runtime-recomp/src/game/save_storage.hpp
 --- a/runtime-recomp/src/game/save_storage.hpp
 +++ b/runtime-recomp/src/game/save_storage.hpp
 @@ -28,6 +28,10 @@
@@ -3455,7 +3423,6 @@ diff --git a/runtime-recomp/src/game/save_storage.hpp b/runtime-recomp/src/game/
          }
          if (entries.size() > 8) {
              std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
-diff --git a/runtime-recomp/src/game/shared_save_jobs.inl b/runtime-recomp/src/game/shared_save_jobs.inl
 --- a/runtime-recomp/src/game/shared_save_jobs.inl
 +++ b/runtime-recomp/src/game/shared_save_jobs.inl
 @@ -10,6 +10,7 @@
@@ -3477,7 +3444,6 @@ diff --git a/runtime-recomp/src/game/shared_save_jobs.inl b/runtime-recomp/src/g
      return true;
  }
  void PumpSharedSaveJob() {
-diff --git a/runtime-recomp/src/game/updates/update_core.cpp b/runtime-recomp/src/game/updates/update_core.cpp
 --- a/runtime-recomp/src/game/updates/update_core.cpp
 +++ b/runtime-recomp/src/game/updates/update_core.cpp
 @@ -85,7 +85,7 @@
@@ -3532,7 +3498,6 @@ diff --git a/runtime-recomp/src/game/updates/update_core.cpp b/runtime-recomp/sr
      std::ifstream file(p, std::ios::binary | std::ios::ate);
      if (!file)
          fail("Could not read update metadata.");
-diff --git a/runtime-recomp/tests/quick_join_transport_tests.cpp b/runtime-recomp/tests/quick_join_transport_tests.cpp
 --- a/runtime-recomp/tests/quick_join_transport_tests.cpp
 +++ b/runtime-recomp/tests/quick_join_transport_tests.cpp
 @@ -134,6 +134,12 @@
@@ -3548,7 +3513,6 @@ diff --git a/runtime-recomp/tests/quick_join_transport_tests.cpp b/runtime-recom
      assert(quick_join_transport);
      assert(quick_join_transport->maximum_plaintext_datagram_bytes() ==
             protocol::kMaximumQuickJoinDatagramBytes);
-diff --git a/scripts/generate_legacy_menu_qualification.py b/scripts/generate_legacy_menu_qualification.py
 --- a/scripts/generate_legacy_menu_qualification.py
 +++ b/scripts/generate_legacy_menu_qualification.py
 @@ -15,9 +15,11 @@
@@ -3590,7 +3554,6 @@ diff --git a/scripts/generate_legacy_menu_qualification.py b/scripts/generate_le
              if isolated:command += ["--functions-per-output-file","1"]
              run_stage(command, f"v{revision} config generation")
              run_stage([str(args.recompiler.resolve()),str(config)], f"v{revision} recompilation ({config.name})")
-diff --git a/scripts/generate_recomp_config.py b/scripts/generate_recomp_config.py
 --- a/scripts/generate_recomp_config.py
 +++ b/scripts/generate_recomp_config.py
 @@ -30,6 +30,7 @@
@@ -3601,11 +3564,10 @@ diff --git a/scripts/generate_recomp_config.py b/scripts/generate_recomp_config.
      parser.add_argument("--water-profile", action="store_true", help="Compose checked water timing hooks")
      parser.add_argument("--functions-per-output-file", type=int,
                          help="Optional source granularity for isolated Patch Pipeline qualification")
-@@ -76,6 +77,15 @@
-             raise ValueError('Composed policy must not overwrite an input or the generated TOML')
+@@ -77,6 +78,15 @@
          arguments.composed_policy.parent.mkdir(parents=True, exist_ok=True)
          arguments.composed_policy.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
-+
+ 
 +    if arguments.european_languages_policy is not None:
 +        import importlib.util
 +        module = importlib.util.spec_from_file_location("dkrr_native_languages", arguments.european_languages_policy)
@@ -3614,10 +3576,10 @@ diff --git a/scripts/generate_recomp_config.py b/scripts/generate_recomp_config.
 +        language_policy = importlib.util.module_from_spec(module)
 +        module.loader.exec_module(language_policy)
 +        policy = language_policy.compose(policy, arguments.elf, revision)
- 
++
      manual = ", ".join(
          "{ name = %s, section = %s, vram = %s, size = %s }"
-diff --git a/runtime-recomp/src/game/shared_save_backend.inl b/runtime-recomp/src/game/shared_save_backend.inl
+         % (
 --- a/runtime-recomp/src/game/shared_save_backend.inl
 +++ b/runtime-recomp/src/game/shared_save_backend.inl
 @@ -66,7 +66,7 @@

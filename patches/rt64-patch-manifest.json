@@ -1,6 +1,6 @@
 {
   "revision": "6f1c2d99a4ea571c139f449c326fd176ba8f3496",
-  "patch_sha256": "3cedbce812cd37d3ee2c7da98d6ad6e75a66d8bda79024477bcb9d439957f768",
+  "patch_sha256": "6fd75a0c8bf174c8b4da916382c6dde01d22d90bb1ab1969aafd9517f21aa307",
   "files": {
     "CMakeLists.txt": {
       "original_sha256": "4d6cb49be103302c019405794995aac6b526b759f257f4786a7a2a00d4de3fa2",
@@ -8,7 +8,7 @@
     },
     "src/hle/rt64_application_window.cpp": {
       "original_sha256": "75df5c4be1c41cd05cfa016d88c3b590629efcbd89d8aaf908e3ebcebcc34c94",
-      "patched_sha256": "20fb71f53cf59880378ca012df13378b8f73a9bfbbe0a4c91d50dcafcc76ab29"
+      "patched_sha256": "0eb6ff59a94dd8b3eef05ddc3df3dc04a439d59141bb8693acfcc766f02857b9"
     },
     "src/common/rt64_thread.cpp": {
       "original_sha256": "0f1f64aa782995439edc2ccde75652ef8b6f819a8c353f6047bf848b6ed76a68",

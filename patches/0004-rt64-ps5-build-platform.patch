@@ -68,7 +68,17 @@
  if (APPLE)
 --- a/src/hle/rt64_application_window.cpp
 +++ b/src/hle/rt64_application_window.cpp
-@@ -82,6 +82,14 @@
+@@ -7,6 +7,9 @@
+ #include <cassert>
+ #include <stdio.h>
+ #include <SDL.h>
++#if defined(__PROSPERO__)
++#include "ps5_display_options.h"
++#endif
+ 
+ #if defined(_WIN32)
+ #   include <Windows.h>
+@@ -82,6 +85,14 @@
      void ApplicationWindow::setup(const char *windowTitle, Listener *listener) {
          assert(windowTitle != nullptr);
  
@@ -83,7 +93,7 @@
          // Find the right window dimension and placement.
          const int Width = 1280;
          const int Height = 720;
-@@ -169,6 +177,7 @@
+@@ -169,6 +180,7 @@
  #   else
          setup(windowHandle, listener, pthread_self());
  #   endif
@@ -91,7 +101,7 @@
      }
  
      void ApplicationWindow::setFullScreen(bool newFullScreen) {
-@@ -227,6 +236,9 @@
+@@ -227,6 +239,9 @@
          }
  
          fullScreen = newFullScreen;
@@ -101,19 +111,32 @@
  #   elif defined(__APPLE__)
          windowWrapper->toggleFullscreen();
  #   elif defined(RT64_SDL_WINDOW_VULKAN)
-@@ -249,7 +261,11 @@
+@@ -249,7 +264,10 @@
      }
  
      void ApplicationWindow::detectRefreshRate() {
 -#   if defined(_WIN32)
 +#   if defined(__PROSPERO__)
-+        // The display swapchain supplies its measured rate to presentation;
-+        // retain a conservative 60 Hz window hint for the integer fallback.
-+        refreshRate = 60;
++        // Match the accepted native surface, not the SDL placeholder window.
++        refreshRate = dkrr_ps5_presentation_display_rate(dkrr_ps5_display_status());
 +#   elif defined(_WIN32)
          HMONITOR monitor = MonitorFromWindow(windowHandle, MONITOR_DEFAULTTONEAREST);
          MONITORINFOEX info = {};
          info.cbSize = sizeof(info);
+@@ -335,7 +353,13 @@
+     }
+ 
+     uint32_t ApplicationWindow::getRefreshRate() const {
++#if defined(__PROSPERO__)
++        // Setup precedes native swapchain creation. Read the active rate here
++        // too, so the first workload cannot retain the earlier 60 Hz hint.
++        return dkrr_ps5_presentation_display_rate(dkrr_ps5_display_status());
++#else
+         return refreshRate;
++#endif
+     }
+ 
+     bool ApplicationWindow::detectWindowMoved() {
 --- a/src/common/rt64_thread.cpp
 +++ b/src/common/rt64_thread.cpp
 @@ -10,8 +10,11 @@
