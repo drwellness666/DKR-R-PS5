@@ -57,7 +57,7 @@ Response http_once(const Request& r, std::stop_token stop, const Sink& sink) {
     cancelled();
     if((s.pool=sceNetPoolCreate("dkrr_mod_store",1024*1024,0))<0 ||
        (s.ssl=sceSslInit(304*1024))<0 || (s.http=sceHttpInit(s.pool,s.ssl,4*1024*1024))<0 ||
-       (s.tmpl=sceHttpCreateTemplate(s.http,"DKR-R-PS5/1.0.7",2,0))<0 ||
+       (s.tmpl=sceHttpCreateTemplate(s.http,"DKR-R-PS5/1.0.8",2,0))<0 ||
        sceHttpSetAutoRedirect(s.tmpl,0)<0 || sceHttpsEnableOption(s.tmpl,0xBD)<0 ||
        sceHttpSetResolveTimeOut(s.tmpl,4000000)<0 || sceHttpSetConnectTimeOut(s.tmpl,4000000)<0 ||
        sceHttpSetSendTimeOut(s.tmpl,std::min(r.timeout,15000U)*1000)<0 ||

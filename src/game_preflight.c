@@ -18,7 +18,7 @@ static void inspect(const char *path) {
 }
 int main(void) {
     setvbuf(stdout,NULL,_IOLBF,0);
-    puts("DKR-R 1.0.7 GAME PREFLIGHT: READ ONLY");
+    puts("DKR-R 1.0.8 GAME PREFLIGHT: READ ONLY");
     int init=sceUserServiceInitialize(NULL);
     printf("preflight: user-service rc=0x%08x\n",(unsigned)init);
     int app=sceSystemServiceGetAppId("PPSA94678");

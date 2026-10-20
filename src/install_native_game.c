@@ -72,7 +72,7 @@ static int install(const char *path,const unsigned char *bytes,size_t count,unsi
 }
 int main(void) {
     setvbuf(stdout,NULL,_IOLBF,0);setvbuf(stderr,NULL,_IOLBF,0);
-    puts("DKR-R 1.0.7 native preview installer (private build; no ROM included)");
+    puts("DKR-R 1.0.8 native preview installer (private build; no ROM included)");
     for(size_t i=0;i<sizeof(native_dirs)/sizeof(native_dirs[0]);++i) {
         if(directory(native_dirs[i])<0) { fprintf(stderr,"native-install: directory FAIL %s: %s\n",native_dirs[i],strerror(errno));return 1; }
     }
