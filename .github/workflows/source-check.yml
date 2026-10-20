@@ -18,6 +18,9 @@ jobs:
       - run: python3 tools/test_component_notices.py
       - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libsdl2-dev glslang-tools spirv-tools libvulkan-dev mesa-vulkan-drivers pkg-config
       - run: python3 tools/prepare_controller_test_sources.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_upstream_release_composition.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_ps5_store_http.py
+      - run: python3 tools/test_ps5_shared_save_jobs.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_controller_presets.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_controller_lights.py
       - run: python3 tools/test_ps5_motion.py
