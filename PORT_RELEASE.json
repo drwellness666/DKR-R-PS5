@@ -1,8 +1,8 @@
 {
   "tag": "ps5-v1.0.0",
-  "upstream_version": "1.0.7",
+  "upstream_version": "1.0.8",
   "source_only": false,
   "qualification": "Version 1.0 preparation: integrated current source; final console and distribution checks remain open.",
-  "installer_sequence": 15,
+  "installer_sequence": 16,
   "release_status": "unreleased"
 }

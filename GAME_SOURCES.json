@@ -2,13 +2,13 @@
   "sources": [
     {
       "name": "DKR-R",
-      "revision": "0368f51d769af4d89671a212e3ea8ac8078ce41b",
-      "file": "DKR-R-1.0.7.tar.gz",
+      "revision": "34ed57ae97ef46759e5b23aa8d7a1e7ec89f3f56",
+      "file": "DKR-R-1.0.8.tar.gz",
       "path": "DKR-R",
-      "sha256": "8a3eeb8415ee8ff590a40165b496cafcae54459c4ae9013c1092fc299e2bee6a",
+      "sha256": "08f363ce520f3a2508808490498822ba32831f3647c0f81f622f9e1077b6a684",
       "bundled": false,
       "strip_components": 1,
-      "url": "https://codeload.github.com/ThatGuyMcd/DKR-R/tar.gz/0368f51d769af4d89671a212e3ea8ac8078ce41b"
+      "url": "https://codeload.github.com/ThatGuyMcd/DKR-R/tar.gz/34ed57ae97ef46759e5b23aa8d7a1e7ec89f3f56"
     },
     {
       "name": "N64Recomp",
@@ -251,10 +251,16 @@
       "path": "rt64-game/src/contrib/plume/contrib/Vulkan-Headers"
     }
   ],
-  "upstream_version": "1.0.7",
-  "release_url": "https://github.com/ThatGuyMcd/DKR-R/releases/tag/Version1.0.7",
+  "upstream_version": "1.0.8",
+  "release_url": "https://github.com/ThatGuyMcd/DKR-R/releases/tag/Version1.0.8",
   "release_layers": {
     "manifest": "patches/release-prep/v1.0.7/source-capsule-r2/manifest.json",
-    "sha256": "db85d62ac1d537fa35e9f3e38bfd059f9a58c485e28cd1f9a9993b775784ebbf"
+    "sha256": "db85d62ac1d537fa35e9f3e38bfd059f9a58c485e28cd1f9a9993b775784ebbf",
+    "capsule_version": "1.0.7"
+  },
+  "startup_memory_hotfix": {
+    "path": "patches/startup-memory/runtime-memory.patch",
+    "sha256": "07c4e61dec8b7388cc9475f31177cb2f584bd90cd108fe3b4f091d25e05a4126",
+    "scope": "Official Windows-only allocation correction; native PS5 POSIX branch unchanged"
   }
 }
