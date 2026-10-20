@@ -18,6 +18,8 @@ In settings, use **L1/R1** to change pages, **D-pad / left stick** to move, **Cr
 
 ## DualSense options
 
+Use **L1/R1** to change pages and **L2/R2** to change the visible section from anywhere on a settings page.
+
 Normal vibration is under **Controls → Device**. The extras under **Controls → PS5** are optional and off by default:
 
 | Option | Effect |

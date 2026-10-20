@@ -24,7 +24,7 @@ If performance is uneven, start with default render settings, lower anti-aliasin
 
 Enable **HDR output → HDR10** with HDR enabled on the PS5 and a compatible display. The game can fall back to SDR if HDR output is unavailable.
 
-**HDR brightness** adjusts menu/reference white, display peak and highlight expansion. Use the calibration pattern to suit your display; it disappears when you leave the page. Defaults are 200-nit reference white, 800-nit peak and 35% highlight expansion.
+**HDR brightness** adjusts menu/reference white, display peak and highlight expansion. **Use neutral HDR mapping** restores reference white and removes added highlight expansion. Use the calibration pattern to suit your display; it disappears when you leave the page. Defaults are 200-nit reference white, 800-nit peak and 0% highlight expansion.
 
 The original game was SDR. This feature expands that image for HDR output; it is not an authored HDR remaster. Physical brightness, performance and HDR with VRR/120 Hz remain part of the [feature checks](KNOWN_ISSUES.md#feature-status).
 
