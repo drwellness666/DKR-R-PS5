@@ -26,7 +26,25 @@ extern "C" int __wrap_fsync(int fd) {
     if(fail_sync){errno=EIO;return -1;}return __real_fsync(fd);
 }
 #include "save_storage.hpp"
+#include "json.hpp"
 namespace store=dkr::runtime::saves::storage;
+// The production shared-save prepare/read/write functions are extracted by the
+// runner. Only the fresh-install catalog and pending-transaction absence are
+// modeled; the JSON, metadata admission, leases and commits remain actual code.
+namespace shared_fixture {
+namespace storage=dkr::runtime::saves::storage;
+using Json=nlohmann::json;
+std::mutex operation_mutex;
+fs::path profile;
+struct Record {struct {fs::path path;std::size_t size;bool valid;} info;std::string scope,preview;unsigned kind;};
+std::vector<Record> catalogue;
+fs::path data_root(){return profile;}
+bool recover_unlocked(std::string&){return true;}
+std::string Timestamp(){return "fixture";}
+std::vector<Record> stored_adventures(unsigned,bool* truncated){*truncated=false;return catalogue;}
+bool ReadFileBounded(const fs::path&path,std::size_t max,store::Bytes&bytes){std::error_code ec;auto size=fs::file_size(path,ec);return !ec&&size<=max&&store::read_exact(path,size,bytes);}
+#include "shared_prepare.inc"
+}
 static store::Bytes image(unsigned char fill) {
     store::Bytes b(512,fill);b[0]='D';b[1]='K';b[2]='R';return b;
 }
@@ -87,6 +105,26 @@ int main(int argc,char**argv) {
     assert(store::write_atomic(online,c,valid,error));expect(path,image(13));expect(online,c);store::protect_offline(profile,false);
     const auto link=profile/"saves/redirect.bin";fs::create_symlink(path,link);
     if(getuid()!=0){assert(!store::write_atomic(link,c,valid,error));expect(path,image(13));}
+    for(const auto* revision:{"profile-us-v77","profile-us-v80"}) {
+        shared_fixture::profile=fixture_root/revision;
+        const auto personal=shared_fixture::profile/"saves/dkr.us.v77.bin";
+        shared_fixture::catalogue={{{personal,512,true},"personal","existing progress",0}};
+        assert(shared_fixture::prepare(shared_fixture::profile,error));
+        const auto manifest=shared_fixture::profile/"save-migration-v1/manifest.json";
+        store::Bytes before;assert(shared_fixture::ReadFileBounded(manifest,65536,before));
+        if(!shared_fixture::prepare(shared_fixture::profile,error)) {
+            std::fprintf(stderr,"shared prepare second call failed: %s\n",error.c_str());assert(false);
+        }
+        expect(manifest,before);expect(personal,revision==std::string("profile-us-v77")?image(13):a);
+        metadata_error=true;assert(!shared_fixture::prepare(shared_fixture::profile,error));metadata_error=false;
+        expect(manifest,before);
+        const auto alias=fixture_root/(std::string(revision)+"-manifest-alias");
+        fs::create_hard_link(manifest,alias);hide_links=false;
+        assert(!shared_fixture::prepare(shared_fixture::profile,error));hide_links=true;
+        expect(manifest,before);expect(alias,before);
+        assert(shared_fixture::prepare(shared_fixture::profile,error));expect(alias,before);
+    }
+    puts("PASS actual shared-save preparation: first/second calls on both revisions with nlink=0, unchanged personal saves and inventory, missing-metadata failure and known alias refusal");
     puts("PASS native save transaction backend: scoped unknown metadata, known aliases refused, atomic alias isolation, backup/history, validation and sync failure, invalid preservation, interprocess exclusion, revision separation and online protection");
     puts("Host model only: does not establish native filesystem or power-loss behavior.");
 }

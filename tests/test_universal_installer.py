@@ -144,6 +144,53 @@ ssize_t __wrap_write(int fd,const void*buf,size_t n){
     p=subprocess.Popen([str(self.network_binary)],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env)
     self.assertEqual(p.stdout.readline(),b'DKRR UPDATE READY v1\n')
     return p
+ def test_app_directory_move_with_ps5_cross_parent_permissions(self):
+    work=self.base/'directory-owner-test';work.mkdir(exist_ok=True)
+    code=work/'owner.c';code.write_text(r"""#include "dkrr_install.h"
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+static uid_t owner;static ino_t inode;static dev_t device;
+static int fail_claim,fail_restore,fail_move,claims,restores,denials;
+int __real_fstat(int,struct stat*);
+int __wrap_fstat(int fd,struct stat *st){int rc=__real_fstat(fd,st);if(!rc&&st->st_ino==inode&&st->st_dev==device)st->st_uid=owner;return rc;}
+int __real_fchown(int,uid_t,gid_t);
+int __wrap_fchown(int fd,uid_t uid,gid_t gid){struct stat st;if(__real_fstat(fd,&st)==0&&st.st_ino==inode&&st.st_dev==device){
+ if(uid==geteuid()){++claims;if(fail_claim){errno=EPERM;return -1;}}
+ else{++restores;if(fail_restore){errno=EPERM;return -1;}}
+ owner=uid;return 0;}return __real_fchown(fd,uid,gid);}
+int __real_rename(const char*,const char*);
+int __wrap_rename(const char*a,const char*b){struct stat st;if(lstat(a,&st)==0&&st.st_ino==inode&&st.st_dev==device){
+ if(owner!=geteuid()&&!(st.st_mode&S_IWOTH)){++denials;errno=EACCES;return -1;}
+ if(fail_move){errno=EIO;return -1;}}
+ return __real_rename(a,b);}
+static char from[1024],to[1024];
+static void setup(const char *root,unsigned n,int app_owned){char base[1024],p[1024];int fd;struct stat st;
+ snprintf(base,sizeof(base),"%s/case-%u",root,n);assert(mkdir(base,0700)==0);
+ snprintf(p,sizeof(p),"%s/source",base);assert(mkdir(p,0700)==0);snprintf(from,sizeof(from),"%s/source/app",base);assert(mkdir(from,0755)==0);
+ snprintf(p,sizeof(p),"%s/target",base);assert(mkdir(p,0755)==0);snprintf(to,sizeof(to),"%s/target/app",base);
+ snprintf(p,sizeof(p),"%s/keep",from);fd=open(p,O_WRONLY|O_CREAT|O_EXCL,0600);assert(fd>=0&&write(fd,"unchanged",9)==9&&close(fd)==0);
+ assert(lstat(from,&st)==0);inode=st.st_ino;device=st.st_dev;owner=geteuid()+(app_owned?1:0);fail_claim=fail_restore=fail_move=claims=restores=denials=0;}
+static int exists(const char*p){struct stat st;return lstat(p,&st)==0;}
+static void check_content(const char *dir){char p[1200],buf[16];struct stat st;snprintf(p,sizeof(p),"%s/keep",dir);int fd=open(p,O_RDONLY);assert(fd>=0&&read(fd,buf,sizeof(buf))==9&&!memcmp(buf,"unchanged",9)&&close(fd)==0);assert(lstat(dir,&st)==0&&(st.st_mode&07777)==0755);assert(lstat(p,&st)==0&&(st.st_mode&0777)==0600);}
+int main(int argc,char**argv){assert(argc==2);uid_t app=geteuid()+1;
+ setup(argv[1],0,1);assert(rename(from,to)<0&&errno==EACCES&&denials==1);assert(dkrr_move_app_directory(from,to)==0);assert(!exists(from)&&exists(to)&&owner==app&&claims==1&&restores==1);check_content(to);
+ setup(argv[1],1,1);fail_claim=1;assert(dkrr_move_app_directory(from,to)<0&&errno==EPERM&&owner==app&&claims==1&&restores==0&&exists(from)&&!exists(to));check_content(from);
+ setup(argv[1],2,1);fail_move=1;assert(dkrr_move_app_directory(from,to)<0&&errno==EIO&&owner==app&&claims==1&&restores==1&&exists(from)&&!exists(to));check_content(from);
+ setup(argv[1],3,1);fail_restore=1;assert(dkrr_move_app_directory(from,to)<0&&errno==EPERM&&!exists(from)&&exists(to)&&owner==geteuid());check_content(to);fail_restore=0;assert(dkrr_move_app_directory(to,from)==0);check_content(from);
+ setup(argv[1],4,0);assert(dkrr_move_app_directory(from,to)==0&&claims==0&&restores==0);check_content(to);
+ setup(argv[1],5,1);assert(mkdir(to,0755)==0);assert(dkrr_move_app_directory(from,to)<0&&errno==EEXIST&&claims==0&&owner==app);check_content(from);
+ setup(argv[1],6,1);char link[1100];snprintf(link,sizeof(link),"%s-link",from);assert(symlink(from,link)==0);assert(dkrr_move_app_directory(link,to)<0&&claims==0&&owner==app);check_content(from);
+ puts("PASS: PS5 cross-parent EACCES reproduced; descriptor owner claim/restore, preserved modes/content, claim/move/restore faults, recovery, collision and symlink refusal");return 0;}
+""")
+    binary=work/'owner'
+    subprocess.run(self.flags+['-Wall','-Wextra','-Werror','-I',str(ROOT/'installer'),str(code),str(self.base/'files.c.o'),str(self.base/'hash.c.o'),'-Wl,--wrap=fstat','-Wl,--wrap=fchown','-Wl,--wrap=rename','-o',str(binary)],check=True)
+    subprocess.run([str(binary),str(work)],env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'),check=True)
  def test_network_disconnect_or_bad_commit_changes_nothing(self):
     for command in (b'',b'BADGO12\n'):
         p=self.network_process();self.assertFalse((self.data/'dkrr').exists())
