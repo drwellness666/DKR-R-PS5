@@ -24,6 +24,7 @@ struct Speaker::Worker {
     int output_handle=-1;
     unsigned cached_revision=0,active_priority=0;
     bool playing=false,pending=false;
+    std::chrono::steady_clock::time_point audible_at{};
     std::array<std::vector<std::int16_t>,ps5_sounds::count> cached_cues;
     std::thread thread;
     explicit Worker(Loader load):loader(load),thread([this]{
@@ -73,6 +74,7 @@ struct Speaker::Worker {
         while(!quit) {
             wake.wait(lock,[&]{return quit||generation!=seen;});if(quit)break;
             seen=generation;pending=false;const bool play=enabled;const auto requested=clip;const auto id=user;const auto rev=revision;
+            const auto start_at=audible_at;
             if(!play||requested<0||requested>=int(ps5_sounds::count)){lock.unlock();if(handle>=0){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}lock.lock();playing=false;continue;}
             // A failure stays local to this optional output until it is toggled.
             if(result.load()<0)continue;
@@ -90,7 +92,15 @@ struct Speaker::Worker {
                 handle=sceAudioOutOpen(id,4,0,256,48000,0);open_user=id;
                 if(handle<0){if(publish_result(seen,-1))std::fprintf(stderr,"[input][speaker] native open failed rc=0x%08x\n",unsigned(handle));lock.lock();playing=false;continue;}
             }
+            // The TV mixer has queued audio already. Start this one cue at the
+            // corresponding audible time, not immediately at the simulation
+            // event. One cancellable request; never accumulate delayed cues.
+            lock.lock();
+            wake.wait_until(lock,start_at,[&]{return quit||!enabled||generation!=seen;});
+            const bool start_cancelled=quit||!enabled||generation!=seen;
+            lock.unlock();
             publish_result(seen,1);std::array<std::int16_t,256> block{};
+            if(!start_cancelled)
             for(std::size_t pos=0;pos<data.size();pos+=block.size()) {
                 lock.lock();const bool cancelled=quit||!enabled||generation!=seen;const float gain=volume;lock.unlock();
                 if(cancelled)break;
@@ -99,7 +109,14 @@ struct Speaker::Worker {
                 const int rc=sceAudioOutOutput(handle,block.data());
                 if(rc<0){if(publish_result(seen,-1))std::fprintf(stderr,"[input][speaker] native output failed rc=0x%08x\n",unsigned(rc));break;}
             }
-            // Drain/close after each short cue; never retain a silent speaker port.
+            // Flush two silent blocks through the same paced output before
+            // closing. Closing immediately after queuing the last sample can
+            // discard the hardware's final pending audio block.
+            block.fill(0);
+            for(unsigned tail=0;tail<2;++tail){
+                lock.lock();const bool cancelled=quit||!enabled||generation!=seen;lock.unlock();
+                if(cancelled||sceAudioOutOutput(handle,block.data())<0)break;
+            }
             if(handle>=0){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}
             lock.lock();playing=false;
         }
@@ -109,7 +126,7 @@ struct Speaker::Worker {
 Speaker::Speaker():Speaker(nullptr){};Speaker::Speaker(Loader load):loader(load){};Speaker::~Speaker()=default;
 Speaker::Speaker(Speaker&&) noexcept=default;Speaker&Speaker::operator=(Speaker&&) noexcept=default;
 int Speaker::status() const {return start_failed?-3:worker?worker->result.load():0;}
-void Speaker::update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision,int game_clip) {
+void Speaker::update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision,int game_clip,unsigned audio_delay_ms) {
     enabled=enabled&&user>=0&&(revision==77||revision==80);
     int clip=event.update(enabled,item,ms,pressed);
     if(clip<0&&game_clip>=9&&game_clip<int(ps5_sounds::count))clip=game_clip;
@@ -124,7 +141,13 @@ void Speaker::update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms
         }
         worker->user=user;worker->revision=revision;worker->volume=std::isfinite(volume)?std::clamp(volume,0.0F,1.0F):0.0F;
         worker->enabled=enabled;
-        if(clip>=0&&!((worker->playing||worker->pending)&&ps5_sounds::priority(unsigned(clip))<std::max(worker->playing?worker->active_priority:0U,worker->pending?ps5_sounds::priority(unsigned(worker->clip)):0U))){worker->clip=clip;worker->pending=true;++worker->generation;worker->wake.notify_one();}
+        // Only an item use can interrupt a lower-priority incidental sound.
+        // Repeated horn/pickup events must not restart an audible clip halfway.
+        if(clip>=0&&!((worker->playing||worker->pending)&&ps5_sounds::priority(unsigned(clip))<=std::max(worker->playing?worker->active_priority:0U,worker->pending?ps5_sounds::priority(unsigned(worker->clip)):0U))){
+            worker->clip=clip;worker->pending=true;
+            worker->audible_at=std::chrono::steady_clock::now()+std::chrono::milliseconds(std::min(audio_delay_ms,250U));
+            ++worker->generation;worker->wake.notify_one();
+        }
     }
 }
 }

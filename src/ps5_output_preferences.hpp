@@ -12,7 +12,7 @@
 namespace dkrr::output_preferences {
 struct Choice {
     dkrr_ps5_display_choice display{1080,60};
-    dkrr_ps5_hdr_choice hdr{0,200,800,35};
+    dkrr_ps5_hdr_choice hdr{0,200,800,0};
 };
 inline std::mutex mutex;
 constexpr char directory[]=DKR_DISPLAY_DATA_ROOT "/preferences";

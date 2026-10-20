@@ -18,7 +18,7 @@ inline std::array<Item,4> sample(std::span<const std::uint8_t> ram, const ps5_li
         const auto object=g.word(table+port*4U);
         if((object&3U)||!g.valid(object,0x68))continue;
         const auto racer=g.word(object+0x64U);
-        if((racer&3U)||!g.valid(racer,0x175U))continue;
+        if((racer&3U)||!g.valid(racer,0x1D9U)||g.byte(racer+0x1D8U))continue;
         const auto owner=(std::uint32_t(g.byte(racer))<<8)|g.byte(racer+1);
         const auto type=g.byte(racer+0x172U),q=g.byte(racer+0x173U);
         if(owner==port&&type<5&&q<=10)items[port]={racer,type,q,true,std::min<std::uint8_t>(2,g.byte(racer+0x174U))};
@@ -56,7 +56,7 @@ public:
         // DKR consumes weapons on Z release. Keep that confirmed item-use
         // impulse even after L2 has returned, without holding resistance on.
         if(had_pull&&ms-last_pull<=250&&item.valid&&previous.valid&&item.racer==previous.racer&&
-           (previous.type==1||previous.type==2)&&previous.quantity>0&&
+           previous.type<5&&previous.quantity>0&&
            (item.quantity==0||(item.type==previous.type&&item.quantity<previous.quantity)))until=ms+70;
         previous=item;
         std::uint8_t mode=0;

@@ -3,7 +3,7 @@
 struct Ps5DisplayUiState {
     int resolution = 0, refresh = 0;
     bool loaded = false, hdr_tuning=false, hdr_pattern=false;
-    int hdr_mode=0, paper_white=200, peak=800, expansion=35;
+    int hdr_mode=0, paper_white=200, peak=800, expansion=0;
     std::string status;
 };
 Ps5DisplayUiState g_ps5_display_ui;
@@ -37,6 +37,10 @@ void DrawPs5DisplayFields(float width, bool entered) {
     PaddockGap(10.0F);
     if(ui.hdr_mode && SettingsDisclosure("ps5-hdr-tuning","HDR brightness",ui.hdr_tuning,width)){
         bool changed=false;
+        if(SettingsButton("Use neutral HDR mapping",width)){
+            ui.paper_white=200;ui.peak=800;ui.expansion=0;changed=true;
+        }
+        SettingsHelp("Start with highlight expansion at 0% to retain the original SDR contrast. HDR remains experimental.",width);
         const auto nits=[](int v){return SettingsRangeValue{std::to_string(v),"nits"};};
         changed|=SettingsRange("ps5-hdr-paper","Menu / reference white",&ui.paper_white,80,300,width,nits,
                                "Comfortable menu brightness. 200 nits is a starting point.");
@@ -59,7 +63,7 @@ void DrawPs5DisplayFields(float width, bool entered) {
     }
     PaddockGap(6.0F);
     if (SettingsRaceButton("RESTORE 1080p / 60 Hz FOR NEXT START", false)) {
-        if (dkrr_ps5_choose_output({1080,60},{0,200,800,35}) == 0) {
+        if (dkrr_ps5_choose_output({1080,60},{0,200,800,0}) == 0) {
             ui.resolution = ui.refresh = ui.hdr_mode = 0;ui.hdr_pattern=false;
             dkrr_ps5_hdr_calibration_pattern(0);
             ui.status = "1080p / 60 Hz saved for the next start.";

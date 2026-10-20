@@ -41,7 +41,7 @@ class Speaker {
 public:
     Speaker();explicit Speaker(Loader load);~Speaker();Speaker(Speaker&&) noexcept;Speaker&operator=(Speaker&&) noexcept;
     Speaker(const Speaker&)=delete;Speaker&operator=(const Speaker&)=delete;
-    void update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision,int game_clip=-1);
+    void update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision,int game_clip=-1,unsigned audio_delay_ms=0);
     int status() const;
 };
 }

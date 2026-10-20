@@ -20,7 +20,7 @@ namespace {
 static_assert(std::atomic<std::uint32_t>::is_always_lock_free);
 constexpr std::uint32_t pack(dkrr_ps5_hdr_choice c){return c.enabled|(c.paper_white<<1)|(c.peak<<10)|(c.expansion<<21);}
 constexpr dkrr_ps5_hdr_choice unpack(std::uint32_t c){return {c&1,(c>>1)&511,(c>>10)&2047,(c>>21)&127};}
-std::atomic<std::uint32_t> calibration{pack({0,200,800,35})};
+std::atomic<std::uint32_t> calibration{pack({0,200,800,0})};
 std::atomic<unsigned> requested{0},output{0},reason{0},pattern{0};
 std::atomic<std::int64_t> pattern_until{0};
 std::int64_t now_ms(){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();}

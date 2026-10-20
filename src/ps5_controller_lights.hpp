@@ -53,10 +53,12 @@ inline std::uint16_t sample(std::span<const std::uint8_t> ram, const Addresses& 
         const auto racer=g.word(object+0x64U);
         // Object.racer +0x64; Object_Racer.playerIndex +0, balloon_type +0x172,
         // quantity +0x173. Authored decomp fields, identical for US77/US80.
-        if ((racer&3U) || !g.valid(racer,0x174U)) continue;
+        if ((racer&3U) || !g.valid(racer,0x1D9U)) continue;
         const auto owner=(std::uint32_t(g.byte(racer))<<8)|g.byte(racer+1);
         const auto type=g.byte(racer+0x172U), quantity=g.byte(racer+0x173U);
-        if (owner==port && type<5 && quantity>0 && quantity<=10)
+        // raceFinished is set at the finish line, before the results/award
+        // cutscene changes GameMode. Inventory can remain populated there.
+        if (owner==port && !g.byte(racer+0x1D8U) && type<5 && quantity>0 && quantity<=10)
             colors|=static_cast<std::uint16_t>((type+1U)<<(port*3U));
     }
     return colors;
