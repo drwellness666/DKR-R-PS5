@@ -1,11 +1,11 @@
 {
   "rt64": {
     "patch": "0007-rt64-ps5-hdr-present.patch",
-    "sha256": "132a9c7f4da38919c06e54bebc25cf1d34b7f8963c2f2c33935321747f1fd72b",
+    "sha256": "7eb0e78bf6827220b473bac0326e0d8ac82545fea80d00e07e66bc5dfc88b90e",
     "files": {
       "src/hle/rt64_present_queue.cpp": {
-        "original_sha256": "50994dab32220142b2963c28a7809dd8b11604c9cdca2fe191285008169e1aef",
-        "patched_sha256": "9d28f0c6ed9dff46e62581ee336b7a0dbfed0cf735817a381b262ed55adb29ef"
+        "original_sha256": "ace65e8efd9a98eae192bbbe8693ef17ce878bd6cb366638e9d41686dfef1167",
+        "patched_sha256": "61243fb82d3d6bb0a3855ccee5496c2e77ed4eaf0f30e7497da1d70d0d75bfe9"
       },
       "src/gui/rt64_inspector.cpp": {
         "original_sha256": "cdc807b36490dedf65adb3f23ee77e4666944a12a0129d6cc2c2f28b50fdf2aa",
@@ -15,11 +15,11 @@
   },
   "plume": {
     "patch": "0008-plume-ps5-hdr-swapchain.patch",
-    "sha256": "0b5ce7fd8b12bf0a2ca0a0acc009124116f340bc6c71a2cc4f2c5f417d9cd7f9",
+    "sha256": "1bb6cebaeb93e19bf376795fa5f4be0a019333c4815c71572068feb0ef4f5bef",
     "files": {
       "src/contrib/plume/plume_vulkan.cpp": {
-        "original_sha256": "ece69b0ecd20ce89794f344e293dcc55a614d728e6bacc14c3066f3835419913",
-        "patched_sha256": "ecb2d57f2193c26e5e102a8dbacb6ab7f3b5b19fc28b447442b96c26f3a57e35"
+        "original_sha256": "7b49b8d19d83570ee272b787badc4cbc757c43682b3ec3f362f8225d8e450f40",
+        "patched_sha256": "ae9fdbec2b29d3a6d441053acadeb1ea655274eed700a1c9bfa944a1b8d11b49"
       }
     }
   }

@@ -1,17 +1,17 @@
 diff --git a/src/hle/rt64_present_queue.cpp b/src/hle/rt64_present_queue.cpp
 --- a/src/hle/rt64_present_queue.cpp
 +++ b/src/hle/rt64_present_queue.cpp
-@@ -4,6 +4,9 @@
- 
- #include "performance_trace.hpp"
+@@ -7,6 +7,9 @@
+ #include "netplay/experimental_performance.hpp"
  #include "rt64_present_queue.h"
+ #include "presentation_pacer.hpp"
 +#if defined(__PROSPERO__)
 +#include "ps5_hdr_presenter.hpp"
 +#endif
  
  #include "common/rt64_thread.h"
  #include "rhi/rt64_render_hooks.h"
-@@ -11,6 +14,9 @@
+@@ -14,6 +17,9 @@
  #include "rt64_workload_queue.h"
  
  namespace RT64 {
@@ -21,7 +21,7 @@ diff --git a/src/hle/rt64_present_queue.cpp b/src/hle/rt64_present_queue.cpp
      // PresentQueue
  
      PresentQueue::PresentQueue() {
-@@ -261,6 +267,16 @@
+@@ -264,6 +270,16 @@
              }
          }
  
@@ -38,7 +38,7 @@ diff --git a/src/hle/rt64_present_queue.cpp b/src/hle/rt64_present_queue.cpp
          // Create the framebuffers if necessary.
          if (swapChainFramebuffers.empty()) {
              uint32_t textureCount = ext.swapChain->getTextureCount();
-@@ -345,7 +361,11 @@
+@@ -348,7 +364,11 @@
                      }
                  }
                  
@@ -50,7 +50,7 @@ diff --git a/src/hle/rt64_present_queue.cpp b/src/hle/rt64_present_queue.cpp
                  commandList->clearColor();
  
                  if (renderParams.texture != nullptr) {
-@@ -353,9 +373,14 @@
+@@ -356,9 +376,14 @@
                      viRenderer->render(renderParams);
                  }
  
@@ -66,7 +66,7 @@ diff --git a/src/hle/rt64_present_queue.cpp b/src/hle/rt64_present_queue.cpp
                  }
  
                  {
-@@ -364,6 +389,9 @@
+@@ -367,6 +392,9 @@
                          inspector->draw(commandList);
                      }
                      
@@ -76,7 +76,7 @@ diff --git a/src/hle/rt64_present_queue.cpp b/src/hle/rt64_present_queue.cpp
                      commandList->barriers(RenderBarrierStage::NONE, RenderTextureBarrier(swapChainTexture, RenderTextureLayout::PRESENT));
                      commandList->end();
                      const RenderCommandList *commandList = ext.presentGraphicsWorker->commandList.get();
-@@ -490,6 +518,9 @@
+@@ -500,6 +528,9 @@
                      ext.presentGraphicsWorker->wait();
                      swapChainValid = ext.swapChain->resize();
                      swapChainFramebuffers.clear();
@@ -86,7 +86,7 @@ diff --git a/src/hle/rt64_present_queue.cpp b/src/hle/rt64_present_queue.cpp
  
                      if (swapChainValid) {
                          ext.sharedResources->setSwapChainSize(ext.swapChain->getWidth(), ext.swapChain->getHeight());
-@@ -549,6 +580,9 @@
+@@ -569,6 +600,9 @@
              }
          }
  

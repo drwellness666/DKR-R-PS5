@@ -1,34 +1,59 @@
 {
-  "revision": "c3eda4d368afbc729ed4a71312cce38d27f87c37",
-  "version": "1.0.6",
+  "revision": "0368f51d769af4d89671a212e3ea8ac8078ce41b",
+  "version": "1.0.7",
+  "base": "Verified effective upstream release layers; see GAME_SOURCES.json release_layers",
   "files": {
+    "patches/enhanced-water/dkr-ray-capabilities.patch": {
+      "original_sha256": "9545995da3b0f92b1eb8736aa3b12431efcc5eae8ae6e0cec971016dd07c9a11",
+      "patched_sha256": "24765f6238f538f369ad56bd83eda9f832998bf7894c1f969caa3dd04df220ed"
+    },
     "runtime-recomp/CMakeLists.txt": {
-      "original_sha256": "c7a186e2b13f8a3d66ef3f98cba82548c503d24f7448077ccd5765d25103f3b7",
-      "patched_sha256": "1b1f023ee7c4874eab4494c0a0e2f19b9f58c8f9ac1966f5aacd064c2858015a"
+      "original_sha256": "5fcb0202203b273f7402fd3b16809b512ca90cc43e3e5a77bb28f12f4a6fb9a9",
+      "patched_sha256": "d231f67eaa262167728a71a38804b362091c4506db1394a7ce0d82d283bc0829"
+    },
+    "runtime-recomp/cmake/Updates.cmake": {
+      "original_sha256": "b3f3d2a41feb204d3fa1f1fb472e7e432714036bf7e335ff2e39fdcda668e28a",
+      "patched_sha256": "eda1864c49b443a1809ec791ad75f3f5b3669e754ea064f153cad29f4eea29ae"
+    },
+    "runtime-recomp/ps5-release/renderer/rt64_generated_mips.h": {
+      "original_sha256": "73b30f1cc13a89b116679bcb46045237c6ad856064da2a68be90ba585cdf328c",
+      "patched_sha256": "c54d8dc7c91af05beeec4e8e97cd31e4faec8505388e7e7965423900899e37b3"
     },
     "runtime-recomp/src/game/game_main.cpp": {
-      "original_sha256": "aa56151f96a050fc85d612b450db3b5192b0c80a626b79d5ce24af64ab128733",
-      "patched_sha256": "1261b6f3435f5dc8888ec5228ea410cd43fad1981df10ecbf7362b78d06fc7bd"
+      "original_sha256": "2ce83dfd7d3d1abade9ece23cbedac7e063cecd03b32a6f8bf8a75e3058a02b7",
+      "patched_sha256": "6f01027761ea9da6e3f2100d6249bc7afff1413c28f646e11420542012deed0b"
     },
     "runtime-recomp/src/game/game_payload.cpp": {
       "original_sha256": "b23f259eb05fc3ffdf8d8e538cd62cd2b74ee3ca07f324d62a872eb1e1f9d451",
       "patched_sha256": "ef81088eda219fc0b146a9ff4aec7c24e5318e68ce3d336baa0e3f521db8b280"
     },
     "runtime-recomp/src/game/game_registration.cpp": {
-      "original_sha256": "691628f71ae258ec36370589d19e32bbe55f9d14009039e8fe0605307d2528f4",
-      "patched_sha256": "7c8a8d9be8ad569559b9efb238ad05352c7357ac1b6c4bd9a5fb7d8def0dc097"
+      "original_sha256": "bf23add65c938d9a85ccee65d46e4027101184be9ace54fd61e37c4884ab7243",
+      "patched_sha256": "761e02076d48ff93fa04a8be755ed4f8a6bef263d143765c0cce35e8967c0c02"
+    },
+    "runtime-recomp/src/game/mod_store.cpp": {
+      "original_sha256": "ef27691736231c4d323c34425c43d5f64724566970fb37602bd30012925fd456",
+      "patched_sha256": "fa313946d4f0120e7351ef84efe8499377eb7c95c6ceb696a6ed4e035cda176b"
+    },
+    "runtime-recomp/src/game/mod_store_install.cpp": {
+      "original_sha256": "c4777fab27887c55cf770d892d7affd0c5b22964e174f782b607b5aad4092101",
+      "patched_sha256": "f57be91370a07b6508b7f13741f76b6e713dd93758b4a3e9c9d87f215e057d13"
+    },
+    "runtime-recomp/src/game/mod_store_names.cpp": {
+      "original_sha256": "28988f6fd5931c0649f29ac80d4417ac6b2cec9649a52f438d0f591bb502938c",
+      "patched_sha256": "452468e5c74e4230bb363f5d180d2005d7bfff6dd57b35f13dd236c608f1c907"
     },
     "runtime-recomp/src/game/mods/legacy_mod_launch.cpp": {
-      "original_sha256": "b5a8d4c37f8aa3a96c1d0fc4fb406b7a6b6af18d4e4d2cd62861c77c23b3e7b6",
-      "patched_sha256": "771f71e9e0d72482944b69ff93bfd10ed8c4cf878d6aab5570579b1a3e9a1373"
+      "original_sha256": "62f0e3213b42a610ede4c8971477cdeabc96af48356be4d6ffdb0f2ed2fa6729",
+      "patched_sha256": "282c2a2d6371a927cbdb72c3b75b50017b39fe34f6194d357ddd4a9b5564b818"
     },
     "runtime-recomp/src/game/mods/legacy_mod_process.cpp": {
       "original_sha256": "f292959811c56f17c22a35b214263af3678a2906d4e8bbd4360197b1a4e51b31",
       "patched_sha256": "cb298b4d1b2f3a2c3bf675a24408f276bbd17cd83551ad26edf44060dcb54396"
     },
     "runtime-recomp/src/game/mods/online_mod_runtime.cpp": {
-      "original_sha256": "71d667b5258d96decc936c5ed9b63451caa85e26fa5095eb2200c0fc8ef16683",
-      "patched_sha256": "a84737f6b12e9b8aac47d1adbc59119953d783c021b4f82bb80258aa54dc34e7"
+      "original_sha256": "c58f3c5079d4276a8e86a3e71ae49e991726e6cb4564e1c41158d6c693f3b935",
+      "patched_sha256": "48af0455a327252720663444f5643046c75755c0d41e859cfc055ee7828e0da2"
     },
     "runtime-recomp/src/game/netplay/datagram_socket.cpp": {
       "original_sha256": "1660d05cb728d8494036fd22dc3e1c9c752dc4b05c7c61a76bdefa6dba341f1e",
@@ -38,49 +63,65 @@
       "original_sha256": "f0faabe326d40ddd34fa3802096eda45ddeec72a4d328e8ff913406cbd56372c",
       "patched_sha256": "71f2f2c18e7996550723f72640b498ea0fef31c34deac4b41fb2eec9a0b609ad"
     },
+    "runtime-recomp/src/game/performance_capture.hpp": {
+      "original_sha256": "de3de8ea29e9ab2baf4ecf2477ac08f3419242167a6dbdca35887be7eadf06a8",
+      "patched_sha256": "485d238d7004f5eb404cd285e151656c54ddac67baec60d84f60a1ba9636125a"
+    },
     "runtime-recomp/src/game/rt64_renderer.cpp": {
-      "original_sha256": "17dd872e436e15de4eb1966586a74dd13f9932374544e5b644653df0b3301160",
-      "patched_sha256": "ec7592a74dfc62bfa70bcb458fab06fc57d426b9317d87709614c1a5f33523d5"
+      "original_sha256": "5d7fccba6878cacd47417777d5eed867e7c27e5b21fa8c56898f7c2a166e69ed",
+      "patched_sha256": "7211cd8807d31ded2767958fe99ef06dd9007d859a53a446e6b9cce5fc910f63"
+    },
+    "runtime-recomp/src/game/runtime_code_mods_ui.inl": {
+      "original_sha256": "4059fb3b89c528066ff045736186b1e0f493a9e82b9b8eb6d1625d8e0f2df080",
+      "patched_sha256": "b74a9459f5d4aef7905532cc0a6bf759a98004a080a123da68c011da2f63d4df"
     },
     "runtime-recomp/src/game/runtime_controls_ui.inl": {
-      "original_sha256": "7ade1bd5e7b165cd1cb561507bf5ddfa87c46e8188480a66ad222e4d6a340d7e",
-      "patched_sha256": "1a1fcb69a3900f3c5d407deea991db951c5dbebf676489c10740724349af4784"
+      "original_sha256": "96f0daf159bd74892fedbe111334f6533f842a6ce2449d4a58ea7d9b7b44bb98",
+      "patched_sha256": "3becdf547d68282120ddaa437f666d4706947923073c13b166e78e7337ed8a7e"
+    },
+    "runtime-recomp/src/game/runtime_crt_overlay.cpp": {
+      "original_sha256": "9af25c08cd67d4534d9c60661096514b2f413b6858886ddc85408b611c491ee1",
+      "patched_sha256": "35a194e222f3069b921052676259517b0726e9986a3daff0730fda1231fc32fc"
+    },
+    "runtime-recomp/src/game/runtime_details_ui.inl": {
+      "original_sha256": "d57565214997c1cd0b1bac3c9e532eba45e10b27c194cbda816a7bc350cc9d82",
+      "patched_sha256": "8feb0207cce63e10c99cba942e29185030a10643a984b0cdfcca0b1f6405f1ec"
     },
     "runtime-recomp/src/game/runtime_graphics_ui.inl": {
-      "original_sha256": "8e390734c03ab654311f3c4532018da081879e4244e03c9c9f9a0b33915c24fd",
-      "patched_sha256": "0c15171a06bc567d4ea54af5337dc41560bc345ab81b1e585370558b508750fb"
+      "original_sha256": "692a0489adfa74d83761ceb06055fe89f628bef9a590e9ac0673ac66800e86f2",
+      "patched_sha256": "1e3b6263637459f0dc6c731e019af9f22f9bb4abf6f83c16009c522a7bc1417e"
     },
     "runtime-recomp/src/game/runtime_hud_layout.cpp": {
       "original_sha256": "9ec1d648e835dfb6b61495f888a6685d10ce75daf3137c7308e368709ab4d7ad",
       "patched_sha256": "2c38bde8b112fb546b77aed33bc07fe68d85d352fb28963ca68be537300ce6a7"
     },
     "runtime-recomp/src/game/runtime_input.cpp": {
-      "original_sha256": "6307122b2ee68a8c11a9b28d17625b66b3bcacb6e526207fc609de7254659187",
-      "patched_sha256": "a4390d2bb51eaa824323655b0f4e2b659ec55bd4def5fedb8cb214f0e67e20a1"
+      "original_sha256": "bec0de68e55c747cec80b815b4d41788c89ef17d65321c53c8eca99b90517c35",
+      "patched_sha256": "f753838f5d0ca90b5fe2e3e01bdc7a09fdf3f4384dea890022364ba05f084e80"
     },
     "runtime-recomp/src/game/runtime_input.hpp": {
-      "original_sha256": "ec8b55f6adfa184153c1ccdf5aee856e131e71344b7aa4c8adb03ecfbc0d4597",
-      "patched_sha256": "4d9f7d2108ea10c9484d166d70e8fc624b7de6ee2055b24f9e84a133be656941"
+      "original_sha256": "4ef742ab7509a5108499c7c7c00a4c2a86acd0b80f36601400db8472c9d360e7",
+      "patched_sha256": "52738042b261cba02c7e0a742f06cd4c936842a716a3be29916e6d13e1580b98"
     },
     "runtime-recomp/src/game/runtime_platform.cpp": {
-      "original_sha256": "91d9ae49a9fe266ac731b7f73a868203f541fbe301661d470ba23c34f72f949e",
-      "patched_sha256": "8d4dd92cd0ef2208b0f446b8fe8cf8b70784a48ffdcb171daa10e46e8047d5df"
+      "original_sha256": "87d0099784a3716223de0595ef16211daf43ca8453f9c0041f9b32df8e475b2e",
+      "patched_sha256": "dbd7ee33efd70022afca09ae1093f97f2bb2417d7898482203a28c15f9178c60"
     },
     "runtime-recomp/src/game/runtime_platform.hpp": {
       "original_sha256": "51f44b3b0719a09e3b6176a8e4e4d92a041f1fe16205ef2199c320f4898d6c22",
       "patched_sha256": "34cfe510d9eaabec04059c68fadd1cffc732c0fa2cb1711ebb67e1d1ceec29ed"
     },
     "runtime-recomp/src/game/runtime_portable.cpp": {
-      "original_sha256": "1eea17d0c29aceb9bffcbdac95e6ade605583152a7f2e4c5f7a6c3e4d623f932",
-      "patched_sha256": "ca9289f1657b071a661c85395c1f0d0924098b1c486ea1d6feff951600b5fefa"
+      "original_sha256": "e9d9d2e1982df32a83c38e554a1609e07757202fe5653c504ff75c623246b6ab",
+      "patched_sha256": "b240f0027e4790ae63454f3cdd86d67ee052eba5c7c9e6eafbb7309df579b5f8"
     },
     "runtime-recomp/src/game/runtime_save_routing.cpp": {
-      "original_sha256": "18e7ae7df1ebf910a8e88e12f13a464621d002c112f4b984069ec085675fd075",
-      "patched_sha256": "cdf530f3772383d89d827c77b4d1939a6ee774ff5eda06fcceb7e8ef1edfc0bb"
+      "original_sha256": "7986db6c65687eff080fcd67e800c0a8fdfb507fee300b06e6dbcb922150b2e6",
+      "patched_sha256": "ed9e2f5302e42923ed9e70b1981d115a596635de86362fe6827b71edbf36a9f2"
     },
     "runtime-recomp/src/game/runtime_saves_ui.inl": {
-      "original_sha256": "ead7773e9b083162688fdaf41efd794404545043b777975e3daa5d7f75d93ea2",
-      "patched_sha256": "2216f8005ce640b317d56c605ba9a967abd4a91f196670ba1013d10f01838670"
+      "original_sha256": "7de6652e89316e58714f3e30b776eec7481fe5c6421c2e55eb275c79b4c3e4b3",
+      "patched_sha256": "6bb6fade9c7f107153c68876a013243c5fe8aedfc00dc617533198980f7dba7a"
     },
     "runtime-recomp/src/game/runtime_settings_ui.inl": {
       "original_sha256": "a893efbc665131ba5b5815da3c44f3c8225b0d72bc677bbc10d9c09ae1d33c14",
@@ -91,16 +132,32 @@
       "patched_sha256": "f394adac886c598cd69e07d11d461ed22e2e5074248c8ec44f1b3fda1aeaea21"
     },
     "runtime-recomp/src/game/runtime_texture_packs.cpp": {
-      "original_sha256": "c597ebaf700bab0f5ec83577581439ec6731b9b639b1f1eade140d188fd987aa",
-      "patched_sha256": "db752e7377861b1764d022cf5192a61cf372fb22437eb058786c183bff2ebc33"
+      "original_sha256": "d2d127d190813aae802652cd18df0230b3f037a9fef60775b67d7dfb2780101e",
+      "patched_sha256": "e4ad918cb1fb0a2ca14f56af768caac63a82d8d06355153bd1a8daad5de71f9c"
     },
     "runtime-recomp/src/game/runtime_ui.cpp": {
-      "original_sha256": "efa6e5618e46e379c5787f51b67d138d999f99a13ceab02f81cb955e0fa0c86d",
-      "patched_sha256": "317801cd73622ab4ece09963016efbbccc26908a4e5c99fc7dca9a1785415dfa"
+      "original_sha256": "4363f93073d81fb89ca1c3646fd65f7eea7f82936235a007de1b2a34ef2aa38d",
+      "patched_sha256": "e23e9d20f8c6caa1935127c288c5147a3329f4a86f3117de99d561f0ef6900da"
     },
     "runtime-recomp/src/game/runtime_ui_paddock.inl": {
-      "original_sha256": "3958334961f6a6b91be789b5c84a0e8a1168bef804650a354bad741a1a581099",
-      "patched_sha256": "c96510d68f887d236bf0d5b2d2256c50a92f9356d14a624edaf7db7c4bed1c4e"
+      "original_sha256": "a4a8c6cce759da1da31079ae18afd132a6a99baab664216f775c60906da70c4a",
+      "patched_sha256": "ed63abdea26e1ee1aafe2dc8eeca84000abc62ac4e449d83d32c1212a16c8d89"
+    },
+    "runtime-recomp/src/game/runtime_updates_ui.inl": {
+      "original_sha256": "ddd6d745367cd360e6623fd757951d26a29e1f980bf488a0156f9e9179a6d287",
+      "patched_sha256": "88f41b86249171da952924ff6ffa20185843ce88ec924cd30dc470550a6335ae"
+    },
+    "runtime-recomp/src/game/save_storage.hpp": {
+      "original_sha256": "373e967270c33be76ebf659daa6e6fbfc07a55c45df1ba6bd33f70413c7f2437",
+      "patched_sha256": "97ef8a06d7caada101702abbb41ed54475f4e695c2cc09ef7df0fb1cd22e7254"
+    },
+    "runtime-recomp/src/game/shared_save_jobs.inl": {
+      "original_sha256": "993570d1dd27996b92dbccdcd8a05ff4d6c7d7348235286f12831f1d158b6ac0",
+      "patched_sha256": "666c68bbaf530bc08c7b46b7bf7a9d14199ee25e05ce14099179283aa89902de"
+    },
+    "runtime-recomp/src/game/updates/update_core.cpp": {
+      "original_sha256": "0c2f5cd124906bd00bc70f988534aa547bc19595fbcef0025c9ebd3c39de74b2",
+      "patched_sha256": "3034682c20c7f3bea0306af5967b30f9d1e656781e8e636aab0054d242b430da"
     },
     "runtime-recomp/tests/quick_join_transport_tests.cpp": {
       "original_sha256": "4f128aebad23c8034a45692fadc63b90cb32c8aa03f0c4d1c0e7d7d40ec09779",
@@ -111,25 +168,9 @@
       "patched_sha256": "ff917c5293d45236c5fb91cae93296905c3485fe05f4914ad79b475af082526b"
     },
     "scripts/generate_recomp_config.py": {
-      "original_sha256": "c31936c7c680dda78363037b284377216e5124db3f261ba851b145f6127dac4b",
-      "patched_sha256": "916a707a528ee840e52b85789c9afd01020fab5c1397db79a6238491e33b4a8d"
-    },
-    "runtime-recomp/src/game/save_storage.hpp": {
-      "original_sha256": "373e967270c33be76ebf659daa6e6fbfc07a55c45df1ba6bd33f70413c7f2437",
-      "patched_sha256": "97ef8a06d7caada101702abbb41ed54475f4e695c2cc09ef7df0fb1cd22e7254"
-    },
-    "runtime-recomp/src/game/runtime_details_ui.inl": {
-      "original_sha256": "615368b9eb6bc327cc86a86a543b4dfd1c628e43dbf6ac09fe715a7d0394d7eb",
-      "patched_sha256": "0af8dbd41e3f89855685155108b711e57047a2cb4a639c8268e695b10319637c"
-    },
-    "runtime-recomp/src/game/performance_capture.hpp": {
-      "original_sha256": "de3de8ea29e9ab2baf4ecf2477ac08f3419242167a6dbdca35887be7eadf06a8",
-      "patched_sha256": "485d238d7004f5eb404cd285e151656c54ddac67baec60d84f60a1ba9636125a"
-    },
-    "runtime-recomp/src/game/runtime_crt_overlay.cpp": {
-      "original_sha256": "9af25c08cd67d4534d9c60661096514b2f413b6858886ddc85408b611c491ee1",
-      "patched_sha256": "35a194e222f3069b921052676259517b0726e9986a3daff0730fda1231fc32fc"
+      "original_sha256": "94bd41d96616a8a2d4a12b05574bd9f06ee68c43eabe924c553b820a12466662",
+      "patched_sha256": "5e631a53a958b0d82f38de96b113c976591f7e863152d537de5ba5c3261ae70c"
     }
   },
-  "patch_sha256": "dc2fcb215c406aa624763a91ad447f31279e84d483bbe30c9e33f45cceb93d53"
+  "patch_sha256": "85250b2751e595a57652400e9239b80f249c3e76108294d22ac1480ec97b0277"
 }
