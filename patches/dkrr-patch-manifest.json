@@ -1,6 +1,6 @@
 {
-  "revision": "0368f51d769af4d89671a212e3ea8ac8078ce41b",
-  "version": "1.0.7",
+  "revision": "34ed57ae97ef46759e5b23aa8d7a1e7ec89f3f56",
+  "version": "1.0.8",
   "base": "Verified effective upstream release layers; see GAME_SOURCES.json release_layers",
   "files": {
     "patches/enhanced-water/dkr-ray-capabilities.patch": {
