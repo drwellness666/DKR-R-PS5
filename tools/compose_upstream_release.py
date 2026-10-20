@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Reconstruct the pinned 1.0.7 source layers for the PS5 source graph.
+"""Reconstruct the frozen 1.0.7 source layers retained by DKR-R 1.0.8.
 
 The upstream release capsule contains first-party deltas and separately hashed
 private draw inputs. This step reconstructs source only. Draw inputs are
@@ -114,7 +114,7 @@ def compose(root, expected_manifest):
         target = ordinary(name)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(raw)
-    receipt = dict(schema=1, upstream_version='1.0.7', manifest_sha256=expected_manifest,
+    receipt = dict(schema=1, upstream_version=(root/'VERSION').read_text().strip() if (root/'VERSION').is_file() else '1.0.7', capsule_version='1.0.7', manifest_sha256=expected_manifest,
                    records_verified=verified,
                    files={name:row for name, (_, row) in sorted(outputs.items())},
                    scope='First-party PS5 source graph; private draw kernels are generated separately')

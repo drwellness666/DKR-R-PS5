@@ -20,7 +20,7 @@ for i,rev in enumerate(selected):
 header+='static const char*native_dirs[]={"/data/dkrr","/data/dkrr/roms"};\nstatic const struct native_file native_files[]={'+','.join(rows)+'};\n'
 (work/'embedded.S').write_text(assembly);(work/'native_game_files.h').write_text(header)
 # Same byte-for-byte installer guard; source copy changes only its title message.
-s=(root/'src/install_native_game.c').read_text().replace('DKR-R 1.0.7 native preview installer (private build; no ROM included)','PRIVATE OWN-ROM INSTALLER: selected owned dumps to own console only').replace('NATIVE INSTALL PASS. Files staged only; mounting and gameplay untested.','OWN ROM INSTALL PASS. Never publish or share this generated ELF.')
+s=(root/'src/install_native_game.c').read_text().replace('DKR-R 1.0.8 native preview installer (private build; no ROM included)','PRIVATE OWN-ROM INSTALLER: selected owned dumps to own console only').replace('NATIVE INSTALL PASS. Files staged only; mounting and gameplay untested.','OWN ROM INSTALL PASS. Never publish or share this generated ELF.')
 (work/'install_owned.c').write_text(s);cc=str(sdk/'bin/prospero-clang');subprocess.run([cc,'-c',str(work/'embedded.S'),'-o',str(work/'embedded.o')],check=True)
 output=private/'dkrr-install-owned-rom.elf';subprocess.run([cc,'-std=c11','-O2','-Wall','-Wextra','-Werror','-I',str(work),str(work/'install_owned.c'),str(work/'embedded.o'),'-o',str(output)],check=True);output.chmod(0o600)
 print('Private owned-ROM installer:',output)

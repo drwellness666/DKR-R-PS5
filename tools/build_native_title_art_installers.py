@@ -86,7 +86,7 @@ int dkrr_sha1_fd(int fd,unsigned char digest[20]) {
     header += 'static const struct native_file native_files[]={' + ','.join(rows) + '};\n'
     (work / 'native_game_files.h').write_text(header)
     (work / 'install.S').write_text(assembly)
-    source = (root / 'src/install_native_game.c').read_text().replace('DKR-R 1.0.7 native preview installer (private build; no ROM included)', 'DKR-R own registered title artwork only; no game/ROM/save input')
+    source = (root / 'src/install_native_game.c').read_text().replace('DKR-R 1.0.8 native preview installer (private build; no ROM included)', 'DKR-R own registered title artwork only; no game/ROM/save input')
     (work / 'install_art.c').write_text(source)
     cc = str(args.sdk / 'bin/prospero-clang')
     for name in ('sha1.c', 'update.S', 'install.S'):
