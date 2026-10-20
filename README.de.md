@@ -3,7 +3,7 @@
 ![Diddy Kong Racing Recompiled — Grafik des Originalprojekts](https://github.com/user-attachments/assets/c913bee2-029c-4e29-9921-0f6abe7a3bf1)
 
 **Diddy Kong Racing Recompiled, nativ auf PlayStation 5.**
-Ein inoffizieller PS5-Port von [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R). Die originale Rekompilierung stammt von **ThatGuyMcd und den DKR-R-Mitwirkenden**.
+Ein inoffizieller PS5-Port von [DKR-R 1.0.7](https://github.com/ThatGuyMcd/DKR-R). Die originale Rekompilierung stammt von **ThatGuyMcd und den DKR-R-Mitwirkenden**.
 
 [📦 Downloads](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇬🇧 English](README.md) · [📖 Hilfe](docs/README.md) · [❤️ Mitwirkende](CREDITS.md) · [🐛 Fehler melden](https://github.com/drwellness666/DKR-R-PS5/issues)
 

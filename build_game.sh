@@ -43,6 +43,10 @@ for revision in "${revisions[@]}"; do
     [[ -d $DKR_PIPELINE/generated-v$revision ]] || { echo "Missing owned generated revision $revision" >&2; exit 2; }
     revision_list+="${revision_list:+;}$revision"
 done
+[[ $revision_list == '77;80' ]] || { echo 'The universal PS5 build requires both owned US ROM revisions.' >&2; exit 2; }
+python3 "$root/tools/prepare_camera_kernels.py" "$DKR_GAME_WORK" "$DKR_PIPELINE" \
+    --v77-build "${DKR_DECOMP_V77_BUILD:-$DKR_GAME_WORK/private/v77/build}" \
+    --v80-build "${DKR_DECOMP_V80_BUILD:-$DKR_GAME_WORK/private/v80/build}"
 cmake_bin=${CMAKE_BIN:-cmake}
 line_tables=${DKR_PS5_LINE_TABLES:-0}
 [[ $line_tables == 0 || $line_tables == 1 ]] || { echo 'DKR_PS5_LINE_TABLES must be 0 or 1' >&2; exit 2; }
@@ -56,8 +60,13 @@ chmod 0700 "$DKR_GAME_WORK/private"
     -DCMAKE_TOOLCHAIN_FILE="$sdk/toolchain/prospero.cmake" -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS_RELEASE="$release_flags" -DCMAKE_CXX_FLAGS_RELEASE="$release_flags" \
     -DDKR_PS5_REVISIONS="$revision_list" \
+    -DDKR_RELEASE_VERSION="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["upstream_version"])' "$root/GAME_SOURCES.json")" \
+    -DDKR_CODE_POLICY_V77="$DKR_PIPELINE/menu-pipeline-v77.toml" \
+    -DDKR_CODE_POLICY_V80="$DKR_PIPELINE/menu-pipeline-v80.toml" \
+    -DDKR_CAMERA_KERNEL_V77="$DKR_GAME_WORK/private/build/camera-v77" \
+    -DDKR_CAMERA_KERNEL_V80="$DKR_GAME_WORK/private/build/camera-v80" \
     -DBUILD_TESTING=OFF -DDKR_RUNTIME_BUILD_RT64=ON -DDKR_RUNTIME_BUILD_SDL3_INPUT_HOST=OFF \
-    -DDKR_NETPLAY_WEBRTC=OFF -DDKR_ENHANCED_WATER=OFF \
+    -DDKR_NETPLAY_WEBRTC=OFF -DDKR_ENHANCED_WATER=ON \
     -DDKR_GENERATED_SOURCE_V77="$DKR_PIPELINE/generated-v77" \
     -DDKR_GENERATED_SOURCE_V80="$DKR_PIPELINE/generated-v80" \
     -DDKR_GENERATED_RSP_SOURCE="$source/DKR-R/runtime-recomp/RecompiledRSP" \

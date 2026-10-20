@@ -3,7 +3,7 @@
 ![Diddy Kong Racing Recompiled — original project artwork](https://github.com/user-attachments/assets/c913bee2-029c-4e29-9921-0f6abe7a3bf1)
 
 **Diddy Kong Racing Recompiled, native on PlayStation 5.**
-An unofficial PS5 port of [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R), the original recompilation by **ThatGuyMcd and the DKR-R contributors**.
+An unofficial PS5 port of [DKR-R 1.0.7](https://github.com/ThatGuyMcd/DKR-R), the original recompilation by **ThatGuyMcd and the DKR-R contributors**.
 
 [📦 Downloads](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇩🇪 Deutsch](README.de.md) · [📖 Help](docs/README.md) · [❤️ Credits](CREDITS.md) · [🐛 Report a bug](https://github.com/drwellness666/DKR-R-PS5/issues)
 
@@ -20,7 +20,7 @@ An unofficial PS5 port of [DKR-R 1.0.6](https://github.com/ThatGuyMcd/DKR-R), th
 - Choose up to **4K**, optional **HDR10**, or experimental **120 Hz / VRR**. [Display settings](docs/DISPLAY.md).
 - Install once and play on the console. Future updates can be installed from the game's settings.
 
-DKR-R provides Modern/Accurate presentation, texture packs, mods, online features and English/French/German game text. The settings menu is English. Compatibility notes are in the [known issues](docs/KNOWN_ISSUES.md).
+DKR-R 1.0.7 provides Modern/Accurate presentation, custom cups, the mod library and SDK 2 mods, texture packs, online features and English/French/German game text. The settings menu is English. Compatibility notes are in the [known issues](docs/KNOWN_ISSUES.md).
 
 ## 📦 Install
 

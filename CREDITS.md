@@ -6,14 +6,14 @@
 
 | Project / people | Contribution |
 |---|---|
-| **[ThatGuyMcd and all DKR-R contributors](https://github.com/ThatGuyMcd/DKR-R)** | The original Diddy Kong Racing Recompiled project, its interface and game features. This PS5 port is based on 1.0.6. |
+| **[ThatGuyMcd and all DKR-R contributors](https://github.com/ThatGuyMcd/DKR-R)** | The original Diddy Kong Racing Recompiled project, its interface and game features. This PS5 port is based on 1.0.7. |
 | **[DavidSM64 and the Diddy Kong Racing decompilation contributors](https://github.com/DavidSM64/Diddy-Kong-Racing)** | Matching source, symbols and game structures. |
 | **[Wiseguy and the N64Recomp contributors](https://github.com/N64Recomp/N64Recomp)** | Static recompilation, with [N64ModernRuntime](https://github.com/N64Recomp/N64ModernRuntime) providing the runtime. |
 | **[RT64 contributors](https://github.com/rt64/rt64)** | Rendering and presentation; [Plume](https://github.com/rt64/Plume) supplies graphics abstraction. |
 | [Wave Race 64 Recomp](https://github.com/elliotttate/wave-race-64-recomp) | Enhanced-water reference used by upstream DKR-R. |
 | [Golden Balloon](https://github.com/akratch/goldenballoon) | HUD-layout reference credited by upstream DKR-R. |
 
-[Original DKR-R credits](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/README.md#credits-and-licensing) · [Original third-party acknowledgements](https://github.com/ThatGuyMcd/DKR-R/blob/c3eda4d368afbc729ed4a71312cce38d27f87c37/THIRD_PARTY.md)
+[Original DKR-R credits](https://github.com/ThatGuyMcd/DKR-R/blob/0368f51d769af4d89671a212e3ea8ac8078ce41b/README.md#credits-and-licensing) · [Original third-party acknowledgements](https://github.com/ThatGuyMcd/DKR-R/blob/0368f51d769af4d89671a212e3ea8ac8078ce41b/THIRD_PARTY.md)
 
 ## PS5 foundations
 

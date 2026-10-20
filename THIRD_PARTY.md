@@ -9,7 +9,7 @@ and copied into the private application. [Distribution scope](docs/LICENSES.md).
 
 | Component | Revision / inventory | Terms |
 |---|---|---|
-| DKR-R | 1.0.6, `c3eda4d368afbc729ed4a71312cce38d27f87c37`; `GAME_SOURCES.json` | Original project source MIT; combined-runtime obligations in upstream COPYING-NOTICE |
+| DKR-R | 1.0.7, `0368f51d769af4d89671a212e3ea8ac8078ce41b`; `GAME_SOURCES.json` | Original project source MIT; combined-runtime obligations in upstream COPYING-NOTICE |
 | N64ModernRuntime | `ae1ffbb909d9f93c88c41830deb539f7feef5ed2` | GPL-3.0 |
 | N64Recomp | `81213c1831fab2521a6a5459c67b63437d67e253` | MIT |
 | PS5 payload SDK | v0.44, `f5d40f02770e9b0001dd9e18056eca70b3da8b40` | Predominantly GPL-3.0-or-later; BSD headers retain separate notices |
