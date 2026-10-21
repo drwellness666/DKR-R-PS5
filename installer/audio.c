@@ -21,7 +21,7 @@ static int cue(struct reader *r,uint64_t bank,uint64_t samples,uint64_t instrume
  if(sfx+10U*(id+1)>end)return -1;unsigned index=u16(r,sfx+10U*id),seen[16],count=0;
  double gain=byte(r,sfx+10U*id+2)/128.0,pitch=byte(r,sfx+10U*id+4)/100.0;
  int64_t *mix=calloc(192000,sizeof(*mix));if(!mix)return -1;size_t mixed=0;int result=-1;
- unsigned sound_count=u16(r,instrument+14);
+ unsigned sound_count=u16(r,instrument+14);unsigned loop_start=0,loop_end=0,release_frames=0;
  while(index&&r->ok){if(index>sound_count||count==16)goto done;for(unsigned i=0;i<count;++i)if(seen[i]==index)goto done;seen[count++]=index;
   uint64_t sound=bank+u32(r,instrument+16+4U*(index-1));
   uint64_t env=bank+u32(r,sound),key=bank+u32(r,sound+4),wave=bank+u32(r,sound+8);
@@ -42,6 +42,16 @@ static int cue(struct reader *r,uint64_t bank,uint64_t samples,uint64_t instrume
   unsigned av=byte(r,env+12),dv=byte(r,env+13);
   double volume=byte(r,sound+13)/127.0*gain;
   size_t total=(size_t)min(144000.0,(double)frames*48000/(rate*speed));
+  if(slot==7){
+   const uint32_t offset=u32(r,wave+12);const uint64_t loop=bank+offset;
+   const unsigned begin=u32(r,loop),end_frame=u32(r,loop+4),repeats=u32(r,loop+8);
+   const int32_t release=(int32_t)u32(r,env+8);
+   if(!offset||count!=1||kd[0]||(kd[2]&0xc0)||begin>=end_frame||end_frame>frames||!repeats||release<=0||release>2000000){free(pcm);goto done;}
+   loop_start=(unsigned)((double)begin*48000/(rate*speed));loop_end=(unsigned)((double)end_frame*48000/(rate*speed));
+   release_frames=(unsigned)((double)release*48000/1000000);
+   if(loop_start>=loop_end||loop_end>144000||!release_frames){free(pcm);goto done;}
+   total=loop_end;
+  }
   size_t delay=(size_t)min(48000.0,(double)kd[1]*33333*48000/1000000);
   if(!r->ok){free(pcm);goto done;}if(mixed<delay+total)mixed=delay+total;
   for(size_t i=0;i<total;++i){double pos=(double)i*rate*speed/48000;size_t j=(size_t)pos;if(j>=frames){free(pcm);goto done;}
@@ -50,7 +60,7 @@ static int cue(struct reader *r,uint64_t bank,uint64_t samples,uint64_t instrume
    if(attack>0&&us<attack)envelope=av/127.0*us/attack;
    else if(decay>0)envelope=(av+((int)dv-(int)av)*min(1,max(0,us-max(0,attack))/decay))/127;
    else envelope=av/127.0;
-   double fade=max(0,min(1,min((double)i/96,(double)(total-1-i)/240)));
+   double fade=slot==7?1:max(0,min(1,min((double)i/96,(double)(total-1-i)/240)));
    mix[delay+i]+=(int64_t)nearbyint(sample*volume*envelope*fade);
   }free(pcm);index=kd[0]+(kd[2]&0xc0)*4;
  }
@@ -59,10 +69,15 @@ static int cue(struct reader *r,uint64_t bank,uint64_t samples,uint64_t instrume
   * already bounds long looping effects; category-specific cuts clip horns,
   * pickups and gold-balloon tails in the middle of the original sound. */
  int64_t peak=0;for(size_t i=0;i<mixed;++i){int64_t n=mix[i]<0?-mix[i]:mix[i];if(n>peak)peak=n;}if(!peak)goto done;
- double scale=min(1,30000.0/(double)peak);int16_t *out=malloc(mixed*2);if(!out)goto done;
+ double scale=min(1,30000.0/(double)peak);const size_t header=slot==7?24:0;unsigned char *bytes=malloc(mixed*2+header);if(!bytes)goto done;
+ int16_t *out=(int16_t*)(bytes+header);
+ if(header){
+  const uint32_t fields[6]={0x4c524b44U,1U,loop_start,loop_end,release_frames,0U};
+  for(unsigned n=0;n<6;++n)for(unsigned k=0;k<4;++k)bytes[n*4+k]=(unsigned char)(fields[n]>>(k*8));
+ }
  for(size_t i=0;i<mixed;++i)out[i]=(int16_t)nearbyint((double)mix[i]*scale*(slot<9?1:min(1,(double)(mixed-1-i)/240)));
- char path[DKRR_PATH];if(snprintf(path,sizeof(path),"%s/%u.pcm",dest,slot)>=(int)sizeof(path)){free(out);goto done;}
- result=dkrr_write_new(path,out,mixed*2,0644);free(out);
+ char path[DKRR_PATH];if(snprintf(path,sizeof(path),"%s/%u.pcm",dest,slot)>=(int)sizeof(path)){free(bytes);goto done;}
+ result=dkrr_write_new(path,bytes,mixed*2+header,0644);free(bytes);
  done:free(mix);return result;
 }
 #include "controller_jingle.inl"
