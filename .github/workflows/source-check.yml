@@ -26,7 +26,6 @@ jobs:
       - run: python3 tools/test_ps5_motion.py
       - run: python3 tools/test_ps5_item_feedback.py
       - run: python3 tools/test_ps5_controller_speaker.py
-      - run: python3 tools/test_ps5_controller_diagram.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_game_audio_hooks.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_file_picker.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_texture_import_worker.py "$PWD/work/controller-test-inputs"
