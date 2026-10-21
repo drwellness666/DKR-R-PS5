@@ -24,9 +24,9 @@ void DrawPs5DisplayFields(float width, bool entered) {
                      "Output buffer size. The game render resolution below controls detail separately. Applies on the next start.");
     PaddockGap(10.0F);
     if (active.high_refresh_build) {
-        SettingsDropdown("ps5-tv-rate", "TV refresh rate", &ui.refresh,
+        SettingsDropdown("ps5-tv-rate", "TV refresh & smoothness", &ui.refresh,
                          {"60 Hz (default)", "120 Hz (experimental)"}, width, false,
-                         "120 Hz is used only when offered by the console. Match display targets the active output rate after restart. It does not guarantee 120 rendered FPS.");
+                         "Modern rendering automatically follows the active 60 or 120 Hz output. Accurate keeps the original frame rate. Unsupported 120 Hz falls back to 60 Hz. Applies after restart; demanding scenes can render more slowly.");
     } else {
         SettingsHelp("TV refresh rate: 60 Hz. A separate optional test build enables the 120 Hz choice.", width);
     }

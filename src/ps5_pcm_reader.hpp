@@ -2,6 +2,7 @@
 #pragma once
 #include <cerrno>
 #include <cstdint>
+#include <cstring>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -9,6 +10,15 @@
 
 namespace dkrr::ps5_speaker {
 // Generated clips are signed 16-bit mono, at most four seconds at 48 kHz.
+// Shield data has a 24-byte private loop header, removed before audio output.
+struct ShieldLoop {std::uint32_t start=0,end=0,release=0;explicit operator bool()const{return start<end&&release>0;}};
+inline ShieldLoop unpack_shield(std::vector<std::int16_t>& data){
+    if(data.size()<=12){data.clear();return {};}
+    std::uint32_t fields[6];std::memcpy(fields,data.data(),sizeof(fields));
+    if(fields[0]!=0x4c524b44U||fields[1]!=1||fields[2]>=fields[3]||fields[3]!=data.size()-12||
+       !fields[4]||fields[4]>96000||fields[5]){data.clear();return {};}
+    data.erase(data.begin(),data.begin()+12);return {fields[2],fields[3],fields[4]};
+}
 // Inspect the opened inode: a path check before ifstream::open can race a
 // replacement with a FIFO and prevent the joined worker from shutting down.
 inline std::vector<std::int16_t> read_pcm(const char* path) {

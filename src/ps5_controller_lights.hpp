@@ -19,6 +19,7 @@ inline constexpr std::array<Color,6> palette{{
 }};
 struct Addresses {
     std::uint32_t mode, paused, tracks_menu, load_timer, racer_count, racers_by_port;
+    std::uint32_t cutscene, race_end_stage, race_end_timer;
 };
 // DKR's original 8 MiB guest range only, in the runtime's word-swapped format.
 // The existing HUD callback owns this memory. Never read live guest RAM from SDL.
@@ -32,6 +33,7 @@ public:
         return offset<ram.size() && size<=ram.size()-offset && size<=0x800000U-offset;
     }
     std::uint8_t byte(std::uint32_t address) const { return ram[(address-0x80000000U)^3U]; }
+    std::uint16_t half(std::uint32_t address) const {return (std::uint16_t(byte(address))<<8)|byte(address+1);}
     std::uint32_t word(std::uint32_t address) const {
         return (std::uint32_t(byte(address))<<24)|(std::uint32_t(byte(address+1))<<16)|
                (std::uint32_t(byte(address+2))<<8)|byte(address+3);
@@ -44,12 +46,16 @@ inline std::uint16_t sample(std::span<const std::uint8_t> ram, const Addresses& 
         if ((p&3U) || !g.valid(p,4)) return 0;
     if (!g.valid(a.paused,1) || g.word(a.mode)!=0 || g.byte(a.paused)!=0 ||
         g.word(a.tracks_menu)!=0 || g.word(a.load_timer)!=0) return 0;
+    // The victory award clears raceFinished while retaining race inventory.
+    // RaceEndStage alone can survive a scene change; qualify it with its timer.
+    if(!g.valid(a.cutscene,1)||!g.valid(a.race_end_stage,1)||!g.valid(a.race_end_timer,2)||
+       g.byte(a.cutscene)||(g.byte(a.race_end_stage)&&g.half(a.race_end_timer)))return 0;
     const auto count=g.word(a.racer_count), table=g.word(a.racers_by_port);
     if (!count || count>10 || (table&3U) || !g.valid(table,count*4U)) return 0;
     std::uint16_t colors=0;
     for (std::uint32_t port=0;port<4 && port<count;++port) {
         const auto object=g.word(table+port*4U);
-        if ((object&3U) || !g.valid(object,0x68)) continue;
+        if ((object&3U) || !g.valid(object,0x68) || g.byte(object+0x48U)!=0 || g.byte(object+0x49U)!=1) continue;
         const auto racer=g.word(object+0x64U);
         // Object.racer +0x64; Object_Racer.playerIndex +0, balloon_type +0x172,
         // quantity +0x173. Authored decomp fields, identical for US77/US80.
@@ -58,7 +64,7 @@ inline std::uint16_t sample(std::span<const std::uint8_t> ram, const Addresses& 
         const auto type=g.byte(racer+0x172U), quantity=g.byte(racer+0x173U);
         // raceFinished is set at the finish line, before the results/award
         // cutscene changes GameMode. Inventory can remain populated there.
-        if (owner==port && !g.byte(racer+0x1D8U) && type<5 && quantity>0 && quantity<=10)
+        if (owner==port && !g.byte(racer+0x1D8U) && type<5 && quantity>0 && quantity<=10 && g.byte(racer+0x174U)<=2)
             colors|=static_cast<std::uint16_t>((type+1U)<<(port*3U));
     }
     return colors;
