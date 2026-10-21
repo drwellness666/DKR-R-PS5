@@ -18,6 +18,7 @@ def fixture_rom(revision):
     u16(bank+0x4e,1);u32(bank+0x50,0x80)
     for off,v in ((0,0xa0),(4,0xc0),(8,0xe0)):u32(bank+0x80+off,v)
     rom[bank+0x8d]=127;u32(bank+0xa4,1000000);rom[bank+0xac:bank+0xae]=b'\x7f\x7f';rom[bank+0xc4]=60
+    u32(bank+0xa8,100000);u32(bank+0xec,0x160);u32(bank+0x164,16);u32(bank+0x168,0xffffffff);
     u32(bank+0xe4,9);u32(bank+0xf0,0x120);u32(bank+0x120,2);u32(bank+0x124,1)
     rom[audio+0x1000:audio+0x1009]=bytes.fromhex('60 12 34 56 78 9a bc de f0')
     for sound in SOUNDS:

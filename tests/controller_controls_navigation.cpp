@@ -97,30 +97,32 @@ int main() {
     assert(controller_preset(0)==ControllerPreset::Custom);
     assert(fields.size()==42); // restore Classic, 20 pairs, restore bindings
     for (const auto& field : fields) assert(field.name.find("R2 / L2 driving")==std::string::npos);
-    for(std::size_t n=1;n<fields.size();++n) {
-        assert(fields[n].min.y >= fields[n-1].max.y);
+    // Original mapping table, two adjacent binding cells per game action.
+    for(std::size_t n=1;n<41;n+=2){
+        assert(fields[n].min.y==fields[n+1].min.y);
+        assert(fields[n].max.x<fields[n+1].min.x);
+        if(n>1)assert(fields[n].min.y>=fields[n-1].max.y);
     }
+    assert(fields[40].max.y-fields[1].min.y<1400.0F);
     press(ImGuiKey_GamepadDpadDown);
     assert(GImGui->NavId==fields[1].id && saved==1);
-    for(std::size_t n=1;n<fields.size();++n) {
-        if(n!=1) press(ImGuiKey_GamepadDpadDown);
+    for(std::size_t n=1;n<41;n+=2){
         assert(GImGui->NavId==fields[n].id);
-        if(n==1) {
-            page.undo=TakeControlsSnapshot();
-            press(ImGuiKey_GamepadFaceDown);
-            assert(g_capture_action==static_cast<int>(Action::StickUp) && !g_capture_secondary_controller);
-            assert(!page.undo && g_capture_popup_pending && !g_capture_finished);
+        if(n==1){
+            page.undo=TakeControlsSnapshot();press(ImGuiKey_GamepadFaceDown);
+            assert(g_capture_action==static_cast<int>(Action::StickUp)&&!g_capture_secondary_controller);
+            assert(!page.undo&&g_capture_popup_pending&&!g_capture_finished);
             assert(g_capture_device==CaptureDevice::Controller);
         }
-        if(n==2) {
-            press(ImGuiKey_GamepadFaceDown);
-            assert(g_capture_action==static_cast<int>(Action::StickUp) && g_capture_secondary_controller);
-        }
+        press(ImGuiKey_GamepadDpadRight);assert(GImGui->NavId==fields[n+1].id);
+        if(n==1){press(ImGuiKey_GamepadFaceDown);assert(g_capture_action==static_cast<int>(Action::StickUp)&&g_capture_secondary_controller);}
+        if(n<39){press(ImGuiKey_GamepadDpadLeft);press(ImGuiKey_GamepadDpadDown);}
     }
+    press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[41].id);
     assert(saved==1); // navigation and capture alone do not change mappings
     assert(GImGui->NavWindow->Scroll.y>0);
     press(ImGuiKey_GamepadDpadUp);
     assert(GImGui->NavId==fields[40].id);
     ImGui::DestroyContext();
-    std::puts("PASS actual controls preset/undo and binding rows: PlayStation labels, one-column geometry, D-pad order, scroll, Cross capture and reverse navigation");
+    std::puts("PASS actual controls preset/undo and binding rows: PlayStation labels, compact original table geometry, D-pad row/column order, scroll, Cross capture and reverse navigation");
 }

@@ -10,13 +10,13 @@ int main(){
  auto send=[&](const Command& c){assert(c.magic==0x44545247&&c.strength<=5&&!c.reserved[0]&&!c.reserved[1]);commands.push_back(c.mode);return 0;};
  Output out;
  assert(out.update(false,held,100,false,send)==0);
- assert(out.update(true,held,100,false,send)==0); // Merely holding an item does nothing.
+ assert(out.update(true,held,100,false,send)==1&&commands.back()==1); // Armed before the first physical pull.
  assert(out.update(true,spent,108,true,send)==1&&commands.back()==2); // First pull can fire immediately.
  for(unsigned t=109;t<178;++t)assert(out.update(true,spent,t,true,send)==0);
  assert(out.update(true,spent,178,true,send)==1&&commands.back()==1);
- assert(out.update(true,spent,180,false,send)==1&&commands.back()==0);
+ assert(out.update(true,spent,180,false,send)==0); // Remaining ammunition keeps the trigger armed.
  assert(out.update(true,spent,181,false,send)==0);
- assert(out.update(true,spent,190,true,send)==1&&commands.back()==1);
+ assert(out.update(true,spent,190,true,send)==0);
  assert(out.update(true,{},191,true,send)==1&&commands.back()==0); // Pause / load / stale / disconnect.
  assert(out.update(true,spent,200,true,send)==1&&commands.back()==1);
  assert(out.update(false,spent,201,true,send)==1&&commands.back()==0);
@@ -39,15 +39,15 @@ int main(){
  Output release;
  assert(release.update(true,held,400,true,send)==1);
  assert(release.update(true,spent,408,false,send)==1&&commands.back()==2);
- assert(release.update(true,spent,479,false,send)==1&&commands.back()==0);
+ assert(release.update(true,spent,479,false,send)==1&&commands.back()==1); // Another shot remains.
  for(unsigned type=0;type<5;++type){
   Output each;Item a=held;a.type=type;Item b=a;b.quantity=0;
   each.update(true,a,600,true,send);
   assert(each.update(true,b,620,false,send)==1&&commands.back()==2);
   assert(each.update(true,b,691,false,send)==1&&commands.back()==0);
  }
- Mailbox box;std::array<Item,4> items{};items[0]=held;items[1]=other;
- box.publish(items,0xFFFFF0);assert(box.read(0,0x1000010,false).quantity==2);
+ Mailbox box;std::array<Item,4> items{};items[0]=held;items[0].shield=true;items[1]=other;
+ box.publish(items,0xFFFFF0);assert(box.read(0,0x1000010,false).quantity==2&&box.read(0,0x1000010,false).shield);
  assert(!box.read(0,0x1000200,false).valid&&!box.read(4,0x1000010,false).valid&&!box.read(0,0x1000010,true).valid);
- puts("PASS item feedback: consumption edge, short pulse, resistance, per-racer reset, release/pause/disable cleanup, deduplicated bounded failures, explicit-toggle recovery after failed reset, and mailbox expiry/wrap");
+ puts("PASS item feedback: consumption edge, short pulse, resistance armed before pull, per-racer reset, release/pause/disable cleanup, deduplicated bounded failures, explicit-toggle recovery after failed reset, and mailbox expiry/wrap");
 }

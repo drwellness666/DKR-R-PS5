@@ -50,9 +50,11 @@ int main() {
     status.refresh_millihz=59940;status.fallback=1;
     ApplyRate(app,{RefreshRate::Display,120});assert(app.userConfig.refreshRateTarget==60);
     status.refresh_millihz=119880;
-    ApplyRate(app,{RefreshRate::Manual,60});assert(app.userConfig.refreshRateTarget==60);
-    ApplyRate(app,{RefreshRate::Manual,900});assert(app.userConfig.refreshRateTarget==500);
+    ApplyRate(app,{RefreshRate::Manual,60});assert(app.userConfig.refreshRateTarget==120);
+    ApplyRate(app,{RefreshRate::Manual,900});assert(app.userConfig.refreshRateTarget==120);
+    status.refresh_millihz=59940;status.fallback=1;
+    ApplyRate(app,{RefreshRate::Manual,120});assert(app.userConfig.refreshRateTarget==60);
     modern=false;ApplyRate(app,{RefreshRate::Display,120});
     assert(app.userConfig.refreshRate==RT64::UserConfiguration::RefreshRate::Original&&app.userConfig.refreshRateTarget==30);
-    puts("PASS actual PS5 default and renderer rate path: Match display targets native 120/60 including fallback; explicit manual cap retained; Accurate stays 30; no SDL dummy query");
+    puts("PASS actual PS5 default and renderer rate path: Match display targets native 120/60 including fallback; stale manual settings cannot impose a second PS5 cap; Accurate stays 30; no SDL dummy query");
 }

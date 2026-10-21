@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ps5_controller_speaker.hpp"
+#include "ps5_pcm_reader.hpp"
+#include <cstring>
 #include <atomic>
 #include <cassert>
 #include <chrono>
@@ -7,7 +9,7 @@
 #include <cstdio>
 #include <thread>
 using namespace dkrr;
-static std::atomic<int> opens{0},outputs{0},closes{0},active{0},loaded{-1},fail_open{0};
+static std::atomic<int> opens{0},outputs{0},closes{0},active{0},loaded{-1},fail_open{0},mixed_blocks{0};
 static std::atomic<unsigned> load_calls{0},loaded_revision{0};
 static std::atomic<bool> delay_open{false},open_entered{false},open_release{false};
 extern "C" int sceAudioOutOpen(int user,int type,int index,unsigned length,unsigned hz,unsigned format) {
@@ -17,11 +19,16 @@ extern "C" int sceAudioOutOpen(int user,int type,int index,unsigned length,unsig
 }
 extern "C" int sceAudioOutOutput(int h,const void*p) {
     assert(h==17);
-    if(p){const auto*s=static_cast<const std::int16_t*>(p);for(unsigned i=0;i<256;++i)assert(std::abs(int(s[i]))<=12000);++outputs;std::this_thread::sleep_for(std::chrono::milliseconds(2));}
+    if(p){const auto*s=static_cast<const std::int16_t*>(p);for(unsigned i=0;i<256;++i)assert(std::abs(int(s[i]))<=12000);if(s[0]>=6000)++mixed_blocks;++outputs;std::this_thread::sleep_for(std::chrono::milliseconds(2));}
     return 0;
 }
 extern "C" int sceAudioOutClose(int h){assert(h==17);++closes;--active;return 0;}
 static std::vector<std::int16_t> load(unsigned rev,unsigned clip){assert((rev==77||rev==80)&&clip<ps5_sounds::count);++load_calls;loaded_revision=rev;loaded=static_cast<int>(clip);return std::vector<std::int16_t>(24000,12000);}
+static std::vector<std::int16_t> loop_load(unsigned rev,unsigned clip){
+ auto data=load(rev,clip);if(clip!=7)return data;
+ const std::uint32_t meta[6]={0x4c524b44,1,0,unsigned(data.size()),4800,0};
+ data.insert(data.begin(),12,0);std::memcpy(data.data(),meta,sizeof(meta));return data;
+}
 static std::atomic<bool> delayed_load{true},load_entered{false},load_release{false};
 static std::vector<std::int16_t> delayed(unsigned rev,unsigned clip){
  if(delayed_load.exchange(false)){load_entered=true;while(!load_release.load())std::this_thread::yield();return {};}
@@ -92,6 +99,33 @@ int main(){
         assert(load_calls==old_loads+1&&outputs==before+96); // ceil(24000/256) + 2 silence blocks.
     }
     {
+        // Two real boosts arrive before the first clip ends. They are mixed
+        // immediately through one native output, with both complete tails.
+        ps5_speaker::Speaker speaker(load);
+        const auto before=opens.load(),old_closes=closes.load(),old_mix=mixed_blocks.load();
+        speaker.update(true,42,{},1200,false,0.25F,77,ps5_sounds::zipper);
+        wait([&]{return opens.load()>before;});
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+        speaker.update(true,42,{},1400,false,0.25F,77,ps5_sounds::zipper);
+        wait([&]{return mixed_blocks.load()>old_mix;});
+        wait([&]{return closes.load()>old_closes;});
+        assert(opens==before+1&&active==0); // No extra output or delayed queue.
+    }
+    {
+        auto data=loop_load(77,7);auto loop=ps5_speaker::unpack_shield(data);
+        assert(loop&&loop.start==0&&loop.end==24000&&loop.release==4800&&data.size()==24000&&data.front()==12000);
+        for(unsigned bad=0;bad<6;++bad){auto malformed=loop_load(77,7);std::uint32_t field=bad==2?25000:bad==3?0:bad==4?96001:99;std::memcpy(malformed.data()+bad*2,&field,4);assert(!ps5_speaker::unpack_shield(malformed)&&malformed.empty());}
+        ps5_speaker::Speaker speaker(loop_load);ps5_items::Item shield=spent;shield.shield=true;
+        const auto before=outputs.load(),old_closes=closes.load();
+        speaker.update(true,42,shield,1500,false,0.25F,77);
+        wait([&]{return outputs.load()>=before+120;}); // Longer than one 94-block source cycle.
+        assert(active==1);
+        const auto stopping=outputs.load();shield.shield=false;
+        speaker.update(true,42,shield,1800,false,0.25F,77);
+        wait([&]{return closes.load()>old_closes;});
+        assert(outputs>=stopping+19&&outputs<=stopping+23); // Original metadata release + paced tail.
+    }
+    {
         // A cancelled load belongs to the old generation. Its missing-file
         // result must not disable a newer request after an off/on transition.
         ps5_speaker::Speaker speaker(delayed);const auto before=opens.load();
@@ -113,5 +147,5 @@ int main(){
         wait([&]{return opens.load()>before+1;});wait([]{return active.load()==0;});
         assert(speaker.status()==1);
     }
-    puts("PASS actual controller audio worker: all five item types/levels, release-use edge, no invented pickup/loss event, real non-item cues and item priority, no port while disabled/idle, correct native user/route/format, bounded gain, pause cancellation, failure isolation, cancelled load/open errors cannot disable newer requests, and shutdown close");
+    puts("PASS actual controller audio worker: all five item types/levels, release-use edge, no invented pickup/loss event, real non-item cues, simultaneous zipper boosts, live shield loop and original release through one output, bounded metadata, and item priority, no port while disabled/idle, correct native user/route/format, bounded gain, pause cancellation, failure isolation, cancelled load/open errors cannot disable newer requests, and shutdown close");
 }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ps5_controller_lights.hpp"
+#include "ps5_item_feedback.hpp"
 #include "revision_addresses.hpp"
 #include <cassert>
 #include <cstdio>
@@ -39,7 +40,7 @@ int main() {
     for (const auto& a:{kUsV77,kUsV80}) {
         std::vector<std::uint8_t> ram(0x800000);
         const Addresses addresses{a.GameMode,a.IsPaused,a.IsInTracksMenu,
-                                  a.LevelLoadTimer,a.NumberOfRacers,a.RacersByPort};
+                                  a.LevelLoadTimer,a.NumberOfRacers,a.RacersByPort,a.CutsceneCameraActive,a.RaceEndStage,a.RaceEndTimer};
         auto byte=[&](std::uint32_t address,std::uint8_t value) { ram[(address-0x80000000U)^3U]=value; };
         auto word=[&](std::uint32_t address,std::uint32_t value) {
             for (unsigned i=0;i<4;++i)byte(address+i,static_cast<std::uint8_t>(value>>(24-i*8)));
@@ -48,18 +49,33 @@ int main() {
         word(a.RacersByPort,table);word(a.NumberOfRacers,4);
         for (unsigned port=0;port<4;++port) {
             const auto object=0x80401000U+port*0x1000U,racer=object+0x100U;
-            word(table+port*4,object);word(object+0x64U,racer);
+            word(table+port*4,object);word(object+0x64U,racer);byte(object+0x49U,1);
             byte(racer,0);byte(racer+1,port);
             byte(racer+0x172U,port);byte(racer+0x173U,1);
         }
         const auto expected=std::uint16_t(1U|(2U<<3)|(3U<<6)|(4U<<9));
         const auto before=ram;assert(sample(ram,addresses)==expected);assert(before==ram);
+        const auto live_items=dkrr::ps5_items::sample(ram,addresses);
+        for(unsigned port=0;port<4;++port){assert(live_items[port].valid);assert(dkrr::ps5_items::color(live_items[port])==palette[port+1]);}
         // IsPaused is an s8, not a word: nonzero neighboring bytes are unrelated.
         byte(a.IsPaused+1,0x7F);assert(sample(ram,addresses)==expected);
         byte(a.IsPaused,1);assert(sample(ram,addresses)==0);byte(a.IsPaused,0);
         for (auto address:{a.GameMode,a.IsInTracksMenu,a.LevelLoadTimer}) {
             word(address,1);assert(sample(ram,addresses)==0);word(address,0);
         }
+        byte(a.CutsceneCameraActive,1);assert(sample(ram,addresses)==0);assert(!dkrr::ps5_items::sample(ram,addresses)[0].valid);byte(a.CutsceneCameraActive,0);
+        // Actual victory flow: raceFinished is cleared for the award, while
+        // balloon inventory remains. Ignore stale stage after a new scene.
+        byte(a.RaceEndStage,4);byte(a.RaceEndTimer,255);byte(a.RaceEndTimer+1,255);
+        assert(sample(ram,addresses)==0);assert(!dkrr::ps5_items::sample(ram,addresses)[0].valid);
+        byte(a.RaceEndTimer,0);byte(a.RaceEndTimer+1,0);assert(sample(ram,addresses)==expected);
+        byte(a.RaceEndStage,0);
+        // The original spatial shield sound runs only while its timer >60.
+        constexpr auto local_racer=0x80401100U;
+        byte(local_racer+0x189U,1);byte(local_racer+0x18eU,1);byte(local_racer+0x18fU,44);
+        assert(dkrr::ps5_items::sample(ram,addresses)[0].shield);
+        byte(local_racer+0x18eU,0);byte(local_racer+0x18fU,60);assert(!dkrr::ps5_items::sample(ram,addresses)[0].shield);
+        byte(local_racer+0x189U,0);byte(local_racer+0x18fU,0);
         word(a.NumberOfRacers,11);assert(sample(ram,addresses)==0);
         word(a.NumberOfRacers,0);assert(sample(ram,addresses)==0);word(a.NumberOfRacers,4);
         for (auto bad:{0U,0x80400001U,0x807FFFFCU,0xFFFFFFFFU}) {
@@ -73,10 +89,17 @@ int main() {
         byte(racer+0x1D8U,1);assert((sample(ram,addresses)&7U)==0); // Finished, balloon still held.
         assert((sample(ram,addresses)&(7U<<3))!=0); // Other local racer still racing.
         byte(racer+0x1D8U,0);assert((sample(ram,addresses)&7U)==5);
+        // A freed object can retain plausible player/inventory bytes.
+        byte(0x80401049U,2);assert((sample(ram,addresses)&7U)==0);
+        assert(!dkrr::ps5_items::sample(ram,addresses)[0].valid);
+        assert(dkrr::ps5_items::color(dkrr::ps5_items::sample(ram,addresses)[0])==palette[0]);
+        byte(0x80401049U,1);
+        byte(racer+0x174U,255);assert((sample(ram,addresses)&7U)==0);assert(!dkrr::ps5_items::sample(ram,addresses)[0].valid);byte(racer+0x174U,0);
         byte(racer+0x172U,5);assert((sample(ram,addresses)&7U)==0);
         byte(racer+0x172U,0);
         for (auto quantity:{0,11,255}) {
             byte(racer+0x173U,quantity);assert((sample(ram,addresses)&7U)==0);
+            assert(dkrr::ps5_items::color(dkrr::ps5_items::sample(ram,addresses)[0])==palette[0]);
         }
         byte(racer+0x173U,1);byte(racer,0xFF);byte(racer+1,0xFF);
         assert((sample(ram,addresses)&7U)==0); // AI is not a local controller
