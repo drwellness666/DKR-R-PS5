@@ -89,7 +89,7 @@
      err = scePadClose(ctx->handle);
      if (err != 0) {
          SDL_SetError("scePadClose: 0x%08x", err);
-@@ -478,16 +523,64 @@
+@@ -478,16 +523,67 @@
      return SDL_Unsupported();
  }
  
@@ -103,8 +103,11 @@
 +} PS5_TriggerParameters;
 +_Static_assert(sizeof(PS5_ItemEffect) == 8, "item effect protocol");
 +_Static_assert(sizeof(PS5_TriggerParameters) == 120, "native trigger ABI size");
-+_Static_assert(offsetof(PS5_PadData,vel) == 28 && offsetof(PS5_PadData,timestamp) == 80,
-+               "native motion ABI fields");
++/* Public native Pad ABI; validate offsets independently from the reader. */
++_Static_assert(sizeof(PS5_PadData) == 120 && offsetof(PS5_PadData,acell) == 0x1c &&
++               offsetof(PS5_PadData,vel) == 0x28 && offsetof(PS5_PadData,touch) == 0x34 &&
++               offsetof(PS5_PadData,connected) == 0x4c && offsetof(PS5_PadData,timestamp) == 0x50 &&
++               offsetof(PS5_PadData,count) == 0x68, "native motion ABI fields");
 +
  static int
  PS5_JoystickSendEffect(SDL_Joystick *joystick, const void *data, int size)
@@ -158,6 +161,25 @@
  static const char *PS5_JoystickGetDevicePath(int index)
 --- a/src/joystick/ps5/SDL_ps5joystick.h
 +++ b/src/joystick/ps5/SDL_ps5joystick.h
+@@ -86,15 +86,15 @@
+         float x;
+         float y;
+         float z;
+-    } vel;
++    } acell;
+     struct
+     {
+         float x;
+         float y;
+         float z;
+-    } acell;
++    } vel;
+     PS5_PadTouchData touch;
+-    uint8_t connected;
++    int32_t connected;
+     uint64_t timestamp;
+     uint8_t ext[16];
+     uint8_t count;
 @@ -106,6 +106,8 @@
  int scePadGetHandle(int user_id, int type, int index);
  int scePadReadState(int handle, PS5_PadData *data);
