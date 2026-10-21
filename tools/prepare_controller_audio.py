@@ -34,7 +34,7 @@ class Bank:
         index=self.u16(self.sfx+10*sound_id)
         gain=self.read(self.sfx+10*sound_id+2,1)[0]/128
         pitch=self.read(self.sfx+10*sound_id+4,1)[0]/100
-        mixed=[];seen=set()
+        mixed=[];seen=set();loop_header=None
         while index:
             if index in seen or len(seen)>=16 or not 1<=index<=self.sound_count:raise ValueError('Invalid sound sequence')
             seen.add(index)
@@ -59,6 +59,11 @@ class Bank:
             volume=self.read(sound+13,1)[0]/127*gain
             # Keep an original, bounded activation cue for long looped effects.
             frames=min(48000*3,int(len(pcm)*48000/(self.rate*speed)))
+            if sound_id==0x9f:
+                loop=self.bank+self.u32(wave+12);begin,end,repeats=struct.unpack('>III',self.read(loop,12))
+                if len(seen)!=1 or key_data[0] or key_data[2]&0xc0 or not begin<end<=len(pcm) or not repeats or not 0<release<=2_000_000:raise ValueError('Invalid original shield loop')
+                loop_start=int(begin*48000/(self.rate*speed));frames=int(end*48000/(self.rate*speed))
+                loop_header=struct.pack('<6I',0x4c524b44,1,loop_start,frames,int(release*48000/1_000_000),0)
             delay=min(48000,int(key_data[1]*33333*48000/1_000_000))
             if len(mixed)<delay+frames:mixed.extend([0]*(delay+frames-len(mixed)))
             for i in range(frames):
@@ -68,12 +73,12 @@ class Bank:
                 if attack>0 and us<attack:envelope=attack_vol/127*us/attack
                 elif decay>0:envelope=(attack_vol+(decay_vol-attack_vol)*min(1,max(0,us-max(0,attack))/decay))/127
                 else:envelope=attack_vol/127
-                fade=min(1,i/96,(frames-1-i)/240)
+                fade=1 if loop_header is not None else min(1,i/96,(frames-1-i)/240)
                 mixed[delay+i]+=round(sample*volume*envelope*max(0,fade))
             index=key_data[0]+(key_data[2]&0xc0)*4
         peak=max((abs(x) for x in mixed),default=0)
         gain=min(1.0,30000/peak) if peak else 1.0
-        return [round(x*gain) for x in mixed]
+        return ([] if loop_header is None else list(struct.unpack("<12h",loop_header)))+[round(x*gain) for x in mixed]
 def prepare(roms,destination):
     root=pathlib.Path(__file__).resolve().parents[1]
     selected=json.loads((roms/'selected-revisions.json').read_text())['revisions']

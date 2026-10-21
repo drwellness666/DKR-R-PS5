@@ -49,6 +49,11 @@ typedef uint64_t Uint64;typedef uint32_t Uint32;typedef uint8_t Uint8;typedef in
 typedef struct SDL_Joystick {int unused;} SDL_Joystick;
 typedef struct PS5_PadContext {int handle;PS5_PadData pad;SDL_bool sensors_enabled;Uint64 sensor_timestamp;} PS5_PadContext;
 static PS5_PadContext context={.handle=17};static PS5_PadData incoming;
+// Native Pad wire ABI: orientation 0x0c, acceleration 0x1c,
+// angular velocity 0x28, int32 connected 0x4c, timestamp 0x50.
+static void native_float(unsigned offset,float value){assert(offset+4<=sizeof(incoming));memcpy((unsigned char*)&incoming+offset,&value,4);}
+static void native_connected(int32_t value){memcpy((unsigned char*)&incoming+0x4c,&value,4);}
+static void native_timestamp(uint64_t value){memcpy((unsigned char*)&incoming+0x50,&value,8);}
 static int available=1,returned=0,motion_calls=0,sensor_calls=0,axis_calls=0;static uint64_t stamp;
 static float received[2][3];static const unsigned btn_map[]={PS5_PAD_BUTTON_CROSS};static int analog_map[256];
 static PS5_PadContext*PS5_JoystickGetPadContext(SDL_Joystick*j){(void)j;return available?&context:NULL;}
@@ -64,18 +69,24 @@ static void SDL_PrivateJoystickSensor(SDL_Joystick*j,int type,uint64_t ts,const 
  code+=extract('PS5_JoystickSetSensorsEnabled')+'\n'+extract('PS5_JoystickUpdate')
  code+=r'''
 int main(void){SDL_Joystick joy={0};
- incoming.connected=1;incoming.timestamp=1000;incoming.vel.x=1.25f;incoming.vel.y=-2.5f;incoming.vel.z=0.75f;incoming.acell.y=1;
+ native_connected(1);native_timestamp(1000);native_float(0x28,1.25f);native_float(0x2c,-2.5f);native_float(0x30,0.75f);native_float(0x20,1);
  PS5_JoystickUpdate(&joy);assert(!sensor_calls);
  assert(PS5_JoystickSetSensorsEnabled(&joy,1)==0&&motion_calls==1&&context.sensors_enabled);
  PS5_JoystickUpdate(&joy);assert(sensor_calls==2&&stamp==1000&&received[0][0]==1.25f&&received[0][1]==-2.5f&&received[0][2]==0.75f);assert(fabsf(received[1][1]-9.80665f)<0.0001f);
  PS5_JoystickUpdate(&joy);assert(sensor_calls==2);
- incoming.timestamp=2000;incoming.vel.x=NAN;PS5_JoystickUpdate(&joy);assert(sensor_calls==2);
- incoming.vel.x=1;incoming.timestamp=3000;PS5_JoystickUpdate(&joy);assert(sensor_calls==4&&stamp==3000);
- incoming.connected=0;PS5_JoystickUpdate(&joy);assert(sensor_calls==4&&axis_calls>=6);
- incoming.connected=1;assert(PS5_JoystickSetSensorsEnabled(&joy,0)==0&&!context.sensors_enabled);incoming.timestamp=4000;PS5_JoystickUpdate(&joy);assert(sensor_calls==4);
+ native_timestamp(2000);native_float(0x28,NAN);PS5_JoystickUpdate(&joy);assert(sensor_calls==2);
+ native_float(0x28,1);native_timestamp(3000);PS5_JoystickUpdate(&joy);assert(sensor_calls==4&&stamp==3000);
+ native_connected(0);PS5_JoystickUpdate(&joy);assert(sensor_calls==4&&axis_calls>=6);
+ native_connected(1);assert(PS5_JoystickSetSensorsEnabled(&joy,0)==0&&!context.sensors_enabled);native_timestamp(4000);PS5_JoystickUpdate(&joy);assert(sensor_calls==4);
+ // A stationary, tilted controller has gravity but no angular velocity.
+ native_float(0x1c,0.6f);native_float(0x20,0.8f);native_float(0x28,0);native_float(0x2c,0);native_float(0x30,0);
+ native_timestamp(5000);assert(PS5_JoystickSetSensorsEnabled(&joy,1)==0);PS5_JoystickUpdate(&joy);
+ assert(received[0][0]==0&&received[0][1]==0&&received[0][2]==0);
+ assert(fabsf(received[1][0]-0.6f*SDL_STANDARD_GRAVITY)<0.0001f);
+ assert(PS5_JoystickSetSensorsEnabled(&joy,0)==0);
  returned=-9;assert(PS5_JoystickSetSensorsEnabled(&joy,1)==-1&&!context.sensors_enabled);
  available=0;assert(PS5_JoystickSetSensorsEnabled(&joy,1)==-1);
- puts("PASS actual SDL sensor callbacks: native values, g conversion, exact timestamps, duplicate/NaN rejection, disconnect neutralization, disable and API-error handling");}
+ puts("PASS actual SDL sensor callbacks: independent native wire offsets, stationary tilted gravity cannot become gyro drift, g conversion, exact timestamps, duplicate/NaN rejection, disconnect neutralization, disable and API-error handling");}
 '''
  (t/'test.c').write_text(code);out=t/'motion'
  subprocess.run(['clang','-std=c11','-O1','-g','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-I'+str(sdl/'src/joystick/ps5'),str(t/'test.c'),'-lm','-o',str(out)],check=True)

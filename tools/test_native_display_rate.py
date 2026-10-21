@@ -13,6 +13,14 @@ if a.game_work is None:
     for cache in a.cache:command+=['--cache',str(cache)]
     subprocess.run(command,check=True)
 game=a.game_work/'source/DKR-R/runtime-recomp/src/game'
+# Preprocess the real page in both modes: only PS5 removes the second control.
+graphics=game/'runtime_graphics_ui.inl'
+for native in (False,True):
+    flags=['-D__PROSPERO__'] if native else []
+    page=subprocess.check_output(['clang++','-E','-P','-x','c++','-I'+str(root/'src'),*flags,str(graphics)],text=True)
+    assert ('"Manual target (advanced)"' in page)==(not native)
+    assert ('"Render frame-rate target"' in page)==(not native)
+
 source=(game/'rt64_renderer.cpp').read_text()
 start=source.index('int DetectDisplayRate() {');end=source.index('\nvoid ApplyConfig(',start)
 with tempfile.TemporaryDirectory(prefix='dkrr-native-display-rate-') as folder:
