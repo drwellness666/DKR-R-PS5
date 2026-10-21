@@ -12,9 +12,9 @@
 | Options | Original Start button |
 | Touchpad | Open or close Recompiled settings |
 
-In settings, use **L1/R1** to change pages, **D-pad / left stick** to move, **Cross** to confirm and **Circle** to go back. A page's **SECTION** selector opens its subsections.
+In settings, use **L1/R1** to change pages, **D-pad / left stick** to move, **Cross** to confirm and **Circle** to go back. Use the visible section buttons or **L2/R2** to change subsections.
 
-**Controls → Button mapping** shows the selected player's current layout. Choose an action and **Change** to rebind it. **More binding options** includes alternate buttons and restoring Classic controls.
+**Controls → Mapping** uses the original DKR-R table: game action, controller binding and alternate binding. Select a binding to change it. Classic controls and Undo remain available.
 
 ## DualSense options
 

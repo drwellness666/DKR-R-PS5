@@ -6,8 +6,7 @@ Open **Touchpad → Graphics → Game display**. Apply output changes and restar
 |---|---|
 | TV output resolution | The output buffer: 1080p, 1440p or 4K |
 | Game render resolution | The detail rendered inside the game; higher settings cost more performance |
-| TV refresh rate | 60 Hz or experimental 120 Hz |
-| Render frame-rate target → Match display | In Modern mode, follow the active 60/120-Hz output |
+| TV refresh & smoothness | 60 Hz or experimental 120 Hz; Modern rendering follows the active output automatically |
 | HDR output | Optional HDR10; SDR is the default |
 
 The menu keeps its normal screen-filling size at 4K. A 4K output alone does not increase the game's internal detail. **Automatic integer scale** controls internal resolution, not frame rate.
@@ -16,7 +15,7 @@ The menu keeps its normal screen-filling size at 4K. A 4K output alone does not 
 
 On PS5, use **120-Hz Output: Automatic** and **VRR: Automatic**. **Apply to unsupported games** is not required. A 4K/119.88-Hz signal with VRR was confirmed on an LG C1; check your TV's signal information for actual HDMI status.
 
-**Match display** is the default Modern rendering target. It follows a fallback to 60 Hz too. Higher visual frame rates interpolate the original game states; they do not speed up physics or race timers. Accurate presentation keeps the original 30-FPS behavior. Sustained 120 FPS depends on the scene and graphics settings.
+Modern rendering automatically follows the active display rate, including a fallback to 60 Hz. There is no separate manual FPS limit on PS5. Higher visual frame rates interpolate the original game states; they do not speed up physics or race timers. Accurate presentation keeps the original 30-FPS behavior. Sustained 120 FPS depends on the scene and graphics settings.
 
 If performance is uneven, start with default render settings, lower anti-aliasing and try without a texture pack. **Restore 1080p / 60 Hz** takes effect on the next start. ALLM follows the console/TV game-mode settings; there is no separate override.
 
