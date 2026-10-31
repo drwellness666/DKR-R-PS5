@@ -21,11 +21,11 @@ static void compare(const struct sockaddr *address,socklen_t length) {
 }
 int main(void) {
     struct sockaddr_in ipv4={0};ipv4.sin_family=AF_INET;
-    assert(inet_pton(AF_INET,"192.168.20.176",&ipv4.sin_addr)==1);
+    assert(inet_pton(AF_INET,"192.0.2.176",&ipv4.sin_addr)==1);
     for(unsigned port=0;port<=65535;++port) {
         ipv4.sin_port=htons((unsigned short)port);compare((const struct sockaddr *)&ipv4,sizeof(ipv4));
     }
-    const char *addresses[]={"::","::1","::ffff:192.168.20.176","2001:db8::abc","fe80::1234"};
+    const char *addresses[]={"::","::1","::ffff:192.0.2.176","2001:db8::abc","fe80::1234"};
     for(unsigned i=0;i<sizeof(addresses)/sizeof(*addresses);++i) {
         struct sockaddr_in6 ipv6={0};ipv6.sin6_family=AF_INET6;ipv6.sin6_port=htons(65535);
         assert(inet_pton(AF_INET6,addresses[i],&ipv6.sin6_addr)==1);
