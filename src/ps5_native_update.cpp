@@ -1,7 +1,9 @@
+#include "ps5_native_metadata.hpp"
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Data-only, in-process update transaction. No ELF execution, socket, daemon,
 // kernel access or writes outside this installation and its private journal.
 #include "ps5_native_update.hpp"
+#include "ps5_controller_audio_bank.h"
 #include "ps5_update_files.h"
 #include "ps5_storage_budget.h"
 #include "../installer/dkrr_install.h"
@@ -67,7 +69,7 @@ bool private_directory(const Path& path,bool create=false) {
         if(created<0&&errno!=EEXIST)return false;
         if(created==0&&dkrr_sync_parent(path.c_str())<0)return false;
     }
-    struct stat st{};return ordinary_directory(path)&&lstat(path.c_str(),&st)==0&&st.st_uid==getuid()&&(st.st_mode&077)==0;
+    struct stat st{};return ordinary_directory(path)&&lstat(path.c_str(),&st)==0&&dkrr::native_metadata::same_user(st,getuid())&&(st.st_mode&077)==0;
 }
 bool parents(const Path& root,const Path& name) {
     for(std::size_t i=0;i<name.size();++i)if(name[i]=='/'&&!private_directory(root+"/"+name.substr(0,i),true))return false;
@@ -80,7 +82,7 @@ bool touch(const Path& path,const char* text) {
 bool marker(const Path& path,const char* text) {
     int fd=open(path.c_str(),O_RDONLY|O_NOFOLLOW|O_NONBLOCK);if(fd<0)return false;
     struct stat st{};char data[16];const auto size=std::strlen(text);
-    bool ok=size<sizeof(data)&&fstat(fd,&st)==0&&S_ISREG(st.st_mode)&&st.st_nlink<=1&&st.st_uid==getuid()&&st.st_size==static_cast<off_t>(size)&&read_all(fd,data,size)&&!std::memcmp(data,text,size);
+    bool ok=size<sizeof(data)&&fstat(fd,&st)==0&&S_ISREG(st.st_mode)&&st.st_nlink<=1&&dkrr::native_metadata::same_user(st,getuid())&&st.st_size==static_cast<off_t>(size)&&read_all(fd,data,size)&&!std::memcmp(data,text,size);
     close(fd);return ok;
 }
 bool present(const Path& path){
@@ -110,9 +112,9 @@ bool matches(const Path& path,const dkrr_file& entry) {
     return dkrr_hash_file(path.c_str(),digest,&bytes)==0&&bytes==entry.size&&!std::strcmp(digest,entry.sha1);
 }
 bool valid_inventory(const dkrr_manifest& m) {
-    if(m.count!=public_count+64)return false;
+    if(m.count!=public_count+2*DKRR_CONTROLLER_CUE_COUNT)return false;
     for(auto* name:dkrr_public_files)if(!find(m,name))return false;
-    for(unsigned revision:{77U,80U})for(unsigned cue=0;cue<32;++cue){char name[128];std::snprintf(name,sizeof(name),"assets/controller-audio/us-v%u/%u.pcm",revision,cue);if(!find(m,name))return false;}
+    for(unsigned revision:{77U,80U})for(unsigned cue=0;cue<DKRR_CONTROLLER_CUE_COUNT;++cue){char name[128];std::snprintf(name,sizeof(name),"assets/controller-audio/us-v%u/%u.pcm",revision,cue);if(!find(m,name))return false;}
     return true;
 }
 bool same_inventory(const dkrr_manifest& a,const dkrr_manifest& b) {
@@ -123,7 +125,7 @@ bool writable(const Path& directory) {
     // No probe entry is left in the mounted app if power is lost during
     // preflight. The installer owns the one-time directory grant.
     struct stat st{};
-    return ordinary_directory(directory)&&lstat(directory.c_str(),&st)==0&&st.st_uid==getuid()&&(st.st_mode&0300)==0300&&access(directory.c_str(),W_OK|X_OK)==0;
+    return ordinary_directory(directory)&&lstat(directory.c_str(),&st)==0&&dkrr::native_metadata::same_user(st,getuid())&&(st.st_mode&0300)==0300&&access(directory.c_str(),W_OK|X_OK)==0;
 }
 bool preflight(Context& c,const dkrr_manifest& old) {
     if(!ordinary_directory(c.app)||!valid_inventory(old)||dkrr_manifest_check(c.app.c_str(),&old,1)<0)return c.fail("The installed files differ from their record. Nothing was replaced.");
@@ -154,7 +156,7 @@ bool collect_cleanup(const Path& root,const Path& relative,std::vector<Path>& fi
         if(!entry){if(errno)ok=false;break;}
         if(!std::strcmp(entry->d_name,".")||!std::strcmp(entry->d_name,".."))continue;
         Path name=relative.empty()?entry->d_name:relative+"/"+entry->d_name,full=root+"/"+name;struct stat st{};
-        if(lstat(full.c_str(),&st)<0||st.st_uid!=getuid()){ok=false;break;}
+        if(lstat(full.c_str(),&st)<0||!dkrr::native_metadata::same_user(st,getuid())){ok=false;break;}
         if(S_ISDIR(st.st_mode)){if(!allowed_cleanup(name,true)||!collect_cleanup(root,name,files,directories)){ok=false;break;}directories.push_back(full);}
         else if(S_ISREG(st.st_mode)&&st.st_nlink<=1&&allowed_cleanup(name,false))files.push_back(full);
         else {ok=false;break;}
@@ -191,7 +193,7 @@ bool rollback(Context& c,const dkrr_manifest& old) {
         Path target=c.app+"/"+name,temp=target+".dkrr-restore";
         // A previous interrupted restoration only leaves this exact private
         // replacement entry; unlinking it never follows or mutates its inode.
-        if(present(temp)){struct stat st{};if(lstat(temp.c_str(),&st)<0||!S_ISREG(st.st_mode)||st.st_uid!=getuid()||st.st_nlink>1||unlink(temp.c_str())<0)return false;}
+        if(present(temp)){struct stat st{};if(lstat(temp.c_str(),&st)<0||!S_ISREG(st.st_mode)||!dkrr::native_metadata::same_user(st,getuid())||st.st_nlink>1||unlink(temp.c_str())<0)return false;}
         // The first activation can be denied by the console's filesystem
         // policy even after staging succeeded. An unchanged file needs no
         // restoration write. This also makes restart recovery possible while

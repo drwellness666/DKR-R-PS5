@@ -33,13 +33,19 @@ void emit(const std::uint8_t* ram,int port,unsigned clip){if(port>=0&&port<4)dkr
  OBJECT_SCOPE(obj_loop_weaponballoon,prefix) \
  OBJECT_SCOPE(obj_loop_silvercoin,prefix) \
  OBJECT_SCOPE(obj_loop_goldenballoon,prefix) \
+ extern "C" void __real_##prefix##hud_silver_coins(std::uint8_t*,recomp_context*); \
+ extern "C" void __wrap_##prefix##hud_silver_coins(std::uint8_t*r,recomp_context*c){ \
+  const Guest g({r,0x800000});const auto racer=std::uint32_t(c->r4); \
+  const int port=!(racer&3U)&&g.valid(racer,0x203)&&g.byte(racer+0x202)==8?int((unsigned(g.byte(racer))<<8)|g.byte(racer+1)):-1; \
+  Scope scope(dkrr_controller_sounds_enabled()&&port>=0&&port<4?port:-1);__real_##prefix##hud_silver_coins(r,c); } \
  extern "C" void __real_##prefix##racer_play_sound(std::uint8_t*,recomp_context*); \
  extern "C" void __wrap_##prefix##racer_play_sound(std::uint8_t*r,recomp_context*c){ \
-  const auto id=std::uint32_t(c->r5);if(dkrr_controller_sounds_enabled()&&((id>=0x156&&id<=0x15f)||id==0x107)){const Guest g({r,0x800000});emit(r,racer_owner(g,std::uint32_t(c->r4)),id==0x107?dkrr::ps5_sounds::zipper:dkrr::ps5_sounds::horn+id-0x156);} \
-  __real_##prefix##racer_play_sound(r,c); } \
+  const auto id=std::uint32_t(c->r5); \
+  if(id>=0x156&&id<=0x15f&&dkrr_controller_sounds_enabled()){const Guest g({r,0x800000});Scope scope(racer_owner(g,std::uint32_t(c->r4)));__real_##prefix##racer_play_sound(r,c);} \
+  else __real_##prefix##racer_play_sound(r,c); } \
  extern "C" void __real_##prefix##sound_play(std::uint8_t*,recomp_context*); \
  extern "C" void __wrap_##prefix##sound_play(std::uint8_t*r,recomp_context*c){ \
-  const auto id=std::uint32_t(c->r4);if(id>=0xa0&&id<=0xa2)emit(r,owner,dkrr::ps5_sounds::pickup+id-0xa0);__real_##prefix##sound_play(r,c); } \
+  const auto id=std::uint32_t(c->r4);if(id>=0xa0&&id<=0xa2)emit(r,owner,dkrr::ps5_sounds::pickup+id-0xa0);if(id==0x147)emit(r,owner,dkrr::ps5_sounds::go_for_it);__real_##prefix##sound_play(r,c); } \
  extern "C" void __real_##prefix##audspat_play_sound_at_position(std::uint8_t*,recomp_context*); \
  extern "C" void __wrap_##prefix##audspat_play_sound_at_position(std::uint8_t*r,recomp_context*c){ \
   if(std::uint32_t(c->r4)==0xe)emit(r,owner,dkrr::ps5_sounds::pickup);__real_##prefix##audspat_play_sound_at_position(r,c); } \
@@ -49,6 +55,7 @@ void emit(const std::uint8_t* ram,int port,unsigned clip){if(port>=0&&port<4)dkr
  extern "C" void __real_##prefix##sound_play_spatial(std::uint8_t*,recomp_context*); \
  extern "C" void __wrap_##prefix##sound_play_spatial(std::uint8_t*r,recomp_context*c){ \
   const auto id=std::uint32_t(c->r4);if(id==0x23d)emit(r,owner,dkrr::ps5_sounds::golden); \
+  if(id>=0x156&&id<=0x15f)emit(r,owner,dkrr::ps5_sounds::horn+id-0x156); \
   if(id==0x107){dkrr_controller_zipper_sound(r,std::uint32_t(c->r5),std::uint32_t(c->r6),std::uint32_t(c->r7));} \
   __real_##prefix##sound_play_spatial(r,c); }
 extern "C" void dkrr_controller_zipper_sound(const std::uint8_t*,std::uint32_t,std::uint32_t,std::uint32_t);

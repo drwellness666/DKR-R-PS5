@@ -1,3 +1,6 @@
+#if defined(DKRR_STATIC_HTTPS)
+#include "ps5_store_curl.inl"
+#else
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Included inside dkr::store's implementation namespace. The enclosing
 // upstream code owns URL allowlists, redirect limits and credential policy.
@@ -119,3 +122,5 @@ Response http_once(const Request& r, std::stop_token stop, const Sink& sink) {
     if(seen.contains("content-length")&&total!=response.length)throw Error("The library download is incomplete.");
     return response;
 }
+
+#endif

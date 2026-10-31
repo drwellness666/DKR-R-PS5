@@ -1,3 +1,8 @@
+#include "ps5_native_metadata.hpp"
+#if defined(DKRR_STATIC_HTTPS)
+#include "ps5_https.hpp"
+#include <stdexcept>
+#endif
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Native HTTPS sequence follows BlackBearReloaded's GPL-3.0-or-later
 // ps5-native-app-boilerplate, examples/update-check, commit 44ae1dab529654ea.
@@ -49,7 +54,9 @@ constexpr char catalog[]="https://raw.githubusercontent.com/drwellness666/DKR-R-
 void state(State value,const char* message) {
     std::lock_guard lock(mutex);current.state=value;
     std::snprintf(current.message,sizeof(current.message),"%s",message);
+    std::fprintf(stderr,"[ps5][updates] state=%u message=%s\n",unsigned(value),current.message);
 }
+#if !defined(DKRR_STATIC_HTTPS)
 struct Services {
     int pool=-1,ssl=-1,http=-1,tmpl=-1;
     bool start() {
@@ -85,6 +92,7 @@ bool redirect(int request,char (&next)[2048]) {
     }
     return matches==1&&allowed_asset_url(next,true);
 }
+#endif
 bool write_all(int fd,const unsigned char* data,std::size_t size) {
     std::size_t at=0;while(at<size&&!stopping.load()){auto n=write(fd,data+at,size-at);if(n<0&&errno==EINTR)continue;if(n<=0)return false;at+=static_cast<std::size_t>(n);}return at==size;
 }
@@ -96,7 +104,7 @@ bool update_directory(char (&folder)[160]) {
     }
     std::snprintf(folder,sizeof(folder),DKRR_UPDATE_ROOT "/preferences/update-client-%u",unsigned(getuid()));
     if(mkdir(folder,0700)<0&&errno!=EEXIST)return false;
-    if(lstat(folder,&st)<0||!S_ISDIR(st.st_mode)||st.st_uid!=getuid()||(st.st_mode&077)!=0)return false;
+    if(lstat(folder,&st)<0||!S_ISDIR(st.st_mode)||!dkrr::native_metadata::same_user(st,getuid())||(st.st_mode&077)!=0)return false;
     // Persist the private directory's own entry, including after an earlier
     // interrupted first creation. Syncing only files inside it is insufficient.
     int parent=open(DKRR_UPDATE_ROOT "/preferences",O_RDONLY|O_DIRECTORY|O_NOFOLLOW);if(parent<0)return false;
@@ -109,7 +117,7 @@ bool load_automatic_check() {
     // Native PS5 stat may report zero for unavailable link-count metadata.
     // Read-only access and atomic entry replacement never mutate that inode;
     // match the existing native-save policy without fabricating a link count.
-    bool enabled=fstat(fd,&st)==0&&S_ISREG(st.st_mode)&&st.st_nlink<=1&&st.st_uid==getuid()&&
+    bool enabled=fstat(fd,&st)==0&&S_ISREG(st.st_mode)&&st.st_nlink<=1&&dkrr::native_metadata::same_user(st,getuid())&&
         st.st_size==1&&read(fd,text,sizeof(text))==1&&text[0]=='1';close(fd);return enabled;
 }
 int temporary_file() {
@@ -120,6 +128,7 @@ int temporary_file() {
     // package is trusted or executed on a subsequent game launch.
     if(unlink(path)<0){close(fd);return -1;}return fd;
 }
+#if !defined(DKRR_STATIC_HTTPS)
 bool download(Services& services,const Offer& release,int fd) {
     char url[2048];std::snprintf(url,sizeof(url),"https://github.com/drwellness666/DKR-R-PS5/releases/download/%s/DKRR-Update.dkru",release.tag);
     const auto deadline=Clock::now()+std::chrono::minutes(10);
@@ -137,6 +146,19 @@ bool download(Services& services,const Offer& release,int fd) {
         }return false;
     }return false;
 }
+#endif
+#if defined(DKRR_STATIC_HTTPS)
+#include "ps5_update_https.inl"
+void run_check() {
+    char text[manifest_limit];std::size_t used=0;
+    dkrr::https::Request request;request.url=catalog;request.limit=sizeof(text);request.cancelled=[]{return stopping.load();};
+    auto response=dkrr::https::perform(request,[&](const char* data,std::size_t count,const dkrr::https::Response& response) {
+        if(response.status!=200)return;
+        if(count>sizeof(text)-used)throw std::runtime_error("Update information is too large.");
+        std::memcpy(text+used,data,count);used+=count;
+    });
+    if(response.status!=200){state(State::Unavailable,response.status==404?"No published update channel is available yet.":"The update server could not provide a release channel.");return;}
+#else
 void run_check() {
     Services services;if(!services.start()){state(State::Unavailable,"Update service unavailable. The installed game is unchanged.");return;}
     Request request;if(!request.start(services,catalog)||request.code!=200){state(State::Unavailable,"No public update channel is available. The installed game is unchanged.");return;}
@@ -146,8 +168,11 @@ void run_check() {
         if(n<0||static_cast<std::size_t>(n)>sizeof(text)-used){state(State::Failed,"Update information could not be verified.");return;}
         if(!n)break;used+=static_cast<std::size_t>(n);
     }
+#endif
     Offer result;if(stopping.load())return;
+#if !defined(DKRR_STATIC_HTTPS)
     if(Clock::now()>=deadline){state(State::Unavailable,"Update check timed out.");return;}
+#endif
     if(!verify_offer(text,used,dkrr_update_public_key,result)||!result.native_package){state(State::Failed,"Update signature is invalid. Nothing was downloaded or installed.");return;}
     native::Space space{};char storage_error[192]{};
     if(result.sequence>DKRR_RELEASE_SEQUENCE)native::storage_budget(result.bytes,space,storage_error,sizeof(storage_error));
@@ -175,11 +200,14 @@ void launch(bool installing) {
     if(worker.joinable())worker.join();stopping.store(false);
     if(installing){std::lock_guard lock(mutex);if(current.state!=State::Available){busy.store(false);return;}current.state=State::Downloading;current.received=0;}
     else state(State::Checking,"Checking for updates...");
-    try {worker=std::thread([installing]{try {if(installing)run_install();else run_check();}catch(...){state(State::Failed,"Update stopped. The installed game is unchanged.");}busy.store(false);});}
+    try {worker=std::thread([installing]{try {if(installing)run_install();else run_check();}catch(const std::exception& e){std::fprintf(stderr,"[ps5][updates] %s\n",e.what());state(State::Failed,"The secure update request failed. Retry when connected.");}catch(...){state(State::Failed,"Update stopped. The installed game is unchanged.");}busy.store(false);});}
     catch(...){busy.store(false);state(State::Unavailable,"Update worker could not start.");}
 }
 }
 void initialize(){
+#if defined(DKRR_STATIC_HTTPS)
+    if(!dkrr::https::available()){state(State::Unavailable,"The secure update connection could not initialize.");return;}
+#else
     if(!sceNetPoolCreate||!sceNetPoolDestroy||!sceSslInit||!sceSslTerm||!sceHttpInit||!sceHttpTerm||
        !sceHttpCreateTemplate||!sceHttpDeleteTemplate||!sceHttpCreateConnectionWithURL||!sceHttpDeleteConnection||
        !sceHttpCreateRequestWithURL||!sceHttpDeleteRequest||!sceHttpSetAutoRedirect||!sceHttpSetResolveTimeOut||
@@ -187,6 +215,7 @@ void initialize(){
        !sceHttpSendRequest||!sceHttpGetStatusCode||!sceHttpGetAllResponseHeaders||!sceHttpReadData){
         state(State::Unavailable,"Native update services are unavailable. ELF updates remain available.");return;
     }
+#endif
     services_ready.store(true);automatic_enabled.store(load_automatic_check());
     state(State::Idle,"Check for updates to download and install directly on this PS5.");
     if(automatic_enabled.load())check();
@@ -201,7 +230,7 @@ bool automatic_check(){return automatic_enabled.load();}
 bool set_automatic_check(bool enabled){
     char folder[160],path[240],pending[260];if(!update_directory(folder))return false;
     std::snprintf(path,sizeof(path),"%s/auto-check",folder);
-    struct stat st{};if(lstat(path,&st)==0){if(!S_ISREG(st.st_mode)||st.st_uid!=getuid()||st.st_nlink>1)return false;}else if(errno!=ENOENT)return false;
+    struct stat st{};if(lstat(path,&st)==0){if(!S_ISREG(st.st_mode)||!dkrr::native_metadata::same_user(st,getuid())||st.st_nlink>1)return false;}else if(errno!=ENOENT)return false;
     std::snprintf(pending,sizeof(pending),"%s/auto-check-%u-%llu",folder,unsigned(getpid()),static_cast<unsigned long long>(Clock::now().time_since_epoch().count()));
     int fd=open(pending,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW,0600);if(fd<0)return false;
     char value=enabled?'1':'0';bool good=write(fd,&value,1)==1&&fsync(fd)==0;if(close(fd)<0)good=false;

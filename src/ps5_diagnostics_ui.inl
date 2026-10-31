@@ -4,7 +4,7 @@ void DrawPs5Diagnostics(float width) {
     static bool save_pending=false;
     static std::string status;
     SettingsHelp(std::string("Build: ")+dkrr_diag_build(),width);
-    SettingsHelp(dkrr_diag_journal_ready()?"Crash details are kept in this game's diagnostics folder. The existing performance overlay shows live rates.":"The local diagnostic journal is unavailable. Use the PC log capture; in-memory measurements can still run.",width);
+    SettingsHelp(dkrr_diag_journal_ready()?"Crash details are kept in this game's diagnostics folder. The existing performance overlay shows live rates.":"No diagnostic file is available yet. Live performance measurements can still run.",width);
     PaddockGap(8.0F);
     if(SettingsRaceButton("START 60-SECOND FRAME-TIME CAPTURE",false)) {
         status=dkrr_diag_capture_start()==0?"Capture started. Return to the race; it stops after 60 seconds.":"Capture could not start. Try again.";

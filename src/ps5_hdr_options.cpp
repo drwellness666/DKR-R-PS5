@@ -18,7 +18,7 @@ namespace {
 // Render snapshots never wait on preference reads, writes or fsync. One word
 // publishes a complete validated choice, so readers cannot see mixed fields.
 static_assert(std::atomic<std::uint32_t>::is_always_lock_free);
-constexpr std::uint32_t pack(dkrr_ps5_hdr_choice c){return c.enabled|(c.paper_white<<1)|(c.peak<<10)|(c.expansion<<21);}
+constexpr std::uint32_t pack(dkrr_ps5_hdr_choice c){return c.enabled|(c.paper_white<<1)|(c.peak<<10);}
 constexpr dkrr_ps5_hdr_choice unpack(std::uint32_t c){return {c&1,(c>>1)&511,(c>>10)&2047,(c>>21)&127};}
 std::atomic<std::uint32_t> calibration{pack({0,200,800,0})};
 std::atomic<unsigned> requested{0},output{0},reason{0},pattern{0};
@@ -39,6 +39,7 @@ extern "C" void dkrr_ps5_hdr_preview(dkrr_ps5_hdr_choice c){if(dkrr::hdr::valid(
 extern "C" void dkrr_ps5_hdr_calibration_pattern(unsigned p){pattern_until=p?now_ms()+300:0;pattern=p!=0;}
 extern "C" unsigned dkrr_ps5_hdr_pattern(){return pattern.load() && now_ms()<pattern_until.load();}
 extern "C" int dkrr_ps5_choose_hdr(dkrr_ps5_hdr_choice c){
+    c.expansion=0;
     const int rc=dkrr::output_preferences::save(nullptr,&c);
     if(!rc)calibration.store(pack(c),std::memory_order_release);
     return rc;

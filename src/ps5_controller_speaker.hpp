@@ -2,7 +2,9 @@
 #pragma once
 #include "ps5_item_feedback.hpp"
 #include "ps5_controller_audio_events.hpp"
+#include "ps5_custom_horn.hpp"
 #include <memory>
+#include <chrono>
 #include <vector>
 namespace dkrr::ps5_speaker {
 // Indices in the private PCM bank, produced from each user's owned revision.
@@ -38,10 +40,13 @@ class Speaker {
     using Loader=std::vector<std::int16_t>(*)(unsigned,unsigned);
     Loader loader;
     bool start_failed=false;
+    struct PendingCue {unsigned clip=0;std::chrono::steady_clock::time_point starts{},expires{};std::shared_ptr<const HornBank> custom;};
+    std::array<PendingCue,ps5_sounds::voice_limit> unsent{};
+    unsigned unsent_count=0;int unsent_user=-1;unsigned unsent_revision=0;
 public:
     Speaker();explicit Speaker(Loader load);~Speaker();Speaker(Speaker&&) noexcept;Speaker&operator=(Speaker&&) noexcept;
     Speaker(const Speaker&)=delete;Speaker&operator=(const Speaker&)=delete;
-    void update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision,int game_clip=-1,unsigned audio_delay_ms=0);
+    void update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision,int game_clip=-1,unsigned audio_delay_ms=0,unsigned categories=1023,std::shared_ptr<const HornBank> custom=nullptr);
     int status() const;
 };
 }

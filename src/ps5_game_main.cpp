@@ -3,6 +3,7 @@
 #include <ps5platform/fp.h>
 #include <ps5platform/klog.h>
 #include <ps5platform/heap.h>
+#include <ps5platform/exec.h>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -12,7 +13,10 @@
 #include <initializer_list>
 #include <atomic>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <unistd.h>
+#include "ps5_net.h"
 #include "ps5_controller_mapping.h"
 #include "ps5_render_diagnostics.h"
 #include "ps5_shader_cache.h"
@@ -20,18 +24,27 @@
 #include "ps5_display_options.h"
 #include "ps5_hdr_options.h"
 #include "ps5_diagnostics.h"
+#include "ps5_async_log.h"
 #include "ps5_installation_lease.hpp"
 #include "ps5_internet_update.hpp"
 #include "ps5_native_update.hpp"
+#include "ps5_online_platform.h"
 
 int dkrr_game_main(int, char **);
 extern "C" void dkrr_ps5_shutdown_dialogs();
 extern "C" unsigned dkrr_report_missing_imports(void (*)(const char *));
+#include "rtc/rtc.h"
 extern "C" int sceKernelSendNotificationRequest(int,void*,size_t,int) __attribute__((weak));
 extern "C" int sceKernelOpen(const char *,int,int);
 extern "C" int sceKernelClose(int);
 extern "C" int sceKernelStat(const char *,struct stat *);
 static std::atomic_bool runtime_error_reported=false;
+static std::atomic_bool native_network_apis_ready=true;
+extern "C" int dkrr_rtc_entropy_available(void);
+extern "C" const char* dkrr_rtc_entropy_source(void);
+extern "C" bool dkrr_native_online_apis_ready(void) {
+    return native_network_apis_ready.load(std::memory_order_relaxed)&&dkrr_rtc_entropy_available();
+}
 extern "C" void original_message_box(const char *) __asm__("__real__ZN11ultramodern14error_handling11message_boxEPKc");
 extern "C" void native_message_box(const char *) __asm__("__wrap__ZN11ultramodern14error_handling11message_boxEPKc");
 extern "C" void native_message_box(const char *message) {
@@ -48,13 +61,45 @@ static void report(const char *format, ...) {
     sceKernelDebugOutText(0,line);
     dkrr_diag_note(line);
 }
+extern "C" int dkrr_platform_diagnostic(char* out,size_t bytes) {
+    struct ps5_heap_stats heap{};ps5_heap_stats(&heap);
+    uint64_t regions=0,code_bytes=0;ps5_exec_live(&regions,&code_bytes);
+    return std::snprintf(out,bytes,"DKRR_MEMORY v=1 mapped=%llu peak=%llu arenas=%u segments=%u libc-fallbacks=%llu code-regions=%llu code-bytes=%llu\n",
+        (unsigned long long)heap.mapped_bytes,(unsigned long long)heap.peak_bytes,heap.arenas,heap.segments,
+        heap.libc_fallbacks,(unsigned long long)regions,(unsigned long long)code_bytes);
+}
 static void notify_update(const char* message) {
     if(!sceKernelSendNotificationRequest)return;
     struct {char reserved[45];char text[3075];} notification{};
     std::snprintf(notification.text,sizeof(notification.text),"%s",message);
     sceKernelSendNotificationRequest(0,&notification,sizeof(notification),0);
 }
+static void report_network_io() {
+    if(!native_network_apis_ready.load()){report("native network I/O unavailable: missing SceNet imports");return;}
+    const int init=dkrr_net_init_result();
+    int fd=dkrr_net_socket(AF_INET,SOCK_DGRAM,0);
+    const int socket_error=fd<0?errno:0;
+    int nonblock=-1,nonblock_error=0;
+    if(fd>=0){
+        int enabled=1;errno=0;nonblock=dkrr_net_ioctl(fd,FIONBIO,&enabled);nonblock_error=nonblock<0?errno:0;
+        dkrr_net_close(fd);
+    }
+    int fds[2];const int wake=dkrr_net_wakeup_pair(fds),wake_error=wake<0?errno:0;
+    int delivered=0;
+    if(!wake){char byte=1;pollfd pfd{fds[0],POLLIN,0};
+        delivered=dkrr_net_send(fds[1],&byte,1,0)==1&&dkrr_net_poll(&pfd,1,20)==1&&dkrr_net_recv(fds[0],&byte,1,0)==1;
+        dkrr_net_close(fds[0]);dkrr_net_close(fds[1]);}
+    report("native SceNet I/O: init=0x%08x socket-error=%d nonblocking=%d/%d UDP-wakeup=%d/%d delivered=%d",unsigned(init),socket_error,
+           nonblock,nonblock_error,wake,wake_error,delivered);
+}
 static void missing_import(const char *name) {
+    // Offline play may use none of the SDK's dormant desktop imports. The
+    // native lobby must not call missing functions when RTC is first opened.
+    static constexpr const char* network[]={"__inet_ntop","__inet_pton","freeifaddrs","getifaddrs","isatty","pthread_getthreadid_np","pthread_rwlock_tryrdlock","pthread_rwlockattr_destroy","pthread_rwlockattr_init","setbuf",
+        "sceNetCtlInit","sceNetCtlGetInfo","sceNetInit","sceNetErrnoLoc","sceNetSocket","sceNetSocketClose","sceNetBind","sceNetConnect","sceNetListen","sceNetAccept","sceNetShutdown",
+        "sceNetGetsockopt","sceNetSetsockopt","sceNetGetsockname","sceNetGetpeername","sceNetSend","sceNetSendto","sceNetRecv","sceNetRecvfrom","sceNetRecvmsg","sceNetSendmsg",
+        "sceNetEpollCreate","sceNetEpollControl","sceNetEpollWait","sceNetEpollDestroy"};
+    for(const char* function:network)if(!strcmp(name,function))native_network_apis_ready.store(false,std::memory_order_relaxed);
     report("unresolved function import: %s",name);
 }
 #define DKR_NATIVE_TITLE_ID "PPSA94678"
@@ -128,6 +173,8 @@ int main() {
         }else report("explicit shader cache refused: own directory unavailable; remains disabled");
     }
     report("function imports unresolved=%u (including dormant optional features)",dkrr_report_missing_imports(missing_import));
+    report("online platform: network-imports=%s secure-rng=%s",native_network_apis_ready.load()?"ready":"missing",dkrr_rtc_entropy_source());
+    report_network_io();
     report("process uid=%u gid=%u",unsigned(getuid()),unsigned(getgid()));
     {
         const char *path="/data/dkrr/profile-us-v77/saves/dkr.us.v77.bin.lock";
@@ -174,7 +221,9 @@ int main() {
         char name[]="/app0/eboot.bin",rom_flag[]="--rom",config_flag[]="--config";
         char *args[]={name,rom_flag,const_cast<char *>(rom),config_flag,const_cast<char *>(profile),nullptr};
         dkrr_diag_stage(DKR_DIAG_GAME);
+        rtcInitLogger(RTC_LOG_INFO,nullptr);
         dkrr::updates::initialize();
+        report("update startup: %s",dkrr::updates::view().message);
         try { status=dkrr_game_main(5,args); }
         catch(const std::exception &e) { report("runtime exception: %s",e.what());status=2; }
         if(status==0 && runtime_error_reported.load(std::memory_order_relaxed))status=5;
@@ -189,6 +238,7 @@ int main() {
         report("native update result: %s",message);
         notify_update(message);
     }
+    dkrr_async_log_stop();
     dkrr_diag_shutdown();
     close(installation_lease);
     usleep(200000);

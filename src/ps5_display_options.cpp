@@ -55,6 +55,7 @@ extern "C" int dkrr_ps5_choose_display(dkrr_ps5_display_choice choice) {
     return dkrr::output_preferences::save(&choice,nullptr);
 }
 extern "C" int dkrr_ps5_choose_output(dkrr_ps5_display_choice display,dkrr_ps5_hdr_choice hdr) {
+    hdr.expansion=0;
     if(display.refresh==120&&!DKR_PS5_HIGH_REFRESH_BUILD){errno=EINVAL;return -1;}
     const int rc=dkrr::output_preferences::save(&display,&hdr);
     if(!rc)dkrr_ps5_hdr_preview(hdr);

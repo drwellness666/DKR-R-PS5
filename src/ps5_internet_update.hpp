@@ -4,7 +4,8 @@
 #include <cstdint>
 namespace dkrr::updates {
 constexpr std::size_t manifest_limit=1024;
-constexpr std::uint64_t payload_limit=128ULL*1024*1024;
+// Updates stream to disk in bounded blocks; this is the total file limit.
+constexpr std::uint64_t payload_limit=256ULL*1024*1024;
 struct Offer {
     unsigned sequence{};
     std::uint64_t bytes{};

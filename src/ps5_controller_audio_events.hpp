@@ -1,37 +1,54 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
+#include "ps5_controller_audio_bank.h"
 #include <array>
 #include <atomic>
 #include <cstdint>
 namespace dkrr::ps5_sounds {
-// All media are generated locally from the owner's ROM; these are indices only.
-inline constexpr unsigned horn=9,pickup=19,golden=22,zipper=23,silver=24,count=32;
+inline constexpr unsigned horn=9,pickup=19,golden=22,zipper=23,silver=24,go_for_it=DKRR_CONTROLLER_GO_FOR_IT_SLOT,custom_horn=DKRR_CONTROLLER_CUE_COUNT,count=DKRR_CONTROLLER_CUE_COUNT+1;
+inline constexpr unsigned voice_limit=32; // Original DKR sound-state budget.
+inline constexpr unsigned category(unsigned clip){
+    return clip<3?0U:clip<5?1U:clip<7?2U:clip==7?3U:clip==8?4U:
+        ((clip>=horn&&clip<horn+10)||clip==custom_horn)?5U:(clip>=pickup&&clip<pickup+3)?6U:((clip>=silver&&clip<silver+DKRR_CONTROLLER_JINGLE_COUNT)||clip==go_for_it)?7U:clip==golden?8U:clip==zipper?9U:10U;
+}
+inline constexpr bool allowed(unsigned mask,unsigned clip){return category(clip)<10&&(mask&(1U<<category(clip)));}
 inline constexpr unsigned priority(unsigned clip){return clip<9?3U:clip==zipper?2U:1U;}
+// Fixed live-event inbox between guest and input threads. Drain the current
+// burst each poll; expire old events instead of playing a delayed backlog.
+// Sequence ownership makes publication bounded and nonblocking, including
+// simultaneous producers. Original calls need no artificial cooldown.
 class Mailbox {
-    std::array<std::atomic<std::uint64_t>,4> values{};
-    std::array<std::array<std::atomic<std::uint64_t>,count>,4> last{};
+    struct Slot {std::atomic<std::uint64_t> sequence{0};std::uint64_t event=0;};
+    struct Port {
+        std::array<Slot,voice_limit> slots;
+        std::atomic<std::uint64_t> write{0},read{0};
+        Port(){for(unsigned i=0;i<voice_limit;++i)slots[i].sequence.store(i,std::memory_order_relaxed);}
+    };
+    std::array<Port,4> ports;
 public:
-    void publish(unsigned port,unsigned clip,std::uint64_t ms){
-        if(port>=4||clip>=count||!ms)return;
-        auto& stamp=last[port][clip];auto previous=stamp.load(std::memory_order_relaxed);
-        if(previous&&ms>=previous&&ms-previous<180)return;
-        if(!stamp.compare_exchange_strong(previous,ms,std::memory_order_relaxed))return;
-        // One latest event, no queue. A same-millisecond event of another kind
-        // still has a distinct token; repeated calls for one cue are coalesced.
-        auto pending=values[port].load(std::memory_order_acquire);
-        const auto token=(ms<<8)|(clip+1U);
-        do {
-            const auto at=pending>>8,old_clip=(pending&255U)-1U;
-            // Within one guest frame a quiet pickup must not overwrite an
-            // unconsumed zipper/item cue. Still only one pending event.
-            if(at&&ms>=at&&ms-at<=40&&old_clip<count&&priority(unsigned(old_clip))>priority(clip))return;
-        }while(!values[port].compare_exchange_weak(pending,token,std::memory_order_release,std::memory_order_acquire));
+    bool publish(unsigned port,unsigned clip,std::uint64_t ms){
+        if(port>=4||clip>=count||!ms||ms>(UINT64_MAX>>8))return false;
+        auto&p=ports[port];auto at=p.write.load(std::memory_order_relaxed);
+        for(unsigned attempt=0;attempt<8;++attempt){
+            auto&slot=p.slots[at%voice_limit];const auto sequence=slot.sequence.load(std::memory_order_acquire);
+            if(sequence<at)return false; // Full: never block gameplay or grow memory.
+            if(sequence!=at){at=p.write.load(std::memory_order_relaxed);continue;}
+            if(!p.write.compare_exchange_weak(at,at+1,std::memory_order_relaxed))continue;
+            slot.event=(ms<<8)|(clip+1U);slot.sequence.store(at+1,std::memory_order_release);return true;
+        }
+        return false;
     }
-    int take(unsigned port,std::uint64_t ms,bool blocked,std::uint64_t& seen)const{
-        if(port>=4)return -1;const auto token=values[port].load(std::memory_order_acquire);
-        if(token==seen)return -1;seen=token;const auto at=token>>8;
-        if(blocked||!at||ms<at||ms-at>150)return -1;
-        const auto clip=(token&255U)-1U;return clip<count?int(clip):-1;
+    int take(unsigned port,std::uint64_t ms,bool blocked,std::uint64_t& seen){
+        if(port>=4)return -1;auto&p=ports[port];
+        for(unsigned consumed=0;consumed<voice_limit;++consumed){
+            auto at=p.read.load(std::memory_order_relaxed);auto&slot=p.slots[at%voice_limit];
+            if(slot.sequence.load(std::memory_order_acquire)!=at+1)return -1;
+            if(!p.read.compare_exchange_weak(at,at+1,std::memory_order_relaxed))continue;
+            const auto token=slot.event;slot.sequence.store(at+voice_limit,std::memory_order_release);seen=at+1;
+            const auto time=token>>8;const auto clip=(token&255U)-1U;
+            if(!blocked&&time&&ms>=time&&ms-time<=150&&clip<count)return int(clip);
+        }
+        return -1;
     }
 };
 }

@@ -5,6 +5,14 @@
 #define DKR_PS5_RENDER_DIAGNOSTICS_H
 #include <stddef.h>
 #include <string.h>
+#include <stdlib.h>
+/* Invoked only when the metrics interval expires, never for each draw.
+ * Keep collection/reset semantics, but avoid synchronous disk writes in the
+ * render worker during ordinary play. The owned diagnostics file can opt in. */
+static inline int dkrr_detail_log_enabled(void) {
+    const char *setting=getenv("DKR_TRACK_PROFILE");
+    return setting && setting[0]=='1' && setting[1]=='\0';
+}
 enum { DKR_RENDER_DIAGNOSTIC_COUNT = 9 };
 static const char *const dkrr_render_keys[DKR_RENDER_DIAGNOSTIC_COUNT] = {
  "track_profile", "water_profile", "interpolation_trace",

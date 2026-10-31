@@ -1,5 +1,8 @@
 // Portable Store snapshot/timestamp handling follows DKR-R 1.0.7 android_store.py.
 #pragma once
+#if defined(DKRR_STATIC_HTTPS)
+#include "ps5_https.hpp"
+#endif
 #include <chrono>
 #include <filesystem>
 #include <string>

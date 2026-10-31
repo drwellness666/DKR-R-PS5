@@ -25,8 +25,10 @@ struct Speaker::Worker {
     unsigned cached_revision=0,active_priority=0;
     bool playing=false,pending=false,shield_active=false;
     ShieldLoop shield_loop;
-    std::chrono::steady_clock::time_point audible_at{};
+    std::array<PendingCue,ps5_sounds::voice_limit> requests{};unsigned request_count=0;
     std::array<std::vector<std::int16_t>,ps5_sounds::count> cached_cues;
+    std::shared_ptr<const HornBank> horn_source;
+    std::shared_ptr<const std::vector<std::int16_t>> horn_pcm;
     std::thread thread;
     explicit Worker(Loader load):loader(load),thread([this]{
         try { run(); } catch(const std::exception& e) {
@@ -73,10 +75,10 @@ struct Speaker::Worker {
     }
     void run() {
         using Clock=std::chrono::steady_clock;
-        struct Voice {unsigned clip=0;std::size_t position=0;Clock::time_point starts{};unsigned released=0;bool releasing=false;};
-        // Simultaneous live cues, never an audio backlog. Four voices bound
-        // both mixing cost and gain when several item/zipper events overlap.
-        std::vector<Voice> voices;voices.reserve(4);
+        struct Voice {unsigned clip=0;std::size_t position=0;Clock::time_point starts{};unsigned released=0;bool releasing=false;std::shared_ptr<const std::vector<std::int16_t>> custom;};
+        // Match the original 32 sound-state budget. All selected starts may
+        // overlap; a horn never waits for another voice to finish.
+        std::vector<Voice> voices;voices.reserve(ps5_sounds::voice_limit);
         int& handle=output_handle;int open_user=-1;unsigned seen=0,epoch=0;
         std::unique_lock lock(mutex);
         auto state=[&]{playing=false;active_priority=0;for(const auto&v:voices)if(v.clip!=7){playing=true;active_priority=std::max(active_priority,ps5_sounds::priority(v.clip));}};
@@ -84,18 +86,35 @@ struct Speaker::Worker {
             if(voices.empty()&&generation==seen)wake.wait(lock,[&]{return quit||generation!=seen;});
             if(quit)break;
             if(!enabled||cancel_generation!=epoch){
-                epoch=cancel_generation;voices.clear();state();
+                epoch=cancel_generation;voices.clear();horn_source.reset();horn_pcm.reset();state();
                 lock.unlock();if(handle>=0){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}lock.lock();
             }
             if(generation!=seen){
-                seen=generation;const bool play=enabled&&pending;pending=false;
-                const auto requested=clip;const auto id=user;const auto rev=revision;
-                const auto start_at=audible_at;const auto request_epoch=cancel_generation;
-                if(play&&requested>=0&&requested<int(ps5_sounds::count)&&result.load()>=0){
+                seen=generation;const auto batch=requests;const auto count=request_count;request_count=0;pending=false;
+                const auto id=user;const auto rev=revision;const auto request_epoch=cancel_generation;
+                for(unsigned event=0;event<count;++event){
+                    const auto requested=int(batch[event].clip);const auto start_at=batch[event].starts;
+                    if(quit||!enabled||cancel_generation!=request_epoch||result.load()<0)break;
+                    if(Clock::now()>batch[event].expires)continue;
                     playing=true;active_priority=std::max(active_priority,ps5_sounds::priority(unsigned(requested)));
-                    lock.unlock();const auto&data=cue(rev,unsigned(requested));lock.lock();
-                    if(quit||!enabled||cancel_generation!=request_epoch)continue;
+                    lock.unlock();
+                    std::shared_ptr<const std::vector<std::int16_t>> custom;
+                    if(unsigned(requested)==ps5_sounds::custom_horn) {
+                        const auto& source=batch[event].custom;
+                        if(source&&source!=horn_source) {
+                            try {horn_pcm=std::make_shared<const std::vector<std::int16_t>>(decode_horn(*source));}
+                            catch(const std::exception& e){horn_pcm.reset();std::fprintf(stderr,"[input][speaker] custom horn unavailable: %s\n",e.what());}
+                            horn_source=source;
+                        }
+                        custom=source?horn_pcm:nullptr;
+                    }
+                    static const std::vector<std::int16_t> empty;
+                    const auto& data=unsigned(requested)==ps5_sounds::custom_horn?(custom?*custom:empty):cue(rev,unsigned(requested));
+                    lock.lock();
+                    if(quit||!enabled||cancel_generation!=request_epoch)break;
+                    if(Clock::now()>batch[event].expires){state();continue;}
                     if(data.empty()){
+                        if(unsigned(requested)==ps5_sounds::custom_horn){state();continue;}
                         lock.unlock();if(publish_result(seen,-2))std::fprintf(stderr,"[input][speaker] private PCM unavailable\n");lock.lock();state();continue;
                     }
                     if(handle>=0&&open_user!=id){lock.unlock();sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;lock.lock();}
@@ -103,7 +122,7 @@ struct Speaker::Worker {
                         // Native PADSPK=4, S16 mono=0, 48 kHz, 256-frame paced blocks.
                         lock.unlock();handle=sceAudioOutOpen(id,4,0,256,48000,0);open_user=id;lock.lock();
                         if(handle<0){lock.unlock();if(publish_result(seen,-1))std::fprintf(stderr,"[input][speaker] native open failed rc=0x%08x\n",unsigned(handle));lock.lock();state();continue;}
-                        if(quit||!enabled||cancel_generation!=request_epoch)continue;
+                        if(quit||!enabled||cancel_generation!=request_epoch)break;
                     }
                     // At capacity replace the oldest, lowest-priority voice;
                     // a new event is heard now, never queued for later playback.
@@ -111,11 +130,12 @@ struct Speaker::Worker {
                         const auto existing=std::find_if(voices.begin(),voices.end(),[](const Voice&v){return v.clip==7;});
                         if(existing!=voices.end()){existing->releasing=false;existing->released=0;state();continue;}
                     }
-                    if(voices.size()==4){
+                    if(voices.size()==ps5_sounds::voice_limit){
                         auto victim=std::min_element(voices.begin(),voices.end(),[](const Voice&a,const Voice&b){return (a.clip==7?4U:ps5_sounds::priority(a.clip))<(b.clip==7?4U:ps5_sounds::priority(b.clip));});
+                        if(ps5_sounds::priority(unsigned(requested))<(victim->clip==7?4U:ps5_sounds::priority(victim->clip)))continue;
                         voices.erase(victim);
                     }
-                    voices.push_back({unsigned(requested),0,start_at});state();
+                    voices.push_back({unsigned(requested),0,start_at,0,false,custom});state();
                 }
             }
             if(voices.empty())continue;
@@ -125,7 +145,7 @@ struct Speaker::Worker {
             std::array<int,256> mix{};std::array<std::int16_t,256> block{};
             for(auto&v:voices){
                 if(v.starts>at)continue;
-                const auto&data=cached_cues[v.clip];
+                const auto&data=v.custom?*v.custom:cached_cues[v.clip];
                 if(v.clip==7&&shield_loop){
                     if(!shield_active)v.releasing=true;
                     for(std::size_t i=0;i<block.size();++i){
@@ -139,7 +159,7 @@ struct Speaker::Worker {
                     v.position+=block.size();
                 }
             }
-            std::erase_if(voices,[&](const Voice&v){return v.clip==7&&shield_loop ? v.releasing&&v.released>=shield_loop.release : v.position>=cached_cues[v.clip].size();});
+            std::erase_if(voices,[&](const Voice&v){return v.clip==7&&shield_loop ? v.releasing&&v.released>=shield_loop.release : v.position>=(v.custom?v.custom->size():cached_cues[v.clip].size());});
             for(std::size_t i=0;i<block.size();++i)block[i]=static_cast<std::int16_t>(std::clamp(float(mix[i])*gain,-32768.0F,32767.0F));
             lock.unlock();const int rc=sceAudioOutOutput(handle,block.data());lock.lock();
             if(rc<0){
@@ -152,7 +172,7 @@ struct Speaker::Worker {
                     if(quit||!enabled||cancel_generation!=output_epoch||generation!=seen)break;
                     lock.unlock();const int tail_rc=sceAudioOutOutput(handle,block.data());lock.lock();if(tail_rc<0)break;
                 }
-                lock.unlock();sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;lock.lock();
+                if(!request_count){lock.unlock();sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;lock.lock();}
             }
         }
         lock.unlock();if(handle>=0){sceAudioOutOutput(handle,nullptr);sceAudioOutClose(handle);handle=-1;}
@@ -161,35 +181,45 @@ struct Speaker::Worker {
 Speaker::Speaker():Speaker(nullptr){};Speaker::Speaker(Loader load):loader(load){};Speaker::~Speaker()=default;
 Speaker::Speaker(Speaker&&) noexcept=default;Speaker&Speaker::operator=(Speaker&&) noexcept=default;
 int Speaker::status() const {return start_failed?-3:worker?worker->result.load():0;}
-void Speaker::update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision,int game_clip,unsigned audio_delay_ms) {
+void Speaker::update(bool enabled,int user,ps5_items::Item item,std::uint64_t ms,bool pressed,float volume,unsigned revision,int game_clip,unsigned audio_delay_ms,unsigned categories,std::shared_ptr<const HornBank> custom) {
     enabled=enabled&&user>=0&&(revision==77||revision==80);
-    int clip=event.update(enabled,item,ms,pressed);
-    if(clip<0&&game_clip>=9&&game_clip<int(ps5_sounds::count))clip=game_clip;
+    const auto now=std::chrono::steady_clock::now();
+    if(!enabled||unsent_user!=user||unsent_revision!=revision)unsent_count=0;
+    unsent_user=user;unsent_revision=revision;
+    const auto add=[&](int cue){
+        if(!enabled||cue<0||cue>=int(ps5_sounds::count)||!ps5_sounds::allowed(categories,unsigned(cue))||unsent_count==unsent.size())return;
+        unsent[unsent_count++]={unsigned(cue),now+std::chrono::milliseconds(std::min(audio_delay_ms,250U)),now+std::chrono::milliseconds(150),unsigned(cue)==ps5_sounds::custom_horn?custom:nullptr};
+    };
+    add(event.update(enabled,item,ms,pressed));
+    if(game_clip>=9)add(game_clip);
     if(!enabled)start_failed=false;
     if(!worker&&enabled&&!start_failed)try {worker=std::make_unique<Worker>(loader);}
     catch(const std::exception& e){start_failed=true;std::fprintf(stderr,"[input][speaker] unavailable: %s\n",e.what());}
     if(!worker)return;
-    {std::lock_guard lock(worker->mutex);
+    {std::unique_lock lock(worker->mutex,std::try_to_lock);
+        // Input polling must never wait for the optional audio worker.
+        if(!lock.owns_lock())return;
         if(!enabled||worker->user!=user||worker->revision!=revision) {
             if(worker->enabled){++worker->generation;++worker->cancel_generation;worker->wake.notify_one();}
-            worker->enabled=false;worker->pending=false;if(worker->result.load()!=-3)worker->result.store(0);
+            worker->enabled=false;worker->pending=false;worker->request_count=0;if(worker->result.load()!=-3)worker->result.store(0);
         }
         worker->user=user;worker->revision=revision;worker->volume=std::isfinite(volume)?std::clamp(volume,0.0F,1.0F):0.0F;
         worker->enabled=enabled;
-        const bool shield=enabled&&item.valid&&item.shield;
+        const bool shield=enabled&&item.valid&&item.shield&&ps5_sounds::allowed(categories,7);
         if(shield!=worker->shield_active){
             worker->shield_active=shield;
-            if(shield&&clip<0)clip=7;
+            if(shield&&std::none_of(unsent.begin(),unsent.begin()+unsent_count,[](const PendingCue&v){return v.clip==7;}))add(7);
             ++worker->generation;worker->wake.notify_one();
         }
-        // Item uses and distinct zipper boosts can overlap. Other incidental
-        // cues keep the quiet single-sound policy; no delayed playback queue.
-        const bool busy=worker->playing||worker->pending;
-        if(clip>=0&&(!busy||clip==int(ps5_sounds::zipper)||ps5_sounds::priority(unsigned(clip))>=2)){
-            worker->clip=clip;worker->pending=true;
-            worker->audible_at=std::chrono::steady_clock::now()+std::chrono::milliseconds(std::min(audio_delay_ms,250U));
-            ++worker->generation;worker->wake.notify_one();
+        unsigned retained=0;
+        for(unsigned i=0;i<unsent_count;++i){
+            const auto cue=unsent[i];
+            if(cue.expires<now||!ps5_sounds::allowed(categories,cue.clip))continue;
+            if(worker->request_count==worker->requests.size()){unsent[retained++]=cue;continue;}
+            worker->requests[worker->request_count++]=cue;worker->pending=true;
         }
+        unsent_count=retained;
+        if(worker->request_count){++worker->generation;worker->wake.notify_one();}
     }
 }
 }

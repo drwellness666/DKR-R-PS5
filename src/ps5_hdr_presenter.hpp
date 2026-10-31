@@ -17,6 +17,7 @@ class Ps5HdrPresenter {
     std::unique_ptr<plume::RenderFramebuffer> sceneFb,uiFb;
     unsigned width=0,height=0;
 public:
+    plume::RenderTexture* uiTarget() { return ui.get(); }
     bool prepare(plume::RenderDevice *device,unsigned w,unsigned h){
         using namespace plume;
         if(!w||!h||w>3840||h>2160)return false;
