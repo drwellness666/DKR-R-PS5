@@ -118,3 +118,8 @@ to the executable. Source members and byte offsets are recorded in
 Build checks verify every section's length and SHA-256 and refuse stale installed
 copies. [Content permission confirmation](licenses/CONTENT-PERMISSIONS.json)
 records the maintainer's scope for Racing Banana and title graphics.
+
+Native HTTPS uses [curl](https://curl.se/) with the existing Mbed TLS library.
+The pinned [Mozilla CA certificate store](https://curl.se/docs/caextract.html) is
+provided under MPL 2.0. Original notices are included in `licenses/COMPONENT-NOTICES.txt`;
+source versions and hashes are recorded in `HTTPS_SOURCES.json`.

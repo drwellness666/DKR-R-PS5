@@ -1,27 +1,21 @@
 # Changelog
 
-## 1.0 — in preparation
+## 1.0 — 2026-10-31
 
-- Keep shared-save preparation working on first and subsequent PS5 starts when native link-count metadata is unavailable.
+First native PS5 release, based on **DKR-R 1.0.9**.
 
-- Fix PS5 installation and update activation while keeping app directory permissions private.
-- Read controller-mapping imports completely before applying them, with bounded USB input outside the input lock.
-- Keep existing controller-mapping exports if the destination changes after file selection.
-- Finish or cancel texture imports cleanly when closing DKR-R or installing an update.
-- Keep tiled CRT filters lightweight on PS5 by repeating their texture on one quad.
-- Browse USB drives and game files directly in the touchpad menu when importing textures, filters, saves or controller mappings. Export saves and mappings to a chosen folder; existing file names are kept.
+- One home-screen app with both US revisions, shared settings/textures and separate progress.
+- Original DKR-R artwork, controller-friendly mapping and optional adjustable analog-stick menu pointer with right-stick scrolling.
+- Optional DualSense balloon colors, stable gyro steering, adaptive L2 item feedback and original game sounds on the controller speaker.
+- Optional 4K, neutral HDR10 and 120-Hz output with VRR; Modern rendering follows the display rate.
+- Native networking for the Mod Store, online directory/lobbies and Internet updates.
+- A ROM-free USB installer, an optional offline update ELF and signed in-game updates that keep installed data.
+- Correct native JSON locale handling for custom water/track metadata and save-record handling on subsequent starts.
+- Remove accumulated software draw commands from GPU menus; move large import scans out of the UI lock and diagnostic writes off rendering threads.
+- Let healthy large downloads continue; reduce repeated texture-copy barriers and redundant hashing while retaining verification and recovery.
+- English and German player guides, upstream credits and complete original component notices.
 
-First PS5 release, based on **DKR-R 1.0.8**. The 1.0.8 Windows startup-memory hotfix is included; the native PS5 memory path is unchanged. Includes its release-source layers for SDK 2, custom cups, the mod library, shared offline saves across mods, camera, water, presentation and performance fixes.
+[Known issues and compatibility](docs/KNOWN_ISSUES.md) · [Full credits](CREDITS.md)
 
-- Native PS5 home-screen app with original DKR-R artwork.
-- Both US revisions in one app, shared settings and textures, separate progress.
-- Controller-friendly settings, readable 4K menus and a live button-layout diagram.
-- Classic driving controls and optional DualSense balloon colors, gyro, adaptive L2 and controller sounds.
-- Controller effects can be retried by toggling their option after a temporary output failure.
-- Optional 4K and HDR10 output; experimental 120 Hz with VRR.
-- One ROM-free installer using the owner's USB ROMs, native saves, in-game Internet updates and a manual update ELF.
-- Update recovery keeps its backup intact when directory access fails.
-- English and German player guides, linked credits and complete original component notices.
-- The optional PC build assistant creates the same ROM-free installer and update files, verifies completed builds before reuse and updates without a previous PC build.
-
-[Known issues and remaining feature checks](docs/KNOWN_ISSUES.md) · [Full credits](CREDITS.md)
+- Holding Square no longer opens the desktop window selector in PS5 menus.
+- Controller horns use the admitted audio bank of installed custom drivers automatically.

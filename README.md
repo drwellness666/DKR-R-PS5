@@ -3,24 +3,24 @@
 ![Diddy Kong Racing Recompiled — original project artwork](https://github.com/user-attachments/assets/c913bee2-029c-4e29-9921-0f6abe7a3bf1)
 
 **Diddy Kong Racing Recompiled, native on PlayStation 5.**
-An unofficial PS5 port of [DKR-R 1.0.8](https://github.com/ThatGuyMcd/DKR-R), the original recompilation by **ThatGuyMcd and the DKR-R contributors**.
+An unofficial PS5 port of [DKR-R 1.0.9](https://github.com/ThatGuyMcd/DKR-R), the original recompilation by **ThatGuyMcd and the DKR-R contributors**.
 
 [📦 Downloads](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇩🇪 Deutsch](README.de.md) · [📖 Help](docs/README.md) · [❤️ Credits](CREDITS.md) · [🐛 Report a bug](https://github.com/drwellness666/DKR-R-PS5/issues)
 
 **A free, open-source hobby project for the community.** Source for the PS5 integration, installer, updater and build tools is included under [GPL-3.0-or-later](LICENSE).
 
-**Version 1.0 is in preparation.** The final installer and update downloads are not available yet.
+**Version 1.0** brings the original game, both US revisions and optional PS5 features together in one home-screen app.
 
 ## 🎮 Made for PS5
 
 - Start from the PS5 home screen, with the original DKR-R icon and cloud background.
 - Switch between **US 1.0 and US 1.1 / Rev A**. Settings and texture packs are shared; progress stays separate.
-- Use classic controls and controller-friendly menus, including a diagram of your current button mapping.
+- Use classic controls, the original binding table and an optional analog-stick menu pointer.
 - Enable optional **DualSense balloon colors, gyro steering, adaptive L2 feedback and controller sounds** under **Controls → PS5**.
-- Choose up to **4K**, optional **HDR10**, or experimental **120 Hz / VRR**. [Display settings](docs/DISPLAY.md).
-- Install once and play on the console. Future updates can be installed from the game's settings.
+- Choose up to **4K**, optional **HDR10**, and **120 Hz / VRR**. [Display settings](docs/DISPLAY.md).
+- Install once and play on the console. Updates can be installed under **Touchpad → Updates**.
 
-DKR-R 1.0.8 provides Modern/Accurate presentation, custom cups, the mod library and SDK 2 mods, texture packs, online features and English/French/German game text. The settings menu is English. Compatibility notes are in the [known issues](docs/KNOWN_ISSUES.md).
+DKR-R 1.0.9 provides Modern/Accurate presentation, custom cups, the mod library and SDK 2 mods, texture packs, online features and English/French/German game text. The settings menu is English. Compatibility notes are in the [known issues](docs/KNOWN_ISSUES.md).
 
 ## 📦 Install
 
@@ -37,13 +37,13 @@ You need a PS5 already running **native homebrew**, **ShadowMountPlus**, an **EL
 
 ## 🎨 Optional texture pack
 
-**DKR REMASTERED by sr.gu** is a recommended separate download. Find it through the [official DKR-R Discord](https://discord.com/invite/AMWfXdBjNP), import it under **Textures**, and choose **Modern** presentation. Version 0.2.7 was used on both US revisions. The pack is not included here. [Pack help](docs/CONTROLS.md#texture-packs-and-mods).
+**Sr.gu’s HD Texture Pack / DKR REMASTERED** is available separately through the in-game **Mods / Hacks → Mod Store** and the [official DKR-R Discord](https://discord.com/invite/AMWfXdBjNP). Choose **Modern** presentation for replacement textures. Version 0.2.8 was installed through the Store during PS5 testing; the pack is not included in this release. [Pack help](docs/CONTROLS.md#texture-packs-and-mods).
 
 ## ⚠️ Known issues
 
 - Water can flash briefly when entering a **Tracks preview**.
 - Occasional **microstutters** remain, especially with demanding graphics settings or texture packs.
-- HDR, the latest installer/update and newer controller features still need their final PS5 checks. Mods, online play and other homebrew setups have limited coverage.
+- Mod compatibility and online races depend on the content and connection. Other homebrew setups have limited coverage.
 
 [Compatibility and feature status](docs/KNOWN_ISSUES.md) · [Planned improvements](docs/ROADMAP.md)
 

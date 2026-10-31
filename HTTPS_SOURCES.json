@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "curl": {
+    "name": "curl",
+    "revision": "curl-8_23_0",
+    "file": "curl-8.23.0.tar.xz",
+    "path": "curl",
+    "sha256": "8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5",
+    "url": "https://curl.se/download/curl-8.23.0.tar.xz",
+    "strip_components": 1
+  },
+  "trust": {
+    "file": "vendor/Mozilla-CA-20261024.pem",
+    "url": "https://curl.se/ca/cacert.pem",
+    "sha256": "796f1389bfea13c0ed78f663b765baaff54a508e5483786bd6ece73c5e3e3cbe",
+    "source": "Mozilla CA Certificate Store distributed by curl",
+    "license": "MPL-2.0"
+  },
+  "native_socket_reference": {
+    "repository": "https://github.com/Portablelle/OpenNOW-PS5",
+    "revision": "ee86867651d1aeb2a95d7a706c4b0b84f05d3542",
+    "path": "src/platform/ps5_sockets.c",
+    "sha256": "294ef79cd630902907bb11b6e75e73eb1345a0053f1240998794db8288522bb1",
+    "license": "GPL-3.0-or-later",
+    "copyright": "Copyright (C) 2026 BlackBearReloaded",
+    "implementation": "src/ps5_net.c; native socket/epoll ABI; scoped adapters; existing c-ares DNS retained"
+  }
+}

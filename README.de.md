@@ -3,22 +3,22 @@
 ![Diddy Kong Racing Recompiled — Grafik des Originalprojekts](https://github.com/user-attachments/assets/c913bee2-029c-4e29-9921-0f6abe7a3bf1)
 
 **Diddy Kong Racing Recompiled, nativ auf PlayStation 5.**
-Ein inoffizieller PS5-Port von [DKR-R 1.0.8](https://github.com/ThatGuyMcd/DKR-R). Die originale Rekompilierung stammt von **ThatGuyMcd und den DKR-R-Mitwirkenden**.
+Ein inoffizieller PS5-Port von [DKR-R 1.0.9](https://github.com/ThatGuyMcd/DKR-R). Die originale Rekompilierung stammt von **ThatGuyMcd und den DKR-R-Mitwirkenden**.
 
 [📦 Downloads](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇬🇧 English](README.md) · [📖 Hilfe](docs/README.md) · [❤️ Mitwirkende](CREDITS.md) · [🐛 Fehler melden](https://github.com/drwellness666/DKR-R-PS5/issues)
 
 **Ein kostenloses Open-Source-Hobbyprojekt für die Community.** Der Quellcode der PS5-Integration, des Installers, Updaters und der Bauwerkzeuge liegt unter [GPL-3.0-or-later](LICENSE) bei.
 
-**Version 1.0 ist in Vorbereitung.** Die endgültigen Installer- und Update-Downloads sind noch nicht verfügbar.
+**Version 1.0** vereint das Originalspiel, beide US-Revisionen und optionale PS5-Funktionen in einer App im Hauptmenü.
 
 ## 🎮 Für die PS5 angepasst
 
 - Start vom PS5-Hauptmenü mit dem originalen DKR-R-Icon und Wolkenhintergrund.
 - Zwischen **US 1.0 und US 1.1 / Rev A** wechseln. Einstellungen und Texturpakete werden gemeinsam verwendet; Spielstände bleiben getrennt.
-- Klassische Steuerung und controllerfreundliche Menüs mit einer Grafik der aktuellen Tastenbelegung.
+- Klassische Steuerung und controllerfreundliche Menüs mit der originalen Belegungstabelle und optionalem Analogstick-Zeiger.
 - Optionale **DualSense-Ballonfarben, Gyrosteuerung, adaptive L2-Effekte und Controller-Töne** unter **Controls → PS5**.
-- Bis zu **4K**, optionales **HDR10** und experimentelle **120 Hz / VRR**. [Bildeinstellungen](docs/DISPLAY.md).
-- Einmal installieren und auf der Konsole spielen. Spätere Updates lassen sich im Spiel installieren.
+- Bis zu **4K**, optionales **HDR10** und **120 Hz / VRR**. [Bildeinstellungen](docs/DISPLAY.md).
+- Einmal installieren und auf der Konsole spielen. Updates lassen sich unter **Touchpad → Updates** installieren.
 
 Modern/Accurate-Darstellung, Texturpakete, Mods, Online-Funktionen und englische/französische/deutsche Spieltexte stammen aus DKR-R. Das Einstellungsmenü ist Englisch. Hinweise zur Kompatibilität stehen in den [bekannten Fehlern](docs/KNOWN_ISSUES.md).
 
@@ -37,13 +37,13 @@ Benötigt werden eine PS5 mit eingerichteter **nativer Homebrew**, **ShadowMount
 
 ## 🎨 Optionales Texturpaket
 
-**DKR REMASTERED von sr.gu** ist eine separate Empfehlung. Bezugsquelle ist der [offizielle DKR-R-Discord](https://discord.com/invite/AMWfXdBjNP). Unter **Textures** importieren und **Modern** wählen. Version 0.2.7 wurde auf beiden US-Revisionen verwendet. Das Paket ist hier nicht enthalten. [Paket-Hilfe](docs/CONTROLS.md#texture-packs-and-mods).
+**Sr.gu’s HD Texture Pack / DKR REMASTERED** gibt es separat im **Mods / Hacks → Mod Store** und über den [offiziellen DKR-R-Discord](https://discord.com/invite/AMWfXdBjNP). Für Ersatztexturen **Modern** wählen. Version 0.2.8 wurde beim PS5-Test über den Store installiert. Das Paket ist hier nicht enthalten. [Paket-Hilfe](docs/CONTROLS.md#texture-packs-and-mods).
 
 ## ⚠️ Bekannte Fehler
 
 - Beim Einstieg in eine **Tracks-Vorschau** kann das Wasser kurz aufblitzen.
 - Gelegentliche **Mikroruckler**, besonders bei aufwendigen Grafikeinstellungen oder Texturpaketen.
-- HDR, der neueste Installer/Updater und neuere Controller-Funktionen brauchen noch ihre abschließenden PS5-Tests. Mods, Online-Spiel und andere Homebrew-Setups sind nur begrenzt geprüft.
+- Mod-Kompatibilität und Online-Rennen hängen von Inhalt und Verbindung ab. Andere Homebrew-Setups sind nur begrenzt geprüft.
 
 [Kompatibilität und Funktionsstand](docs/KNOWN_ISSUES.md) · [Geplante Verbesserungen](docs/ROADMAP.md)
 
