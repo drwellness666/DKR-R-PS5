@@ -8,7 +8,7 @@
       "source": "DKR-R/LICENSE.md",
       "bytes": 1075,
       "sha256": "892094a99ab18d0cea2d6a7c6db6015bac249c64c7e0cb0b742bd2805dd821f0",
-      "revision": "34ed57ae97ef46759e5b23aa8d7a1e7ec89f3f56"
+      "revision": "47ccadf8c2e68e42867f3b5770671305e828fac1"
     },
     {
       "component": "N64Recomp",
@@ -411,6 +411,68 @@
       "bytes": 1083,
       "sha256": "761ecab744d5ed0528b5b794239abaa6f62bd5bd36fc1980b3cb98c48ce32868",
       "revision": "6f1c2d99a4ea571c139f449c326fd176ba8f3496 (bundled re-spirv)"
+    },
+    {
+      "component": "libdatachannel",
+      "source": "DKR-R/extern/libdatachannel/LICENSE",
+      "bytes": 16726,
+      "sha256": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85",
+      "revision": "c6696d157b5612df2a741d9a03b192b47ab6cefb"
+    },
+    {
+      "component": "nlohmann JSON",
+      "source": "DKR-R/extern/libdatachannel/deps/json/LICENSE.MIT",
+      "bytes": 1076,
+      "sha256": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+      "revision": "55f93686c01528224f448c19128836e7df245f72"
+    },
+    {
+      "component": "LibJuice",
+      "source": "DKR-R/extern/libdatachannel/deps/libjuice/LICENSE",
+      "bytes": 16726,
+      "sha256": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85",
+      "revision": "22145ec3473c73d811417ac9a6aee0de530aaa3f"
+    },
+    {
+      "component": "plog",
+      "source": "DKR-R/extern/libdatachannel/deps/plog/LICENSE",
+      "bytes": 1071,
+      "sha256": "e4d01796524cbc13b1571a1f0914823c6a23b316ba039e7014f47a4eef7fd4c3",
+      "revision": "94899e0b926ac1b0f4750bfbd495167b4a6ae9ef"
+    },
+    {
+      "component": "usrsctp",
+      "source": "DKR-R/extern/libdatachannel/deps/usrsctp/LICENSE.md",
+      "bytes": 1500,
+      "sha256": "fa53711b25af4b9a9b8dadfea3cb38166ec4b96760c8d62b284055554537d9ef",
+      "revision": "fec583d54493f879d2ae44a743423bf8a04371ab"
+    },
+    {
+      "component": "curl",
+      "source": "curl/COPYING",
+      "bytes": 1088,
+      "sha256": "82f2f4427d6545ee5aaac4f0b80428da6cc8ba41c2cf5da3a03680ec327b9681",
+      "revision": "curl-8_23_0"
+    },
+    {
+      "component": "Mozilla CA store",
+      "source": "Mozilla/MPL-2.0",
+      "bytes": 16727,
+      "sha256": "66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172",
+      "revision": "2026-10-20"
+    },
+    {
+      "component": "c-ares",
+      "source": "c-ares/LICENSE.md",
+      "bytes": 1211,
+      "sha256": "460f5e768fda3752ca2169a95df062578a10fb126bfd65f3b9b1a1bed2f84807"
+    },
+    {
+      "component": "PS5 SceNet adapter",
+      "source": "OpenNOW-PS5/src/platform/ps5_sockets.c/source-notice",
+      "bytes": 149,
+      "sha256": "f98c992ecb0584137abdc4fcfd7abb33585aadf4f0ab41c76d6b07832d469442",
+      "revision": "ee86867651d1aeb2a95d7a706c4b0b84f05d3542"
     }
   ]
 }
