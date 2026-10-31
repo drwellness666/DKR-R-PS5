@@ -4,7 +4,6 @@ The current version already includes the universal installer, native in-game upd
 
 The next priorities are:
 
-- Resolve the Tracks-preview water flash and reproducible stutters.
 - Broaden console, display, controller and update-recovery coverage.
 - Test more mods, online modes and ghost/Controller Pak saves.
 - Complete a Windows/WSL2 source-build walkthrough on Windows.

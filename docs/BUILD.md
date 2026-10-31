@@ -17,7 +17,7 @@ sources and needs several GB of free space. [Windows setup](WINDOWS.md).
 Both are required by the normal installer. Byte order is detected from contents;
 original files are read-only. PAL is unsupported. The PS5 must already support
 native homebrew, an ELF receiver and ShadowMountPlus. Tested sessions used 13.60,
-Relapse / WebKit Autoloader 0.6.1 and kstuff-lite; etaHEN was not used.
+Relapse / WebKit Autoloader 0.6.2 and kstuff-lite; etaHEN was not used.
 
 ## Manual commands (advanced)
 
