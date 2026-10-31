@@ -88,7 +88,7 @@
     },
     "runtime-recomp/src/game/runtime_platform.cpp": {
       "original_sha256": "4c390fff00dbd9967956ed035e4384d713c6ef9b6c1ce367da67156446951b6e",
-      "patched_sha256": "769a3c9f58c6a2f2e0cfc505e19fafa021d6e1be120b2a49b188ae5ef7bd7290"
+      "patched_sha256": "9a9402dd9a24644a71cf88b58aed5ef7a9582be7f3becc9ff3bf79ca4e42f168"
     },
     "runtime-recomp/src/game/runtime_platform.hpp": {
       "original_sha256": "51f44b3b0719a09e3b6176a8e4e4d92a041f1fe16205ef2199c320f4898d6c22",
@@ -120,7 +120,7 @@
     },
     "runtime-recomp/src/game/runtime_ui.cpp": {
       "original_sha256": "e0d8893b1945bcee9bce27eebc57b42e72b2cbdb2be3a4a7e60660da3d8d1450",
-      "patched_sha256": "901494541a2d6fea7571cc9baef1143da64d145abc653fa3e5949e4b69cc575d"
+      "patched_sha256": "39621c285607a64a55a797f25718b236eed231f2149a4a2c548103add8bc376c"
     },
     "runtime-recomp/src/game/runtime_ui_paddock.inl": {
       "original_sha256": "a4a8c6cce759da1da31079ae18afd132a6a99baab664216f775c60906da70c4a",
@@ -175,5 +175,5 @@
       "patched_sha256": "a607f12d4077fff3291fbb5ed53400ec2b4d9ad1f096380aa5dee44c9ebb4129"
     }
   },
-  "patch_sha256": "3050ed1af697379c80ded1ca1607ef8dcdaaf8011ab49216fa73c9a73a0350d5"
+  "patch_sha256": "aeb73fcdd1d8d60d47275833a31a4e5fd22eb9d0aa2eae7dbb59ca64b1ce7f07"
 }

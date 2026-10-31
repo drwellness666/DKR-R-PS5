@@ -2441,22 +2441,7 @@
      if (g_window == nullptr) {
  #if defined(DKR_IOS)
          // Desktop fullscreen, as on the Mac. Real fullscreen makes SDL restore
-@@ -1998,8 +2067,14 @@
-                static_cast<std::size_t>(StandardButton::South));
-         button(ImGuiKey_GamepadFaceRight,
-                static_cast<std::size_t>(StandardButton::East));
-+#if defined(__PROSPERO__)
-+        // Desktop window selection has no role in fixed console panels.
-+        // Physical Square remains available to gameplay and binding capture.
-+        io.AddKeyEvent(ImGuiKey_GamepadFaceLeft,false);
-+#else
-         button(ImGuiKey_GamepadFaceLeft,
-                static_cast<std::size_t>(StandardButton::West));
-+#endif
-         button(ImGuiKey_GamepadFaceUp,
-                static_cast<std::size_t>(StandardButton::North));
-         button(ImGuiKey_GamepadDpadLeft,
-@@ -2054,8 +2129,22 @@
+@@ -2054,8 +2123,22 @@
          io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
      }
  
@@ -2479,7 +2464,7 @@
              SDL_GameControllerGetButton(controller, source) != 0);
      };
      const auto axis = [&](ImGuiKey negative_key, ImGuiKey positive_key,
-@@ -2063,9 +2152,11 @@
+@@ -2063,9 +2146,11 @@
          float value = connected
              ? NormaliseAxis(SDL_GameControllerGetAxis(controller, source))
              : 0.0F;
@@ -2494,19 +2479,7 @@
          io.AddKeyAnalogEvent(negative_key, value < 0.0F, std::max(-value, 0.0F));
          io.AddKeyAnalogEvent(positive_key, value > 0.0F, std::max(value, 0.0F));
      };
-@@ -2074,7 +2165,11 @@
-     button(ImGuiKey_GamepadBack, SDL_CONTROLLER_BUTTON_BACK);
-     button(ImGuiKey_GamepadFaceDown, SDL_CONTROLLER_BUTTON_A);
-     button(ImGuiKey_GamepadFaceRight, SDL_CONTROLLER_BUTTON_B);
-+#if defined(__PROSPERO__)
-+    io.AddKeyEvent(ImGuiKey_GamepadFaceLeft,false);
-+#else
-     button(ImGuiKey_GamepadFaceLeft, SDL_CONTROLLER_BUTTON_X);
-+#endif
-     button(ImGuiKey_GamepadFaceUp, SDL_CONTROLLER_BUTTON_Y);
-     button(ImGuiKey_GamepadDpadLeft, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
-     button(ImGuiKey_GamepadDpadRight, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
-@@ -2199,10 +2294,27 @@
+@@ -2199,10 +2284,27 @@
              dkr::runtime::custom_music::render(g_custom_music_buffer.data(),
                                                 sample_count / 2U, g_audio_frequency);
          }
@@ -2534,7 +2507,7 @@
              const auto filtered = g_audio_equalizer.process(
                  static_cast<float>(samples[i + 1]) + (custom_music_active ? g_custom_music_buffer[i] : 0.0F),
                  static_cast<float>(samples[i]) + (custom_music_active ? g_custom_music_buffer[i + 1] : 0.0F));
-@@ -2247,6 +2359,10 @@
+@@ -2247,6 +2349,10 @@
          } else {
              const std::size_t queued_frames = SDL_GetQueuedAudioSize(g_audio_device) /
                                                (2U * sizeof(std::int16_t));
@@ -2545,7 +2518,7 @@
              if (!g_audio_playback_started && g_audio_prime_target_frames != 0U &&
                  queued_frames >= g_audio_prime_target_frames) {
                  SDL_PauseAudioDevice(g_audio_device, 0);
-@@ -2401,6 +2517,16 @@
+@@ -2401,6 +2507,16 @@
          return;
      }
      g_audio_frequency = static_cast<std::uint32_t>(obtained.freq);
@@ -2562,7 +2535,7 @@
      g_audio_callback_frames = obtained.samples;
      g_audio_playback_started = false;
      g_audio_nominal_block_frames = 0U;
-@@ -2461,9 +2587,69 @@
+@@ -2461,9 +2577,69 @@
  
      const bool blocked = dkr::runtime::ui::overlay_visible() || dkr::runtime::camera::editor_open.load();
      const bool window_focused = g_window != nullptr &&
@@ -2632,7 +2605,7 @@
      const int configured_keyboard_player =
          dkr::runtime::input::keyboard_player();
      const std::size_t online_profile = std::min(
-@@ -2722,6 +2908,96 @@
+@@ -2722,6 +2898,96 @@
  #endif
  }
  
@@ -2729,7 +2702,7 @@
  bool dkr::runtime::platform::gyro_available(std::size_t player) {
  #if DKR_RUNTIME_HAS_RT64
      std::scoped_lock lock(g_platform_mutex);
-@@ -3264,8 +3540,16 @@
+@@ -3264,8 +3530,16 @@
                   "Select it and restart DKR-R before importing.";
          return false;
      }
@@ -2746,7 +2719,7 @@
      std::vector<std::string> valid;
      valid.reserve(lines.size());
      for (const std::string& line : lines) {
-@@ -3307,11 +3591,18 @@
+@@ -3307,11 +3581,18 @@
          status = "No custom controller mappings have been created yet.";
          return false;
      }
@@ -2769,7 +2742,7 @@
          return false;
      }
      status = "Controller mappings exported.";
-@@ -3355,3 +3646,66 @@
+@@ -3355,3 +3636,66 @@
      (void)assignments;
  #endif
  }
@@ -4281,11 +4254,12 @@
      shutdown_online_mods();
      g_online_mod_settings={config_directory / "online-mods",mod_worker,{}};
      g_online_mod_link=std::make_unique<dkr::runtime::netplay::DirectModSyncLink>(dkr::runtime::netplay::session());
-@@ -8520,6 +8655,24 @@
+@@ -8520,6 +8655,29 @@
                   "[boot][settings] unavailable graphics API recovered to Automatic\n");
  }
  
 +#if defined(__PROSPERO__)
++#include "ps5_menu_window_policy.hpp"
 +static void InstallNativeMenuInput() {
 +    dkrr::menu_pointer::state={};
 +    // Fixed console panels have no desktop window placement to persist.
@@ -4295,7 +4269,11 @@
 +    hook.Type=ImGuiContextHookType_NewFramePre;
 +    hook.Callback=[](ImGuiContext*,ImGuiContextHook*) {
 +        dkr::runtime::platform::update_ui_gamepad_navigation();
++        dkrr::menu_window_policy::before_navigation();
 +    };
++    ImGui::AddContextHook(ImGui::GetCurrentContext(),&hook);
++    hook.Type=ImGuiContextHookType_NewFramePost;
++    hook.Callback=[](ImGuiContext*,ImGuiContextHook*){dkrr::menu_window_policy::after_navigation();};
 +    ImGui::AddContextHook(ImGui::GetCurrentContext(),&hook);
 +    hook.Type=ImGuiContextHookType_EndFramePre;
 +    hook.Callback=[](ImGuiContext*,ImGuiContextHook*){dkrr::menu_pointer::draw();};
@@ -4306,7 +4284,7 @@
  dkr::runtime::ui::StartupResult dkr::runtime::ui::run_startup_screen(
      SDL_Window* window, const std::filesystem::path& preselected_rom,
      bool software_failure_recovery) {
-@@ -8550,6 +8703,14 @@
+@@ -8550,6 +8708,14 @@
      if (!renderer) renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
  #else
      SDL_Renderer* renderer = nullptr;
@@ -4321,7 +4299,7 @@
      struct ReturnFramebufferHint {
          std::optional<std::string> previous;
          bool active=false;
-@@ -8627,7 +8788,12 @@
+@@ -8627,7 +8793,12 @@
                       (renderer_info.flags & SDL_RENDERER_ACCELERATED) != 0 ? "yes" : "no",
                       static_cast<unsigned>(SDL_GetWindowFlags(window)));
      }
@@ -4335,7 +4313,7 @@
          (renderer_info.flags&SDL_RENDERER_ACCELERATED)==0;
      if(software_failure_recovery)std::fprintf(stderr,
          "[rollback][recovery] fresh launcher return renderer=%s bounded-software=%d\n",
-@@ -8635,6 +8801,9 @@
+@@ -8635,6 +8806,9 @@
  
      IMGUI_CHECKVERSION();
      ImGui::CreateContext();
@@ -4345,7 +4323,7 @@
      ImGui::GetIO().ConfigFlags |=
          ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
      const auto launcher_assets_started_at =
-@@ -8642,7 +8811,14 @@
+@@ -8642,7 +8816,14 @@
      LoadLauncherFonts();
      ApplyStyle();
      ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
@@ -4360,7 +4338,7 @@
      dkr::store::service().gameplay(false);
      g_mod_store_renderer = renderer;
      int launcher_display_refresh_rate = 60;
-@@ -8712,9 +8888,14 @@
+@@ -8712,9 +8893,14 @@
  #endif
      dkr::runtime::startup_performance::report(
          "rom-catalog-load", rom_catalog_started_at);
@@ -4377,7 +4355,7 @@
              : LoadLastRom();
      if (initial_rom.has_value()) {
          std::string error;
-@@ -8734,11 +8915,18 @@
+@@ -8734,11 +8920,18 @@
      }
  
      int page = 0;
@@ -4397,7 +4375,7 @@
      std::filesystem::path mod_launch_rom;
      // Events may arrive between redraw deadlines. Retain actions until the
      // next ImGui frame consumes them, including controller modal requests.
-@@ -8750,6 +8938,9 @@
+@@ -8750,6 +8943,9 @@
          if (g_play_offline_after_leave && !dkr::runtime::netplay::session().active()) {
              g_play_offline_after_leave = false; launch_requested = true;
          }
@@ -4407,7 +4385,7 @@
          const auto launcher_services_started = std::chrono::steady_clock::now();
          // Hash only the already-imported catalog on a worker. Applying the
          // authenticated offer still happens exclusively on this UI thread.
-@@ -8969,13 +9160,16 @@
+@@ -8969,13 +9165,16 @@
              continue;
          }
          constexpr int launcher_page_count = kMenuPageCount;
@@ -4425,7 +4403,7 @@
          dkr::runtime::platform::pump_input_backend_events();
          SDL_Event event{};
          const auto process_launcher_event = [&](SDL_Event& event) {
-@@ -9142,6 +9336,9 @@
+@@ -9142,6 +9341,9 @@
              if (!launcher_window_visible) ++launcher_hidden_wakes;
              // Input interrupts the wait, not the redraw budget. Services run
              // on every wake (at most 50 ms between waits), even while hidden.
@@ -4435,7 +4413,7 @@
              if (SDL_WaitEventTimeout(&event, launcher_wait_ms) != 0) {
                  process_launcher_event(event);
              }
-@@ -9164,10 +9361,22 @@
+@@ -9164,10 +9366,22 @@
  
          const auto launcher_ui_build_started =
              std::chrono::steady_clock::now();
@@ -4458,7 +4436,7 @@
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
          SDL_GetWindowSize(window, &hud_viewport_width, &hud_viewport_height);
-@@ -9223,6 +9432,11 @@
+@@ -9223,6 +9437,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -4470,7 +4448,7 @@
          LauncherSidebarButton("PLAY", 0, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("DKR-R ONLINE", kPageOnlineMp, page, sidebar_selection,
-@@ -9243,6 +9457,8 @@
+@@ -9243,6 +9462,8 @@
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("ABOUT DKR-R", kPageAbout, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
@@ -4479,7 +4457,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9265,6 +9481,7 @@
+@@ -9265,6 +9486,7 @@
              request_quit_popup = true;
          }
          ImGui::PopStyleColor();
@@ -4487,7 +4465,7 @@
          --g_race_button_sidebar;
          ImGui::PopItemFlag();
          ImGui::EndGroup();
-@@ -9297,7 +9514,11 @@
+@@ -9297,7 +9519,11 @@
          }
  #endif
          const PaddockLauncherTypographyScope launcher_typography;
@@ -4499,7 +4477,7 @@
          ImGui::BeginDisabled(update_handoff);
          const PlayPageContext play_context{selected_rom, rom_status, rom_ready, rom_catalog,
                                             launch_requested};
-@@ -9323,6 +9544,10 @@
+@@ -9323,6 +9549,10 @@
              DrawTexturesPage(right_inner_width);
          } else if (page == kPageAchievements) {
              DrawAchievementsPage(right_inner_width);
@@ -4510,7 +4488,7 @@
          } else {
              DrawAboutPage(right_inner_width, true);
          }
-@@ -9377,13 +9602,31 @@
+@@ -9377,13 +9607,31 @@
              ImGui::EndPopup();
          }
          ImGui::End();
@@ -4542,7 +4520,7 @@
          DrawTextEntryKeyboard();
          DrawOnlineNotification();
          DrawOlToast();
-@@ -9404,6 +9647,9 @@
+@@ -9404,6 +9652,9 @@
          }
  #endif
          DrawAchievementToast();
@@ -4552,7 +4530,7 @@
          ImGui::Render();
          const auto launcher_ui_build_finished =
              std::chrono::steady_clock::now();
-@@ -9423,8 +9669,13 @@
+@@ -9423,8 +9674,13 @@
                  std::chrono::microseconds>(launcher_ui_build_finished -
                                             launcher_ui_build_started).count());
          const auto launcher_present_started = launcher_ui_build_finished;
@@ -4566,7 +4544,7 @@
  #if defined(__APPLE__)
          // With a non-1 render scale the ImGui SDL backend stops applying
          // FramebufferScale itself (clips included), so SDL scales clips and
-@@ -9433,13 +9684,26 @@
+@@ -9433,13 +9689,26 @@
              SDL_RenderSetScale(renderer, launcher_draw_data->FramebufferScale.x,
                                 launcher_draw_data->FramebufferScale.y);
  #endif
@@ -4593,7 +4571,7 @@
          const auto launcher_present_finished =
              std::chrono::steady_clock::now();
          launcher_present_microseconds +=
-@@ -9453,14 +9717,22 @@
+@@ -9453,14 +9722,22 @@
              }
              dkr::runtime::startup_performance::mark(
                  "launcher-first-frame-presented");
@@ -4618,7 +4596,7 @@
                  static_cast<unsigned long long>(frames),
                  frames ? double(draw_us)/double(frames)/1000.0 : 0.0,
                  static_cast<unsigned long long>(launcher_panel_cache.hits()));
-@@ -9483,8 +9755,13 @@
+@@ -9483,8 +9760,13 @@
              launcher_window_flags, launcher_frame_rate);
      }
  
@@ -4632,7 +4610,7 @@
      g_mod_launch.abandon();
      if(!result.start_game)shutdown_online_mods();
  
-@@ -9496,7 +9773,11 @@
+@@ -9496,7 +9778,11 @@
          static_cast<unsigned long long>(launcher_panel_cache.builds()),
          static_cast<unsigned long long>(launcher_panel_cache.hits()));
      launcher_panel_cache.clear();
@@ -4644,7 +4622,7 @@
      ImGui_ImplSDL2_Shutdown();
      ImGui::DestroyContext();
      while(SharedSaveBusy()){PumpSharedSaveJob();SDL_PumpEvents();std::this_thread::sleep_for(std::chrono::milliseconds(2));}
-@@ -9506,6 +9787,12 @@
+@@ -9506,6 +9792,12 @@
      ReleaseTextureDumpTextures();
      ReleaseModStoreTextures();
      SDL_DestroyRenderer(renderer);
@@ -4657,7 +4635,7 @@
      const auto launcher_elapsed_microseconds =
          std::chrono::duration_cast<std::chrono::microseconds>(
              std::chrono::steady_clock::now() - launcher_animation_epoch)
-@@ -9561,6 +9848,10 @@
+@@ -9561,6 +9853,10 @@
          static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window()));
      application.presentQueue->inspector->setIniPath(g_config_directory / "dkr-port-ui.ini");
      g_inspector = application.presentQueue->inspector.get();
@@ -4668,7 +4646,7 @@
  #if defined(DKR_IOS)
      g_ios_ui_events.clear();
  #endif
-@@ -9573,6 +9864,9 @@
+@@ -9573,6 +9869,9 @@
  void dkr::runtime::ui::detach(RT64::Application& application) {
      std::scoped_lock guard(g_inspector_guard);
      g_inspector = nullptr;
@@ -4678,7 +4656,7 @@
  #if defined(DKR_IOS)
      g_ios_ui_events.clear();
  #endif
-@@ -9585,6 +9879,13 @@
+@@ -9585,6 +9884,13 @@
  }
  
  void dkr::runtime::ui::draw(RT64::Application& application) {
@@ -4692,7 +4670,7 @@
      // Publish only an atomic value; the raster worker snapshots it into the
      // next pass's push constants. No GPU resources or samplers are rebuilt.
      // Keep this before visibility checks so closing the overlay or changing
-@@ -9637,6 +9938,9 @@
+@@ -9637,6 +9943,9 @@
          return;
      }
      if (application.presentQueue->inspector == nullptr) {
@@ -4702,7 +4680,7 @@
          attach(application);
          if (show_overlay) {
              g_overlay_focus_requested.store(true, std::memory_order_release);
-@@ -9645,9 +9949,13 @@
+@@ -9645,9 +9954,13 @@
      if (application.presentQueue->inspector == nullptr) {
          return;
      }
@@ -4716,7 +4694,7 @@
      RT64::Inspector* inspector = application.presentQueue->inspector.get();
      dkr::runtime::performance_trace::Scope ui_measure(dkr::runtime::performance_trace::Region::UiBuild);
  #if defined(DKR_IOS)
-@@ -9658,7 +9966,30 @@
+@@ -9658,7 +9971,30 @@
          for (auto& event : pending.events) inspector->handleSdlEvent(&event);
      }
  #endif
@@ -4747,7 +4725,7 @@
      if (auto* hud_window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window())) {
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
-@@ -9687,7 +10018,7 @@
+@@ -9687,7 +10023,7 @@
          const PaddockLauncherTypographyScope overlay_typography;
          bool request_quit_popup = false;
          bool request_restart_popup = false;
@@ -4756,7 +4734,7 @@
          int sidebar_selection = std::clamp(
              g_overlay_sidebar_selection.load(std::memory_order_acquire), 0,
              overlay_sidebar_count - 1);
-@@ -9712,7 +10043,8 @@
+@@ -9712,7 +10048,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -4766,7 +4744,7 @@
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9745,6 +10077,11 @@
+@@ -9745,6 +10082,11 @@
          }
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
@@ -4778,7 +4756,7 @@
          SidebarButton("PLAY", 0, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
          SidebarButton("DKR-R ONLINE", kPageOnlineMp, sidebar_selection, nav_inner_width,
-@@ -9765,6 +10102,8 @@
+@@ -9765,6 +10107,8 @@
                        sidebar_layout.button_height);
          SidebarButton("ABOUT DKR-R", kPageAbout, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
@@ -4787,7 +4765,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9793,6 +10132,7 @@
+@@ -9793,6 +10137,7 @@
              request_quit_popup = true;
          }
          ImGui::PopStyleColor();
@@ -4795,7 +4773,7 @@
          --g_race_button_sidebar;
          ImGui::PopItemFlag();
          ImGui::EndGroup();
-@@ -9827,6 +10167,11 @@
+@@ -9827,6 +10172,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -4807,7 +4785,7 @@
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9880,10 +10225,28 @@
+@@ -9880,10 +10230,28 @@
          // Match launcher modal text without enlarging FPS/network notifications
          // or the game HUD. These dialogs render outside the content child.
          const PaddockLauncherTypographyScope modal_typography(show_overlay);
@@ -4836,7 +4814,7 @@
          DrawTextEntryKeyboard();
      }
      // Over the race, not the menu: the panel is for tuning while driving.
-@@ -9907,6 +10270,9 @@
+@@ -9907,6 +10275,9 @@
  #endif
      DrawPinnedAchievement();
      DrawAchievementToast();
@@ -4846,7 +4824,7 @@
      inspector->endFrame();
  }
  
-@@ -9924,8 +10290,12 @@
+@@ -9924,8 +10295,12 @@
             (event->type==SDL_CONTROLLERBUTTONDOWN&&event->cbutton.button==SDL_CONTROLLER_BUTTON_B)) {
              dkr::runtime::invites::cancel_dialog();return true;
          }
@@ -4859,7 +4837,7 @@
      }
  
  #if defined(__ANDROID__) || defined(DKR_IOS)
-@@ -9989,7 +10359,7 @@
+@@ -9989,7 +10364,7 @@
          !code_keyboard_visible &&
          event->type == SDL_CONTROLLERBUTTONDOWN) {
          if (event->cbutton.button == SDL_CONTROLLER_BUTTON_LEFTSHOULDER) {
@@ -4868,7 +4846,7 @@
              const int current = g_overlay_sidebar_selection.load(
                  std::memory_order_relaxed);
              const int selected = StepSidebarSelection(current,-1);
-@@ -10003,7 +10373,7 @@
+@@ -10003,7 +10378,7 @@
              return true;
          }
          if (event->cbutton.button == SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) {
@@ -4877,7 +4855,7 @@
              const int current = g_overlay_sidebar_selection.load(
                  std::memory_order_relaxed);
              const int selected = StepSidebarSelection(current,1);
-@@ -10036,7 +10406,11 @@
+@@ -10036,7 +10411,11 @@
              // carry NoNav and therefore cannot steal this focus.
          }
      }
@@ -4890,7 +4868,7 @@
      // UIKit presentation may wait for the main thread while the renderer holds
      // frameMutex. Keep the main event pump free to service that presentation.
      return g_ios_ui_events.push(*event);
-@@ -10046,6 +10420,7 @@
+@@ -10046,6 +10425,7 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -4898,7 +4876,7 @@
      // RT64's ImGui backend owns normal pointer, keyboard and gamepad event
      // delivery. Do not turn those events into page-focus requests: ImGui must
      // be allowed to retain the item selected by the previous event so the
-@@ -10065,6 +10440,15 @@
+@@ -10065,6 +10445,15 @@
  }
  
  void dkr::runtime::ui::toggle_overlay() {
@@ -4914,7 +4892,7 @@
  #if defined(__ANDROID__) || defined(DKR_IOS)
      dkr::runtime::mobile::clear();
  #endif
-@@ -10087,6 +10471,11 @@
+@@ -10087,6 +10476,11 @@
      return g_lifecycle_request.load(std::memory_order_acquire);
  }
  
@@ -4926,7 +4904,7 @@
  void dkr::runtime::ui::reset_lifecycle_request() {
      g_lifecycle_request.store(LifecycleRequest::None, std::memory_order_release);
  }
-@@ -10168,3 +10557,22 @@
+@@ -10168,3 +10562,22 @@
      return true;
  }
  #endif
