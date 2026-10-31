@@ -20,6 +20,8 @@ jobs:
       - run: python3 tools/prepare_controller_test_sources.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_upstream_release_composition.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_store_http.py
+      - run: python3 tools/test_ps5_native_net.py
+      - run: python3 tools/test_ps5_dns.py
       - run: python3 tools/test_ps5_shared_save_jobs.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_controller_presets.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_controller_lights.py
@@ -27,6 +29,7 @@ jobs:
       - run: python3 tools/test_ps5_item_feedback.py
       - run: python3 tools/test_ps5_controller_speaker.py
       - run: python3 tools/test_ps5_game_audio_hooks.py "$PWD/work/controller-test-inputs"
+      - run: python3 tools/test_ps5_menu_windowing.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_file_picker.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_texture_import_worker.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_crt_overlay.py "$PWD/work/controller-test-inputs"
