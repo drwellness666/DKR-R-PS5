@@ -12,6 +12,7 @@
 #include <atomic>
 namespace dkr::runtime::ui { void toggle_overlay(); }
 namespace dkr::runtime::hud::editor { bool active(){return false;} void request_back(){} }
+namespace dkr::runtime::invites { void focus_visible(){} }
 static std::atomic_bool g_overlay_visible{true},g_overlay_focus_requested{false};
 static std::atomic_int g_overlay_last_rendered_page{-1},g_overlay_sidebar_selection{0},g_overlay_sidebar_action{0};
 static int g_overlay_page=0;

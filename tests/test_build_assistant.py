@@ -25,7 +25,7 @@ class Tests(unittest.TestCase):
    (app/'eboot.bin').write_bytes(bytes.fromhex('4f153d1d')+build.encode())
    (app/'sce_sys/param.json').write_text(json.dumps({'titleId':'PPSA94678','attribute3':0x40040}))
    for rev in (77,80):
-    for i in range(32):
+    for i in range(33):
      f=app/f'assets/controller-audio/us-v{rev}/{i}.pcm';f.parent.mkdir(parents=True,exist_ok=True);f.write_bytes(b'\x00\x00')
    link=self.app.game/'native-link';link.mkdir();(link/'native-inputs.json').write_text(json.dumps({'build_id':build}))
    (link/'program.c').write_text('const char id[]=\"'+build+'\"; int main(void){return id[0]==0;}')
@@ -58,7 +58,7 @@ class Tests(unittest.TestCase):
   self.assertEqual(self.commands[-1][0][1],'tools/build_universal_installer.py')
   self.assertEqual(self.commands[-1][0][3:], [str(first/'private/native/PPSA94678'),str(first/'private/CANDIDATE.json'),str(first/'private/universal')])
   self.assertFalse(any('build_native_game_installer.py' in str(x) or '--with-owned-roms' in x for argv,_ in self.commands for x in argv))
-  self.assertEqual(len(inspect_build(self.app.completed)['spec']['files']),101)
+  self.assertEqual(len(inspect_build(self.app.completed)['spec']['files']),103)
   self.app.build(2);self.assertNotEqual(first,self.app.game);self.assertTrue((first/'private/CANDIDATE.json').exists())
   self.app.install('192.168.1.50',True);self.assertTrue(self.app.state['installed'])
   sends=[x[0] for x in self.commands if 'tools/send_elf.py' in x[0]]

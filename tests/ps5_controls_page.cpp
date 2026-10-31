@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Real PS5 page dispatch/callbacks with modeled devices and simple ImGui fields.
 #include <imgui.h>
+#include "ps5_menu_pointer.hpp"
 #include <imgui_internal.h>
 #include <algorithm>
 #include <cassert>
@@ -13,7 +14,8 @@
 static bool modern=true;
 namespace dkr::runtime::enhancements {int presentation_profile(){return 1;}bool modern_options_visible(int){return modern;}}
 namespace dkr::runtime::platform {
-static bool feedback=false,lights=false,speaker=false;static float volume=0.25F;
+static bool feedback=false,lights=false,speaker=false;static float volume=0.25F;static unsigned mask=1023;
+unsigned controller_speaker_categories(){return mask;}void set_controller_speaker_categories(unsigned v){mask=v;}
 bool item_feedback_enabled(){return feedback;}void set_item_feedback_enabled(bool v){feedback=v;}
 bool controller_lights_enabled(){return lights;}void set_controller_lights_enabled(bool v){lights=v;}
 bool controller_speaker_enabled(){return speaker;}void set_controller_speaker_enabled(bool v){speaker=v;}
@@ -27,24 +29,33 @@ static void add(){fields.push_back({ImGui::GetItemID(),ImGui::GetItemRectMin(),I
 static void PaddockGap(float f){ImGui::Dummy({0,f});}
 static void ControlsScope(bool,float){}
 static void ControlsNote(std::string_view s,float){ImGui::TextWrapped("%.*s",int(s.size()),s.data());}
-static bool SettingsCheck(const char*id,const char*label,bool*v,float){ImGui::PushID(id);bool c=ImGui::Checkbox(label,v);add();ImGui::PopID();return c;}
+static bool SettingsCheck(const char*id,const char*label,bool*v,float,const char* =nullptr){ImGui::PushID(id);bool c=ImGui::Checkbox(label,v);add();ImGui::PopID();return c;}
 struct SettingsRangeValue{std::string text,unit;};
 template<class Format>static bool SettingsRange(const char*id,const char*,int*v,int lo,int hi,float,Format){bool c=ImGui::SliderInt(id,v,lo,hi);add();return c;}
+static bool ControlsDisclosure(const char*id,std::string_view label,bool&open,float){bool changed=ImGui::Button((std::string(label)+"##"+id).c_str());add();if(changed)open=!open;return open;}
 static void DrawControlsMotion(float w,bool,const std::function<void()>&commit){++motion_drawn;if(SettingsCheck("gyro","Enable gyro steering",&gyro,w))commit();}
 #include "ps5_controls_page.inc"
 static void frame(bool focus=false){
- ImGui::NewFrame();ImGui::SetNextWindowPos({0,0});ImGui::SetNextWindowSize({1000,250});ImGui::Begin("Controls PS5",nullptr,ImGuiWindowFlags_NoTitleBar);fields.clear();
+ ImGui::NewFrame();ImGui::SetNextWindowPos({0,0});ImGui::SetNextWindowSize({1000,350});ImGui::Begin("Controls PS5",nullptr,ImGuiWindowFlags_NoTitleBar);fields.clear();
  if(focus)ImGui::SetKeyboardFocusHere();DrawControlsPs5(900,true,[]{++commits;});ImGui::End();ImGui::Render();
 }
 static void press(ImGuiKey key){auto&io=ImGui::GetIO();io.AddKeyEvent(key,true);frame();frame();io.AddKeyEvent(key,false);frame();frame();}
 int main(){
  ImGui::CreateContext();auto&io=ImGui::GetIO();io.IniFilename=nullptr;io.DisplaySize={1200,900};io.DeltaTime=1.0F/60;io.ConfigFlags|=ImGuiConfigFlags_NavEnableGamepad;io.BackendFlags|=ImGuiBackendFlags_HasGamepad;
- unsigned char*p;int w,h;io.Fonts->GetTexDataAsRGBA32(&p,&w,&h);frame(true);frame();assert(fields.size()==4&&GImGui->NavId==fields[0].id);
- press(ImGuiKey_GamepadDpadDown);press(ImGuiKey_GamepadDpadUp);press(ImGuiKey_GamepadFaceDown);assert(dkr::runtime::platform::feedback&&commits==1);
- press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[1].id);press(ImGuiKey_GamepadFaceDown);assert(dkr::runtime::platform::lights&&commits==2);
- press(ImGuiKey_GamepadDpadDown);press(ImGuiKey_GamepadFaceDown);assert(dkr::runtime::platform::speaker&&commits==3&&fields.size()==5);
- press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[3].id);press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[4].id);press(ImGuiKey_GamepadFaceDown);assert(gyro&&commits==4);
+ unsigned char*p;int w,h;io.Fonts->GetTexDataAsRGBA32(&p,&w,&h);frame(true);frame();assert(fields.size()==5&&GImGui->NavId==fields[0].id);
+ press(ImGuiKey_GamepadDpadDown);press(ImGuiKey_GamepadDpadUp);press(ImGuiKey_GamepadFaceDown);assert(dkrr::menu_pointer::enabled.load()&&commits==1);
+ assert(fields.size()==6);press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[1].id);
+ const int before=dkrr::menu_pointer::speed();press(ImGuiKey_GamepadFaceDown);press(ImGuiKey_GamepadDpadRight);press(ImGuiKey_GamepadFaceDown);
+ assert(dkrr::menu_pointer::speed()>before&&commits>=2);const unsigned speed_commits=commits;
+ press(ImGuiKey_GamepadDpadDown);press(ImGuiKey_GamepadFaceDown);assert(dkr::runtime::platform::feedback&&commits==speed_commits+1);
+ press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[3].id);press(ImGuiKey_GamepadFaceDown);assert(dkr::runtime::platform::lights&&commits==speed_commits+2);
+ press(ImGuiKey_GamepadDpadDown);press(ImGuiKey_GamepadFaceDown);assert(dkr::runtime::platform::speaker&&commits==speed_commits+3&&fields.size()==8);
+ press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[5].id);press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[6].id);press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[7].id);press(ImGuiKey_GamepadFaceDown);assert(gyro&&commits==speed_commits+4);
  for(std::size_t i=1;i<fields.size();++i)assert(fields[i].min.y>=fields[i-1].max.y);
- assert(fields.back().max.y-fields.front().min.y<220.0F);modern=false;motion_drawn=0;frame();assert(motion_drawn==0&&fields.size()==4);
+ assert(fields.back().max.y-fields.front().min.y<300.0F);// Expand selection; toggling one cue preserves the master switch and all other cues.
+ press(ImGuiKey_GamepadDpadUp);press(ImGuiKey_GamepadFaceDown);assert(fields.size()==18);
+ press(ImGuiKey_GamepadDpadDown);press(ImGuiKey_GamepadFaceDown);assert(dkr::runtime::platform::mask==1022&&commits==speed_commits+5&&dkr::runtime::platform::speaker);
+ press(ImGuiKey_GamepadDpadUp);press(ImGuiKey_GamepadFaceDown);assert(fields.size()==8);
+ modern=false;motion_drawn=0;frame();assert(motion_drawn==0&&fields.size()==7);
  ImGui::DestroyContext();puts("PASS actual PS5 page: D-pad order, Cross toggles light/trigger/speaker and gyro dispatch, volume insertion without focus loss, compact field height and Accurate-only gyro restriction");
 }

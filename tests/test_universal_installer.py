@@ -5,6 +5,7 @@ import fcntl,hashlib,json,os,pathlib,shutil,struct,subprocess,sys,tempfile,unitt
 ROOT=pathlib.Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'))
 from build_universal_installer import emit,hash_source,release_files
 from build_native_game_bundle_updater import CORE,inventory,inventory_hash
+from prepare_controller_audio import CUE_COUNT
 SIZE=12*1024*1024
 SOUNDS=(0x21,0x232,0x233,0x135,0x134,0x151,0x0f,0x9f,0x13a,*range(0x156,0x160),0xa0,0xa1,0xa2,0x23d,0x107)
 def fixture_rom(revision):
@@ -21,7 +22,7 @@ def fixture_rom(revision):
     u32(bank+0xa8,100000);u32(bank+0xec,0x160);u32(bank+0x164,16);u32(bank+0x168,0xffffffff);
     u32(bank+0xe4,9);u32(bank+0xf0,0x120);u32(bank+0x120,2);u32(bank+0x124,1)
     rom[audio+0x1000:audio+0x1009]=bytes.fromhex('60 12 34 56 78 9a bc de f0')
-    for sound in SOUNDS:
+    for sound in (*SOUNDS,0x147):
         p=audio+0x2000+10*sound;u16(p,1);rom[p+2]=128;rom[p+4]=100
     # Synthetic music bank and one-note CSeq, shared by eight fixture jingles.
     u16(audio,0x4231);u32(audio+4,0x20);u16(audio+0x20,1);u32(audio+0x24,32000);u32(audio+0x2c,0x40)
@@ -253,7 +254,7 @@ int main(void){
     self.run_installer(0,False);self.assertIn(b'3'*24,(self.live/'eboot.bin').read_bytes())
     for rev in (77,80):
      self.assertEqual((self.data/f'dkrr/roms/dkr.us.v{rev}.z64').read_bytes(),self.roms[rev])
-     self.assertEqual(len(list((self.live/f'assets/controller-audio/us-v{rev}').glob('*.pcm'))),32)
+     self.assertEqual(len(list((self.live/f'assets/controller-audio/us-v{rev}').glob('*.pcm'))),CUE_COUNT)
     # Updates use internal ROMs after USB has been removed.
     shutil.rmtree(self.mnt/'usb0');self.run_installer(2)
  def test_exact_legacy_migration_and_update_only_guard(self):

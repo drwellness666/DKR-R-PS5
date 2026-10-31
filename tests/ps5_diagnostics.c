@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/resource.h>
+#include <unistd.h>
 static volatile sig_atomic_t handled;
 static void preserved(int n){(void)n;handled=1;}
 int main(int argc,char **argv){
@@ -16,6 +17,18 @@ int main(int argc,char **argv){
         if(!strcmp(argv[1],"preserve")){struct sigaction a={0};a.sa_handler=preserved;sigemptyset(&a.sa_mask);assert(sigaction(SIGABRT,&a,0)==0);}
         assert(dkrr_diag_initialize("integrated-test",(uintptr_t)&main)==0);assert(dkrr_diag_journal_ready());
         dkrr_diag_stage(DKR_DIAG_GAME);
+        if(!strcmp(argv[1],"short-stalls")){
+            dkrr_diag_ui_phase(DKR_UI_CONTENT);usleep(40000);
+            dkrr_diag_ui_phase(DKR_UI_IDLE);
+            dkrr_diag_present();usleep(45000);dkrr_diag_present();
+            assert(!dkrr_diag_capture_state().active);
+            usleep(400000);dkrr_diag_shutdown();return 0;
+        }
+        if(!strcmp(argv[1],"watchdog")){
+            dkrr_diag_ui_phase(DKR_UI_CONTENT);usleep(2000000);
+            dkrr_diag_ui_phase(DKR_UI_IDLE);usleep(500000);
+            dkrr_diag_shutdown();return 0;
+        }
         if(!strcmp(argv[1],"fault")){*(volatile unsigned long *)(uintptr_t)0xd0=42;abort();}
         if(!strcmp(argv[1],"abort")){raise(SIGABRT);return 99;}
         if(!strcmp(argv[1],"preserve")){raise(SIGABRT);assert(handled);dkrr_diag_shutdown();return 0;}

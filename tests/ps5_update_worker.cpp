@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ps5_internet_update.hpp"
+#if defined(DKRR_STATIC_HTTPS)
+#include "ps5_https.hpp"
+#include <stdexcept>
+#endif
 #include "ps5_native_update.hpp"
 #include <unistd.h>
 #include <algorithm>
@@ -24,8 +28,8 @@ bool is_redirect(int id){return (mode=="redirect"||mode=="bad-redirect")&&!is_ca
 extern "C" {
 int __real_lstat(const char*,struct stat*);
 int __real_fstat(int,struct stat*);
-int __wrap_lstat(const char* path,struct stat* st){int r=__real_lstat(path,st);if(r==0&&mode=="zero-links")st->st_nlink=0;return r;}
-int __wrap_fstat(int fd,struct stat* st){int r=__real_fstat(fd,st);if(r==0&&mode=="zero-links")st->st_nlink=0;return r;}
+int __wrap_lstat(const char* path,struct stat* st){int r=__real_lstat(path,st);if(r==0&&(mode=="zero-links"||mode=="redacted")){st->st_nlink=0;if(mode=="redacted")st->st_uid=0;}return r;}
+int __wrap_fstat(int fd,struct stat* st){int r=__real_fstat(fd,st);if(r==0&&(mode=="zero-links"||mode=="redacted")){st->st_nlink=0;if(mode=="redacted")st->st_uid=0;}return r;}
 int sceNetPoolCreate(const char*,int,int){return 1;} int sceNetPoolDestroy(int){return 0;}
 int sceSslInit(std::size_t){return 2;} int sceSslTerm(int){return 0;}
 int sceHttpInit(int,int,std::size_t){return 3;} int sceHttpTerm(int){return 0;}
@@ -53,6 +57,27 @@ int sceHttpReadData(int id,void* data,std::size_t size){
 }
 
 }
+#if defined(DKRR_STATIC_HTTPS)
+namespace dkrr::https {
+bool available(){return true;}
+Response perform(const Request& request,const Sink& sink) {
+    assert(request.method=="GET"&&request.headers.empty());
+    const int id=sceHttpCreateConnectionWithURL(0,request.url.c_str(),0);
+    Response response;int status=0;sceHttpGetStatusCode(id,&status);response.status=unsigned(status);
+    if(is_redirect(id)) {
+        response.headers.emplace_back("location",mode=="bad-redirect"?"https://evil.example/x":"https://release-assets.githubusercontent.com/asset?x=1&sig=2");return response;
+    }
+    char buffer[17];
+    for(;;){
+        if(request.cancelled&&request.cancelled())throw std::runtime_error("Cancelled");
+        const auto count=sceHttpReadData(id,buffer,sizeof(buffer));if(!count)break;
+        if(response.received+unsigned(count)>request.limit)throw std::runtime_error("Too large");
+        response.received+=unsigned(count);if(sink)sink(buffer,unsigned(count),response);
+    }
+    return response;
+}
+}
+#endif
 namespace dkrr::updates::native {
 bool storage_budget(std::uint64_t bytes,Space& space,char* error,std::size_t capacity) {
     assert(bytes==256);space={16*1024*1024,mode=="space-low"?1024U:64U*1024*1024,mode!="space-unknown"};
@@ -72,7 +97,7 @@ int main(int argc,char** argv){
     if(mode=="oversize")payload+='x';
     using State=dkrr::updates::State;
     const auto wait=[&](auto predicate){auto end=std::chrono::steady_clock::now()+std::chrono::seconds(5);while(std::chrono::steady_clock::now()<end){if(predicate())return;std::this_thread::sleep_for(std::chrono::milliseconds(2));}assert(false);};
-    const bool automatic=mode=="auto"||mode=="zero-links";
+    const bool automatic=mode=="auto"||mode=="zero-links"||mode=="redacted";
     assert(dkrr::updates::set_automatic_check(automatic));
     const std::string auto_path=std::string(DKRR_UPDATE_ROOT)+"/preferences/update-client-"+std::to_string(unsigned(getuid()))+"/auto-check";
     if(mode=="fifo-setting"){assert(!unlink(auto_path.c_str()));assert(!mkfifo(auto_path.c_str(),0600));}

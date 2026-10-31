@@ -36,7 +36,9 @@ int main() {
  assert(StepSidebarSelection(0,1)==3&&StepSidebarSelection(3,-1)==0);
  int at=0;std::array<bool,11> seen{};
  for(int i=0;i<11;++i){assert(at>=0&&at<11&&!seen[at]);seen[at]=true;int next=StepSidebarSelection(at,1);assert(StepSidebarSelection(next,-1)==at);at=next;}
- assert(at==0);
+ assert(at==0&&kSidebarOrder.size()==11);
+ assert(StepSidebarSelection(6,1)==9&&StepSidebarSelection(9,1)==5);
+ assert(StepSidebarSelection(5,1)==10&&StepSidebarSelection(10,1)==7);
  ImGui::CreateContext();auto& io=ImGui::GetIO();io.DisplaySize={1200,800};io.DeltaTime=1.0F/60;
  io.IniFilename=nullptr;io.ConfigFlags|=ImGuiConfigFlags_NavEnableGamepad;io.BackendFlags|=ImGuiBackendFlags_HasGamepad;
  unsigned char* pixels;int w,h;io.Fonts->GetTexDataAsRGBA32(&pixels,&w,&h);

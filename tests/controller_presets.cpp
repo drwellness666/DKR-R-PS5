@@ -22,22 +22,28 @@ auto controller_assignment_keys() { return std::array<std::string, 4>{}; }
 }
 #include "controls_snapshot.inc"
 #include "binding_settings.inc"
+#include "shortcut_settings.inc"
 
 static std::string save_bindings() {
     std::ostringstream output;
     #include "save_bindings.inc"
+    SaveShortcutSettings(output);
     return output.str();
 }
 static void reload_bindings(const std::string& records) {
     std::istringstream input(records);
     std::string line;
+    ControlsShortcutBindings keyboard{},controller{},alternate{};
+    for(std::size_t i=0;i<keyboard.size();++i){auto action=static_cast<dkr::runtime::input::ShortcutAction>(i);keyboard[i]=dkr::runtime::input::shortcut_keyboard_binding(action);controller[i]=dkr::runtime::input::shortcut_controller_binding(action);alternate[i]=dkr::runtime::input::alternate_shortcut_controller_binding(action);}
     while (std::getline(input, line)) {
         const auto equal = line.find('=');
         assert(equal != std::string::npos);
+        if(line.starts_with("shortcut.")){assert(LoadShortcutSetting(line.substr(0,equal),std::stoi(line.substr(equal+1)),keyboard,controller,alternate));continue;}
         if (line.find(".controller_key=") == std::string::npos) {
             assert(LoadPlayerBindingSetting(line.substr(0, equal), std::stoi(line.substr(equal + 1))));
         }
     }
+    for(std::size_t i=0;i<keyboard.size();++i){auto action=static_cast<dkr::runtime::input::ShortcutAction>(i);dkr::runtime::input::set_shortcut_keyboard_binding(action,keyboard[i]);dkr::runtime::input::set_shortcut_controller_binding(action,controller[i]);dkr::runtime::input::set_alternate_shortcut_controller_binding(action,alternate[i]);}
 }
 static void unique_sources(std::size_t player) {
     using namespace dkr::runtime::input;
@@ -155,6 +161,44 @@ int main(int argc, char** argv) {
         sample(0, 0, -1);
         assert(!consume_shortcut_request(ShortcutAction::ToggleOverlay));
     }
+    // Independent alternates use the same edge detector and source suppression
+    // in real SDL polling and the native snapshot path.
+    set_alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay,{SDL_CONTROLLER_BUTTON_Y,kUnbound});
+    for(bool modern:{false,true}){
+        dkr::runtime::enhancements::modern=modern;
+        sample(0,0,-1);assert(sample(0,0,SDL_CONTROLLER_BUTTON_Y).buttons==0);
+        assert(consume_shortcut_request(ShortcutAction::ToggleOverlay));
+        sample(0,0,SDL_CONTROLLER_BUTTON_Y);assert(!consume_shortcut_request(ShortcutAction::ToggleOverlay));
+        sample(0,0,-1);sample(0,0,SDL_CONTROLLER_BUTTON_BACK);assert(consume_shortcut_request(ShortcutAction::ToggleOverlay));
+        sample(0,0,-1);sample(0,0,SDL_CONTROLLER_BUTTON_Y,true);assert(consume_shortcut_request(ShortcutAction::ToggleOverlay));
+        sample(0,0,-1);
+    }
+    dkr::runtime::controllers::ControllerSnapshot chord;chord.connected=true;chord.button_bound.fill(1);
+    set_alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay,{SDL_CONTROLLER_BUTTON_A,SDL_CONTROLLER_BUTTON_X});
+    chord.buttons[SDL_CONTROLLER_BUTTON_A]=1;
+    assert(poll_snapshot(0,&chord,nullptr,false,false).buttons!=0);
+    assert(!consume_shortcut_request(ShortcutAction::ToggleOverlay));
+    chord.buttons[SDL_CONTROLLER_BUTTON_X]=1;
+    assert(poll_snapshot(0,&chord,nullptr,false,false).buttons==0);
+    assert(consume_shortcut_request(ShortcutAction::ToggleOverlay));
+    chord.buttons.fill(0);poll_snapshot(0,&chord,nullptr,false,false);
+    chord.buttons[SDL_CONTROLLER_BUTTON_A]=1;chord.buttons[SDL_CONTROLLER_BUTTON_X]=1;
+    assert(poll_snapshot(1,&chord,nullptr,false,false,true,false).buttons!=0);
+    assert(!consume_shortcut_request(ShortcutAction::ToggleOverlay));
+    set_alternate_shortcut_controller_binding(ShortcutAction::RecenterGyro,{SDL_CONTROLLER_BUTTON_X,kUnbound});
+    const auto shortcuts_saved=save_bindings();reset_controller_shortcuts();reload_bindings(shortcuts_saved);
+    assert(alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay).primary==SDL_CONTROLLER_BUTTON_A);
+    assert(alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay).secondary==SDL_CONTROLLER_BUTTON_X);
+    assert(alternate_shortcut_controller_binding(ShortcutAction::RecenterGyro).primary==SDL_CONTROLLER_BUTTON_X);
+    assert(save_bindings()==shortcuts_saved);
+    // Capture/restore cannot fire a newly assigned control while it is still held.
+    set_alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay,{});
+    sample(0,0,-1);sample(0,0,SDL_CONTROLLER_BUTTON_X);
+    set_alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay,{SDL_CONTROLLER_BUTTON_X,kUnbound});
+    sample(0,0,SDL_CONTROLLER_BUTTON_X);assert(!consume_shortcut_request(ShortcutAction::ToggleOverlay));
+    sample(0,0,SDL_CONTROLLER_BUTTON_X);assert(!consume_shortcut_request(ShortcutAction::ToggleOverlay));
+    sample(0,0,-1);sample(0,0,SDL_CONTROLLER_BUTTON_X);assert(consume_shortcut_request(ShortcutAction::ToggleOverlay));
+    sample(0,0,-1);
     // Real saved record format and loader, no new preset setting/file.
     auto saved = save_bindings();
     reset_defaults();

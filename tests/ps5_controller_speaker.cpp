@@ -9,8 +9,9 @@
 #include <cstdio>
 #include <thread>
 using namespace dkrr;
-static std::atomic<int> opens{0},outputs{0},closes{0},active{0},loaded{-1},fail_open{0},mixed_blocks{0};
+static std::atomic<int> opens{0},outputs{0},closes{0},active{0},loaded{-1},fail_open{0},mixed_blocks{0},peak_sample{0};
 static std::atomic<unsigned> load_calls{0},loaded_revision{0};
+static std::atomic<bool> block_output{false},output_entered{false},output_release{false};
 static std::atomic<bool> delay_open{false},open_entered{false},open_release{false};
 extern "C" int sceAudioOutOpen(int user,int type,int index,unsigned length,unsigned hz,unsigned format) {
     assert(user==42&&type==4&&index==0&&length==256&&hz==48000&&format==0);
@@ -19,7 +20,7 @@ extern "C" int sceAudioOutOpen(int user,int type,int index,unsigned length,unsig
 }
 extern "C" int sceAudioOutOutput(int h,const void*p) {
     assert(h==17);
-    if(p){const auto*s=static_cast<const std::int16_t*>(p);for(unsigned i=0;i<256;++i)assert(std::abs(int(s[i]))<=12000);if(s[0]>=6000)++mixed_blocks;++outputs;std::this_thread::sleep_for(std::chrono::milliseconds(2));}
+    if(p){if(block_output.load()){output_entered=true;while(!output_release.load())std::this_thread::yield();}const auto*s=static_cast<const std::int16_t*>(p);for(unsigned i=0;i<256;++i)assert(std::abs(int(s[i]))<=32768);if(s[0]>=6000)++mixed_blocks;auto peak=peak_sample.load();while(s[0]>peak&&!peak_sample.compare_exchange_weak(peak,s[0])){}++outputs;std::this_thread::sleep_for(std::chrono::milliseconds(2));}
     return 0;
 }
 extern "C" int sceAudioOutClose(int h){assert(h==17);++closes;--active;return 0;}
@@ -36,6 +37,7 @@ static std::vector<std::int16_t> delayed(unsigned rev,unsigned clip){
 }
 template<class Test>static void wait(Test test){for(int i=0;i<1000&&!test();++i)std::this_thread::sleep_for(std::chrono::milliseconds(1));assert(test());}
 int main(){
+    for(unsigned clip=0;clip<ps5_sounds::count;++clip){const auto category=ps5_sounds::category(clip);assert(category<10);if(category<10){assert(ps5_sounds::allowed(1023,clip));assert(!ps5_sounds::allowed(1023&~(1U<<category),clip));}}
     ps5_items::Item held{0x80401100,0,1,true,0},spent=held;spent.quantity=0;
     for(unsigned type=0;type<5;++type)for(unsigned level=0;level<3;++level){held.type=type;held.level=level;ps5_speaker::Event event;assert(event.update(true,held,1,true)==-1);spent=held;spent.quantity=0;assert(event.update(true,spent,20,false)==static_cast<int>(ps5_speaker::clip_for(held)));assert(event.update(true,spent,21,false)==-1);}
     held={0x80401100,1,1,true,0};spent=held;spent.quantity=0;
@@ -79,13 +81,12 @@ int main(){
         speaker.update(true,42,held,600,true,0.25F,77);
         speaker.update(true,42,spent,620,false,0.25F,77);wait([]{return active.load()==1;});
         const auto during=loaded.load();speaker.update(true,42,spent,621,false,0.25F,77,ps5_sounds::silver);
-        std::this_thread::sleep_for(std::chrono::milliseconds(8));assert(loaded==during);
+        wait([&]{return loaded.load()!=during;});assert(loaded==int(ps5_sounds::silver));
         speaker.update(false,42,{},630,false,0.25F,77);wait([]{return active.load()==0;});
     }
     {
-        // An event starts against the TV backlog deadline. A same-priority
-        // repeated event cannot restart or clip it. Every original PCM block
-        // and the output tail must be delivered before closing.
+        // Every selected event starts against the TV backlog deadline. A horn
+        // can overlap a pickup; neither is discarded by a busy/cooldown gate.
         ps5_speaker::Speaker speaker(load);
         const auto before=outputs.load(),old_closes=closes.load();const auto old_loads=load_calls.load();
         const auto at=std::chrono::steady_clock::now();
@@ -96,7 +97,7 @@ int main(){
         assert(std::chrono::steady_clock::now()-at>=std::chrono::milliseconds(70));
         speaker.update(true,42,{},1001,false,0.25F,77,ps5_sounds::horn,80);
         wait([&]{return closes.load()>old_closes;});
-        assert(load_calls==old_loads+1&&outputs==before+96); // ceil(24000/256) + 2 silence blocks.
+        assert(load_calls==old_loads+2&&outputs>before+96); // Both complete voices, including the later tail.
     }
     {
         // Two real boosts arrive before the first clip ends. They are mixed
@@ -110,6 +111,23 @@ int main(){
         wait([&]{return mixed_blocks.load()>old_mix;});
         wait([&]{return closes.load()>old_closes;});
         assert(opens==before+1&&active==0); // No extra output or delayed queue.
+    }
+    {
+        // A rapid horn burst is not collapsed, serialized, or made to wait
+        // for the first horn's end. All16 voices overlap on the one output.
+        ps5_speaker::Speaker speaker(load);const auto old_closes=closes.load(),old_opens=opens.load();peak_sample=0;
+        for(unsigned i=0;i<16;++i){speaker.update(true,42,{},2000+i*5,false,1.0F/64,77,ps5_sounds::horn,100);std::this_thread::sleep_for(std::chrono::milliseconds(1));}
+        // Retry a contended handoff without inventing another sound event.
+        for(unsigned i=0;i<10;++i){speaker.update(true,42,{},2100+i,false,1.0F/64,77);std::this_thread::sleep_for(std::chrono::milliseconds(1));}
+        wait([&]{return peak_sample.load()>=16*187;});wait([&]{return closes.load()>old_closes;});assert(opens==old_opens+1);
+    }
+    {
+        ps5_speaker::Speaker speaker(load);block_output=true;output_entered=false;output_release=false;
+        speaker.update(true,42,{},2300,false,0.25F,77,ps5_sounds::horn);wait([]{return output_entered.load();});
+        std::atomic<bool> returned{false};std::thread input([&]{for(unsigned i=0;i<16;++i)speaker.update(true,42,{},2301+i,false,0.25F,77,ps5_sounds::horn);returned=true;});
+        for(unsigned i=0;i<100&&!returned.load();++i)std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        const bool nonblocking=returned;output_release=true;input.join();block_output=false;assert(nonblocking);
+        speaker.update(false,42,{},2400,false,0.25F,77);wait([]{return active.load()==0;});
     }
     {
         auto data=loop_load(77,7);auto loop=ps5_speaker::unpack_shield(data);
@@ -147,5 +165,19 @@ int main(){
         wait([&]{return opens.load()>before+1;});wait([]{return active.load()==0;});
         assert(speaker.status()==1);
     }
-    puts("PASS actual controller audio worker: all five item types/levels, release-use edge, no invented pickup/loss event, real non-item cues, simultaneous zipper boosts, live shield loop and original release through one output, bounded metadata, and item priority, no port while disabled/idle, correct native user/route/format, bounded gain, pause cancellation, failure isolation, cancelled load/open errors cannot disable newer requests, and shutdown close");
+    {
+        // All eight pitches and the original completion voice reach the worker
+        // when only Silver coins is enabled; unrelated cues stay filtered.
+        ps5_speaker::Speaker speaker(load);
+        const unsigned old=load_calls.load();
+        for(unsigned i=0;i<9;++i){
+            speaker.update(true,42,{},6000+i*20,false,0.25F,77,ps5_sounds::silver+i,0,1U<<7);
+            wait([&]{return load_calls.load()==old+i+1;});
+            assert(loaded==int(ps5_sounds::silver+i));
+        }
+        speaker.update(true,42,{},6200,false,0.25F,77,ps5_sounds::horn,0,1U<<7);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));assert(load_calls==old+9);
+        speaker.update(false,42,{},6300,false,0.25F,77);wait([]{return active.load()==0;});
+    }
+    puts("PASS actual controller audio worker: all five item types/levels, release-use edge, no invented pickup/loss event, real non-item cues, rapid horn and selected cue overlap without suppression, simultaneous zipper boosts, live shield loop and original release through one output, bounded metadata, and item priority, no port while disabled/idle, correct native user/route/format, bounded gain, pause cancellation, failure isolation, cancelled load/open errors cannot disable newer requests, and shutdown close");
 }

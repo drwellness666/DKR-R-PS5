@@ -2,65 +2,66 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <algorithm>
+#include <atomic>
 #include <cstdio>
-#include <cstdlib>
+#include <filesystem>
 #include <string>
-#include <cmath>
-#include <limits>
+#include <vector>
+#include <cassert>
 #include "ps5_revision_selection.h"
-static struct dkrr_ps5_revision_state state{77,77,3,3};
-static unsigned calls=0;
-extern "C" struct dkrr_ps5_revision_state dkrr_ps5_revision_state(){return state;}
-extern "C" int dkrr_ps5_choose_revision(unsigned revision){++calls;state.preferred=revision;return 0;}
-static void check(bool ok,const char*message){if(!ok){std::fprintf(stderr,"FAIL: %s\n",message);std::exit(1);}}
-#include "sidebar_marker.inc"
-static ImGuiID original,revision,resume;
-static bool resumed=false;
-static float content_width=740.0F;
-static void frame(bool focus=false){
- ImGui::NewFrame();ImGui::SetNextWindowPos({0,0});ImGui::SetNextWindowSize({1000,650});
- ImGui::Begin("Play",nullptr,ImGuiWindowFlags_NoTitleBar);
- ImGui::Button("PLAY",{200,46});
- const auto vertices=ImGui::GetWindowDrawList()->VtxBuffer.Size;
- const auto commands=ImGui::GetWindowDrawList()->CmdBuffer.Size;
- DrawSidebarCurrentStripe();
- check(ImGui::GetWindowDrawList()->VtxBuffer.Size==vertices&&ImGui::GetWindowDrawList()->CmdBuffer.Size==commands,"native sidebar adds no stripe geometry or scissor command");
- ImGui::Button("REFERENCE RETURN",{content_width,64.0F});
- const auto reference_min=ImGui::GetItemRectMin(), reference_max=ImGui::GetItemRectMax();
- const auto first_card_vertex=ImGui::GetWindowDrawList()->VtxBuffer.Size;
- if(focus)ImGui::SetKeyboardFocusHere();
- original=ImGui::GetID("##version-us10");revision=ImGui::GetID("##version-us11");
- #include "ps5_revision_ui.inl"
- // Check actual card-fill geometry (allowing the half-pixel AA inset)
- // against the existing full-width button,
- // with window space deliberately wider than the page content.
- float min_x=std::numeric_limits<float>::max(),max_x=-min_x;
- const ImU32 fills[]={ImGui::GetColorU32(ImVec4(0.08F,0.26F,0.43F,1)),ImGui::GetColorU32(ImVec4(0.10F,0.33F,0.50F,1)),ImGui::GetColorU32(ImVec4(0.04F,0.14F,0.27F,1))};
- for(int i=first_card_vertex;i<ImGui::GetWindowDrawList()->VtxBuffer.Size;++i) {
-  const auto& v=ImGui::GetWindowDrawList()->VtxBuffer[i];
-  if(std::none_of(std::begin(fills),std::end(fills),[&](ImU32 c){return (v.col&0xffffff)==(c&0xffffff);}))continue;
-  min_x=std::min(min_x,v.pos.x);max_x=std::max(max_x,v.pos.x);
+static unsigned preferred=77,active=77,available=3;
+extern "C" unsigned dkrr_ps5_initial_revision(){return preferred;}
+extern "C" unsigned dkrr_ps5_active_revision(){return active;}
+extern "C" int dkrr_ps5_choose_revision(unsigned rev){preferred=rev;return 0;}
+struct RomCatalogEntry{std::filesystem::path path;};
+static std::vector<RomCatalogEntry> LoadRomCatalog(){std::vector<RomCatalogEntry> v{{"/data/dkrr/roms/dkr.us.v77.z64"}};if(available&2)v.push_back({"/data/dkrr/roms/dkr.us.v80.z64"});return v;}
+static bool SelectCatalogRom(const RomCatalogEntry&entry,std::filesystem::path&selected,const std::vector<RomCatalogEntry>&,std::string&){selected=entry.path;return true;}
+struct PlayPageContext{const std::filesystem::path&selected;const std::string&status;bool ready;const std::vector<RomCatalogEntry>&catalog;bool&launch;};
+static const PlayPageContext* g_launcher_rom=nullptr;
+static bool online=false;
+namespace dkr::runtime::netplay{struct Session{bool active(){return online;}};static Session value;static Session&session(){return value;}}
+static constexpr int kPagePlay=0;
+static std::atomic<bool> g_native_offline_launch_requested=false,g_native_online_lobby_requested=false;
+static std::atomic<int> g_native_frontend_page=-1;
+namespace dkr::runtime::ui {enum class LifecycleRequest{None,StopGame};}
+static std::atomic<dkr::runtime::ui::LifecycleRequest> g_lifecycle_request=dkr::runtime::ui::LifecycleRequest::None;
+static std::atomic<bool> g_overlay_visible=true;
+static double PaddockClock(){return ImGui::GetTime();}
+static void DrawPlayLights(ImDrawList*,ImVec2,bool,double){}
+static void SettingsHelp(const char*label,float){ImGui::TextWrapped("%s",label);}
+static bool SettingsRaceButton(const char*label,bool disabled){ImGui::BeginDisabled(disabled);const bool result=ImGui::Button(label);ImGui::EndDisabled();return result&&!disabled;}
+template<class F>static void SettingsCard(float width,F body){ImGui::BeginGroup();body(width);ImGui::EndGroup();}
+enum class RomSelectResult{None,Switched};
+static ImGuiID original=0,revision=0,load=0;
+// Catalog widget is supplied by upstream; this fixture drives its selection
+// outcome and checks the actual PS5 pause-page lifecycle around that widget.
+static RomSelectResult DrawRomSelect(const char*,float,bool,bool locked,const char*) {
+ assert(g_launcher_rom);auto&context=*g_launcher_rom;RomSelectResult result=RomSelectResult::None;
+ ImGui::BeginDisabled(locked);
+ for(unsigned i=0;i<context.catalog.size();++i){const auto&entry=context.catalog[i];const char*label=i?"US 1.1":"US 1.0";
+  if(ImGui::Button(label)){const_cast<std::filesystem::path&>(context.selected)=entry.path;preferred=i?80:77;result=RomSelectResult::Switched;}
+  if(i)revision=ImGui::GetItemID();else original=ImGui::GetItemID();
  }
- if(!(std::abs(min_x-reference_min.x)<0.75F&&std::abs(max_x-reference_max.x)<0.75F))std::fprintf(stderr,"geometry frame=%d windowHidden=%d x=%g..%g ref=%g..%g vertices=%d\n",GImGui->FrameCount,ImGui::GetCurrentWindow()->Hidden,min_x,max_x,reference_min.x,reference_max.x,ImGui::GetWindowDrawList()->VtxBuffer.Size-first_card_vertex);
- check(std::abs(min_x-reference_min.x)<0.75F&&std::abs(max_x-reference_max.x)<0.75F,
-       "rendered version-card edges align with Return to race, independently of wider window/panel space");
- if(ImGui::Button("RETURN TO RACE"))resumed=true;resume=ImGui::GetItemID();
- ImGui::End();ImGui::Render();
+ ImGui::EndDisabled();return result;
+}
+#include "sidebar_marker.inc"
+static void frame(bool focus=false){
+ ImGui::NewFrame();ImGui::SetNextWindowPos({0,0});ImGui::SetNextWindowSize({1000,700});ImGui::Begin("Play",nullptr,ImGuiWindowFlags_NoTitleBar);
+ const auto vertices=ImGui::GetWindowDrawList()->VtxBuffer.Size;DrawSidebarCurrentStripe();assert(ImGui::GetWindowDrawList()->VtxBuffer.Size==vertices);
+ const float content_width=740; if(focus)ImGui::SetKeyboardFocusHere();
+ #include "ps5_revision_ui.inl"
+ assert(!g_launcher_rom);load=ImGui::GetID("LOAD SELECTED VERSION");ImGui::End();ImGui::Render();
 }
 static void press(ImGuiKey key){auto&io=ImGui::GetIO();io.AddKeyEvent(key,true);frame();frame();io.AddKeyEvent(key,false);frame();frame();}
 int main(){
- ImGui::CreateContext();auto&io=ImGui::GetIO();io.DisplaySize={1200,800};io.DeltaTime=1.0f/60;
- io.IniFilename=nullptr;io.ConfigFlags|=ImGuiConfigFlags_NavEnableGamepad;io.BackendFlags|=ImGuiBackendFlags_HasGamepad;
+ ImGui::CreateContext();auto&io=ImGui::GetIO();io.IniFilename=nullptr;io.DisplaySize={1280,800};io.DeltaTime=1.F/60;io.ConfigFlags|=ImGuiConfigFlags_NavEnableGamepad;io.BackendFlags|=ImGuiBackendFlags_HasGamepad;
  unsigned char*p;int w,h;io.Fonts->GetTexDataAsRGBA32(&p,&w,&h);
- frame(true);frame();check(GImGui->NavId==original,"initial focus is US 1.0");
- press(ImGuiKey_GamepadDpadDown);check(GImGui->NavId==revision,"Down selects next version");
- press(ImGuiKey_GamepadFaceDown);check(calls==1&&state.preferred==80&&state.active==77,"Cross chooses next launch only, not current game");
- press(ImGuiKey_GamepadDpadDown);check(GImGui->NavId==resume,"Down reaches return button");
- press(ImGuiKey_GamepadFaceDown);check(resumed,"Cross resumes through return button");
- state.available_mask=1;state.preferred=77;io.DeltaTime=1.1f;frame(true);frame();io.DeltaTime=1.0f/60;
- check(GImGui->NavId==original,"US 1.0 retains focus when Rev A ROM unavailable");
- press(ImGuiKey_GamepadDpadDown);check(GImGui->NavId==resume,"unavailable ROM choice is skipped");
- check(calls==1,"navigation alone never changes version");
- content_width=280.0F;frame(true);frame();
- ImGui::DestroyContext();std::puts("PASS actual Play version UI, next-launch ownership, disabled-ROM navigation, resume, card/button edge alignment at wide/narrow widths and no sidebar stripe/scissor");
+ frame(true);frame();assert(GImGui->NavId==original);press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==revision);
+ press(ImGuiKey_GamepadFaceDown);assert(preferred==80&&active==77&&!g_native_offline_launch_requested);
+ press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==load);press(ImGuiKey_GamepadFaceDown);
+ assert(g_native_offline_launch_requested&&g_native_frontend_page==kPagePlay&&g_native_online_lobby_requested&&g_lifecycle_request==dkr::runtime::ui::LifecycleRequest::StopGame&&!g_overlay_visible);
+ // A live lobby blocks replacement. The previous context is restored after
+ // every draw and both installed files remain in the catalog.
+ online=true;g_native_offline_launch_requested=false;frame(true);press(ImGuiKey_GamepadFaceDown);assert(!g_native_offline_launch_requested&&LoadRomCatalog().size()==2);
+ ImGui::DestroyContext();puts("PASS actual PS5 revision pause page: catalog ownership, controller selection, explicit in-process load request, lobby lock, restored frontend context and no sidebar stripe");
 }

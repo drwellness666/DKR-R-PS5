@@ -34,7 +34,7 @@ static void snapshot_during_save(){
     {std::unique_lock lock(sync_mutex);completed_while_save_blocked=sync_wake.wait_for(lock,std::chrono::seconds(3),[]{return snapshot_complete;});release_sync=true;stall_sync=false;}
     sync_wake.notify_all();writer.join();renderer.join();
     assert(saved==0 && completed_while_save_blocked);
-    const dkrr_ps5_hdr_choice a{1,80,400,0},b{0,300,2000,100};
+    const dkrr_ps5_hdr_choice a{1,80,400,0},b{0,300,2000,0};
     dkrr_ps5_hdr_preview(a);std::atomic<bool> done{false};
     std::thread preview([&]{for(unsigned i=0;i<100000;++i)dkrr_ps5_hdr_preview(i&1?a:b);done=true;});
     do {const auto c=dkrr_ps5_hdr_calibration();assert((c.enabled==a.enabled&&c.paper_white==a.paper_white&&c.peak==a.peak&&c.expansion==a.expansion)||(c.enabled==b.enabled&&c.paper_white==b.paper_white&&c.peak==b.peak&&c.expansion==b.expansion));}while(!done);
@@ -55,7 +55,7 @@ int main(){
     fs::path root=DKR_DISPLAY_DATA_ROOT;fs::create_directories(root/"preferences");
     dkrr_ps5_hdr_choice c{};assert(dkrr_ps5_read_hdr_choice(&c)==0&&!c.enabled);
     assert(!dkrr_ps5_choose_hdr({1,180,700,25}));assert(dkrr_ps5_read_hdr_choice(&c)==1&&c.paper_white==180);
-    dkrr_ps5_initialize_hdr();assert(dkrr_ps5_hdr_requested()==1&&dkrr_ps5_hdr_calibration().peak==700);
+    dkrr_ps5_initialize_hdr();assert(dkrr_ps5_hdr_requested()==1&&dkrr_ps5_hdr_calibration().peak==700&&dkrr_ps5_hdr_calibration().expansion==0);
     assert(!dkrr_ps5_choose_hdr({0,200,900,0}));assert(dkrr_ps5_hdr_requested()==1); // next launch, never mid-frame
     dkrr_ps5_initialize_hdr();assert(!dkrr_ps5_hdr_requested());
     dkrr_ps5_hdr_preview({1,220,800,10});assert(dkrr_ps5_hdr_calibration().paper_white==220);

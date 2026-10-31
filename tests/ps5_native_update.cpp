@@ -32,9 +32,9 @@ extern "C" int __wrap_lstat(const char* p,struct stat* st){
     const std::string path=p;
     if(std::getenv("FAIL_STAT_ROOT")&&path.ends_with("/native-install")){errno=EIO;return -1;}
     if(std::getenv("FAIL_STAT_APPLY_ONCE")&&path.ends_with("/native-install/applying")){static bool failed=false;if(!failed){failed=true;errno=EIO;return -1;}}
-    int r=__real_lstat(p,st);if(!r&&std::getenv("ZERO_LINKS"))st->st_nlink=0;return r;
+    int r=__real_lstat(p,st);if(!r&&(std::getenv("ZERO_LINKS")||std::getenv("REDACTED_METADATA"))){st->st_nlink=0;if(std::getenv("REDACTED_METADATA"))st->st_uid=0;}return r;
 }
-extern "C" int __wrap_fstat(int fd,struct stat* st){int r=__real_fstat(fd,st);if(!r&&std::getenv("ZERO_LINKS"))st->st_nlink=0;return r;}
+extern "C" int __wrap_fstat(int fd,struct stat* st){int r=__real_fstat(fd,st);if(!r&&(std::getenv("ZERO_LINKS")||std::getenv("REDACTED_METADATA"))){st->st_nlink=0;if(std::getenv("REDACTED_METADATA"))st->st_uid=0;}return r;}
 extern "C" int __real_rename(const char*,const char*);
 static unsigned replacements;
 extern "C" int __real_statvfs(const char*,struct statvfs*);

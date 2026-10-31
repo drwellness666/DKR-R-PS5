@@ -12,7 +12,7 @@ static bool SettingsRaceButton(const char* label,bool){return pressed==label;}
 #include "ps5_diagnostics_ui.inl"
 static bool contains(const char* needle){for(const auto& line:help)if(line.find(needle)!=std::string::npos)return true;return false;}
 int main(){
-    DrawPs5Diagnostics(900);assert(!dkrr_diag_capture_state().active);assert(contains("unavailable"));
+    DrawPs5Diagnostics(900);assert(!dkrr_diag_capture_state().active);assert(contains("No diagnostic file is available yet"));
     pressed="START 60-SECOND FRAME-TIME CAPTURE";help.clear();DrawPs5Diagnostics(900);assert(dkrr_diag_capture_state().active);assert(contains("Capture started"));
     pressed="STOP AND SAVE FRAME-TIME CAPTURE";help.clear();DrawPs5Diagnostics(900);assert(!dkrr_diag_capture_state().active);assert(contains("journal could not be written"));
     pressed.clear();help.clear();DrawPs5Diagnostics(900);assert(!dkrr_diag_capture_state().active);assert(contains("not HDMI scanout"));

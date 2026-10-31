@@ -9,6 +9,7 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <functional>
@@ -23,6 +24,7 @@ constexpr unsigned kSetText=0xFFFFFF, kSetMuted=0xAAAAAA, kCtlLine=0x334455;
 static std::size_t g_selected_player=0;
 struct PaddockType { float line=16.0F; };
 static PaddockType PaddockReading(float n, bool, float) { return {n}; }
+static float PaddockMeasure(PaddockType,const char*text){return ImGui::CalcTextSize(text).x;}
 static ImU32 PaddockRgb(unsigned n) { return n | 0xFF000000; }
 static ImU32 PaddockCol(unsigned n, unsigned a=255) { return n | (a << 24); }
 static void PaddockGap(float n) { ImGui::Dummy({0,n}); }
@@ -50,10 +52,20 @@ static CaptureDevice g_capture_device=CaptureDevice::Controller;
 #include "controls_state.inc"
 #include "controller_capture_begin.inc"
 #include "friendly_binding.inc"
-#include "controls_preset.inc"
+constexpr int kShortcutCaptureAction=-2;
+static bool g_capture_shortcut_alternate=false;
+static auto g_capture_shortcut_action=dkr::runtime::input::ShortcutAction::Count;
+static std::array<int,2> g_shortcut_capture_sources{};
+static int g_shortcut_capture_count=0;
+static std::chrono::steady_clock::time_point g_shortcut_capture_deadline{};
+static int saved=0;
+static void SaveSettings(){++saved;}
+#include "shortcut_names.inc"
+#include "shortcut_begin.inc"
+#include "shortcut_commit.inc"
+#include "controls_row.inc"
 #include "controls_bindings.inc"
 static ControlsPageState& page=g_controls_page;
-static int saved=0;
 static void frame(bool focus=false) {
     ImGui::NewFrame();
     ImGui::SetNextWindowPos({0,0});ImGui::SetNextWindowSize({1000,600});
@@ -83,46 +95,51 @@ int main() {
     assert(FriendlyBinding("a")=="Cross" && FriendlyBinding("x")=="Square");
     assert(FriendlyBinding("back")=="Touchpad" && FriendlyBinding("start")=="Options");
     assert(FriendlyBinding("lefttrigger +")=="L2" && FriendlyBinding("righttrigger +")=="R2");
+    for(const auto& [source,name]:std::array<std::pair<const char*,const char*>,12>{{
+        {"leftx -","Left stick Left"},{"leftx +","Left stick Right"},
+        {"lefty -","Left stick Up"},{"lefty +","Left stick Down"},
+        {"rightx -","Right stick Left"},{"rightx +","Right stick Right"},
+        {"righty -","Right stick Up"},{"righty +","Right stick Down"},
+        {"dpup","D-pad Up"},{"dpdown","D-pad Down"},
+        {"dpleft","D-pad Left"},{"dpright","D-pad Right"}}}) assert(FriendlyBinding(source)==name);
+    assert(FriendlyBinding("leftx - + a")=="Left stick Left + Cross");
     set_controller_binding(0, Action::A, SDL_CONTROLLER_BUTTON_Y);
+    set_controller_binding(1, Action::A, SDL_CONTROLLER_BUTTON_B);
+    set_alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay,{SDL_CONTROLLER_BUTTON_X,kUnbound});
     frame(true);frame();
-    assert(GImGui->NavId==fields[0].id);
-    assert(saved==0 && controller_preset(0)==ControllerPreset::Custom);
-    // Keyboard-focus initialization starts without gamepad highlighting.
-    // Enter real gamepad navigation before exercising activation.
+    assert(GImGui->NavId==fields[0].id&&fields.size()==48&&saved==0);
+    for(const auto& field:fields){assert(field.name.find("Restore classic")==std::string::npos);assert(field.name.find("R2 / L2 driving")==std::string::npos);}
+    for(std::size_t n=0;n<48;n+=2){
+        assert(fields[n].min.y==fields[n+1].min.y&&fields[n].max.x<fields[n+1].min.x);
+        if(n)assert(fields[n].min.y>=fields[n-1].max.y);
+    }
     press(ImGuiKey_GamepadDpadDown);press(ImGuiKey_GamepadDpadUp);
-    assert(GImGui->NavId==fields[0].id);
-    press(ImGuiKey_GamepadFaceDown);
-    assert(saved==1 && page.undo && controller_preset(0)==ControllerPreset::Classic);
-    RestoreControlsSnapshot(*page.undo);page.undo.reset();frame();
-    assert(controller_preset(0)==ControllerPreset::Custom);
-    assert(fields.size()==42); // restore Classic, 20 pairs, restore bindings
-    for (const auto& field : fields) assert(field.name.find("R2 / L2 driving")==std::string::npos);
-    // Original mapping table, two adjacent binding cells per game action.
-    for(std::size_t n=1;n<41;n+=2){
-        assert(fields[n].min.y==fields[n+1].min.y);
-        assert(fields[n].max.x<fields[n+1].min.x);
-        if(n>1)assert(fields[n].min.y>=fields[n-1].max.y);
-    }
-    assert(fields[40].max.y-fields[1].min.y<1400.0F);
-    press(ImGuiKey_GamepadDpadDown);
-    assert(GImGui->NavId==fields[1].id && saved==1);
-    for(std::size_t n=1;n<41;n+=2){
+    for(std::size_t n=0;n<46;n+=2){
         assert(GImGui->NavId==fields[n].id);
-        if(n==1){
-            page.undo=TakeControlsSnapshot();press(ImGuiKey_GamepadFaceDown);
-            assert(g_capture_action==static_cast<int>(Action::StickUp)&&!g_capture_secondary_controller);
-            assert(!page.undo&&g_capture_popup_pending&&!g_capture_finished);
-            assert(g_capture_device==CaptureDevice::Controller);
-        }
+        if(n==0){press(ImGuiKey_GamepadFaceDown);assert(g_capture_action==int(Action::StickUp)&&!g_capture_secondary_controller&&g_capture_popup_pending&&!g_capture_finished);}
+        if(n==40){press(ImGuiKey_GamepadFaceDown);assert(g_capture_action==kShortcutCaptureAction&&g_capture_shortcut_action==ShortcutAction::ToggleOverlay&&!g_capture_shortcut_alternate);}
         press(ImGuiKey_GamepadDpadRight);assert(GImGui->NavId==fields[n+1].id);
-        if(n==1){press(ImGuiKey_GamepadFaceDown);assert(g_capture_action==static_cast<int>(Action::StickUp)&&g_capture_secondary_controller);}
-        if(n<39){press(ImGuiKey_GamepadDpadLeft);press(ImGuiKey_GamepadDpadDown);}
+        if(n==0){press(ImGuiKey_GamepadFaceDown);assert(g_capture_secondary_controller);}
+        if(n==40){
+            press(ImGuiKey_GamepadFaceDown);assert(g_capture_shortcut_alternate&&g_capture_device==CaptureDevice::Controller);
+            const auto primary=shortcut_controller_binding(ShortcutAction::ToggleOverlay);
+            g_shortcut_capture_sources={SDL_CONTROLLER_BUTTON_Y,kUnbound};g_shortcut_capture_count=1;CommitShortcutCapture();
+            assert(saved==1&&g_capture_finished&&alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay).primary==SDL_CONTROLLER_BUTTON_Y);
+            assert(shortcut_controller_binding(ShortcutAction::ToggleOverlay).primary==primary.primary);
+        }
+        press(ImGuiKey_GamepadDpadLeft);press(ImGuiKey_GamepadDpadDown);
     }
-    press(ImGuiKey_GamepadDpadDown);assert(GImGui->NavId==fields[41].id);
-    assert(saved==1); // navigation and capture alone do not change mappings
+    assert(GImGui->NavId==fields[46].id&&saved==1);
+    press(ImGuiKey_GamepadFaceDown);assert(saved==2&&page.undo&&controller_preset(0)==ControllerPreset::Classic);
+    assert(controller_binding(1,Action::A)==SDL_CONTROLLER_BUTTON_B);
+    assert(alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay).primary==kUnbound);
+    RestoreControlsSnapshot(*page.undo);page.undo.reset();frame();
+    assert(controller_preset(0)==ControllerPreset::Custom&&alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay).primary==SDL_CONTROLLER_BUTTON_Y);
+    press(ImGuiKey_GamepadDpadRight);assert(GImGui->NavId==fields[47].id);press(ImGuiKey_GamepadFaceDown);
+    assert(saved==3&&page.undo&&controller_preset(0)==ControllerPreset::Classic&&controller_preset(1)==ControllerPreset::Classic);
+    RestoreControlsSnapshot(*page.undo);assert(controller_binding(1,Action::A)==SDL_CONTROLLER_BUTTON_B);
+    assert(alternate_shortcut_controller_binding(ShortcutAction::ToggleOverlay).primary==SDL_CONTROLLER_BUTTON_Y);
     assert(GImGui->NavWindow->Scroll.y>0);
-    press(ImGuiKey_GamepadDpadUp);
-    assert(GImGui->NavId==fields[40].id);
     ImGui::DestroyContext();
-    std::puts("PASS actual controls preset/undo and binding rows: PlayStation labels, compact original table geometry, D-pad row/column order, scroll, Cross capture and reverse navigation");
+    std::puts("PASS actual mapping table: 20 game actions plus 3 shortcut pairs, readable directions, no layout/disclosure block, full D-pad grid and alternate capture, adjacent player/all reset and undo including shortcuts");
 }
