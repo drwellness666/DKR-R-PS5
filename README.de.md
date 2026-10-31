@@ -41,8 +41,6 @@ Benötigt werden eine PS5 mit eingerichteter **nativer Homebrew**, **ShadowMount
 
 ## ⚠️ Bekannte Fehler
 
-- Beim Einstieg in eine **Tracks-Vorschau** kann das Wasser kurz aufblitzen.
-- Gelegentliche **Mikroruckler**, besonders bei aufwendigen Grafikeinstellungen oder Texturpaketen.
 - Mod-Kompatibilität und Online-Rennen hängen von Inhalt und Verbindung ab. Andere Homebrew-Setups sind nur begrenzt geprüft.
 
 [Kompatibilität und Funktionsstand](docs/KNOWN_ISSUES.md) · [Geplante Verbesserungen](docs/ROADMAP.md)

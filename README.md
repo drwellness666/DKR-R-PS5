@@ -41,8 +41,6 @@ You need a PS5 already running **native homebrew**, **ShadowMountPlus**, an **EL
 
 ## ⚠️ Known issues
 
-- Water can flash briefly when entering a **Tracks preview**.
-- Occasional **microstutters** remain, especially with demanding graphics settings or texture packs.
 - Mod compatibility and online races depend on the content and connection. Other homebrew setups have limited coverage.
 
 [Compatibility and feature status](docs/KNOWN_ISSUES.md) · [Planned improvements](docs/ROADMAP.md)
