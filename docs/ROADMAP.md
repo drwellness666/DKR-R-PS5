@@ -1,6 +1,6 @@
 # Planned improvements
 
-The current version already includes the universal installer, native in-game updates, shared settings, optional gyro, adaptive L2, controller sounds and HDR. Their [feature status](KNOWN_ISSUES.md#feature-status) distinguishes implementation from remaining PS5 checks.
+The current version already includes the universal installer, native in-game updates, shared settings, optional gyro, adaptive L2, controller sounds and HDR. Their [feature status](KNOWN_ISSUES.md) distinguishes implementation from remaining PS5 checks.
 
 The next priorities are:
 
