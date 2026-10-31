@@ -3,6 +3,6 @@
   "upstream_version": "1.0.9",
   "source_only": false,
   "qualification": "First native PS5 release based on DKR-R 1.0.9. See the player guide for compatibility and known issues.",
-  "installer_sequence": 43,
+  "installer_sequence": 45,
   "release_status": "release"
 }
