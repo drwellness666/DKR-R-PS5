@@ -40,6 +40,9 @@ for archive in (g/'game-ps5/libDKR-R.a',g/'game-ps5/libDKRNetplayCore.a'):
 if 'ps5_exec_allocate' not in symbols or 'ps5_exec_release' not in symbols:
  raise SystemExit('The actual native mod-code allocator is missing')
 imports=subprocess.check_output([str(a.sdk/'bin/llvm-nm'),'--undefined-only',str(g/'native-link/llvm-pie.elf')],text=True)
+for name in ('sceNetPoolCreate','sceNetPoolDestroy','sceNetResolverCreate','sceNetResolverDestroy','sceNetResolverStartNtoa'):
+ if not re.search(r'\b[Uw] '+name+r'$',imports,re.M):raise SystemExit('Native system DNS service import missing: '+name)
+
 for name in ('fork','vfork','execve','execlp','posix_spawn','popen','system'):
  if re.search(r'\bU '+name+r'$',imports,re.M):raise SystemExit('Desktop process dependency in native title: '+name)
 if symbols.get('system')!=symbols.get('dkrr_ps5_no_shell') or 'dkrr_ps5_no_shell' not in symbols:

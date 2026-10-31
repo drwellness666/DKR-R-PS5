@@ -11,6 +11,8 @@ expected=str(domain/'src/game/runtime_graphics_ui.inl')
 wrong=str(domain/'stages/upstream-sync/graphics.inl')
 if expected not in text or wrong in text:
     raise SystemExit('The actual UI object still includes the upstream graphics alias instead of the final PS5 page')
+if 'ps5_menu_window_policy.hpp' not in text:
+    raise SystemExit('The actual native UI object lacks the fixed-panel navigation policy')
 obj=dependency.with_suffix('').read_bytes()
 for desktop_label in (b'Window mode\0',b'Manual target (advanced)\0'):
     if desktop_label in obj:raise SystemExit('Desktop graphics control remains in the actual PS5 UI object: '+desktop_label.decode())
