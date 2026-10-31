@@ -53,7 +53,7 @@ def verify(root):
             raise ValueError('Changed or truncated original notice: ' + source)
         expected.extend(header + data + b'\n\n')
     required = {'DKR-R', 'N64ModernRuntime', 'RT64', 're-spirv', 'PS5 Mesa',
-                'PS5 native tooling', 'PS5 payload SDK', 'PS5 platform SDK', 'zlib'}
+                'PS5 native tooling', 'PS5 payload SDK', 'PS5 platform SDK', 'zlib', 'curl', 'Mozilla CA store'}
     if not required <= components:
         raise ValueError('Missing required runtime/build component notices')
     if bytes(expected) != blob:

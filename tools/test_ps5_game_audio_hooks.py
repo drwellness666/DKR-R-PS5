@@ -9,10 +9,10 @@ with tempfile.TemporaryDirectory(prefix='dkrr-game-sounds-') as name:
   a.game_work=t/'inputs';cmd=['python3',str(root/'tools/prepare_controller_test_sources.py'),str(a.game_work)]
   for cache in a.cache:cmd+=['--cache',str(cache)]
   subprocess.run(cmd,check=True)
- game=a.game_work/'source/DKR-R/runtime-recomp/src/game';platform=(game/'runtime_platform.cpp').read_text();start=platform.index('namespace {\nbool NativeSoundContext(');end=platform.index('\n#endif',start);(t/'sound_callbacks.inc').write_text(platform[start:end])
+ game=a.game_work/'source/DKR-R/runtime-recomp/src/game';native=a.game_work/'game-ps5/native-domain/src/game';game=native if native.is_dir() else game;platform=(game/'runtime_platform.cpp').read_text();start=platform.index('namespace {\nbool NativeSoundContext(');end=platform.index('\n#endif',start);(t/'sound_callbacks.inc').write_text(platform[start:end])
  archive=root/'vendor/N64Recomp.tar.gz';expected=next(line.split('  ')[0] for line in (root/'vendor/SHA256SUMS').read_text().splitlines() if line.endswith('  N64Recomp.tar.gz'))
  assert hashlib.sha256(archive.read_bytes()).hexdigest()==expected
  with tarfile.open(archive) as src:
   entries=[m for m in src if m.isfile() and (m.name=='include/recomp.h' or m.name.endswith('/include/recomp.h'))];assert len(entries)==1;(t/'recomp.h').write_bytes(src.extractfile(entries[0]).read())
- binary=t/'sounds';subprocess.run(['clang++','-std=c++20','-O1','-g','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-I'+str(root/'src'),'-I'+str(game),'-I'+str(t),str(root/'tests/ps5_game_audio_hooks.cpp'),str(root/'src/ps5_game_audio_hooks.cpp'),'-o',str(binary)],check=True)
+ binary=t/'sounds';subprocess.run(['clang++','-std=c++20','-DDKRR_NATIVE_CUSTOM_HORN_AVAILABLE='+str(int('void dkrr_controller_mod_horn(' in platform)),'-O1','-g','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-I'+str(root/'src'),'-I'+str(game),'-I'+str(t),str(root/'tests/ps5_game_audio_hooks.cpp'),str(root/'src/ps5_game_audio_hooks.cpp'),'-o',str(binary)],check=True)
  subprocess.run([str(binary)],check=True,env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'))

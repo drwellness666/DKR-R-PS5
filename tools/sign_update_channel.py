@@ -13,7 +13,7 @@ def manifest(payload,sequence,tag):
         if native and (len(header)<16 or struct.unpack_from('<II',header,8)!=(sequence,37)):raise ValueError('Native package sequence or file count differs')
         stream.seek(0);digest=hashlib.file_digest(stream,'sha256').hexdigest()
     size=payload.stat().st_size
-    if not 64<=size<=128*1024*1024:raise ValueError('Unexpected update size')
+    if not 64<=size<=256*1024*1024:raise ValueError('Unexpected update size')
     version,name=(2,'DKRR-Update.dkru') if native else (1,'DKRR-Network-Update.elf')
     return f'DKRR-UPDATE-{version}\nPPSA94678\n{sequence}\n{tag}\n{size}\n{digest}\n{name}\n'.encode()
 

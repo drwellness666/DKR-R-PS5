@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Apply symbol aliases after the dependency's configure probes. Putting them
+# in CMAKE_C_FLAGS makes fresh link probes fail before the bridge is linked.
+function(dkrr_native_socket_target)
+    if(PROJECT_NAME STREQUAL "CURL")
+        set(_target libcurl_static)
+    elseif(PROJECT_NAME STREQUAL "c-ares")
+        set(_target c-ares)
+    else()
+        return()
+    endif()
+    if(NOT TARGET ${_target} OR NOT EXISTS "${DKRR_NATIVE_NET_HEADER}")
+        message(FATAL_ERROR "Native socket target/header is unavailable")
+    endif()
+    target_compile_options(${_target} PRIVATE "SHELL:-include ${DKRR_NATIVE_NET_HEADER}")
+    if(DKRR_TEST_NATIVE_NET)
+        target_compile_definitions(${_target} PRIVATE DKRR_TEST_NATIVE_NET=1)
+    endif()
+endfunction()
+cmake_language(DEFER CALL dkrr_native_socket_target)

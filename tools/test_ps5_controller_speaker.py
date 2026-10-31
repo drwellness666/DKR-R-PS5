@@ -5,8 +5,14 @@ import os,pathlib,subprocess,tempfile
 r=pathlib.Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory(prefix='dkrr-speaker-') as tmp:
     out=pathlib.Path(tmp)/'speaker'
-    subprocess.run(['clang++','-std=c++20','-O1','-g','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-I'+str(r/'src'),str(r/'tests/ps5_controller_speaker.cpp'),str(r/'src/ps5_controller_speaker.cpp'),'-pthread','-o',str(out)],check=True)
+    subprocess.run(['clang','-std=c11','-O1','-g','-fsanitize=address,undefined','-c',str(r/'installer/vadpcm.c'),'-o',str(pathlib.Path(tmp)/'vadpcm.o')],check=True)
+    subprocess.run(['clang++','-std=c++20','-O1','-g','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-I'+str(r/'src'),str(r/'tests/ps5_controller_speaker.cpp'),str(r/'src/ps5_controller_speaker.cpp'),str(r/'src/ps5_custom_horn.cpp'),str(pathlib.Path(tmp)/'vadpcm.o'),'-pthread','-o',str(out)],check=True)
     subprocess.run([str(out)],check=True,env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'))
+
+    custom=pathlib.Path(tmp)/'custom-horn'
+    subprocess.run(['clang++','-std=c++20','-O1','-g','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-I'+str(r/'src'),str(r/'tests/ps5_custom_horn.cpp'),str(r/'src/ps5_controller_speaker.cpp'),str(r/'src/ps5_custom_horn.cpp'),str(pathlib.Path(tmp)/'vadpcm.o'),'-pthread','-o',str(custom)],check=True)
+    subprocess.run([str(custom)],check=True,env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'))
+    print('PASS admitted mod horn: bounded bank decode, exact sample/pitch/envelope inputs, owner lifetime, overlapping voices, no retail PCM lookup, invalid optional bank does not disable retail cues')
 
 with tempfile.TemporaryDirectory(prefix='dkrr-speaker-files-') as tmp:
     out=pathlib.Path(tmp)/'reader'

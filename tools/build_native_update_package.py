@@ -21,7 +21,7 @@ def build(app,receipt,sequence,output):
                 if len(path)>=160 or len(data)!=meta['size'] or hashlib.sha256(data).hexdigest()!=meta['sha256']:raise ValueError('Package input changed')
                 stream.write(path.ljust(160,b'\0')+struct.pack('<QI',len(data),meta['mode'])+bytes.fromhex(meta['sha1']))
                 stream.write(data)
-        if not 64<=output.stat().st_size<=128*1024*1024:raise ValueError('Unexpected native package size')
+        if not 64<=output.stat().st_size<=256*1024*1024:raise ValueError('Unexpected native package size')
     except BaseException:
         output.unlink(missing_ok=True);raise
     return dict(size=output.stat().st_size,sha256=hashlib.sha256(output.read_bytes()).hexdigest(),files=len(reviewed),roms_embedded=False,original_pcm_embedded=False)

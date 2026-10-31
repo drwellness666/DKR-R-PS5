@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Prepare private item PCM from verified owned ROMs. Never distribute its output."""
-import argparse,hashlib,json,math,pathlib,struct,shutil,subprocess,tempfile
+import re,argparse,hashlib,json,math,pathlib,struct,shutil,subprocess,tempfile
 from vadpcm_decode import decode
 KNOWN={77:('0cb115d8716dbbc2922fda38e533b9fe63bb9670',969568),80:('6d96743d46f8c0cd0edb0ec5600b003c89b93755',970976)}
+CUE_COUNT=int(re.search(r"^#define DKRR_CONTROLLER_CUE_COUNT ([0-9]+)$",(pathlib.Path(__file__).resolve().parents[1]/"src/ps5_controller_audio_bank.h").read_text(),re.M)[1])
 # Actual item-use effects from the pinned decomp racer/audio paths.
 SOUNDS=(0x21,0x232,0x233,0x135,0x134,0x151,0x0f,0x9f,0x13a,*range(0x156,0x160),0xa0,0xa1,0xa2,0x23d,0x107)
 class Bank:
@@ -95,14 +96,14 @@ def prepare(roms,destination):
             if hashlib.sha1(p.read_bytes()).hexdigest()!=sha:raise ValueError('Owned ROM checksum mismatch')
             result=subprocess.run([str(binary),str(p),str(revision)],check=True,stdout=subprocess.PIPE)
             data=result.stdout
-            if len(data)>32*(384000+8):raise ValueError('Unbounded private PCM output')
+            if len(data)>CUE_COUNT*(384000+8):raise ValueError('Unbounded private PCM output')
             files={};at=0
             while at<len(data):
                 if len(data)-at<8:raise ValueError('Truncated cue record')
                 index,size=struct.unpack_from('<II',data,at);at+=8
-                if index>=32 or index in files or not size or size%2 or size>384000 or size>len(data)-at:raise ValueError('Invalid cue record')
+                if index>=CUE_COUNT or index in files or not size or size%2 or size>384000 or size>len(data)-at:raise ValueError('Invalid cue record')
                 files[index]=data[at:at+size];at+=size
-            if set(files)!=set(range(32)):raise ValueError('Incomplete private cue bank')
+            if set(files)!=set(range(CUE_COUNT)):raise ValueError('Incomplete private cue bank')
             folder=destination/f'us-v{revision}'
             if folder.is_symlink():raise ValueError('Private audio destination is a symlink')
             folder.mkdir(parents=True,exist_ok=True);rows=[]
@@ -110,7 +111,7 @@ def prepare(roms,destination):
                 target=folder/f'{index}.pcm'
                 if target.is_symlink() or (target.exists() and target.read_bytes()!=blob):raise ValueError('Different private effect output already exists')
                 if not target.exists():target.write_bytes(blob)
-                rows.append(dict(index=index,**({'sound_id':SOUNDS[index]} if index<24 else {'sequence_id':43+index-24}),frames=len(blob)//2,sha256=hashlib.sha256(blob).hexdigest()))
+                rows.append(dict(index=index,**({'sound_id':SOUNDS[index]} if index<24 else {'sequence_id':43+index-24} if index<32 else {'sound_id':0x147}),frames=len(blob)//2,sha256=hashlib.sha256(blob).hexdigest()))
             receipt[str(revision)]=rows
     return receipt
 if __name__=='__main__':

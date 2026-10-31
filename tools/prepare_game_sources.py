@@ -41,7 +41,7 @@ def inventory():
               'patches/0003-plume-ps5-radv-display.patch',
               'patches/0004-rt64-ps5-build-platform.patch',
               'patches/0005-dkrr-ps5-native-preview.patch',
-              'patches/dkrr-patch-manifest.json', 'src/plume_ps5_display.h', 'src/ps5_display_options.h', 'src/ps5_diagnostics.h', 'src/ps5_hdr_options.h', 'src/ps5_hdr_presenter.hpp', 'src/ps5_hdr_shaders.h', 'tools/StagePS5HDR.cmake', 'patches/0007-rt64-ps5-hdr-present.patch', 'patches/0008-plume-ps5-hdr-swapchain.patch', 'patches/hdr-stage-manifest.json', 'tools/apply_dependency_patch.py', 'tools/compose_upstream_release.py']
+              'patches/dkrr-patch-manifest.json', 'src/plume_ps5_display.h', 'src/ps5_display_options.h', 'src/ps5_diagnostics.h', 'src/ps5_hdr_options.h', 'src/ps5_hdr_presenter.hpp', 'src/ps5_frontend_presenter.hpp', 'src/ps5_rtc_platform.c', 'src/ps5_hdr_shaders.h', 'tools/StagePS5HDR.cmake', 'patches/0007-rt64-ps5-hdr-present.patch', 'patches/0008-plume-ps5-hdr-swapchain.patch', 'patches/hdr-stage-manifest.json', 'tools/apply_dependency_patch.py', 'tools/compose_upstream_release.py','tools/StagePS5NextRelease.cmake','tools/StagePS5Network.cmake','tools/NativeSocketTarget.cmake','tools/stage_ps5_network.py','tools/StagePS5Session.cmake','tools/StagePS5NativePolicy.cmake','tools/stage_ps5_sljit.py','tools/stage_ps5_session.py','tools/verify_native_ui.py','src/ps5_runtime_session.h','src/ps5_nonblocking.h','src/ps5_net.h','src/ps5_net_alias.h','src/ps5_net.c','src/ps5_builtin_input.cpp','src/ps5_sljit_exec_allocator.inl','tools/canonicalize_native_domain.py','tools/stage_ps5_detail_metrics.py','tools/stage_ps5_render_waits.py','tools/stage_ps5_ui_wording.py','tools/stage_ps5_texture_io.py','tools/stage_ps5_release_final.py','patches/dkrr-109-native-final.patch','patches/dkrr-109-final-manifest.json','HTTPS_SOURCES.json','vendor/Mozilla-CA-20261024.pem']
     return {'files': files, 'links': links, 'inputs': {name:digest(root/name) for name in inputs}}
 
 if stamp.exists():
@@ -104,15 +104,33 @@ for row in renderer['dxc']['files']:
         target.chmod(0o755)
 
 dk = source / 'DKR-R'
+# Keep the stable original ownership audit beside the separately composed game.
+original = source / '_release-current'
+unpack(dict(game['sources'][0], path='_release-current'))
+baseline = None
+if game.get('capsule_base'):
+    unpack(dict(game['capsule_base'], path='_release-base'))
+    baseline = source / '_release-base'
 if game.get('release_layers'):
-    layers = compose_release(dk, game['release_layers']['sha256'])
+    layers = compose_release(dk, game['release_layers']['sha256'], baseline)
     print('Reconstructed', layers['records_verified'], 'verified upstream release-layer records')
+# The official later layers transform pre-platform native files. Preserve the
+# complete checked capsule image so no PS5 hunk contaminates those inputs.
+for subtree in ('src', 'include', 'tests'):
+    shutil.copytree(dk/'runtime-recomp'/subtree,
+                    dk/'runtime-recomp/ps5-release/native-base'/subtree, dirs_exist_ok=True)
+for name in json.loads((dk/'patches/upstream-sync/pins.json').read_text())['sources']:
+    target=dk/'runtime-recomp/ps5-release/upstream-sync-inputs'/name
+    target.parent.mkdir(parents=True,exist_ok=True)
+    shutil.copy2(original/'runtime-recomp/src/game'/name,target)
 targets = {'N64ModernRuntime': source / 'N64ModernRuntime',
            'N64Recomp': source / 'N64Recomp', 'sljit': source / 'N64Recomp/lib/sljit',
            'RT64': source / 'rt64-game', 'Plume': source / 'rt64-game/src/contrib/plume',
            'hlslpp': source / 'rt64-game/src/contrib/hlslpp'}
 targets['plume']=targets['Plume'] # Upstream manifest uses the lowercase name.
 targets['nativefiledialog-extended']=source/'rt64-game/src/contrib/nativefiledialog-extended'
+for name,path in [('libdatachannel','extern/libdatachannel'),('LibJuice','extern/libdatachannel/deps/libjuice'),('usrsctp','extern/libdatachannel/deps/usrsctp')]:
+    targets[name]=dk/path
 receipts=[]
 
 for dependency in json.loads((dk / 'patches/manifest.json').read_text())['dependencies']:
@@ -165,5 +183,12 @@ for name, sha in re.findall(r'dkr_xdelta_file\(([^ ]+) ([a-f0-9]{64})\)',
                             (dk / 'runtime-recomp/cmake/LegacyMods.cmake').read_text()):
     url = 'https://raw.githubusercontent.com/jmacd/xdelta/ff322e592383227b0d65ddfde7e0e5bbc504dc15/xdelta3/' + name
     shutil.copy2(fetch('xdelta-' + name, url, sha), xdelta / name)
+for name, target in [('n64-modern-runtime', '../N64ModernRuntime'), ('rt64', '../rt64-game'), ('dkr-decomp', '../dkr-decomp')]:
+    link=original/'extern'/name
+    if link.is_symlink():link.unlink()
+    elif link.exists():
+        if any(link.iterdir()):raise SystemExit('Unexpected original dependency input')
+        link.rmdir()
+    link.symlink_to('../../'+Path(target).name,target_is_directory=True)
 stamp.write_text(json.dumps(inventory(), indent=2) + '\n')
 print('Pinned public sources, authored patches and PS5 adapters prepared; no ROM used')

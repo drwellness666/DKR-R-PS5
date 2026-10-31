@@ -3,13 +3,14 @@
  * local pipe; Python validates paths and writes the private output files.
  */
 #include "../installer/dkrr_install.h"
+#include "../src/ps5_controller_audio_bank.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 int dkrr_mkdir(const char*path,unsigned mode){(void)path;(void)mode;return 0;}
 int dkrr_write_new(const char*path,const void*data,size_t size,unsigned mode){
  (void)mode;const char*p=strrchr(path,'/');if(!p||size>384000||!size||(size&1))return -1;
- char*end;unsigned long slot=strtoul(p+1,&end,10);if(slot>=32||strcmp(end,".pcm"))return -1;
+ char*end;unsigned long slot=strtoul(p+1,&end,10);if(slot>=DKRR_CONTROLLER_CUE_COUNT||strcmp(end,".pcm"))return -1;
  unsigned char h[8];for(unsigned i=0;i<4;++i){h[i]=(unsigned char)(slot>>(8*i));h[4+i]=(unsigned char)(size>>(8*i));}
  return fwrite(h,1,8,stdout)==8&&fwrite(data,1,size,stdout)==size?0:-1;
 }

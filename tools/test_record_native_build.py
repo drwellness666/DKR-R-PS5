@@ -9,6 +9,7 @@ import tempfile
 
 from record_native_build import record
 from build_native_game_bundle_updater import inventory
+from prepare_controller_audio import CUE_COUNT
 
 with tempfile.TemporaryDirectory(prefix='dkrr-build-receipt-') as temp:
     game = pathlib.Path(temp)/'game'
@@ -29,17 +30,17 @@ with tempfile.TemporaryDirectory(prefix='dkrr-build-receipt-') as temp:
         (app/'sce_sys'/name).write_bytes(b'synthetic artwork')
     audio=app/'assets/controller-audio/us-v80'
     audio.mkdir(parents=True)
-    (audio/'31.pcm').write_bytes(b'private synthetic cue')
-    assert 'assets/controller-audio/us-v80/31.pcm' in inventory(app)
-    (audio/'32.pcm').write_bytes(b'out of range')
+    (audio/f'{CUE_COUNT-1}.pcm').write_bytes(b'private synthetic cue')
+    assert f'assets/controller-audio/us-v80/{CUE_COUNT-1}.pcm' in inventory(app)
+    (audio/f'{CUE_COUNT}.pcm').write_bytes(b'out of range')
     try:
         inventory(app)
     except ValueError:
         pass
     else:
         raise AssertionError('Out-of-bank audio input accepted')
-    (audio/'32.pcm').unlink()
-    (audio/'31.pcm').unlink()
+    (audio/f'{CUE_COUNT}.pcm').unlink()
+    (audio/f'{CUE_COUNT-1}.pcm').unlink()
     output, spec = record(game)
     assert spec['file_count'] == 6 and spec['build_id'] == build
     assert stat.S_IMODE(output.stat().st_mode) == 0o600 and not spec['console_executed']

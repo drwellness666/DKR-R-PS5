@@ -15,6 +15,8 @@ with tempfile.TemporaryDirectory(prefix='dkrr-picker-') as folder:
   for cache in a.cache:cmd+=['--cache',str(cache)]
   subprocess.run(cmd,check=True)
  source=a.game_work/'source/DKR-R/runtime-recomp/src/game/runtime_ui.cpp'
+ if (a.game_work/'game-ps5/native-domain/src/game/runtime_ui.cpp').is_file():
+  source=a.game_work/'game-ps5/native-domain/src/game/runtime_ui.cpp'
  text=source.read_text()
  helper=text[text.index('bool ChooseFileForAction('):text.index('bool SelectRomWithDialog(')]
  jobs=text[text.index('std::mutex g_dialog_job_mutex;'):text.index('// A folder picker, for the dialog-job thread')]

@@ -54,8 +54,9 @@ def delta(original, patch):
     return ''.join(result + old[cursor:]).encode('utf-8')
 
 
-def compose(root, expected_manifest):
+def compose(root, expected_manifest, baseline=None):
     root = Path(root)
+    baseline = Path(baseline) if baseline is not None else None
     if root.is_symlink() or not root.is_dir():
         raise ValueError('Release source must be an ordinary directory')
     def ordinary(name):
@@ -75,9 +76,6 @@ def compose(root, expected_manifest):
         raise ValueError('Unsupported upstream release capsule')
     bases, outputs, verified = {}, {}, 0
     for role, entries in manifest['roles'].items():
-        # SDK2_BASE is an optional byte-identical build-cache reuse layer.
-        if role == 'SDK2_BASE':
-            continue
         for name, row in entries.items():
             safe(name)
             if 'base' in row:
@@ -85,6 +83,13 @@ def compose(root, expected_manifest):
                 if row['base'] not in bases:
                     bases[row['base']] = ordinary(row['base']).read_bytes().replace(b'\r\n', b'\n')
                 raw = bases[row['base']]
+                if digest(raw) != row['base_sha256'] and baseline is not None:
+                    # New upstream releases retain a frozen capsule whose bases
+                    # precede current source. Accept only its original hash.
+                    candidate = baseline.joinpath(*safe(row['base']).parts)
+                    if candidate.is_symlink():
+                        raise ValueError('Capsule baseline cannot follow filesystem links')
+                    raw = candidate.read_bytes().replace(b'\r\n', b'\n')
                 if digest(raw) != row['base_sha256']:
                     raise ValueError('Release base source changed: ' + row['base'])
                 if 'patch' in row:
@@ -97,15 +102,16 @@ def compose(root, expected_manifest):
                 raise ValueError('Release-layer reconstruction failed: ' + role + '/' + name)
             verified += 1
             destination = None
-            if name.startswith(('src/', 'include/')):
+            if name.startswith(('src/', 'include/', 'tests/')):
                 destination = 'runtime-recomp/' + name
-            elif name.startswith(('native/src/', 'native/include/')):
+            elif name.startswith(('native/src/', 'native/include/', 'native/tests/')):
                 destination = 'runtime-recomp/' + name[len('native/'):]
             elif name.startswith('native/') and PurePosixPath(name).suffix in {'.hpp', '.h', '.cpp', '.inl'}:
                 destination = 'runtime-recomp/src/game/' + name[len('native/'):]
             elif name.startswith('renderer/'):
                 destination = 'runtime-recomp/ps5-release/' + name
-            if destination:
+            outputs['runtime-recomp/ps5-release/roles/' + role + '/' + name] = (raw, dict(role=role, source=name, sha256=row['sha256']))
+            if destination and role != 'SDK2_BASE':
                 outputs[destination] = (raw, dict(role=role, source=name, sha256=row['sha256']))
     # No source mutation until every layer has passed its original byte hash.
     for name in outputs:

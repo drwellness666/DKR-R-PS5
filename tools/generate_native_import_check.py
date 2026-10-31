@@ -27,7 +27,7 @@ for index,name in enumerate(names):
     optional=' __attribute__((weak))' if bindings[name]=='WEAK' or name in optional_names else ''
     text+=f'extern void import_{index}(void) __asm__("{name}"){optional};\n'
 text+='static const struct {const char *name; Function address; unsigned optional;} imports[]={\n'
-text+=''.join(f'{{"{name}",import_{index},{int(bindings[name]=="WEAK" or name in optional_names)}}},\n' for index,name in enumerate(names))+'};\n'
+text+=''.join(f'{{"{name}",import_{index},{int((bindings[name]=="WEAK" or name in optional_names) and not name.startswith(("sceHttp","sceHttps","sceSsl","sceNetPool")))}}},\n' for index,name in enumerate(names))+'};\n'
 text+='''unsigned dkrr_report_missing_imports(void (*emit)(const char *)) {
     unsigned missing=0;
     for(size_t i=0;i<sizeof(imports)/sizeof(imports[0]);++i) {

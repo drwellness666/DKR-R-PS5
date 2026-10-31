@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Plan/build an exact-previous-app update for the private PPSA94678 preview."""
+from prepare_controller_audio import CUE_COUNT
 import argparse
 import hashlib
 import json
@@ -29,7 +30,7 @@ def inventory(app, *, previous=False):
         name = path.relative_to(app).as_posix()
         if len(('/data/homebrew/' + TITLE + '/' + name + '.dkrr-v9999-update').encode()) >= 256:
             raise ValueError('Application path exceeds native updater limit')
-        owned_audio = name in {f'assets/controller-audio/us-v{revision}/{i}.pcm' for revision in (77,80) for i in range(32)}
+        owned_audio = name in {f'assets/controller-audio/us-v{revision}/{i}.pcm' for revision in (77,80) for i in range(CUE_COUNT)}
         if name not in CORE and not owned_audio and not (previous and name in LEGACY_ART) and not (name.startswith('assets/') and path.suffix.lower() in ASSET_EXTENSIONS):
             raise ValueError('Unapproved application input: ' + name)
         if any(c in str(path) for c in '\n\r"\\'):

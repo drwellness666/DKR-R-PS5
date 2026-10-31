@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Real in-process transaction, signed packages and power cuts, without ROMs."""
+from prepare_controller_audio import CUE_COUNT
 import argparse,hashlib,json,os,pathlib,shutil,struct,subprocess,tempfile
 from build_native_update_package import build
 from build_universal_installer import PUBLIC_FILES,hash_source
@@ -25,7 +26,7 @@ def main():
                 p.write_bytes((b'\x4f\x15\x3d\x1d'+code) if name=='eboot.bin' else b'unchanged ABI' if name=='sce_module/libc.prx' else json.dumps({'titleId':'PPSA94678'}).encode() if name=='sce_sys/param.json' else code+name.encode())
                 p.chmod(0o755 if name in ('eboot.bin','sce_module/libc.prx') else 0o644)
             for rev in (77,80):
-                for cue in range(32):
+                for cue in range(CUE_COUNT):
                     p=where/f'assets/controller-audio/us-v{rev}/{cue}.pcm';p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b'private synthetic PCM'+str((rev,cue)).encode())
             files=inventory(where);record=dict(files=files,app_manifest_sha256=inventory_hash(files),build_id='integrated-'+code.decode()*24)
             receipt=t/f'receipt-{sequence}.json';receipt.write_text(json.dumps(record))
@@ -44,7 +45,7 @@ def main():
         for source in (deps/'monocypher/src/monocypher.c',deps/'monocypher/src/optional/monocypher-ed25519.c',deps/'mbedtls/library/sha256.c',deps/'mbedtls/library/platform_util.c',ROOT/'installer/files.c',t/'hash.c'):
             obj=t/(source.name+'.o');subprocess.run(['clang','-std=c11','-D_GNU_SOURCE',*flags,'-c',str(source),'-o',str(obj)],check=True);objects.append(str(obj))
         binary=t/'native-test'
-        subprocess.run(['clang++','-std=c++20',*flags,'-Wall','-Wextra','-Werror','-DDKRR_RELEASE_SEQUENCE=7','-DDKRR_NATIVE_TEST_HOOK','-DDKRR_UPDATE_ROOT="'+str(root)+'"','-DDKRR_NATIVE_APP="'+str(app)+'"','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-Wl,--wrap=rename','-Wl,--wrap=write','-Wl,--wrap=unlink','-Wl,--wrap=readdir','-Wl,--wrap=closedir','-Wl,--wrap=fsync','-Wl,--wrap=statvfs',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_native_update.cpp'),str(ROOT/'tests/ps5_native_update.cpp'),*objects,'-o',str(binary)],check=True)
+        subprocess.run(['clang++','-std=c++20',*flags,'-Wall','-Wextra','-Werror','-DDKRR_RELEASE_SEQUENCE=7','-DDKRR_NATIVE_TEST_HOOK','-DDKRR_TEST_NATIVE_METADATA','-DDKRR_UPDATE_ROOT="'+str(root)+'"','-DDKRR_NATIVE_APP="'+str(app)+'"','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-Wl,--wrap=rename','-Wl,--wrap=write','-Wl,--wrap=unlink','-Wl,--wrap=readdir','-Wl,--wrap=closedir','-Wl,--wrap=fsync','-Wl,--wrap=statvfs',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_native_update.cpp'),str(ROOT/'tests/ps5_native_update.cpp'),*objects,'-o',str(binary)],check=True)
         env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1');runs=[]
         def run(action,expected=0,cut=None,index=0,zero=False,**failure):
             extra={} if cut is None else dict(CUT_EVENT=cut,CUT_INDEX=str(index))
@@ -133,6 +134,7 @@ def main():
         reset();run('prepare');run('apply',cut='replaced',index=8);run('recover',1,cut='restored',index=4);run('recover',1);unchanged()
         reset();run('prepare',cut='prepared');run('recover');unchanged()
         reset();run('prepare',zero=True);run('apply',zero=True);run('recover',zero=True)
+        reset();run('prepare',REDACTED_METADATA='1');run('apply',REDACTED_METADATA='1');run('recover',REDACTED_METADATA='1')
         reset();run('prepare',-1,FAIL_WRITE='1');unchanged();assert not (client/'native-install').exists()
         for i in (0,8,len(PUBLIC_FILES)-2):
             reset();run('prepare');run('apply',-1,FAIL_RENAME=str(i));unchanged();run('recover')

@@ -15,7 +15,7 @@ output = Path(sys.argv[1])
 if not output.is_absolute() or output.exists():
     raise SystemExit('Use a new absolute export directory')
 output.mkdir(parents=True)
-files = ['.gitattributes','LICENSE','CMakeLists.txt','build.sh','build_gpu.sh','build_rt64.sh','build_game.sh','build_integrated.sh','setup.py','Start-Windows.cmd','Start-Linux.sh','README.md','README.de.md','CHANGELOG.md','PORT_RELEASE.json','GAME_SOURCES.json','RT64_SOURCES.json','VULKAN_SOURCES.json','TITLE_ART_SOURCES.json','CONTRIBUTING.md','THIRD_PARTY.md','CREDITS.md']
+files = ['.gitattributes','LICENSE','CMakeLists.txt','build.sh','build_gpu.sh','build_rt64.sh','build_game.sh','build_integrated.sh','setup.py','Start-Windows.cmd','Start-Linux.sh','README.md','README.de.md','CHANGELOG.md','PORT_RELEASE.json','GAME_SOURCES.json','RT64_SOURCES.json','VULKAN_SOURCES.json','TITLE_ART_SOURCES.json','HTTPS_SOURCES.json','CONTRIBUTING.md','THIRD_PARTY.md','CREDITS.md']
 for name in files:
     shutil.copy2(root / name, output / name)
 # Publish player help and the necessary contributor/build references only.
@@ -28,7 +28,6 @@ public_docs = ('README.md', 'INSTALLER.md', 'UPDATES.md', 'CONTROLS.md',
 for name in public_docs:
     shutil.copy2(root / 'docs' / name, output / 'docs' / name)
 (output / 'updates').mkdir()
-shutil.copy2(root / 'updates/channel.txt', output / 'updates/channel.txt')
 shutil.copy2(root / 'updates/native-channel.txt', output / 'updates/native-channel.txt')
 for folder in ('src', 'tools', 'patches', 'tests', 'licenses', 'installer'):
     shutil.copytree(root / folder, output / folder,
@@ -38,6 +37,7 @@ archives = ['N64ModernRuntime.tar.gz', 'N64Recomp.tar.gz', 'libsamplerate.tar.gz
             'PS5_Vulkan-build-support.tar.gz', 'RT64.tar.gz',
             'zlib-1.3.1.tar.gz', 'zlib-1.3.2.tar.gz', 'zlib_1.3.1-1_patch.zip']
 (output / 'vendor').mkdir()
+shutil.copy2(root / 'vendor/Mozilla-CA-20261024.pem', output / 'vendor/Mozilla-CA-20261024.pem')
 for name in archives:
     shutil.copy2(root / 'vendor' / name, output / 'vendor' / name)
 icon = output / 'homebrew/DKR-R-Probe/sce_sys/icon0.png'

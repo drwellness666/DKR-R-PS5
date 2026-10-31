@@ -12,6 +12,8 @@ root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('game_work', type=Path, nargs='?')
 parser.add_argument('--cache', type=Path, action='append', default=[])
+parser.add_argument('--navigation-only',action='store_true')
+parser.add_argument('--input-only',action='store_true')
 args = parser.parse_args()
 prepared = None
 if args.game_work is None:
@@ -58,30 +60,38 @@ env = dict(os.environ, SDL_VIDEODRIVER='dummy', SDL_AUDIODRIVER='dummy',
 with tempfile.TemporaryDirectory(prefix='dkrr-controller-presets-') as temp:
     temp = Path(temp)
     (temp / 'controls_snapshot.inc').write_text(snapshot)
+    constants=ui[ui.index('constexpr std::size_t kShortcutActionCount'):ui.index('bool g_capture_secondary_controller')]
+    alias='using ControlsShortcutBindings = std::array<dkr::runtime::input::ShortcutBinding, kShortcutActionCount>;\n'
+    (temp / 'shortcut_settings.inc').write_text(constants+alias+function(ui,'void SaveShortcutSettings(')+function(ui,'bool LoadShortcutSetting('))
     (temp / 'binding_settings.inc').write_text(function(ui, 'LoadPlayerBindingSetting('))
     (temp / 'save_bindings.inc').write_text(ui[saved_start:saved_end])
-    out = temp / 'controller-presets'
-    subprocess.run(['clang++', '-std=c++20', '-O1', '-g', '-Wall', '-Wextra', '-Werror',
-                    '-fsanitize=address,undefined', '-DDKR_RUNTIME_HAS_RT64=1',
-                    '-I', str(game), '-I', str(temp), '-I', str(root / 'src'), str(root / 'tests/controller_presets.cpp'),
-                    str(game / 'runtime_input.cpp'), *sdl, '-pthread', '-o', str(out)], check=True)
-    subprocess.run([str(out), str(temp / 'shared-profile-fixture')], env=env, check=True)
-    # Same pinned authored UI source, including Play selector/sidebar and the
-    # one-column Settings/Save grids. No additional preparation or ROM needed.
-    for name in ('test_console_play_navigation.py','test_console_menu_navigation.py'):
-        subprocess.run(['python3',str(root/'tools'/name),str(args.game_work)],env=env,check=True)
-    (temp / 'controller_capture.inc').write_text(function(ui, 'bool HandleInputCaptureEvent(SDL_Event* event) {'))
-    out = temp / 'controller-capture'
-    subprocess.run(['clang++', '-std=c++20', '-O1', '-g', '-Wall', '-Wextra', '-Werror',
-                    '-fsanitize=address,undefined', '-DDKR_RUNTIME_HAS_RT64=1',
-                    '-I', str(game), '-I', str(temp), str(root / 'tests/controller_capture.cpp'),
-                    str(game / 'runtime_input.cpp'), *sdl, '-pthread', '-o', str(out)], check=True)
-    subprocess.run([str(out)], env=env, check=True)
+    if not args.navigation_only:
+        out = temp / 'controller-presets'
+        subprocess.run(['clang++', '-std=c++20', '-O1', '-g', '-Wall', '-Wextra', '-Werror',
+                        '-fsanitize=address,undefined', '-DDKR_RUNTIME_HAS_RT64=1',
+                        '-I', str(game), '-I', str(temp), '-I', str(root / 'src'), str(root / 'tests/controller_presets.cpp'),
+                        str(game / 'runtime_input.cpp'), *sdl, '-pthread', '-o', str(out)], check=True)
+        subprocess.run([str(out), str(temp / 'shared-profile-fixture')], env=env, check=True)
+        if args.input_only: raise SystemExit(0)
+        # Same pinned authored UI source, including Play selector/sidebar and the
+        # one-column Settings/Save grids. No additional preparation or ROM needed.
+        for name in ('test_console_play_navigation.py','test_console_menu_navigation.py'):
+            subprocess.run(['python3',str(root/'tools'/name),str(args.game_work)],env=env,check=True)
+        (temp / 'controller_capture.inc').write_text(function(ui, 'bool HandleInputCaptureEvent(SDL_Event* event) {'))
+        out = temp / 'controller-capture'
+        subprocess.run(['clang++', '-std=c++20', '-O1', '-g', '-Wall', '-Wextra', '-Werror',
+                        '-fsanitize=address,undefined', '-DDKR_RUNTIME_HAS_RT64=1',
+                        '-I', str(game), '-I', str(temp), str(root / 'tests/controller_capture.cpp'),
+                        str(game / 'runtime_input.cpp'), *sdl, '-pthread', '-o', str(out)], check=True)
+        subprocess.run([str(out)], env=env, check=True)
     (temp / 'controls_state.inc').write_text(
         controls[controls.index('struct ControlsSnapshot {'):controls.index('// SDL\'s binding names')])
     (temp / 'controller_capture_begin.inc').write_text(function(controls, 'BeginControllerCapture('))
     (temp / 'friendly_binding.inc').write_text(function(controls, 'FriendlyBinding('))
-    (temp / 'controls_preset.inc').write_text(function(controls, 'DrawControlsPreset('))
+    (temp / 'shortcut_names.inc').write_text(function(ui, 'std::string ShortcutBindingName('))
+    (temp / 'shortcut_begin.inc').write_text(function(ui, 'void BeginShortcutCapture('))
+    (temp / 'shortcut_commit.inc').write_text(function(ui, 'void CommitShortcutCapture('))
+    (temp / 'controls_row.inc').write_text('template<typename Left, typename Right>\n'+function(controls,'void ControlsRow('))
     (temp / 'controls_bindings.inc').write_text(function(controls, 'DrawControlsBindings('))
     imgui = source / 'rt64-game/src/contrib/imgui'
     out = temp / 'controller-navigation'

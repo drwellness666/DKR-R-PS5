@@ -32,12 +32,12 @@ def main():
         public=subprocess.check_output(['openssl','pkey','-in',str(key),'-pubout','-outform','DER'])[12:];assert len(public)==32;(t/'public.bin').write_bytes(public)
         (t/'fixture_key.h').write_text('static const unsigned char dkrr_update_public_key[32]={'+','.join(str(n) for n in public)+'};\n')
         data=bytearray(range(256));data[:7]=b'\x7fELF\x02\x01\x01';struct.pack_into('<H',data,18,62);payload=t/'payload.elf';payload.write_bytes(data)
-        def signed(sequence,native=False):
+        def signed(sequence,native=False,size=256):
             version,name=(2,'DKRR-Update.dkru') if native else (1,'DKRR-Network-Update.elf')
-            body=f'DKRR-UPDATE-{version}\nPPSA94678\n{sequence}\nps5-beta.3.4\n256\n{hashlib.sha256(data).hexdigest()}\n{name}\n'.encode();message=t/'body';message.write_bytes(body)
+            body=f'DKRR-UPDATE-{version}\nPPSA94678\n{sequence}\nps5-v1.0.0\n{size}\n{hashlib.sha256(data).hexdigest()}\n{name}\n'.encode();message=t/'body';message.write_bytes(body)
             sig=subprocess.check_output(['openssl','pkeyutl','-sign','-rawin','-inkey',str(key),'-in',str(message)])
             return body+sig.hex().encode()+b'\n'
-        manifest=t/'channel.txt';manifest.write_bytes(signed(7));(t/'current.txt').write_bytes(signed(6))
+        manifest=t/'channel.txt';manifest.write_bytes(signed(33));(t/'current.txt').write_bytes(signed(32))
         flags=['-O1','-g','-fsanitize=address,undefined','-DMBEDTLS_CONFIG_FILE="legacy_mod_hash_config.h"','-I'+str(ROOT/'src'),'-I'+str(t),'-I'+str(deps/'monocypher/src'),'-I'+str(deps/'monocypher/src/optional'),'-I'+str(deps/'mbedtls/include')]
         (t/'legacy_mod_hash_config.h').write_text('#define MBEDTLS_SHA256_C\n')
         objects=[]
@@ -47,20 +47,24 @@ def main():
         subprocess.run(cpp+[str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'tests/ps5_update_policy.cpp'),*objects,'-o',str(t/'policy')],check=True)
         env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1')
         subprocess.run([str(t/'policy'),str(manifest),str(t/'public.bin'),str(payload)],env=env,check=True)
-        release_channel=ROOT/'updates/channel.txt'
+        for size,mode in ((256*1024*1024,'--channel'),(256*1024*1024+1,'--invalid-channel')):
+            boundary=t/'boundary.txt';boundary.write_bytes(signed(33,True,size))
+            subprocess.run([str(t/'policy'),str(boundary),str(t/'public.bin'),'-',mode],env=env,check=True)
+        release_channel=ROOT/'updates/native-channel.txt'
         if release_channel.exists():
             trusted=bytes(int(n,16) for n in re.findall(r'0x([0-9a-f]{2})',(ROOT/'src/ps5_update_channel.h').read_text()));assert len(trusted)==32
             (t/'release-public.bin').write_bytes(trusted)
-            subprocess.run([str(t/'policy'),str(release_channel),str(t/'release-public.bin'),str(a.release_payload or '-'),'--release' if a.release_payload else '--channel'],env=env,check=True)
-            native_channel=ROOT/'updates/native-channel.txt'
-            if native_channel.exists():
-                subprocess.run([str(t/'policy'),str(native_channel),str(t/'release-public.bin'),str(a.native_package or '-'),'--release' if a.native_package else '--channel'],env=env,check=True)
+            subprocess.run([str(t/'policy'),str(release_channel),str(t/'release-public.bin'),str(a.native_package or '-'),'--release' if a.native_package else '--channel'],env=env,check=True)
         data[:8]=b'DKRRPK2\n';payload.write_bytes(data)
-        manifest.write_bytes(signed(7,True));(t/'current.txt').write_bytes(signed(6,True))
+        manifest.write_bytes(signed(33,True));(t/'current.txt').write_bytes(signed(32,True))
         data_root=t/'data/dkrr';(data_root/'preferences').mkdir(parents=True)
-        subprocess.run(cpp+['-pthread','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-DDKRR_RELEASE_SEQUENCE=6','-DDKRR_UPDATE_KEY_HEADER="fixture_key.h"','-DDKRR_UPDATE_ROOT="'+str(data_root)+'"',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_internet_update.cpp'),str(ROOT/'tests/ps5_update_worker.cpp'),*objects,'-o',str(t/'worker')],check=True)
-        for mode in ('good','offline','current','signature','digest','oversize','prepare-fail','cancel','redirect','bad-redirect','auto','zero-links','space-low','space-unknown','fifo-setting'):
+        subprocess.run(cpp+['-DDKRR_TEST_NATIVE_METADATA','-pthread','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-DDKRR_RELEASE_SEQUENCE=32','-DDKRR_UPDATE_KEY_HEADER="fixture_key.h"','-DDKRR_UPDATE_ROOT="'+str(data_root)+'"',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_internet_update.cpp'),str(ROOT/'tests/ps5_update_worker.cpp'),*objects,'-o',str(t/'worker')],check=True)
+        for mode in ('good','offline','current','signature','digest','oversize','prepare-fail','cancel','redirect','bad-redirect','auto','zero-links','redacted','space-low','space-unknown','fifo-setting'):
             subprocess.run([str(t/'worker'),mode,str(manifest),str(t/'current.txt'),str(payload)],env=env,check=True,timeout=20)
+        subprocess.run(cpp+['-DDKRR_STATIC_HTTPS=1','-DDKRR_TEST_NATIVE_METADATA','-pthread','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-DDKRR_RELEASE_SEQUENCE=32','-DDKRR_UPDATE_KEY_HEADER="fixture_key.h"','-DDKRR_UPDATE_ROOT="'+str(data_root)+'"',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_internet_update.cpp'),str(ROOT/'tests/ps5_update_worker.cpp'),*objects,'-o',str(t/'worker-static')],check=True)
+        for mode in ('good','offline','current','signature','digest','oversize','prepare-fail','cancel','redirect','bad-redirect','auto','zero-links','redacted','space-low','space-unknown','fifo-setting'):
+            subprocess.run([str(t/'worker-static'),mode,str(manifest),str(t/'current.txt'),str(payload)],env=env,check=True,timeout=20)
+
         assert not list(data_root.rglob('*.elf'))
-        print('PASS actual native update worker: 15 service scenarios, nonblocking FIFO preference refusal, shortage refused before download, unavailable-space fallback, zero ELF-loader socket APIs, native zero-link metadata, shared opt-in auto-check, verified data-only preparation')
+        print('PASS actual native update worker: 32 service scenarios across historical SDK and production static transport, nonblocking FIFO preference refusal, shortage refused before download, unavailable-space fallback, zero ELF-loader socket APIs, native zero-link metadata, shared opt-in auto-check, verified data-only preparation')
 if __name__=='__main__':main()

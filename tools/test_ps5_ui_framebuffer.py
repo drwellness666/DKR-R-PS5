@@ -4,7 +4,8 @@
 import argparse,os,pathlib,subprocess,tempfile
 root=pathlib.Path(__file__).resolve().parent.parent
 p=argparse.ArgumentParser();p.add_argument('game_work',type=pathlib.Path,nargs='?',default=root/'work/ui-scale-tests');a=p.parse_args()
-subprocess.run(['python3',str(root/'tools/prepare_game_sources.py'),str(a.game_work)],check=True)
+if not (a.game_work/'source/rt64-game/src/contrib/imgui/imgui.cpp').is_file():
+ subprocess.run(['python3',str(root/'tools/prepare_game_sources.py'),str(a.game_work)],check=True)
 imgui=a.game_work/'source/rt64-game/src/contrib/imgui'
 warnings=[]
 for warning in ('-Wno-nontrivial-memcall','-Wno-nontrivial-memaccess'):

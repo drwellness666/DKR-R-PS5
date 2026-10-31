@@ -30,9 +30,10 @@ profile="$game/game-ps5/dkr-ps5-profile.json"
 [[ -f $profile ]] || { echo 'Missing selected-revision CMake profile' >&2; exit 2; }
 mapfile -t revisions < <(python3 -c 'import json,sys;p=json.load(open(sys.argv[1]));print(p["v77"]);print(p["v80"])' "$profile")
 release_sequence=$(python3 -c 'import json,sys;v=json.load(open(sys.argv[1]))["installer_sequence"];assert type(v) is int and 1<=v<=2147483647;print(v)' "$root/PORT_RELEASE.json")
+cc -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden -I "$root/src" -I "$sdl/src/ps5-SDL/include" -c "$root/src/ps5_sdl_texture_tracking.cpp" -o "$build/obj/sdl_texture_tracking.o"
 cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revisions[1]}" -std=c++20 -O2 -fexceptions -fcxx-exceptions -D_LIBCPP_ENABLE_EXPERIMENTAL -Wall -Wextra -Werror \
     -fvisibility=hidden -ffunction-sections -fdata-sections \
-    -I "$root/src" -c "$root/src/ps5_game_main.cpp" -o "$build/obj/game_main.o"
+    -I "$root/src" -I "$game/source/DKR-R/extern/libdatachannel/include" -c "$root/src/ps5_game_main.cpp" -o "$build/obj/game_main.o"
 cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revisions[1]}" -std=c++20 -O2 -Wall -Wextra -Werror \
     -fvisibility=hidden -ffunction-sections -fdata-sections \
     -I "$root/src" -c "$root/src/ps5_revision_selection.cpp" -o "$build/obj/revision_selection.o"
@@ -67,15 +68,35 @@ cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_pathconf.c" -o "$build/obj/pathconf.o"
 cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_rdram.c" -o "$build/obj/rdram.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_rtc_net.c" -o "$build/obj/rtc_net.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -I "$root/src" -c "$root/src/ps5_net.c" -o "$build/obj/net.o"
+[[ -f $game/native-dns/build/lib/libcares.a ]] || { echo 'Build the pinned native DNS library first' >&2; exit 2; }
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -I "$game/native-dns/build" -I "$game/native-dns/source/include" \
+    -c "$root/src/ps5_dns.c" -o "$build/obj/dns.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_isatty.c" -o "$build/obj/isatty.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_process_policy.c" -o "$build/obj/process_policy.o"
 cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions \
     -I "$root/src" -c "$root/src/ps5_controller_speaker.cpp" -o "$build/obj/controller_speaker.o"
+cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions \
+    -I "$root/src" -c "$root/src/ps5_custom_horn.cpp" -o "$build/obj/custom_horn.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/installer/vadpcm.c" -o "$build/obj/speaker_vadpcm.o"
 cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions -fvisibility=hidden \
     -I "$root/src" -c "$root/src/ps5_file_picker.cpp" -o "$build/obj/file_picker.o"
 cc -DDKR_PAYLOAD_V77_ENABLED="${revisions[0]}" -DDKR_PAYLOAD_V80_ENABLED="${revisions[1]}" -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden -ffunction-sections -fdata-sections \
     -I "$root/src" -I "$game/source/N64Recomp/include" -c "$root/src/ps5_game_audio_hooks.cpp" -o "$build/obj/game_audio_hooks.o"
 cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions -fvisibility=hidden \
-    -DDKRR_RELEASE_SEQUENCE="$release_sequence" -I "$root/src" \
+    -DDKRR_STATIC_HTTPS=1 -DDKRR_RELEASE_SEQUENCE="$release_sequence" -I "$root/src" \
     -c "$root/src/ps5_internet_update.cpp" -o "$build/obj/internet_update.o"
+[[ -f $game/native-https/HTTPS-RECEIPT.json && -f $game/source/curl/include/curl/curl.h ]] || { echo 'Build the pinned native HTTPS library first' >&2; exit 2; }
+cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions -fvisibility=hidden \
+    -I "$root/src" -I "$game/source/curl/include" -I "$game/native-https" \
+    -c "$root/src/ps5_https.cpp" -o "$build/obj/https.o"
 cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions -fvisibility=hidden \
     -DDKRR_RELEASE_SEQUENCE="$release_sequence" -I "$root/src" \
     -c "$root/src/ps5_native_update.cpp" -o "$build/obj/native_update.o"
@@ -106,32 +127,63 @@ for lib in libSceAgc libSceAgcDriver; do
 done
 mapfile -d '' libs < <(find "$game/game-ps5" -type f -name '*.a' -print0 | sort -z)
 filtered_libs=()
+rtc_enabled=0
+if [[ $(sed -n 's/^DKR_NETPLAY_WEBRTC:BOOL=//p' "$game/game-ps5/CMakeCache.txt") == ON ]]; then
+    rtc_enabled=1
+    [[ -f $game/game-ps5/mbedtls/library/libmbedcrypto.a ]] || { echo 'Enabled RTC crypto library missing' >&2; exit 2; }
+fi
 for lib in "${libs[@]}"; do
     [[ ${revisions[0]} != 0 || $lib != */libDKRRecompiledFuncsV77.a ]] || continue
     [[ ${revisions[1]} != 0 || $lib != */libDKRRecompiledFuncsV80.a ]] || continue
+    # CMake replaces the small legacy hash target with the complete TLS crypto
+    # target when RTC is enabled. A reused build can retain the old archive.
+    if [[ $rtc_enabled == 1 && ( $lib == */libDKRLegacyModHash.a || $lib == */libDKRUpdateHash.a ) ]]; then continue; fi
+    if [[ $rtc_enabled == 0 && ( $lib == "$game/game-ps5/libdatachannel/"* || $lib == "$game/game-ps5/mbedtls/"* ) ]]; then continue; fi
     filtered_libs+=("$lib")
 done
 libs=("${filtered_libs[@]}")
 [[ -f $game/game-ps5/libDKR-R.a && -f $game/game-ps5/rt64/rt64.a ]] || { echo 'Game and renderer libraries missing' >&2; exit 2; }
 source "$support/tools/radv-link.sh"
 radv_link_recipe "$support" "$sdk" "$gpu/radv-build/src/amd/vulkan/libvulkan_radeon.a"
+# The renderer's DNS entry points are placeholders, not runtime capability.
+# Keep its other libc adaptations, but bind both DNS ownership operations to
+# the same genuine resolver used by RTC and the static HTTPS client.
+dns_flags=()
+for flag in "${radv_link_flags[@]}"; do
+    [[ $flag != --defsym=getaddrinfo=ps5_getaddrinfo && $flag != --defsym=freeaddrinfo=ps5_freeaddrinfo ]] || continue
+    dns_flags+=("$flag")
+done
+radv_link_flags=("${dns_flags[@]}" --defsym=getaddrinfo=__wrap_getaddrinfo --defsym=freeaddrinfo=__wrap_freeaddrinfo)
+radv_link_flags+=(--defsym=system=dkrr_ps5_no_shell)
+# The pinned SDK lacks the newer native-title C locale correction. Keep all
+# JSON consumers on the same SDK C-locale contract, including Store tracks.
+radv_link_flags+=(--defsym=localeconv=dkrr_ps5_localeconv)
+for name in fprintf vfprintf printf vprintf fputs puts fwrite; do
+    radv_link_flags+=("--wrap=$name")
+done
+radv_link_flags+=(--wrap=SDL_CreateTexture --wrap=SDL_CreateTextureFromSurface --wrap=SDL_UpdateTexture --wrap=SDL_DestroyTexture)
 radv_link_flags+=(--wrap=mmap --wrap=mprotect --wrap=munmap --wrap=_ZN11ultramodern14error_handling11message_boxEPKc)
-radv_link_flags+=(--wrap=sceVideoOutOpen --wrap=sceVideoOutIsOutputSupported)
+radv_link_flags+=(--wrap=sceVideoOutOpen --wrap=sceVideoOutIsOutputSupported --wrap=getnameinfo --wrap=isatty)
+if [[ $rtc_enabled == 1 ]]; then radv_link_flags+=(--wrap=syscall --wrap=read_random); fi
 for prefix in '' dkr_v80_; do
     [[ $prefix != '' || ${revisions[0]} != 0 ]] || continue
     [[ $prefix != dkr_v80_ || ${revisions[1]} != 0 ]] || continue
-    for symbol in obj_loop_weaponballoon obj_loop_silvercoin obj_loop_goldenballoon racer_play_sound sound_play audspat_play_sound_at_position music_jingle_play sound_play_spatial; do
+    for symbol in obj_loop_weaponballoon obj_loop_silvercoin obj_loop_goldenballoon hud_silver_coins racer_play_sound sound_play audspat_play_sound_at_position music_jingle_play sound_play_spatial; do
         radv_link_flags+=("--wrap=${prefix}${symbol}")
     done
 done
-printf '{ local: _Zn*; _Zd*; getargv; realpath; lstat; getcwd; pathconf; __wrap_mmap; __wrap_mprotect; __wrap_munmap; };\n' > "$build/gen/game-symbols.map"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_c_locale.c" -o "$build/obj/c_locale.o"
+cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -I "$root/src" -c "$root/src/ps5_async_log.c" -o "$build/obj/async_log.o"
+printf '{ local: _Zn*; _Zd*; system; dkrr_ps5_no_shell; localeconv; dkrr_ps5_localeconv; getargv; realpath; lstat; getcwd; pathconf; __wrap_mmap; __wrap_mprotect; __wrap_munmap; };\n' > "$build/gen/game-symbols.map"
 link_game() {
 "$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
     --version-script "$build/gen/game-symbols.map" --exclude-libs=ALL -e _start -o "$build/llvm-pie.elf" \
-    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/hdr_options.o" "$build/obj/hdr_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/import_check.o" \
-    "$build/obj/controller_speaker.o" "$build/obj/file_picker.o" "$build/obj/game_audio_hooks.o" "$build/obj/internet_update.o" "$build/obj/native_update.o" "$build/obj/update_files.o" "$build/obj/update_sha1.o" "$build/obj/update_policy.o" "$build/obj/update_ed25519.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
-    --start-group "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
-    "${radv_link_inputs[@]}" --no-as-needed "$sdk/target/lib/libSceHttp.so" "$sdk/target/lib/libSceSsl.so" "$sdk/target/lib/libSceNet.so" "$sdk/target/lib/libSceRandom.so" --as-needed "$sdk"/target/lib/*.so
+    "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/hdr_options.o" "$build/obj/hdr_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/import_check.o" "$build/obj/c_locale.o" "$build/obj/async_log.o" \
+    "$build/obj/sdl_texture_tracking.o" "$build/obj/controller_speaker.o" "$build/obj/custom_horn.o" "$build/obj/speaker_vadpcm.o" "$build/obj/file_picker.o" "$build/obj/game_audio_hooks.o" "$build/obj/rtc_net.o" "$build/obj/net.o" "$build/obj/dns.o" "$build/obj/isatty.o" "$build/obj/process_policy.o" "$build/obj/internet_update.o" "$build/obj/https.o" "$build/obj/native_update.o" "$build/obj/update_files.o" "$build/obj/update_sha1.o" "$build/obj/update_policy.o" "$build/obj/update_ed25519.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
+    --start-group "$game/native-https/build/lib/libcurl.a" "$game/native-dns/build/lib/libcares.a" "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
+    "${radv_link_inputs[@]}" --no-as-needed "$sdk/target/lib/libSceHttp.so" "$sdk/target/lib/libSceSsl.so" "$sdk/target/lib/libSceNet.so" "$sdk/target/lib/libSceNetCtl.so" "$sdk/target/lib/libSceRandom.so" --as-needed "$sdk"/target/lib/*.so
 }
 # First pass obtains imports without introducing new library dependencies.
 printf 'unsigned dkrr_report_missing_imports(void (*emit)(const char *)){(void)emit;return 0;}\n' > "$build/gen/import_check.c"
@@ -140,6 +192,8 @@ link_game
 python3 "$root/tools/generate_native_import_check.py" "$build/llvm-pie.elf" "$build/gen/import_check.c"
 cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden -c "$build/gen/import_check.c" -o "$build/obj/import_check.o"
 link_game
+python3 "$root/tools/verify_native_network.py" "$sdk" "$game"
+python3 "$root/tools/verify_native_ui.py" "$game"
 tool="$gpu/native-title/ps5-native-tool"
 [[ -x $tool ]] || { echo 'Build the native renderer first to obtain the public converter' >&2; exit 2; }
 "$tool" link --in "$build/llvm-pie.elf" --out "$build/eboot.elf" \
@@ -193,8 +247,8 @@ python3 - "$support/sce_sys/param-radv.json" "$target/sce_sys/param.json" "$root
 import json,pathlib,re,sys
 p=json.loads(pathlib.Path(sys.argv[1]).read_text())
 tag=json.loads(pathlib.Path(sys.argv[3]).read_text())['tag']
-version=re.fullmatch(r'ps5-v([0-9]{1,2})\.([0-9]{1,3})\.([0-9]{1,3})',tag)
-if not version:raise SystemExit('Use a numeric PS5 release tag such as ps5-v1.0.0')
+version=re.fullmatch(r'ps5-v([0-9]{1,2})\.([0-9]{1,3})\.([0-9]{1,3})(?:-rc\.[1-9][0-9]*)?',tag)
+if not version:raise SystemExit('Use a numeric PS5 release tag, optionally followed by -rc.N')
 # Shell registration stays stable across ordinary in-game updates.
 # PORT_RELEASE.json and the signed update channel carry each actual release tag.
 p.update(titleId='PPSA94678',conceptId='94678',contentId='UP9000-PPSA94678_00-DKRRNATIVE000001',contentVersion='01.000.000')

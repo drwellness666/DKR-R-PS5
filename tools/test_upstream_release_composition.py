@@ -17,8 +17,8 @@ args = parser.parse_args()
 game = args.game_work / 'source/DKR-R'
 record = json.loads((game/'ps5-release-layers.json').read_text())
 pin = json.loads((root/'GAME_SOURCES.json').read_text())['release_layers']['sha256']
-assert record['manifest_sha256'] == pin and record['records_verified'] == 1924
-assert len(record['files']) == 650
+assert record['manifest_sha256'] == pin and record['records_verified'] == 2549
+assert len(record['files']) == 3213
 assert record['upstream_version'] == json.loads((root/'GAME_SOURCES.json').read_text())['upstream_version']
 assert record['capsule_version'] == '1.0.7'
 hotfix = json.loads((root/'GAME_SOURCES.json').read_text())['startup_memory_hotfix']
@@ -93,4 +93,4 @@ with tempfile.TemporaryDirectory(prefix='dkrr-store-metadata-') as folder:
     test=Path(folder)/'test.cpp';test.write_text(prelude+body+checks);binary=Path(folder)/'test'
     subprocess.run(['clang++','-D__PROSPERO__','-std=c++20','-O1','-g','-Wall','-Wextra','-Werror','-fsanitize=address,undefined',str(test),'-o',str(binary)],check=True)
     subprocess.run([str(binary)],check=True,env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0',UBSAN_OPTIONS='halt_on_error=1'))
-print('PASS exact 1.0.8 provenance with frozen 1.0.7 layers and pinned startup-memory hotfix, wrong pins/base/result, path traversal and source-link refusal; failed validation leaves source unchanged')
+print('PASS exact 1.0.9 provenance with frozen 1.0.7 layers and pinned startup-memory hotfix, wrong pins/base/result, path traversal and source-link refusal; failed validation leaves source unchanged')

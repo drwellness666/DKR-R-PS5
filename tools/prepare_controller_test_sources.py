@@ -69,8 +69,17 @@ with tarfile.open(fetch(game_row)) as archive:
             continue
         member.name = '/'.join(parts[1:])
         archive.extract(member, game, filter='data')
+baseline=None
+if game_config.get('capsule_base'):
+    baseline=args.work/'source/_release-base'
+    with tarfile.open(fetch(game_config['capsule_base'])) as archive:
+        for member in archive:
+            parts=PurePosixPath(member.name).parts
+            if len(parts)<2:continue
+            member.name='/'.join(parts[1:])
+            archive.extract(member,baseline,filter='data')
 if game_config.get('release_layers'):
-    compose_release(game, game_config['release_layers']['sha256'])
+    compose_release(game, game_config['release_layers']['sha256'],baseline)
 for name in wanted:
     path = game / name
     if not path.is_file():

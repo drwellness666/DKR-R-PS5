@@ -18,6 +18,8 @@ with tempfile.TemporaryDirectory(prefix='dkrr-diagnostics-') as temp:
     (data/'diagnostics').unlink();subprocess.run([str(work/'checked'),'journal'],env=env,check=True)
     logs=list((data/'diagnostics').glob('run-*.log'));assert len(logs)==2
     assert sum(p.read_text().count('DKRR_CAPTURE ') for p in logs)==1
+    assert sum(p.read_text().count('DKRR_GAP ') for p in logs)==1
+    assert any('DKRR_GAP v=1 index=0 at-ns=100000001 gap-ns=100000000' in p.read_text() for p in logs)
     for mode,expected in [('preserve',0),('fault',-signal.SIGSEGV),('abort',-signal.SIGABRT)]:
         before=set((data/'diagnostics').iterdir());result=subprocess.run([str(work/'fault'),mode],capture_output=True)
         assert result.returncode==expected,(mode,result.returncode,result.stderr)
@@ -29,3 +31,12 @@ with tempfile.TemporaryDirectory(prefix='dkrr-diagnostics-') as temp:
             assert 'DKRR_SESSION_END' not in text
             if mode=='fault':assert 'address=0x00000000000000d0' in text
     print('PASS actual journal, symlink/missing refusal, repeated init, preserved handler, SIGSEGV/SIGABRT default termination and crash records')
+    before=set((data/'diagnostics').iterdir());subprocess.run([str(work/'checked'),'watchdog'],env=env,check=True,timeout=5)
+    text=next(iter(set((data/'diagnostics').iterdir())-before)).read_text()
+    assert 'DKRR_UI_STALL v=1 phase=5' in text and 'DKRR_UI_RECOVERED v=1' in text and text.endswith('DKRR_SESSION_END\n')
+    print('PASS internal UI observer: blocked phase, recovery, bounded shutdown and joined observer before journal close')
+    before=set((data/'diagnostics').iterdir());subprocess.run([str(work/'checked'),'short-stalls'],env=env,check=True,timeout=3)
+    text=next(iter(set((data/'diagnostics').iterdir())-before)).read_text()
+    assert 'DKRR_UI_SLOW v=1 phase=5' in text and 'DKRR_PRESENT_SLOW v=1' in text
+    assert text.endswith('DKRR_SESSION_END\n')
+    print('PASS automatic short-stall recorder: real 40ms UI work and 45ms present gap, no manual capture, bounded observer-only writes')
