@@ -96,6 +96,7 @@ int dkrr_audio_prepare(const unsigned char *rom,size_t size,unsigned revision,co
  uint64_t b=bank+u32(&r,bank+4);unsigned rate=u32(&r,b+4);uint64_t instrument=bank+u32(&r,b+12);
  if(!r.ok||dkrr_mkdir(dest,0755)<0)return -1;
  for(unsigned i=0;i<DKRR_CONTROLLER_SFX_COUNT;++i)if(cue(&r,bank,samples,instrument,sfx,end,rate,dkrr_controller_sound_ids[i],dest,i)<0){fprintf(stderr,"[controller-audio] effect %u failed\n",i);return -1;}
- for(unsigned i=0;i<8;++i)if(jingle(&r,audio,table,43+i,dest,DKRR_CONTROLLER_SFX_COUNT+i)<0){fprintf(stderr,"[controller-audio] jingle %u failed\n",i);return -1;}
+ for(unsigned i=0;i<DKRR_CONTROLLER_JINGLE_COUNT;++i)if(jingle(&r,audio,table,43+i,dest,DKRR_CONTROLLER_SFX_COUNT+i)<0){fprintf(stderr,"[controller-audio] jingle %u failed\n",i);return -1;}
+ if(cue(&r,bank,samples,instrument,sfx,end,rate,0x147,dest,DKRR_CONTROLLER_GO_FOR_IT_SLOT)<0){fprintf(stderr,"[controller-audio] T.T. completion voice failed\n");return -1;}
  return 0;
 }
