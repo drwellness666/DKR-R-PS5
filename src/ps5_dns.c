@@ -40,6 +40,15 @@ static int native_channel(ares_channel_t *channel){
 
 extern int sceNetCtlInit(void) __attribute__((weak));
 extern int sceNetCtlGetInfo(int,void *) __attribute__((weak));
+/* Same resolver ABI as the public payload SDK libc/netdb.c. The native
+ * service owns DNS configuration and cache; do not send title UDP queries to
+ * a loopback proxy when that service is available. Timeout is microseconds
+ * (2 is EINVAL on the real console; 2000000 succeeds). */
+extern int sceNetPoolCreate(const char *,int,int) __attribute__((weak));
+extern int sceNetPoolDestroy(int) __attribute__((weak));
+extern int sceNetResolverCreate(const char *,int,int) __attribute__((weak));
+extern int sceNetResolverDestroy(int) __attribute__((weak));
+extern int sceNetResolverStartNtoa(int,const char *,in_addr_t *,int,int,int) __attribute__((weak));
 extern int dkrr_secure_random(void *,size_t);
 extern int dkrr_rtc_entropy_available(void);
 void dkrr_dns_random(void *out,size_t bytes){if(dkrr_secure_random(out,bytes))abort();}
@@ -92,6 +101,62 @@ static int servers(struct in_addr out[2]){
     if(!count){out[0].s_addr=htonl(INADDR_LOOPBACK);count=1;}
     return count;
 }
+/* Each concurrent lookup owns its pool/resolver. Release both on every
+ * branch. A failed native lookup falls through to the existing bounded
+ * IPv4/IPv6 resolver, preserving multiple-record and IPv6-only capability. */
+static int native_ipv4(const char *name,struct in_addr *address,int *code){
+    *code=0;
+    if(!sceNetPoolCreate||!sceNetPoolDestroy||!sceNetResolverCreate||
+       !sceNetResolverDestroy||!sceNetResolverStartNtoa)return 0;
+#if defined(__PROSPERO__) || defined(DKRR_TEST_NATIVE_NET)
+    (void)dkrr_net_init_result();
+#endif
+    int pool=sceNetPoolCreate("dkrr-dns",0x4000,0);
+    if(pool<0){*code=pool;return -1;}
+    int resolver=sceNetResolverCreate("dkrr-dns",pool,0),status=resolver;
+    if(resolver>=0){
+        status=sceNetResolverStartNtoa(resolver,name,&address->s_addr,2000000,1,0);
+        int close_status=sceNetResolverDestroy(resolver);
+        if(!status&&close_status<0)status=close_status;
+    }
+    int close_status=sceNetPoolDestroy(pool);
+    if(!status&&close_status<0)status=close_status;
+    *code=status;
+    if(status!=0)return -1;
+    if(address->s_addr==INADDR_ANY||address->s_addr==INADDR_BROADCAST){*code=EAI_FAIL;return -1;}
+    return 1;
+}
+static int native_answer(const char *name,unsigned port,int type,int protocol,int flags,
+                         const struct in_addr *address,struct addrinfo **out){
+    struct addrinfo **tail=out;
+    /* Unspecified socket type has the same TCP/UDP alternatives as c-ares. */
+    const int first=type?type:(protocol==IPPROTO_UDP?SOCK_DGRAM:SOCK_STREAM);
+    const int alternatives=type||protocol?1:2;
+    for(int i=0;i<alternatives;++i){
+        struct addrinfo *entry=calloc(1,sizeof(*entry));
+        struct sockaddr_in *socket_address=calloc(1,sizeof(*socket_address));
+        if(!entry||!socket_address){free(entry);free(socket_address);goto no_memory;}
+        socket_address->sin_family=AF_INET;socket_address->sin_addr=*address;
+        socket_address->sin_port=htons((uint16_t)port);
+#ifdef __PROSPERO__
+        socket_address->sin_len=sizeof(*socket_address);
+#endif
+        entry->ai_flags=flags;entry->ai_family=AF_INET;
+        entry->ai_socktype=i?SOCK_DGRAM:first;
+        entry->ai_protocol=entry->ai_socktype==SOCK_DGRAM?IPPROTO_UDP:IPPROTO_TCP;
+        entry->ai_addrlen=sizeof(*socket_address);entry->ai_addr=(struct sockaddr*)socket_address;
+        if(!i&&(flags&AI_CANONNAME)){
+            entry->ai_canonname=malloc(strlen(name)+1);
+            if(!entry->ai_canonname){free(socket_address);free(entry);goto no_memory;}
+            strcpy(entry->ai_canonname,name);
+        }
+        *tail=entry;tail=&entry->ai_next;
+    }
+    return 0;
+no_memory:
+    while(*out){struct addrinfo *entry=*out;*out=entry->ai_next;free(entry->ai_addr);free(entry->ai_canonname);free(entry);}
+    return EAI_MEMORY;
+}
 static int configured_family(int family){
     struct ifaddrs *all=NULL;
     if(getifaddrs(&all))return family; /* Keep explicit DNS failure handling. */
@@ -143,7 +208,20 @@ int __wrap_getaddrinfo(const char *name,const char *service,const struct addrinf
         if(numeric_family){if(family!=AF_UNSPEC&&family!=numeric_family)return EAI_NONAME;family=numeric_family;name=numeric_name;}
     }
     if(flags&AI_ADDRCONFIG){family=configured_family(family);if(family<0)return failed("address-config",EAI_NONAME,hints?hints->ai_family:AF_UNSPEC,flags);}
-    if(service){unsigned port=0;if(!*service||strnlen(service,16)>15)return EAI_SERVICE;for(const char*p=service;*p;++p){if(*p<'0'||*p>'9')return EAI_SERVICE;port=port*10+(unsigned)(*p-'0');if(port>65535)return EAI_SERVICE;}}
+    unsigned port=0;
+    if(service){if(!*service||strnlen(service,16)>15)return EAI_SERVICE;for(const char*p=service;*p;++p){if(*p<'0'||*p>'9')return EAI_SERVICE;port=port*10+(unsigned)(*p-'0');if(port>65535)return EAI_SERVICE;}}
+    if(name&&!numeric_family&&family!=AF_INET6){
+        struct in_addr address={0};int native_code=0;
+        const int native=native_ipv4(name,&address,&native_code);
+        if(native>0){
+            static _Atomic int reported;
+            if(!atomic_exchange_explicit(&reported,1,memory_order_relaxed))
+                fputs("[ps5][dns] system resolver active; owned pool/resolver; timeout-us=2000000 retries=1\n",stderr);
+            return native_answer(name,port,type,protocol,flags,&address,result);
+        }
+        /* No URL, authorization header or account token enters this log. */
+        if(native<0)failed("native-resolver",native_code,family,flags);
+    }
     if(pthread_once(&once,initialize)||library_status!=ARES_SUCCESS)return failed("library-init",EAI_FAIL,family,flags);
     struct lookup l={0};for(int i=0;i<DNS_SOCKETS;++i)l.sockets[i].fd=-1;
     struct in_addr dns[2];struct ares_options options={0};
