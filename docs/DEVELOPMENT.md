@@ -11,7 +11,7 @@ Players can use the [installer ELF](INSTALLER.md) without compiling anything. Th
 
 ## Source and checks
 
-`GAME_SOURCES.json`, `RT64_SOURCES.json`, `VULKAN_SOURCES.json` and `TITLE_ART_SOURCES.json` pin inputs. DKR-R 1.0.8 retains the checked 1.0.7 release-source layers and adds the upstream Windows startup-memory hotfix; the PS5 build reconstructs those layers before applying platform changes and generates both private camera draw kernels locally. Keep PS5 changes in adapters and reproducible patches; regenerate CPU code through the build pipeline.
+`GAME_SOURCES.json`, `RT64_SOURCES.json`, `VULKAN_SOURCES.json` and `TITLE_ART_SOURCES.json` pin inputs. DKR-R 1.0.9 is pinned by commit and archive digest. Its release-source layers are reconstructed before applying the recorded PS5 changes; both private CPU/camera payloads are generated locally from owned ROMs. Keep PS5 changes in adapters and reproducible patches; regenerate CPU code through the build pipeline.
 
 [GitHub Actions](../.github/workflows/source-check.yml) defines the automated source checks. They cover installation/update recovery, storage, controls, menus, output and provenance. Hardware behavior still requires PS5 testing; [feature status](KNOWN_ISSUES.md#feature-status) records its scope.
 

@@ -10,7 +10,7 @@ Use the game's **Save Manager** to inspect saves. Close the game normally before
 | US 1.1 progress and Paks | `/data/dkrr/profile-us-v80` |
 | Your imported ROMs | `/data/dkrr/roms` |
 
-Keep the folder names; use **Touchpad → Play** to switch revision. Within each revision, normal offline play and regular mods use the same personal Adventure save, as in DKR-R 1.0.8. Online sessions and development sandboxes retain their own save ownership. The port does not provide shared emulator-style save states.
+Keep the folder names; use **Touchpad → Play** to switch revision. Within each revision, normal offline play and regular mods use the same personal Adventure save, as in DKR-R 1.0.9. Online sessions and development sandboxes retain their own save ownership. The port does not provide shared emulator-style save states.
 
 Saving is built into the game. No PC service or separate save-helper ELF is required.
 

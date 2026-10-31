@@ -4,27 +4,20 @@
 
 | Problem | Details |
 |---|---|
-| Tracks-preview water | A brief flash can appear when entering a course preview. It settles afterward; Adventure water was reported stable. |
-| Microstutters | Occasional short stutters remain. High render resolution, anti-aliasing and texture packs add load. |
-| Adventure intro | A new-game intro skip was reported but has not been reproduced consistently. |
+| Tracks-preview water | A brief flash can appear when entering a course preview. It settles afterward. |
+| Occasional stutters | Some scenes or demanding graphics/texture settings can still produce short pauses. |
+| Large texture packs | Conversion and verification can take time. Keep DKR-R open until installation completes; copy/verification progress is displayed. |
 
-## Feature status
+## Tested setup
 
-**Version 1.0 is in preparation.** The current build is based on **DKR-R 1.0.8**. Earlier PS5 sessions used the 1.0.6-based port and confirmed gameplay picture/sound, both US revisions, save/reload, shared settings/textures, classic controls, vibration, balloon light colors, readable 4K menus and title artwork. Output at 4K/119.88 Hz with VRR Automatic was confirmed on an LG C1.
+Version 1.0 is based on **DKR-R 1.0.9**. PS5 sessions confirmed installation from owned USB ROMs, both US revisions, save/load after a full console restart, shared settings and texture choices, classic controls, vibration, balloon lighting, gyro, adaptive L2 and controller sounds. 4K/119.88 Hz, VRR Automatic and neutral HDR10 output were confirmed on an LG C1.
 
-Those sessions used **firmware 13.60, Relapse / WebKit Autoloader 0.6.1, kstuff-lite and ShadowMountPlus**. This is compatibility evidence, not a requirement to update your firmware.
+The tested console used **firmware 13.60, Relapse / WebKit Autoloader 0.6.1, kstuff-lite and ShadowMountPlus**. This describes the test setup; it is not a firmware-upgrade recommendation.
 
-The combined version still needs these final PS5 checks:
+Sherbet Land, Moggy and Sr.gu’s HD Texture Pack 0.2.8 installed through the Mod Store. Compatibility is not guaranteed for every mod or combination. A custom-character Hubworld freeze was reported during testing; the subsequent record-file startup refusal was fixed. Report any repeat with the character, location and graphics settings.
 
-- Fresh installation and save/load after a full console restart.
-- In-game Internet update, restart and interrupted-update recovery.
-- Gyro, adaptive L2 and controller-speaker behavior.
-- HDR brightness, SDR fallback and HDR with VRR/120 Hz.
+The online directory, Discord connection and lobbies were exercised on PS5. Full races between two physical consoles have not yet been confirmed in these sessions. Host checks and lobby access do not substitute for that test.
 
-The features are implemented and have automated checks; those do not establish physical behavior on every console. Controller sounds are short cues, not the full game's spatial audio mix. Normal TV sound stays available.
-
-Legacy ROM-patch ZIP mods cannot be imported on PS5. The new mod library is included, but a listed mod still needs PS5 compatibility.
-
-Online play, other mods, ghosts/Paks, other loaders/displays and the complete Windows/WSL2 source-build route have limited coverage. Constant 120 rendered FPS is not guaranteed.
+The in-game updater verifies signed releases and preserves installed data. Local transaction/recovery checks have passed; the first download from the public release channel is still to be verified on PS5. Other loaders/displays, ghosts/Paks and the Windows/WSL2 source-build route have limited coverage. Constant 120 rendered FPS is not guaranteed.
 
 [Report a problem](https://github.com/drwellness666/DKR-R-PS5/issues) · [What to include](DIAGNOSTICS.md) · [Planned improvements](ROADMAP.md)

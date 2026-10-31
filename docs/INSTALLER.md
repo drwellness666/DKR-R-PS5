@@ -1,6 +1,6 @@
 # Install on PS5 📦
 
-The final **1.0 installer** is in preparation. It installs the game on the console; no PC compilation is needed.
+**DKRR-Installer.elf** installs version 1.0 directly on the console. No PC compilation is needed.
 
 ## Before you start
 

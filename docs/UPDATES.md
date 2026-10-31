@@ -2,7 +2,7 @@
 
 ## From the game
 
-Open **Touchpad → About DKR-R → PS5 updates** and choose **Check for updates**. When a compatible release is available, choose **Install update and close DKR-R**. Wait for the completion notification, then start DKR-R again from its PS5 icon.
+Open **Touchpad → Updates** and choose **Check for updates**. When a compatible release is available, choose **Install update and close DKR-R**. Wait for the completion notification, then start DKR-R again from its PS5 icon.
 
 The game downloads and verifies the update itself. **No PC, USB drive, ELF receiver or background helper is required.** Automatic checks at launch are optional and off by default; installation waits for your choice.
 

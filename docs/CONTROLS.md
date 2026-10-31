@@ -14,7 +14,7 @@
 
 In settings, use **L1/R1** to change pages, **D-pad / left stick** to move, **Cross** to confirm and **Circle** to go back. Use the visible section buttons or **L2/R2** to change subsections.
 
-**Controls → Mapping** uses the original DKR-R table: game action, controller binding and alternate binding. Select a binding to change it. Classic controls and Undo remain available.
+**Controls → Mapping** uses the original DKR-R table: game action, controller binding and alternate binding. Select a binding to change it. Use **Restore this player bindings** or **Restore all player bindings** below the table to return to the original layout. Game shortcuts use the same binding table.
 
 ## DualSense options
 
@@ -31,16 +31,18 @@ Normal vibration is under **Controls → Device**. The extras under **Controls �
 
 Use **Controller volume** for the sounds and **Gyro tuning** for calibration, roll/yaw, sensitivity and deadzone. Effects follow the local player and stop during pause/loading. [Feature status](KNOWN_ISSUES.md#feature-status).
 
+The optional **Left stick menu pointer** and its speed setting are under **Controls → PS5**. When enabled, the left stick moves the pointer, Cross selects, and the right stick scrolls. D-pad or L1/R1 returns to button navigation.
+
 ## Revision and language
 
-Choose **Touchpad → Play → Game version**, close the game normally and start it again. **Playing** shows the active revision. Both US versions share controls, graphics, audio and texture choices; their progress and Paks stay separate.
+Choose a ROM under **Touchpad → Play** and select **Load different version** to start that revision in the same PS5 app. **Playing** shows the active revision. Both US versions share controls, graphics, audio and texture choices; their progress and Paks stay separate.
 
 In the original game's **Options → Language**, choose **English, French or German**. No PAL ROM is needed. The Recompiled settings menu is English.
 
 ## Texture packs and mods
 
-**DKR REMASTERED by sr.gu** is an optional recommendation. Version **0.2.7** was used on both US revisions. Find the author's download through the [official DKR-R Discord](https://discord.com/invite/AMWfXdBjNP); it is not included here.
+**Sr.gu’s HD Texture Pack / DKR REMASTERED** is an optional recommendation, available in **Mods / Hacks → Mod Store** or through the [official DKR-R Discord](https://discord.com/invite/AMWfXdBjNP). Version **0.2.8** was installed through the Store during PS5 testing. It is not included here.
 
 Import compatible packs through **Textures** and select **Modern** presentation. The selected packs are shared between US 1.0 and US 1.1. When packs overlap, a lower priority number takes precedence. Obtain packs and mods separately under their authors' terms.
 
-[Upstream texture-pack guide](https://github.com/ThatGuyMcd/DKR-R/blob/34ed57ae97ef46759e5b23aa8d7a1e7ec89f3f56/docs/TEXTURE_PACKS.md) · [Compatibility](KNOWN_ISSUES.md) · [Save data](SAVES.md)
+[Upstream texture-pack guide](https://github.com/ThatGuyMcd/DKR-R/blob/47ccadf8c2e68e42867f3b5770671305e828fac1/docs/TEXTURE_PACKS.md) · [Compatibility](KNOWN_ISSUES.md) · [Save data](SAVES.md)

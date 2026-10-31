@@ -8,7 +8,7 @@
 | DKR-R-PS5-source.zip | Matching source for rebuilding or contributing |
 | SHA256SUMS.txt / BUILD-INFO.json | Download checksums and version information |
 
-The final 1.0 downloads are in preparation. Normal installation needs only the installer ELF and your ROMs. Shared installers contain program code and interface artwork, with no ROMs or extracted controller audio.
+Normal installation needs only the installer ELF and your ROMs. Shared installers contain program code and interface artwork, with no ROMs or extracted controller audio.
 
 The repository contains source, build recipes and required licences. Personal ROMs, saves, packs, logs, keys and local build/audit folders stay outside it.
 
