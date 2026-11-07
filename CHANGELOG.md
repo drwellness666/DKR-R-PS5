@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1 — 2026-11-07
+
+Update to **DKR-R 1.0.14**. Installed 1.0 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept.
+
+- New from DKR-R 1.0.14: Language choice in **Play** (Automatic follows the PS5 system language; some translations are drafts), aspect-specific render resolutions, a Session mods switch, Skip launcher option and the new Starting Game screen.
+- Matched launcher and in-game overlay pages, consistent Search/Status/Sort across the Mod Library, sidebar navigation by LB/RB or D-pad and improved stick navigation.
+- Custom-car and road-wheel lighting fixes, seasonal themes (on PS5 using the global calendar) and optional crash reports that only start after your consent.
+- PS5: the PC child-process updater stays excluded, so updates continue through the signed PS5 package; online play uses the current DKR-R 1.0.14 protocol.
+
 ## 1.0 — 2026-10-31
 
 First native PS5 release, based on **DKR-R 1.0.9**.

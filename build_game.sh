@@ -63,9 +63,15 @@ DKRR_PINNED_ARCHIVE=$(python3 -c 'import json,sys;print(next(s["revision"] for s
 sdk="$DKR_GPU_WORK/PS5_Vulkan/.deps/native/ps5-payload-sdk"
 mkdir -p "$DKR_GAME_WORK/private"
 chmod 0700 "$DKR_GAME_WORK/private"
+python3 "$root/tools/prepare_native_https.py" "$DKR_GAME_WORK" "$sdk" "$source/curl" \
+    "$root/vendor/Mozilla-CA-20261024.pem" --cmake "$cmake_bin"
+python3 "$root/tools/prepare_native_dns.py" "$DKR_GAME_WORK" "$sdk" "$source/c-ares" --cmake "$cmake_bin"
 "$cmake_bin" -S "$source/DKR-R/runtime-recomp" -B "$DKR_GAME_WORK/game-ps5" \
     -DCMAKE_TOOLCHAIN_FILE="$sdk/toolchain/prospero.cmake" -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS_RELEASE="$release_flags" -DCMAKE_CXX_FLAGS_RELEASE="$release_flags" \
+    -DCURL_INCLUDE_DIR="$source/curl/include" \
+    -DCURL_LIBRARY="$DKR_GAME_WORK/native-https/build/lib/libcurl.a" \
+    -DCURL_LIBRARY_RELEASE="$DKR_GAME_WORK/native-https/build/lib/libcurl.a" \
     -DDKR_PS5_REVISIONS="$revision_list" \
     -DDKR_RELEASE_VERSION="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["upstream_version"])' "$root/GAME_SOURCES.json")" \
     -DDKR_CODE_POLICY_V77="$DKR_PIPELINE/menu-pipeline-v77.toml" \
@@ -88,8 +94,5 @@ chmod 0700 "$DKR_GAME_WORK/private"
     -DDKR_PS5_FILE_TO_C="$DKR_RT64_WORK/host-tools/file_to_c" \
     -DDKR_PS5_ADAPTERS_ROOT="$root/src"
 "$cmake_bin" --build "$DKR_GAME_WORK/game-ps5" --target DKRPortGame --parallel "${DKR_GPU_JOBS:-4}"
-python3 "$root/tools/prepare_native_https.py" "$DKR_GAME_WORK" "$sdk" "$source/curl" \
-    "$root/vendor/Mozilla-CA-20261024.pem" --cmake "$cmake_bin"
-python3 "$root/tools/prepare_native_dns.py" "$DKR_GAME_WORK" "$sdk" "$source/c-ares" --cmake "$cmake_bin"
 bash "$root/tools/link_native_game.sh" "$DKR_GPU_WORK" "$DKR_GAME_WORK"
 echo 'Private native candidate built for the selected owned revision(s). Candidate-specific console acceptance remains required.'

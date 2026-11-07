@@ -42,6 +42,10 @@ for path in (source/'runtime-recomp/ps5-release/roles').rglob('*'):
 
 def mapped(path):
     path=Path(path)
+    # These outputs are owned by CMake custom commands, produced at build
+    # time. Their source/include paths must stay attached to those rules.
+    for generated in ('localisation','enhanced-water-shaders'):
+        if path.is_relative_to(build/'generated'/generated):return path
     if path.is_relative_to(final/'runtime-recomp'):return domain/path.relative_to(final/'runtime-recomp')
     key=logical(path)
     if key is not None:return domain/key
@@ -158,6 +162,10 @@ for path in (source/'runtime-recomp/ps5-release/roles').rglob('*'):
         dest=mapped(path);key=hashlib.sha256(str(path).encode()).hexdigest()
         cmake.append('set_property(GLOBAL PROPERTY DKRR_DOMAIN_'+key+' "'+str(dest)+'")')
 cmake+=['function(dkrr_native_domain_path input output)',
+        '  if(input MATCHES "^'+str(build)+'/generated/(localisation|enhanced-water-shaders)(/|$)")',
+        '    set(${output} "${input}" PARENT_SCOPE)',
+        '    return()',
+        '  endif()',
         '  string(SHA256 key "${input}")',
         '  get_property(exact GLOBAL PROPERTY "DKRR_DOMAIN_${key}")',
         '  if(exact)',

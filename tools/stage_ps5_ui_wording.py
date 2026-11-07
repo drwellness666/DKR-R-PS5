@@ -24,7 +24,7 @@ WORDS={
  'Returning safely to the launcher...':'Returning to the DKR-R menu...',
 }
 def compose(name,text):
-    if not (name.endswith('_ui.inl') or name in ('runtime_ui.cpp','runtime_ui_paddock.inl','store_account_page.inl','directory_ui.inl','invite_ui.inl','connection_ui.inl','report_ui.inl')):return text
+    if not (name.endswith('_ui.inl') or name in ('runtime_ui.cpp','runtime_ui_paddock.inl','store_account_page.inl','directory_ui.inl','invite_ui.inl','connection_ui.inl','report_ui.inl','store_field.inl')):return text
     def token(m):
         s=m[0]
         if not s.startswith('"'):return s
@@ -56,8 +56,13 @@ def compose(name,text):
         text=text.replace(old,'activated&&(GImGui->ActiveIdSource==ImGuiInputSource_Gamepad||GImGui->ActiveIdSource==ImGuiInputSource_Mouse)')
     if name=='mod_store_ui.inl':
         old='const bool controller_keyboard = ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_GamepadFaceDown) &&'
-        if text.count(old)!=1:raise ValueError('Changed Store text-entry activation')
-        text=text.replace(old,'const bool controller_keyboard = ((ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_GamepadFaceDown)) || ImGui::IsItemActivated()) &&')
+        if text.count(old)==1:
+            text=text.replace(old,'const bool controller_keyboard = ((ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_GamepadFaceDown)) || ImGui::IsItemActivated()) &&')
+        elif '/library_ui/store_field.inl"' not in text:raise ValueError('Changed Store text-entry activation')
+    if name=='store_field.inl':
+        old='const bool controller=ImGui::IsItemFocused()&&ImGui::IsKeyPressed(ImGuiKey_GamepadFaceDown)&&'
+        if text.count(old)!=1:raise ValueError('Changed shared Library text-entry activation')
+        text=text.replace(old,'const bool controller=((ImGui::IsItemFocused()&&ImGui::IsKeyPressed(ImGuiKey_GamepadFaceDown))||ImGui::IsItemActivated())&&')
     if name=='sdk2_tools_ui.inl':
         old='''            const std::string shortcut=g_sdk2_key_capture?"Press a key (Esc cancels)":std::string("Keyboard: ")+SDL_GetScancodeName(SDL_Scancode(g_sdk2_tools_key));
             if(ImGui::Button(shortcut.c_str(),{280,40}))g_sdk2_key_capture=true;'''

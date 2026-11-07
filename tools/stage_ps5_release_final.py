@@ -8,9 +8,24 @@ INCLUDE=re.compile(r'^#include "([^"\n]+)"',re.M)
 def sha(data):return hashlib.sha256(data).hexdigest()
 def select_source(logical,rows,source,build):
     leaf=Path(logical).name
+    if leaf.endswith('.inl'):
+        names=(leaf,'graphics.inl') if leaf=='runtime_graphics_ui.inl' else (leaf,)
+        for name in names:
+            current=build/'generated/character-library-portraits'/name
+            if current.is_file():return current
+    if leaf=='runtime_input.hpp':
+        consumer=next((Path(row['path']) for row in rows if row['target']=='DKRPortGame' and Path(row['path']).name=='runtime_input.cpp'),None)
+        if consumer is not None:
+            for match in INCLUDE.finditer(consumer.read_text()):
+                current=Path(match[1])
+                if current.is_absolute() and current.name==leaf and current.is_file():return current
     if leaf=='runtime_online_ui.inl':return build/'generated/online-directory/runtime_online_ui.inl'
     if leaf=='runtime_graphics_ui.inl':return build/'generated/upstream-sync/graphics.inl'
     paths={Path(row['path']) for row in rows if Path(row['path']).name==leaf}
+    if len(paths)>1:
+        suffix='/'+str(Path(logical).relative_to('runtime-recomp/src/game')) if logical.startswith('runtime-recomp/src/game/') else '/'+str(Path(logical).relative_to('runtime-recomp'))
+        exact={path for path in paths if path.as_posix().endswith(suffix)}
+        if len(exact)==1:paths=exact
     if len(paths)>1:
         preferred={Path(row['path']) for row in rows if row['target']=='DKRPortGame' and Path(row['path']).name==leaf}
         if len(preferred)==1:paths=preferred
@@ -56,7 +71,12 @@ def main():
             if name in header_aliases:return '#include \"'+str(header_aliases[name])+'\"'
             # The current vehicle layer extends the library-card and import
             # contracts. Preserve its effective header search when relocating UI.
-            if name=='runtime_mod_library_ui.inl':return '#include "'+str(build/'generated/custom-vehicles/native/runtime_mod_library_ui.inl')+'"'
+            # 1.0.14: the character-library-portraits layer extends the vehicle
+            # library UI (its input) and upstream's runtime_ui.cpp includes it.
+            if name=='runtime_mod_library_ui.inl':
+                library=build/'generated/character-library-portraits/runtime_mod_library_ui.inl'
+                if not library.is_file():library=build/'generated/custom-vehicles/native/runtime_mod_library_ui.inl'
+                return '#include "'+str(library)+'"'
             if Path(name).name=='linux_keyring.hpp':return '#include "'+str(root/'src/ps5_online_keyring.hpp')+'"'
             chosen=next((value for relative,value in headers.items() if name==relative or name.endswith('/'+relative)),None)
             if chosen:return '#include "'+str(chosen)+'"'

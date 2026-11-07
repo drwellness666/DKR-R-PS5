@@ -8,7 +8,9 @@
 
 ## Tested setup
 
-Version 1.0 is based on **DKR-R 1.0.9**. PS5 sessions confirmed installation from owned USB ROMs, both US revisions, save/load after a full console restart, shared settings and texture choices, classic controls, vibration, balloon lighting, gyro, adaptive L2 and controller sounds. 4K/119.88 Hz, VRR Automatic and neutral HDR10 output were confirmed on an LG C1.
+Version 1.1 is based on **DKR-R 1.0.14**. It was built and checked on PC with the same PS5 adaptations as 1.0; its console confirmation is through the in-game update from 1.0. Report anything that worked in 1.0 and no longer does.
+
+For version 1.0 (DKR-R 1.0.9), PS5 sessions confirmed installation from owned USB ROMs, both US revisions, save/load after a full console restart, shared settings and texture choices, classic controls, vibration, balloon lighting, gyro, adaptive L2 and controller sounds. 4K/119.88 Hz, VRR Automatic and neutral HDR10 output were confirmed on an LG C1.
 
 The tested console used **firmware 13.60, Relapse / WebKit Autoloader 0.6.2, kstuff-lite and ShadowMountPlus**. This describes the test setup; it is not a firmware-upgrade recommendation.
 
@@ -16,6 +18,6 @@ Sherbet Land, Moggy and Sr.gu’s HD Texture Pack 0.2.8 installed through the Mo
 
 The online directory, Discord connection and lobbies were exercised on PS5. Full races between two physical consoles have not yet been confirmed in these sessions. Host checks and lobby access do not substitute for that test.
 
-The in-game updater verifies signed releases and preserves installed data. Local transaction/recovery checks have passed; the first download from the public release channel is still to be verified on PS5. Other loaders/displays, ghosts/Paks and the Windows/WSL2 source-build route have limited coverage. Constant 120 rendered FPS is not guaranteed.
+The in-game updater verifies signed releases and preserves installed data. Local transaction/recovery checks have passed; the update from 1.0 to 1.1 is the first public-channel download on PS5. Other loaders/displays, ghosts/Paks and the Windows/WSL2 source-build route have limited coverage. Constant 120 rendered FPS is not guaranteed.
 
 [Report a problem](https://github.com/drwellness666/DKR-R-PS5/issues) · [What to include](DIAGNOSTICS.md) · [Planned improvements](ROADMAP.md)

@@ -36,7 +36,7 @@
  if(APPLE)
      enable_language(OBJC OBJCXX)
  endif()
-@@ -136,8 +141,30 @@
+@@ -142,8 +147,30 @@
  option(DKR_NETPLAY_WEBRTC "Build the optional five-character Quick Join transport" ON)
  include(cmake/DependencyPreflight.cmake)
  
@@ -68,7 +68,7 @@
          message(FATAL_ERROR
              "DKR_GENERATED_SOURCE_V80 must name the generated US Rev A/v1.1 "
              "CPU source directory. Both revision payloads are linked into the "
-@@ -147,8 +174,8 @@
+@@ -153,8 +180,8 @@
          "${DKR_GENERATED_SOURCE_V77}" ABSOLUTE)
      get_filename_component(DKR_GENERATED_SOURCE_V80_ABSOLUTE
          "${DKR_GENERATED_SOURCE_V80}" ABSOLUTE)
@@ -79,7 +79,7 @@
          message(FATAL_ERROR
              "The v1.0 and Rev A CPU payloads must come from different generated "
              "source directories; protected generated output is never rewritten.")
-@@ -399,13 +426,16 @@
+@@ -421,13 +448,16 @@
              "Run Prepare-DKR-Runtime.cmd first.")
      endif()
      set(RT64_STATIC TRUE CACHE BOOL "Build RT64 as a static runtime dependency" FORCE)
@@ -97,7 +97,7 @@
      # Layer selection is a checked build-stage patch; never edit RT64 itself.
      dkr_stage_patch(rt64 "${DKR_RT64_SOURCE}" texture-layer-priority
          "${DKRPORT_ROOT}/patches/rt64/texture-layer-priority.patch"
-@@ -632,6 +662,7 @@
+@@ -654,6 +684,7 @@
      endif()
      include("${CMAKE_CURRENT_LIST_DIR}/cmake/EnhancedWater.cmake")
      include("${CMAKE_CURRENT_LIST_DIR}/cmake/HleCommandGuard.cmake")
@@ -105,7 +105,7 @@
      if(MSVC AND TARGET rt64)
          # RT64 enables /MP internally. Ensure all compiler workers serialize
          # writes to the target PDB so clean RelWithDebInfo builds are reliable.
-@@ -652,7 +683,9 @@
+@@ -674,7 +705,9 @@
      set(DKR_V80_SYMBOL_MAP
          "${CMAKE_BINARY_DIR}/generated/dkr_v80_symbol_map.hpp")
      include("${CMAKE_CURRENT_LIST_DIR}/cmake/RevisionSymbolMap.cmake")
@@ -116,7 +116,7 @@
  
      # Each ROM revision contributes only its generated CPU payload. The
      # frontend, renderer, audio, input, netplay and settings runtime are linked
-@@ -692,6 +725,9 @@
+@@ -714,6 +747,9 @@
              "dkr_legacy_character_cinematic_portrait"
              "dkr_legacy_character_race_sound"
              "dkr_legacy_character_play_sound")
@@ -126,7 +126,7 @@
          foreach(REQUIRED_INPUT_HOOK IN LISTS REQUIRED_INPUT_HOOKS)
              set(REQUIRED_INPUT_HOOK_FOUND FALSE)
              foreach(GENERATED_FILE IN LISTS GENERATED_FILES)
-@@ -754,13 +790,17 @@
+@@ -776,13 +812,17 @@
          set(DKR_GENERATED_FILE_COUNT "${TOTAL_GENERATED_COUNT}" PARENT_SCOPE)
      endfunction()
  
@@ -151,7 +151,7 @@
  endif()
  
  if(DKR_RUNTIME_BUILD_GENERATED)
-@@ -872,7 +912,25 @@
+@@ -894,7 +934,25 @@
          set_property(SOURCE resources/dkr-r.rc APPEND PROPERTY COMPILE_DEFINITIONS
              "DKR_RELEASE_RESOURCE_VERSION=${DKR_RELEASE_RESOURCE_VERSION},${DKR_RELEASE_BUILD_NUMBER}")
      endif()
@@ -178,7 +178,7 @@
          add_library(DKRPortGame SHARED ${DKR_GAME_SOURCES} src/android/android_platform.cpp src/android/mobile_ui.cpp)
          target_link_libraries(DKRPortGame PRIVATE SDL2::SDL2 SDL2::SDL2main android log)
      else()
-@@ -904,7 +962,11 @@
+@@ -926,7 +984,11 @@
          DKR_PATCH_POLICY_SHA256="${DKR_PATCH_POLICY_SHA256}"
          NOMINMAX
      )
@@ -191,7 +191,7 @@
      if(DKR_EXPERIMENTAL_RACE_TEST)
          target_compile_definitions(DKRPortGame PRIVATE DKR_EXPERIMENTAL_RACE_TEST=1)
      endif()
-@@ -920,14 +982,15 @@
+@@ -942,14 +1004,15 @@
      # unresolved on Linux. MSVC is order-independent, and this ordering keeps
      # both platforms on the same single-runtime link graph.
      target_link_libraries(DKRPortGame PRIVATE
@@ -210,7 +210,7 @@
      if(MSVC)
          target_compile_options(DKRPortGame PRIVATE /FS)
      endif()
-@@ -967,6 +1030,9 @@
+@@ -989,6 +1052,9 @@
                      "$<TARGET_FILE_DIR:DKRPortGame>/SDL2.dll"
                  VERBATIM
              )
@@ -220,7 +220,7 @@
          elseif(IOS)
              dkr_ios_finish(DKRPortGame)
          else()
-@@ -2621,3 +2687,7 @@
+@@ -2675,3 +2741,7 @@
              -P "${CMAKE_CURRENT_LIST_DIR}/tests/cmake/test_assertions.cmake")
      set_tests_properties(DKRTestAssertionContract PROPERTIES TIMEOUT 120)
  endif()
@@ -230,16 +230,15 @@
 +endif()
 --- a/runtime-recomp/cmake/Updates.cmake
 +++ b/runtime-recomp/cmake/Updates.cmake
-@@ -34,6 +34,9 @@
- configure_file("${CMAKE_CURRENT_LIST_DIR}/update_trust.hpp.in"
-     "${CMAKE_BINARY_DIR}/generated/updates/update_trust.hpp" @ONLY)
- target_include_directories(DKRUpdateCore PUBLIC "${CMAKE_BINARY_DIR}/generated/updates")
-+if(PS5)
-+    return() # The PS5 application uses its native signed update format.
-+endif()
- find_package(Threads REQUIRED)
- add_library(DKRUpdateInstall STATIC src/game/updates/update_process.cpp src/game/updates/update_install.cpp)
- target_include_directories(DKRUpdateInstall PRIVATE "${DKR_MODERN_RUNTIME_SOURCE}/thirdparty")
+@@ -59,7 +59,7 @@
+     find_package(CURL 7.85 REQUIRED)
+     target_link_libraries(DKRUpdateClient PRIVATE CURL::libcurl)
+ endif()
+-if(NOT ANDROID AND NOT IOS)
++if(NOT ANDROID AND NOT IOS AND NOT PS5)
+     add_executable(DKRUpdateHelper src/game/updates/update_helper_main.cpp)
+     target_link_libraries(DKRUpdateHelper PRIVATE DKRUpdateInstall)
+     set_target_properties(DKRUpdateHelper PROPERTIES OUTPUT_NAME "DKR-R-Updater")
 --- a/runtime-recomp/ps5-release/renderer/rt64_generated_mips.h
 +++ b/runtime-recomp/ps5-release/renderer/rt64_generated_mips.h
 @@ -9,7 +9,7 @@
@@ -922,7 +921,7 @@
  #if defined(__ANDROID__)
      // Desktop path detection can select /data/.dkr-port on Android and throw
      // from RT64's constructor before its setup error handling is reached.
-@@ -477,11 +493,14 @@
+@@ -477,10 +493,13 @@
      }
  #endif
      auto config = ultramodern::renderer::get_graphics_config();
@@ -931,13 +930,12 @@
      if (!dkr::runtime::enhancements::modern_presentation_enabled()) {
          dkr::runtime::mobile_graphics::apply_accurate_budget(config);
      }
- #endif
++#endif
 +#if defined(__PROSPERO__)
 +    config.api_option = ultramodern::renderer::GraphicsApi::Vulkan;
-+#endif
+ #endif
      const auto effective_anisotropy =
          static_cast<std::uint32_t>(
- #if defined(__ANDROID__)
 @@ -505,6 +524,9 @@
          const auto application_started_at =
              dkr::runtime::startup_performance::Clock::now();
@@ -986,14 +984,14 @@
          last_android_report_ = report_now;
          performance_trace::report();
          const auto metrics = dkr::runtime::telemetry::metrics();
-@@ -924,6 +960,7 @@
+@@ -923,6 +959,7 @@
+             "vi=%.1f target=%d scale=%.1f\n",
              metrics.presented_fps, metrics.simulation_hz, metrics.graphics_hz,
              metrics.vi_hz, g_effective_refresh_target, get_resolution_scale());
-     }
 +    }
+     }
      if (present_count_ == 1 && !owned_mode_) {
          dkr::runtime::startup_performance::mark("first-vi-received");
-         std::fprintf(stderr, "[boot] VI initialized; starting recompiled DKR entrypoint\n");
 @@ -1361,14 +1398,18 @@
      workspace.reset();
      if(!mailbox.finish_decode(lease))throw std::runtime_error("Owned decoder lease could not retire its CPU readers.");
@@ -1077,30 +1075,30 @@
      bool response_open = false;
      // The last restore, so it can be undone until the next controls change
      // or until the page is left.
-@@ -38,6 +40,11 @@
+@@ -37,6 +39,11 @@
+     std::string undo_message;
  };
  ControlsPageState g_controls_page;
- 
++
 +void SelectControlsPlayer(ControlsPageState& state, std::size_t player) {
 +    if (player != g_selected_player) state.undo.reset();
 +    g_selected_player = player;
 +}
-+
+ 
  ControlsSnapshot TakeControlsSnapshot() {
      namespace input = dkr::runtime::input;
-     ControlsSnapshot snapshot;
-@@ -49,6 +56,11 @@
+@@ -48,6 +55,11 @@
+                                                 input::controller_binding(player, action),
                                                  input::secondary_controller_binding(player, action)};
          }
-     }
++    }
 +    for (std::size_t i = 0; i < snapshot.shortcuts.size(); ++i) {
 +        const auto action = static_cast<input::ShortcutAction>(i);
 +        snapshot.shortcuts[i] = input::shortcut_controller_binding(action);
 +        snapshot.alternate_shortcuts[i] = input::alternate_shortcut_controller_binding(action);
-+    }
+     }
      snapshot.deadzone = input::stick_deadzone();
      snapshot.anti_deadzone = input::stick_anti_deadzone();
-     snapshot.sensitivity = input::stick_sensitivity();
 @@ -74,6 +86,11 @@
              input::set_secondary_controller_binding(player, action, snapshot.bindings[player][index][2]);
          }
@@ -1333,14 +1331,14 @@
      const std::string player = std::to_string(g_selected_player + 1U);
      if (SettingsButton("Restore this player\xE2\x80\x99s bindings")) {
          ControlsSnapshot before = TakeControlsSnapshot();
-@@ -578,6 +700,7 @@
+@@ -577,6 +699,7 @@
+             state.undo = before;
              state.undo_message = "All player bindings restored.";
          }
-     }
 +    }
+     }
  }
  
- // ------------------------------------------------------------ stick response
 @@ -710,20 +833,28 @@
      const std::size_t player = g_selected_player;
      ControlsScope(false, width);
@@ -1963,10 +1961,12 @@
  }
  
  void dkr::runtime::input::reset_defaults(std::size_t player) {
-@@ -623,6 +694,83 @@
+@@ -621,6 +692,83 @@
+                                         std::size_t target_player) {
+     std::scoped_lock lock(g_binding_mutex);
      g_bindings[PlayerIndex(target_player)] = g_bindings[PlayerIndex(source_player)];
- }
- 
++}
++
 +dkr::runtime::input::ControllerPreset dkr::runtime::input::controller_preset(
 +    std::size_t player) {
 +#if DKR_RUNTIME_HAS_RT64
@@ -2042,11 +2042,9 @@
 +    (void)player;
 +    return false;
 +#endif
-+}
-+
- int dkr::runtime::input::keyboard_player() {
-     return g_keyboard_player.load(std::memory_order_acquire);
  }
+ 
+ int dkr::runtime::input::keyboard_player() {
 @@ -692,16 +840,60 @@
      return g_shortcut_controller[ShortcutIndex(action)];
  }
@@ -2962,7 +2960,7 @@
  // ------------------------------------------------------------ section signs
 --- a/runtime-recomp/src/game/runtime_support.cpp
 +++ b/runtime-recomp/src/game/runtime_support.cpp
-@@ -23,10 +23,12 @@
+@@ -23,9 +23,11 @@
  #elif defined(__APPLE__)
  #include <sys/sysctl.h>
  #include <unistd.h>
@@ -2970,12 +2968,11 @@
 +#elif defined(__linux__)
  #include <sys/sysinfo.h>
  #include <sys/utsname.h>
- #include <unistd.h>
-+#else
 +#include <unistd.h>
++#else
+ #include <unistd.h>
  #endif
  
- namespace dkr::runtime::support {
 @@ -266,6 +268,9 @@
          error = "Windows could not open that DKR-R support folder.";
          return false;
@@ -3189,10 +3186,11 @@
  }
  
  // The Sound page's volumes: Master, then the four-part island mix. A muted
-@@ -1622,6 +1668,56 @@
+@@ -1621,6 +1667,56 @@
+     }
      g_sound_muted[channel] = muted;
  }
- 
++
 +using ControlsShortcutBindings = std::array<dkr::runtime::input::ShortcutBinding, kShortcutActionCount>;
 +void SaveShortcutSettings(std::ostream& output) {
 +    for (std::size_t index = 0; index < kShortcutSettingNames.size(); ++index) {
@@ -3242,10 +3240,9 @@
 +    return false;
 +}
 +
-+
+ 
  void SaveSettings() {
      std::error_code error;
-     std::filesystem::create_directories(g_config_directory, error);
 @@ -1786,6 +1882,15 @@
          output << "memory_pak=" << (dkr::runtime::pak::enabled() ? 1 : 0) << '\n';
          output << "rumble=" << (dkr::runtime::platform::rumble_enabled() ? 1 : 0) << '\n';
@@ -3460,61 +3457,10 @@
  
 -    g_texture_import_cancel_requested.store(false, std::memory_order_release);
 -    {
--        std::scoped_lock lock(g_texture_import_mutex);
--        g_texture_import_state = {};
--        g_texture_import_state.running = true;
--        g_texture_import_state.modal_visible = true;
--        g_texture_import_state.progress = 0.0F;
--        g_texture_import_state.stage = "Preparing texture-pack import";
--    }
--
--    g_texture_import_worker = std::jthread(
--        [source, owner_copy, import_temp_copy](std::stop_token stop_token) {
--            std::string status;
--            const auto progress = [stop_token](
--                                      const dkr::runtime::texture_packs::ImportProgress& update) {
--                {
--                    std::scoped_lock lock(g_texture_import_mutex);
--                    g_texture_import_state.progress = update.fraction;
--                    g_texture_import_state.stage = update.stage;
--                    g_texture_import_state.commit_started = update.commit_started;
--                }
--                if (update.commit_started) return true;
--                return !stop_token.stop_requested() &&
--                    !g_texture_import_cancel_requested.load(
--                        std::memory_order_acquire);
--            };
--            bool imported = false;
--            try {
--                imported = dkr::runtime::texture_packs::import_archive(
--                    source, status, progress,
--                    owner_copy ? &*owner_copy : nullptr);
--            } catch (const std::exception& exception) {
--                status = "Texture-pack import stopped safely: ";
--                status += exception.what();
--            } catch (...) {
--                status = "Texture-pack import stopped safely because archive "
--                         "processing raised an unknown error.";
--            }
--            if (!import_temp_copy.empty()) {
--                dkr::runtime::custom_tracks::discard_install_temp(
--                    import_temp_copy);
--            }
 +    try {
 +        g_texture_import_cancel_requested.store(false, std::memory_order_release);
 +        {
-             std::scoped_lock lock(g_texture_import_mutex);
--            g_texture_import_state.running = false;
--            g_texture_import_state.finished = true;
--            g_texture_import_state.succeeded = imported;
--            g_texture_import_state.result = status;
--            if (imported) {
--                g_texture_import_state.progress = 1.0F;
--                g_texture_import_state.stage = "Texture pack imported";
--            } else if (g_texture_import_state.stage.empty()) {
--                g_texture_import_state.stage = "Texture-pack import stopped";
--            }
--        });
++            std::scoped_lock lock(g_texture_import_mutex);
 +            g_texture_import_state = {};
 +            g_texture_import_state.running = true;
 +            g_texture_import_state.modal_visible = true;
@@ -3567,7 +3513,58 @@
 +                }
 +            });
 +    } catch (...) {
-+        std::scoped_lock lock(g_texture_import_mutex);
+         std::scoped_lock lock(g_texture_import_mutex);
+-        g_texture_import_state = {};
+-        g_texture_import_state.running = true;
+-        g_texture_import_state.modal_visible = true;
+-        g_texture_import_state.progress = 0.0F;
+-        g_texture_import_state.stage = "Preparing texture-pack import";
+-    }
+-
+-    g_texture_import_worker = std::jthread(
+-        [source, owner_copy, import_temp_copy](std::stop_token stop_token) {
+-            std::string status;
+-            const auto progress = [stop_token](
+-                                      const dkr::runtime::texture_packs::ImportProgress& update) {
+-                {
+-                    std::scoped_lock lock(g_texture_import_mutex);
+-                    g_texture_import_state.progress = update.fraction;
+-                    g_texture_import_state.stage = update.stage;
+-                    g_texture_import_state.commit_started = update.commit_started;
+-                }
+-                if (update.commit_started) return true;
+-                return !stop_token.stop_requested() &&
+-                    !g_texture_import_cancel_requested.load(
+-                        std::memory_order_acquire);
+-            };
+-            bool imported = false;
+-            try {
+-                imported = dkr::runtime::texture_packs::import_archive(
+-                    source, status, progress,
+-                    owner_copy ? &*owner_copy : nullptr);
+-            } catch (const std::exception& exception) {
+-                status = "Texture-pack import stopped safely: ";
+-                status += exception.what();
+-            } catch (...) {
+-                status = "Texture-pack import stopped safely because archive "
+-                         "processing raised an unknown error.";
+-            }
+-            if (!import_temp_copy.empty()) {
+-                dkr::runtime::custom_tracks::discard_install_temp(
+-                    import_temp_copy);
+-            }
+-            std::scoped_lock lock(g_texture_import_mutex);
+-            g_texture_import_state.running = false;
+-            g_texture_import_state.finished = true;
+-            g_texture_import_state.succeeded = imported;
+-            g_texture_import_state.result = status;
+-            if (imported) {
+-                g_texture_import_state.progress = 1.0F;
+-                g_texture_import_state.stage = "Texture pack imported";
+-            } else if (g_texture_import_state.stage.empty()) {
+-                g_texture_import_state.stage = "Texture-pack import stopped";
+-            }
+-        });
 +        g_texture_import_state.running = false;
 +        g_texture_import_state.finished = true;
 +        g_texture_import_state.succeeded = false;
@@ -4308,9 +4305,10 @@
                  "launcher-first-frame-presented");
 +#if !defined(__PROSPERO__)
              if(auto* updates=dkr::updates::service()){updates->launcher_ready();updates->startup();}
-+#endif
-         }
+-        }
 -        if (software_failure_recovery && launcher_present_finished - launcher_recovery_reported_at >=
++#endif
++        }
 +        if (
 +#if defined(__PROSPERO__)
 +            true &&
@@ -4566,20 +4564,20 @@
 +#endif
 --- a/runtime-recomp/src/game/runtime_ui_paddock.inl
 +++ b/runtime-recomp/src/game/runtime_ui_paddock.inl
-@@ -7,6 +7,13 @@
+@@ -6,6 +6,13 @@
+ // Sizes below are CSS pixels, as in tools/launcher-html. Dear ImGui sizes a face
  // by its ascent - descent, CSS by its em square, so every face carries the
  // ratio between the two.
- 
++
 +// Console pages use one vertical flow so D-pad movement follows the reading order.
 +#if defined(__PROSPERO__)
 +constexpr bool kConsoleMenuLayout = true;
 +#else
 +constexpr bool kConsoleMenuLayout = false;
 +#endif
-+
+ 
  // ------------------------------------------------------------------ colour
  
- constexpr ImU32 PaddockRgb(unsigned rgb, unsigned alpha = 255U) {
 --- a/runtime-recomp/src/game/runtime_updates_ui.inl
 +++ b/runtime-recomp/src/game/runtime_updates_ui.inl
 @@ -1,3 +1,8 @@
@@ -4775,66 +4773,63 @@
             protocol::kMaximumQuickJoinDatagramBytes);
 --- a/scripts/generate_legacy_menu_qualification.py
 +++ b/scripts/generate_legacy_menu_qualification.py
-@@ -15,9 +15,11 @@
- def main(argv=None):
-     parser=argparse.ArgumentParser(description=__doc__)
-     parser.add_argument("--output",type=Path,required=True)
--    parser.add_argument("--v77-build",type=Path,required=True)
--    parser.add_argument("--v80-build",type=Path,required=True)
-+    parser.add_argument("--v77-build",type=Path)
-+    parser.add_argument("--v80-build",type=Path)
-+    parser.add_argument("--revisions",type=int,nargs="+",choices=(77,80),default=(77,80),help="Generate only selected owned revisions; default preserves the unified build")
-     parser.add_argument("--recompiler",type=Path,required=True)
-+    parser.add_argument("--european-languages-policy", type=Path, help="Explicit checked native US language adapter")
-     parser.add_argument("--characters",action="store_true",help="Include the checked character resource adapter")
-     parser.add_argument("--character-menu",action="store_true",help="Include the checked additive character selector")
-     parser.add_argument("--refresh-presentation",action="store_true",help="Refresh the reviewed presentation layer in an already-composed committed policy")
-@@ -38,6 +40,8 @@
+@@ -19,6 +19,8 @@
+     parser.add_argument("--v77-build", type=Path, required=True)
+     parser.add_argument("--v80-build", type=Path, required=True)
+     parser.add_argument("--recompiler", type=Path, required=True)
++    parser.add_argument("--revisions", type=int, nargs="+", choices=(77,80), default=(77,80))
++    parser.add_argument("--european-languages-policy", type=Path)
+     parser.add_argument("--characters", action="store_true", help="Include the checked character resource adapter")
+     parser.add_argument("--character-menu", action="store_true", help="Include the checked additive character selector")
+     parser.add_argument(
+@@ -43,6 +45,8 @@
          parser.error(f"Recompiler must be an existing executable: {args.recompiler}")
      # Validate both revisions before any subprocess or output mutation.
-     for revision, source, explicit in ((77,args.v77_build,args.v77_policy), (80,args.v80_build,args.v80_policy)):
-+        if revision not in args.revisions: continue
-+        if source is None: parser.error(f"Missing --v{revision}-build for selected revision")
-         required = [source/f"dkr.us.v{revision}.elf", source/f"dkr.us.v{revision}.z64"]
-         policies = [explicit or root/f"runtime-recomp/dkr.us.v{revision}.recomp-policy.json",
-                     root/f"runtime-recomp/legacy-mods.v{revision}.recomp-fragment.json",
-@@ -71,6 +75,7 @@
+     for revision, source, explicit in ((77, args.v77_build, args.v77_policy), (80, args.v80_build, args.v80_policy)):
++        if revision not in args.revisions:
++            continue
+         required = [source / f"dkr.us.v{revision}.elf", source / f"dkr.us.v{revision}.z64"]
+         policies = [
+             explicit or root / f"runtime-recomp/dkr.us.v{revision}.recomp-policy.json",
+@@ -78,6 +82,8 @@
  
  def generate(args, root, output):
-     for revision,source,entry in ((77,args.v77_build,"0x80065D40"),(80,args.v80_build,"0x80065F80")):
-+        if revision not in args.revisions: continue
-         elf=source/f"dkr.us.v{revision}.elf"
-         rom=source/f"dkr.us.v{revision}.z64"
-         policy=output/f"menu-v{revision}.policy.json"
-@@ -99,6 +104,7 @@
-             config=output/f"menu-{'pipeline-' if isolated else ''}v{revision}.toml"
-             command=[sys.executable,str(root/"scripts/generate_recomp_config.py"),"--policy",str(policy),
-                 "--elf",str(elf),"--rom",str(rom),"--output-functions",str(functions),"--entrypoint",entry,"--output",str(config)]
-+            if args.european_languages_policy is not None:command += ["--european-languages-policy", str(args.european_languages_policy)]
-             if isolated:command += ["--functions-per-output-file","1"]
+     for revision, source, entry in ((77, args.v77_build, "0x80065D40"), (80, args.v80_build, "0x80065F80")):
++        if revision not in args.revisions:
++            continue
+         elf = source / f"dkr.us.v{revision}.elf"
+         rom = source / f"dkr.us.v{revision}.z64"
+         policy = output / f"menu-v{revision}.policy.json"
+@@ -147,6 +153,8 @@
+                 "--output",
+                 str(config),
+             ]
++            if args.european_languages_policy is not None:
++                command += ["--european-languages-policy", str(args.european_languages_policy)]
+             if isolated:
+                 command += ["--functions-per-output-file", "1"]
              run_stage(command, f"v{revision} config generation")
-             run_stage([str(args.recompiler.resolve()),str(config)], f"v{revision} recompilation ({config.name})")
 --- a/scripts/generate_recomp_config.py
 +++ b/scripts/generate_recomp_config.py
-@@ -30,6 +30,7 @@
-     parser.add_argument("--composed-policy", type=Path,
-                         help="Write the complete checked policy for code-mod hook protection")
+@@ -31,6 +31,7 @@
+         "--composed-policy", type=Path, help="Write the complete checked policy for code-mod hook protection"
+     )
      parser.add_argument("--use-mdebug", action="store_true")
-+    parser.add_argument("--european-languages-policy", type=Path, help="Explicit checked native US language adapter")
++    parser.add_argument("--european-languages-policy", type=Path)
      parser.add_argument("--water-profile", action="store_true", help="Compose checked water timing hooks")
-     parser.add_argument("--functions-per-output-file", type=int,
-                         help="Optional source granularity for isolated Patch Pipeline qualification")
-@@ -77,6 +78,15 @@
+     parser.add_argument(
+         "--functions-per-output-file",
+@@ -103,6 +104,15 @@
          arguments.composed_policy.parent.mkdir(parents=True, exist_ok=True)
-         arguments.composed_policy.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+         arguments.composed_policy.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
  
 +    if arguments.european_languages_policy is not None:
 +        import importlib.util
-+        module = importlib.util.spec_from_file_location("dkrr_native_languages", arguments.european_languages_policy)
-+        if module is None or module.loader is None:
++        spec = importlib.util.spec_from_file_location("dkrr_native_languages", arguments.european_languages_policy)
++        if spec is None or spec.loader is None:
 +            raise ValueError("Missing native language policy module")
-+        language_policy = importlib.util.module_from_spec(module)
-+        module.loader.exec_module(language_policy)
++        language_policy = importlib.util.module_from_spec(spec)
++        spec.loader.exec_module(language_policy)
 +        policy = language_policy.compose(policy, arguments.elf, revision)
 +
      manual = ", ".join(
@@ -4939,10 +4934,6 @@
      }
  }
  
--void DrawOnlinePage(float available_width, bool launcher, bool rom_ready) {
--    if (!dkr::runtime::netplay::session().active() && (dkr::store::installations().view()->busy || !dkr::store::installations().view()->ready)) {
--        ImGui::TextWrapped("Finish the Mod Store operation before starting or joining an online session.");
--        return;
 +bool DrawOnlineStoreStatus(float width, bool launcher) {
 +    const auto installations = dkr::store::installations().view();
 +    const bool store_ready = installations->ready && !installations->busy;
@@ -4955,11 +4946,15 @@
 +        if (launcher && !installations->busy && OlCta("RETRY MOD LIBRARY CHECK", OlCtaColour::Blue, width))
 +            dkr::store::installations().retry_recovery();
 +        PaddockGap(20.0F);
-     }
++    }
 +    return store_ready;
 +}
 +
-+void DrawOnlinePage(float available_width, bool launcher, bool rom_ready) {
+ void DrawOnlinePage(float available_width, bool launcher, bool rom_ready) {
+-    if (!dkr::runtime::netplay::session().active() && (dkr::store::installations().view()->busy || !dkr::store::installations().view()->ready)) {
+-        ImGui::TextWrapped("Finish the Mod Store operation before starting or joining an online session.");
+-        return;
+-    }
 +    const bool store_ready = DrawOnlineStoreStatus(available_width, launcher);
      using namespace dkr::runtime::netplay;
      DirectSession& online = session();
@@ -5038,7 +5033,7 @@
 - for commit in pins['prs'].values():
 -  subprocess.run(['git','-C',str(ROOT),'merge-base','--is-ancestor',commit,'HEAD'],check=True)
 + archive=ROOT/'runtime-recomp/ps5-release/upstream-sync-inputs'
-+ archive_mode=archive.is_dir() and os.environ.get('DKRR_PINNED_ARCHIVE')=='47ccadf8c2e68e42867f3b5770671305e828fac1'
++ archive_mode=archive.is_dir() and os.environ.get('DKRR_PINNED_ARCHIVE')=='fbae505f9fe2dae63d3a351aa3a82da2b4e7dae1'
 + if not archive_mode:
 +  for commit in pins['prs'].values():
 +   subprocess.run(['git','-C',str(ROOT),'merge-base','--is-ancestor',commit,'HEAD'],check=True)
@@ -5052,3 +5047,14 @@
     raise ValueError('Reviewed upstream source changed: '+path)
    result[name]=data.decode()
   return pins,result
+--- a/runtime-recomp/src/game/updates/update_process.cpp
++++ b/runtime-recomp/src/game/updates/update_process.cpp
+@@ -227,7 +227,7 @@
+                                  std::to_string(GetLastError()) + ").");
+     CloseHandle(process.hThread);
+     impl->handle = process.hProcess;
+-#elif defined(__ANDROID__) || defined(DKR_IOS)
++#elif defined(__ANDROID__) || defined(DKR_IOS) || defined(__PROSPERO__)
+     (void)exe;
+     (void)arguments;
+     (void)directory;

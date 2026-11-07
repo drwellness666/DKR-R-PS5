@@ -3,14 +3,13 @@
 #include <array>
 namespace dkrr::ps5_menu {
 struct Page { const char* label; int id; };
-// Stable upstream page IDs; visual and shoulder-button order use one policy.
-inline constexpr std::array<Page,11> pages{{
-    {"PLAY",0}, {"CONTROLS",3}, {"GRAPHICS",1}, {"SOUND",2},
-    {"TEXTURES",8}, {"SAVE MANAGER",4}, {"MODS / HACKS",6},
-    {"ACHIEVEMENTS",9}, {"DKR-R ONLINE",5}, {"UPDATES",10}, {"ABOUT DKR-R",7}
+// Keep 1.0.14's page IDs and grouped Play tools. Native updates own page 11.
+inline constexpr std::array<Page,9> pages{{
+    {"PLAY",0}, {"DKR-R ONLINE",5}, {"MOD LIBRARY",10}, {"INSTALLED MODS",6},
+    {"GRAPHICS",1}, {"SOUND",2}, {"CONTROLS",3}, {"UPDATES",11}, {"ABOUT DKR-R",7}
 }};
 inline constexpr auto selection_order=[] {
-    std::array<int,11> result{};
+    std::array<int,pages.size()> result{};
     for(unsigned i=0;i<pages.size();++i)result[i]=pages[i].id;
     return result;
 }();

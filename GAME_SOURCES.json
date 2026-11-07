@@ -2,13 +2,13 @@
   "sources": [
     {
       "name": "DKR-R",
-      "revision": "47ccadf8c2e68e42867f3b5770671305e828fac1",
-      "file": "DKR-R-1.0.9.tar.gz",
+      "revision": "fbae505f9fe2dae63d3a351aa3a82da2b4e7dae1",
+      "file": "DKR-R-1.0.14.tar.gz",
       "path": "DKR-R",
-      "sha256": "1cf55e4129fc1419d08f93f4f14f488550a79741c7e3d002ea93b8198694b29f",
+      "sha256": "8f6b527ba4504e43659afe7a40ac5009a447be13c07eeda36a9339d6c2d5cbc4",
       "bundled": false,
       "strip_components": 1,
-      "url": "https://codeload.github.com/ThatGuyMcd/DKR-R/tar.gz/47ccadf8c2e68e42867f3b5770671305e828fac1"
+      "url": "https://codeload.github.com/ThatGuyMcd/DKR-R/tar.gz/fbae505f9fe2dae63d3a351aa3a82da2b4e7dae1"
     },
     {
       "name": "N64Recomp",
@@ -336,8 +336,8 @@
       "bundled": false
     }
   ],
-  "upstream_version": "1.0.9",
-  "release_url": "https://github.com/ThatGuyMcd/DKR-R/releases/tag/Version1.0.9",
+  "upstream_version": "1.0.14",
+  "release_url": "https://github.com/ThatGuyMcd/DKR-R/releases/tag/Version1.0.14",
   "release_layers": {
     "manifest": "patches/release-prep/v1.0.7/source-capsule-r2/manifest.json",
     "sha256": "db85d62ac1d537fa35e9f3e38bfd059f9a58c485e28cd1f9a9993b775784ebbf",

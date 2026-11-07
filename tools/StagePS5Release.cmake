@@ -18,6 +18,13 @@ target_sources(DKRPortGame PRIVATE
     "${_release_game}/mod_store_names.cpp"
     "${_release_game}/mod_store_install.cpp")
 target_include_directories(DKRPortGame PRIVATE "${_release_json}" "${_release_headers}" "${_release_game}")
+# On PC the shared-saves overlay gives DKRPortGame the replay-probe headers as
+# its own include directory. The composed PS5 capsule skips that overlay, so
+# they arrive only via DKRExperimentalOwnedGameV* link interfaces, which the
+# 1.0.14 online-performance pipeline does not follow. Name the same directory
+# explicitly, so owned_game.hpp -> netplay_types.hpp is relocated consistently
+# (one protocol definition per translation unit).
+target_include_directories(DKRPortGame PRIVATE "${DKRPORT_ROOT}/runtime-recomp/tests/replay_probe")
 
 add_library(DKRCameraPresentation STATIC
     "${_release_game}/camera_presentation.cpp" "${_release_game}/camera_scene.cpp"
