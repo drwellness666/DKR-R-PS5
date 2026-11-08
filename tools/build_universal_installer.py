@@ -99,6 +99,9 @@ def build(sdk,app,receipt,output,migrations=()):
     from build_native_update_package import build as build_data_package
     native_package=output/'DKRR-Update.dkru'
     package=build_data_package(app,receipt,sequence,native_package)
+    from legacy_update_digest import compatible_bytes
+    # Installed 1.0 games verify this download with their shipped updater.
+    if not compatible_bytes(native_package.read_bytes()):raise ValueError('Package layout is not verifiable by the 1.0 updater; run legacy_update_digest.py on the application')
     built[native_package.name]={k:package[k] for k in ('size','sha256')}
     source_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'installer').glob('*')) if p.is_file()}
     unique={(f['size'],f['sha256']) for f in files.values()}

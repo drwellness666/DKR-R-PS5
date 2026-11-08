@@ -110,8 +110,15 @@ pathlib.Path(sys.argv[2]).write_text(hash_source())
 PY
 cc -std=c11 -O2 -fvisibility=hidden -ffunction-sections -fdata-sections \
     -c "$build/gen/update_sha1.c" -o "$build/obj/update_sha1.o"
+# Compile the update digest with the exact Mbed TLS configuration of the linked
+# provider: full RTC crypto (user config) or the small legacy hash archive.
+if [[ $(sed -n 's/^DKR_NETPLAY_WEBRTC:BOOL=//p' "$game/game-ps5/CMakeCache.txt") == ON ]]; then
+    update_hash_config=(-DMBEDTLS_USER_CONFIG_FILE="\"$game/source/DKR-R/runtime-recomp/src/game/netplay/mbedtls_dkrr_user_config.h\"")
+else
+    update_hash_config=(-DMBEDTLS_CONFIG_FILE='"legacy_mod_hash_config.h"')
+fi
 cc -std=c++20 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
-    -DMBEDTLS_CONFIG_FILE=\"legacy_mod_hash_config.h\" -I "$root/src" \
+    "${update_hash_config[@]}" -I "$root/src" \
     -I "$game/source/DKR-R/extern/monocypher/src" -I "$game/source/DKR-R/extern/monocypher/src/optional" \
     -I "$game/source/DKR-R/extern/mbedtls/include" -I "$game/source/DKR-R/runtime-recomp/src/game/mods" \
     -c "$root/src/ps5_update_policy.cpp" -o "$build/obj/update_policy.o"
@@ -263,5 +270,6 @@ if sys.argv[4] == '1':
     p['attribute3'] = p.get('attribute3', 0) | 0x40040
 pathlib.Path(sys.argv[2]).write_text(json.dumps(p,indent=2)+'\n')
 PY
+python3 "$root/tools/legacy_update_digest.py" "$target"
 "$tool" self --inspect --file "$target/eboot.bin"
 echo "Built private native game candidate: $target (hardware gameplay untested)"

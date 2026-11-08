@@ -18,6 +18,6 @@ Sherbet Land, Moggy and Sr.gu’s HD Texture Pack 0.2.8 installed through the Mo
 
 The online directory, Discord connection and lobbies were exercised on PS5. Full races between two physical consoles have not yet been confirmed in these sessions. Host checks and lobby access do not substitute for that test.
 
-The in-game updater verifies signed releases and preserves installed data. Local transaction/recovery checks have passed; the update from 1.0 to 1.1 is the first public-channel download on PS5. Other loaders/displays, ghosts/Paks and the Windows/WSL2 source-build route have limited coverage. Constant 120 rendered FPS is not guaranteed.
+The in-game updater verifies signed releases and preserves installed data. Local transaction/recovery checks have passed. The first 1.0 → 1.1 attempt on PS5 found a package-check bug in 1.0; it is fixed in 1.1, and the republished 1.1 package was checked on PC with the exact 1.0 update code. If an earlier attempt failed, simply try **Touchpad → Updates** again. **DKRR-Update.elf** remains the offline alternative. Other loaders/displays, ghosts/Paks and the Windows/WSL2 source-build route have limited coverage. Constant 120 rendered FPS is not guaranteed.
 
 [Report a problem](https://github.com/drwellness666/DKR-R-PS5/issues) · [What to include](DIAGNOSTICS.md) · [Planned improvements](ROADMAP.md)

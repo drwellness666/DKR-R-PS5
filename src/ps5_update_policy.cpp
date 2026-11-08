@@ -61,7 +61,12 @@ bool payload_digest(int fd,const Offer& offer) {
     if(offer.native_package) {if(std::memcmp(header,"DKRRPK2\n",8))return false;}
     else if(std::memcmp(header,"\177ELF\2\1\1",7)||header[18]!=62||header[19])return false;
     if(lseek(fd,0,SEEK_SET)<0)return false;
-    mbedtls_sha256_context sha;mbedtls_sha256_init(&sha);bool ok=mbedtls_sha256_starts(&sha,0)==0;std::uint64_t count=0;
+    // The context layout belongs to the linked crypto library. 1.0 compiled this
+    // file with a smaller config, so finish() read SHA-224 state from the buffer
+    // below. Zeroed spare storage keeps any such field at "SHA-256".
+    union {mbedtls_sha256_context context;unsigned char spare[sizeof(mbedtls_sha256_context)+64];} storage;
+    std::memset(&storage,0,sizeof(storage));std::memset(digest,0,sizeof(digest));auto& sha=storage.context;
+    mbedtls_sha256_init(&sha);bool ok=mbedtls_sha256_starts(&sha,0)==0;std::uint64_t count=0;
     while(ok){auto n=read(fd,buffer,sizeof(buffer));if(n<0&&errno==EINTR)continue;if(n<0){ok=false;break;}if(!n)break;count+=static_cast<std::uint64_t>(n);if(count>offer.bytes||mbedtls_sha256_update(&sha,buffer,static_cast<std::size_t>(n))!=0)ok=false;}
     if(ok)ok=mbedtls_sha256_finish(&sha,digest)==0&&count==offer.bytes&&std::memcmp(digest,offer.sha256,32)==0;
     mbedtls_sha256_free(&sha);return ok&&lseek(fd,0,SEEK_SET)==0;

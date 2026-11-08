@@ -8,6 +8,7 @@ Update to **DKR-R 1.0.14**. Installed 1.0 games update in game under **Touchpad 
 - Matched launcher and in-game overlay pages, consistent Search/Status/Sort across the Mod Library, sidebar navigation by LB/RB or D-pad and improved stick navigation.
 - Custom-car and road-wheel lighting fixes, seasonal themes (on PS5 using the global calendar) and optional crash reports that only start after your consent.
 - PS5: the PC child-process updater stays excluded, so updates continue through the signed PS5 package; online play uses the current DKR-R 1.0.14 protocol.
+- Fixed the in-game updater: 1.0 could report "Download cancelled or verification failed" after a complete, correct download, because its package check was built with a mismatched Mbed TLS configuration. 1.1 checks downloads correctly, and the 1.1 package is laid out so that the installed 1.0 accepts it.
 
 ## 1.0 — 2026-10-31
 

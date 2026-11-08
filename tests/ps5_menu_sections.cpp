@@ -8,6 +8,9 @@
 #include <cstdio>
 #include <vector>
 #include "ps5_menu_layout.hpp"
+#if __has_include("library_ui/policy.hpp")
+#include "library_ui/policy.hpp" // 1.0.14 sidebar_parent()
+#endif
 #include "ps5_menu_sections.inl"
 constexpr auto kSidebarOrder=dkrr::ps5_menu::selection_order;
 #include "sidebar_step.inc"
@@ -33,12 +36,14 @@ static void press(ImGuiKey key) {
 }
 void run_ps5_update_ui_tests();
 int main() {
- assert(StepSidebarSelection(0,1)==3&&StepSidebarSelection(3,-1)==0);
- int at=0;std::array<bool,11> seen{};
- for(int i=0;i<11;++i){assert(at>=0&&at<11&&!seen[at]);seen[at]=true;int next=StepSidebarSelection(at,1);assert(StepSidebarSelection(next,-1)==at);at=next;}
- assert(at==0&&kSidebarOrder.size()==11);
- assert(StepSidebarSelection(6,1)==9&&StepSidebarSelection(9,1)==5);
- assert(StepSidebarSelection(5,1)==10&&StepSidebarSelection(10,1)==7);
+ // 1.0.14 grouping: Save Manager (4) and Achievements (9) are Play tools.
+ assert(StepSidebarSelection(0,1)==5&&StepSidebarSelection(5,-1)==0);
+ int at=0;std::array<bool,12> seen{};
+ for(int i=0;i<9;++i){assert(at>=0&&at<12&&!seen[at]);seen[at]=true;int next=StepSidebarSelection(at,1);assert(StepSidebarSelection(next,-1)==at);at=next;}
+ assert(at==0&&kSidebarOrder.size()==9&&!seen[4]&&!seen[8]&&!seen[9]);
+ assert(StepSidebarSelection(5,1)==10&&StepSidebarSelection(10,1)==6&&StepSidebarSelection(6,1)==1);
+ assert(StepSidebarSelection(3,1)==11&&StepSidebarSelection(11,1)==7&&StepSidebarSelection(7,1)==0);
+ assert(StepSidebarSelection(4,1)==5&&StepSidebarSelection(9,1)==5&&StepSidebarSelection(4,-1)==7);
  ImGui::CreateContext();auto& io=ImGui::GetIO();io.DisplaySize={1200,800};io.DeltaTime=1.0F/60;
  io.IniFilename=nullptr;io.ConfigFlags|=ImGuiConfigFlags_NavEnableGamepad;io.BackendFlags|=ImGuiBackendFlags_HasGamepad;
  unsigned char* pixels;int w,h;io.Fonts->GetTexDataAsRGBA32(&pixels,&w,&h);
