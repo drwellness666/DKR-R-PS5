@@ -53,7 +53,10 @@ int sceHttpGetAllResponseHeaders(int id,char** out,std::size_t* size){
 int sceHttpReadData(int id,void* data,std::size_t size){
     auto& r=records[id];const auto& body=is_catalog(id)?(mode=="current"?old_channel:channel):payload;
     if(!is_catalog(id)&&mode=="cancel")std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    auto n=std::min({size,body.size()-r.at,std::size_t(17)});std::memcpy(data,body.data()+r.at,n);r.at+=n;return int(n);
+    auto n=std::min({size,body.size()-r.at,std::size_t(17)});std::memcpy(data,body.data()+r.at,n);r.at+=n;
+    // Cancel after the last package byte, before the worker hands off.
+    if(!n&&!is_catalog(id)&&mode=="late-cancel")dkrr::updates::cancel();
+    return int(n);
 }
 
 }
@@ -63,6 +66,8 @@ bool available(){return true;}
 Response perform(const Request& request,const Sink& sink) {
     assert(request.method=="GET"&&request.headers.empty());
     const int id=sceHttpCreateConnectionWithURL(0,request.url.c_str(),0);
+    // Package downloads use the stall policy, not a fixed total deadline.
+    assert(is_catalog(id)!=request.streaming);
     Response response;int status=0;sceHttpGetStatusCode(id,&status);response.status=unsigned(status);
     if(is_redirect(id)) {
         response.headers.emplace_back("location",mode=="bad-redirect"?"https://evil.example/x":"https://release-assets.githubusercontent.com/asset?x=1&sig=2");return response;
@@ -122,7 +127,7 @@ int main(int argc,char** argv){
     if(mode=="fifo-setting"){assert(!dkrr::updates::set_automatic_check(false));assert(!unlink(auto_path.c_str()));}
     assert(dkrr::updates::set_automatic_check(false));
     assert(!dkrr::updates::automatic_check());
-    if(mode=="digest"||mode=="oversize"||mode=="signature"||mode=="offline"||mode=="current"||mode=="cancel"||mode=="bad-redirect")assert(preparations==0);
+    if(mode=="digest"||mode=="oversize"||mode=="signature"||mode=="offline"||mode=="current"||mode=="cancel"||mode=="late-cancel"||mode=="bad-redirect")assert(preparations==0);
     if(mode=="prepare-fail")assert(preparations==1&&!dkrr::updates::close_requested());
     if(mode=="space-low")assert(preparations==0&&connections==1&&dkrr::updates::view().received==0);
     assert(connections>=1);std::printf("PASS native update worker: %s\n",mode.c_str());

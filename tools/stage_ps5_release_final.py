@@ -6,6 +6,32 @@ from pathlib import Path
 from compose_upstream_release import delta
 INCLUDE=re.compile(r'^#include "([^"\n]+)"',re.M)
 def sha(data):return hashlib.sha256(data).hexdigest()
+def include_locations(source,build):
+    """Identify generated header directories by their logical source, not cwd.
+
+    Upstream hashes the absolute input path for directory names. Record which
+    logical header owns each hash so a source export can be built elsewhere
+    without accepting changes to any source bytes.
+    """
+    receipt=build/'generated/online-performance/header_receipts.json'
+    if not receipt.is_file():return {}
+    result={}
+    for row in json.loads(receipt.read_text()):
+        origin=row['path'].replace(str(build),'@DKRR_BUILD@').replace(str(source),'@DKRR_SOURCE@')
+        directory=Path(row['new']).parent.name
+        if not re.fullmatch(r'[0-9a-f]{16}',directory):raise ValueError('Unexpected generated header directory')
+        if origin in result and result[origin]!=directory:raise ValueError('Ambiguous generated header owner')
+        result[origin]=directory
+    return result
+def relocate_includes(text,original,current):
+    renames={}
+    for owner,before in original.items():
+        after=current.get(owner)
+        if after is None:continue
+        if before in renames and renames[before]!=after:raise ValueError('Ambiguous generated header relocation')
+        renames[before]=after
+    return re.sub(r'(/generated/online-performance/includes/)([0-9a-f]{16})(/)',
+        lambda m:m[1]+renames.get(m[2],m[2])+m[3],text)
 def select_source(logical,rows,source,build):
     leaf=Path(logical).name
     if leaf.endswith('.inl'):
@@ -51,6 +77,8 @@ def main():
     source,build,output=a.source.resolve(),a.build.resolve(),a.output.resolve();root=Path(__file__).resolve().parents[1];rows=json.loads((build/'ps5-release-graph.json').read_text())
     manifest=json.loads((root/'patches/dkrr-109-final-manifest.json').read_text());patch=(root/'patches/dkrr-109-native-final.patch').read_bytes()
     if sha(patch)!=manifest['patch_sha256']:raise ValueError('Changed final native patch')
+    recorded=manifest.get('include_directories',{})
+    current=include_locations(source,build)
     # Split only the exact unified file records, then verify every before/after.
     parts={}
     for match in re.finditer(rb'^--- a/([^\n]+)\n',patch,re.M):parts[match[1].decode()]=match.start()
@@ -58,11 +86,12 @@ def main():
     for index,key in enumerate(keys):
         raw=patch[parts[key]:parts[keys[index+1]] if index+1<len(keys) else len(patch)]
         path=select_source(key,rows,source,build);before,restore=canonical(path.read_text(),key,source,build,root/'src')
+        before=relocate_includes(before,current,recorded)
         row=manifest['files'][key]
         if sha(before.encode())!=row['original_sha256']:raise ValueError('Changed final release input: '+key)
         after=delta(before.encode(),raw)
         if sha(after)!=row['patched_sha256']:raise ValueError('Changed final native output: '+key)
-        prepared[key]=(path,expand(after.decode(),source,build,root/'src'),restore)
+        prepared[key]=(path,relocate_includes(expand(after.decode(),source,build,root/'src'),recorded,current),restore)
     headers={str(Path(k).relative_to('runtime-recomp/src/game')):output/k for k in prepared if Path(k).suffix in ('.h','.hpp','.inl')}
     header_aliases={str(original):output/key for key,(original,text,restore) in prepared.items() if Path(key).suffix in ('.h','.hpp','.inl')}
     for key,(original,text,restore) in prepared.items():

@@ -35,9 +35,9 @@ The optional **Left stick menu pointer** and its speed setting are under **Contr
 
 ## Revision and language
 
-Choose a ROM under **Touchpad → Play** and select **Load different version** to start that revision in the same PS5 app. **Playing** shows the active revision. Both US versions share controls, graphics, audio and texture choices; their progress and Paks stay separate.
+Starting DKR-R opens the launcher. Choose the installed US ROM on **Play**, then select **Start Game**. To change revisions during play, open **Touchpad → Play → Return to Launcher**, confirm, choose the other ROM and start it. Only progress already saved by the game is kept when stopping a session. Both US versions share controls, graphics, audio and texture choices; their progress and Paks stay separate.
 
-In the original game's **Options → Language**, choose **English, French or German**. No PAL ROM is needed. The Recompiled settings menu is English.
+In the original game's **Options → Language**, choose **English, French or German**. No PAL ROM is needed. The launcher's language is selected separately on **Play**; some upstream translations are drafts.
 
 ## Texture packs and mods
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2 — 2026-11-09
+
+Update to **DKR-R 1.0.15**. Installed 1.0 and 1.1 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. Online lobbies need matching 1.0.15 games on every player.
+
+- Launcher first: starting DKR-R from the PS5 home screen opens the launcher. Choose the version, mods and settings, then press **Start Game**. Stopping a race returns to the launcher; the "Skip launcher" option is no longer offered on PS5.
+- New from DKR-R 1.0.15: smoother online recovery after delays, live host settings (prediction window and input delay during a race), better spectators, Start Game kept at the bottom of Play, character names in Player Select and automatic storage cleanup of old downloads and caches (About DKR-R → Support → Storage; saves, ROMs, installed mods and texture packs are kept).
+- Launcher text: hyphens, slashes, brackets and counts now sit on the same line as the letters ("D-PAD" no longer looks like "D_PAD"); digits match the letter height, also in button names such as L1/R2.
+- Controls: PS5 button names in Title Case ("D-Pad Up", "Left Stick Up") and the controller shown as "DualSense (PS5)". The sidebar navigation switch is removed; L1/R1 change pages and the D-pad moves inside a page.
+- In-game updater: cancelling no longer leaves it stuck on "Downloading"/"Checking", slow but working connections no longer fail after 10 minutes, and clearer error messages.
+
 ## 1.1 — 2026-11-07
 
 Update to **DKR-R 1.0.14**. Installed 1.0 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept.

@@ -59,12 +59,12 @@ def main():
         manifest.write_bytes(signed(33,True));(t/'current.txt').write_bytes(signed(32,True))
         data_root=t/'data/dkrr';(data_root/'preferences').mkdir(parents=True)
         subprocess.run(cpp+['-DDKRR_TEST_NATIVE_METADATA','-pthread','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-DDKRR_RELEASE_SEQUENCE=32','-DDKRR_UPDATE_KEY_HEADER="fixture_key.h"','-DDKRR_UPDATE_ROOT="'+str(data_root)+'"',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_internet_update.cpp'),str(ROOT/'tests/ps5_update_worker.cpp'),*objects,'-o',str(t/'worker')],check=True)
-        for mode in ('good','offline','current','signature','digest','oversize','prepare-fail','cancel','redirect','bad-redirect','auto','zero-links','redacted','space-low','space-unknown','fifo-setting'):
+        for mode in ('good','offline','current','signature','digest','oversize','prepare-fail','cancel','late-cancel','redirect','bad-redirect','auto','zero-links','redacted','space-low','space-unknown','fifo-setting'):
             subprocess.run([str(t/'worker'),mode,str(manifest),str(t/'current.txt'),str(payload)],env=env,check=True,timeout=20)
         subprocess.run(cpp+['-DDKRR_STATIC_HTTPS=1','-DDKRR_TEST_NATIVE_METADATA','-pthread','-Wl,--wrap=lstat','-Wl,--wrap=fstat','-DDKRR_RELEASE_SEQUENCE=32','-DDKRR_UPDATE_KEY_HEADER="fixture_key.h"','-DDKRR_UPDATE_ROOT="'+str(data_root)+'"',str(ROOT/'src/ps5_update_policy.cpp'),str(ROOT/'src/ps5_internet_update.cpp'),str(ROOT/'tests/ps5_update_worker.cpp'),*objects,'-o',str(t/'worker-static')],check=True)
-        for mode in ('good','offline','current','signature','digest','oversize','prepare-fail','cancel','redirect','bad-redirect','auto','zero-links','redacted','space-low','space-unknown','fifo-setting'):
+        for mode in ('good','offline','current','signature','digest','oversize','prepare-fail','cancel','late-cancel','redirect','bad-redirect','auto','zero-links','redacted','space-low','space-unknown','fifo-setting'):
             subprocess.run([str(t/'worker-static'),mode,str(manifest),str(t/'current.txt'),str(payload)],env=env,check=True,timeout=20)
 
         assert not list(data_root.rglob('*.elf'))
-        print('PASS actual native update worker: 32 service scenarios across historical SDK and production static transport, nonblocking FIFO preference refusal, shortage refused before download, unavailable-space fallback, zero ELF-loader socket APIs, native zero-link metadata, shared opt-in auto-check, verified data-only preparation')
+        print('PASS actual native update worker: 34 service scenarios across historical SDK and production static transport, nonblocking FIFO preference refusal, shortage refused before download, unavailable-space fallback, zero ELF-loader socket APIs, native zero-link metadata, shared opt-in auto-check, verified data-only preparation')
 if __name__=='__main__':main()

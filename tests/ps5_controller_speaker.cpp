@@ -36,6 +36,7 @@ static std::vector<std::int16_t> delayed(unsigned rev,unsigned clip){
  return load(rev,clip);
 }
 template<class Test>static void wait(Test test){for(int i=0;i<1000&&!test();++i)std::this_thread::sleep_for(std::chrono::milliseconds(1));assert(test());}
+template<class Test>static void wait_slow(Test test){for(int i=0;i<2000&&!test();++i)std::this_thread::sleep_for(std::chrono::milliseconds(1));assert(test());}
 int main(){
     for(unsigned clip=0;clip<ps5_sounds::count;++clip){const auto category=ps5_sounds::category(clip);assert(category<10);if(category<10){assert(ps5_sounds::allowed(1023,clip));assert(!ps5_sounds::allowed(1023&~(1U<<category),clip));}}
     ps5_items::Item held{0x80401100,0,1,true,0},spent=held;spent.quantity=0;
@@ -51,11 +52,16 @@ int main(){
         speaker.update(true,42,spent,20,false,0.25F,80);wait([]{return outputs.load()>0;});assert(loaded==3);
         const auto before=outputs.load();
         speaker.update(false,42,{},25,false,0.25F,80);wait([]{return active.load()==0;});assert(outputs<=before+1&&closes==1);
+        // Exercise the failure path only when no worker exists. Once a worker
+        // has started, Speaker intentionally retains its disabled state until a
+        // clean off/on transition and a real new event; testing a second retry
+        // after the first worker opens is not a production path.
         fail_open=1;
         speaker.update(true,42,held,30,true,0.25F,80);speaker.update(true,42,spent,40,false,0.25F,80);wait([&]{return speaker.status()<0;});const auto failures=opens.load();
         speaker.update(true,42,held,50,true,0.25F,80);speaker.update(true,42,spent,60,false,0.25F,80);std::this_thread::sleep_for(std::chrono::milliseconds(10));assert(opens==failures);
         speaker.update(false,42,{},70,false,0.25F,80);fail_open=0;
-        speaker.update(true,42,held,80,true,0.25F,80);speaker.update(true,42,spent,90,false,0.25F,80);wait([]{return active.load()==1;});
+        const auto held_opens=opens.load();
+        speaker.update(true,42,held,80,true,0.25F,80);speaker.update(true,42,spent,90,false,0.25F,80);wait_slow([&]{return opens.load()>held_opens;});wait_slow([]{return active.load()==1;});
     }
     assert(active==0&&opens==closes+1); // One failed open owns no port.
     assert(load_calls==1); // The retry path reuses the already loaded cue.

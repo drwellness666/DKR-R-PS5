@@ -1,6 +1,6 @@
 {
-  "revision": "fbae505f9fe2dae63d3a351aa3a82da2b4e7dae1",
-  "version": "1.0.14",
+  "revision": "d2925302d961b46a8492cb3da2169f290ea724b6",
+  "version": "1.0.15",
   "base": "Verified effective upstream release layers; see GAME_SOURCES.json release_layers",
   "files": {
     "patches/enhanced-water/dkr-ray-capabilities.patch": {
@@ -8,8 +8,8 @@
       "patched_sha256": "24765f6238f538f369ad56bd83eda9f832998bf7894c1f969caa3dd04df220ed"
     },
     "runtime-recomp/CMakeLists.txt": {
-      "original_sha256": "0200c64adc6bf79db8d9daf2559fb4449a29de8759c6a9972a810279425f7b2b",
-      "patched_sha256": "b4cca34c269bc3b8120ffef0ca34fbc870a0ef8fc1eaccb68c6aa3890ea1bea4"
+      "original_sha256": "33dd90114578c9f8eb84a7ce5f36b5ea05df1ca11396d4196cf9ace460fe7e10",
+      "patched_sha256": "fbd4b721657022444380c024c984e1f67fbc4329d0944608b1cb20459894265a"
     },
     "runtime-recomp/cmake/Updates.cmake": {
       "original_sha256": "b3f3d2a41feb204d3fa1f1fb472e7e432714036bf7e335ff2e39fdcda668e28a",
@@ -197,12 +197,20 @@
     },
     "patches/upstream-sync/pipeline.py": {
       "original_sha256": "ba3c8179605ee5f69be8d29d0eeda2e0e78a01fd9a0ba8ba9c28db7e7701d986",
-      "patched_sha256": "afbbee7bd2ebb9377772edaa5ce55efb1b2557d7a7e516a983ec4d5bbaeda9f8"
+      "patched_sha256": "88170b2c8fff903d41395a8b91a03402bc1d2417bce405cc587a124f04fdf0a6"
     },
     "runtime-recomp/src/game/updates/update_process.cpp": {
       "original_sha256": "40d25ad15dcefff2aead04835b75b805c8ee0a1601f4da338452068d0e2f8d74",
       "patched_sha256": "b433baf634d7fac05cbaff168eaa06fce5eaee7a15c1e9906eb171b25f21bf10"
+    },
+    "runtime-recomp/cmake/FilePicker.cmake": {
+      "original_sha256": "dbf0962a82dc6b33a8b55071e0bcdd3e778ed536d9b0a4d37805d3eb08bad441",
+      "patched_sha256": "96a2b2d91e56e56444fc98bff0f1bef15585e3ccbe9293308668ca3b834e6b46"
+    },
+    "patches/online-performance/pipeline.py": {
+      "original_sha256": "d1d6a25d0648853462ba319505137875653e613810b1515450d6bde78a46a453",
+      "patched_sha256": "3aa395978d6203ad7648cfc3813424291f81557a5bc32c3c70e886d593d7cb2e"
     }
   },
-  "patch_sha256": "d4d363e98fc9361d9346fae20bfd39dd5de6e03b5587632e255eb0c3405a8623"
+  "patch_sha256": "d4aeacb6112b97b71a646ab2ca09c9609f7f5f1e745a1b3712cf8cc59409a251"
 }

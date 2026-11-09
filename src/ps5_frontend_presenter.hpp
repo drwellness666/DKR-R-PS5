@@ -9,6 +9,7 @@
 #include <vector>
 
 namespace plume { std::unique_ptr<RenderInterface> CreateVulkanInterface(); }
+extern "C" int sceSystemServiceHideSplashScreen(void);
 namespace dkrr {
 // The guest and its renderer must have joined before this owner is created.
 // The existing frontend draws through the game's ImGui Vulkan backend. SDL
@@ -118,7 +119,17 @@ public:
         const bool shown=dkrr::render_wait(8,[&]{return s.swap->present(index,&done,1);});
         if(!s.wait())return false;
         if(!shown&&dkrr_ps5_hdr_status().output==3)return s.recoverSdr();
-        if(shown)dkrr_diag_present();
+        if(shown) {
+            dkrr_diag_present();
+            // Launcher-first has no RT64 game owner yet to dismiss the shell
+            // splash. Do so only after a real frontend frame was presented.
+            static bool splash_hidden=false;
+            if(!splash_hidden) {
+                const int result=sceSystemServiceHideSplashScreen();
+                splash_hidden=result>=0;
+                if(result<0)std::fprintf(stderr,"[ps5][frontend] hide splash failed: 0x%08x\n",unsigned(result));
+            }
+        }
         return shown;
     }
 };

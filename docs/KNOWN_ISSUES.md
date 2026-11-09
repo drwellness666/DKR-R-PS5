@@ -8,7 +8,7 @@
 
 ## Tested setup
 
-Version 1.1 is based on **DKR-R 1.0.14**. It was built and checked on PC with the same PS5 adaptations as 1.0; its console confirmation is through the in-game update from 1.0. Report anything that worked in 1.0 and no longer does.
+Version 1.2 is based on **DKR-R 1.0.15** and opens the launcher first. It was built and checked on PC with the same PS5 adaptations as 1.1; its console confirmation is through the in-game update. Report anything that worked in 1.1 and no longer does.
 
 For version 1.0 (DKR-R 1.0.9), PS5 sessions confirmed installation from owned USB ROMs, both US revisions, save/load after a full console restart, shared settings and texture choices, classic controls, vibration, balloon lighting, gyro, adaptive L2 and controller sounds. 4K/119.88 Hz, VRR Automatic and neutral HDR10 output were confirmed on an LG C1.
 

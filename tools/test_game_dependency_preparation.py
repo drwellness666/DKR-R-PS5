@@ -13,7 +13,10 @@ with tempfile.TemporaryDirectory(prefix='dkrr-real-dependencies-') as folder:
     source=work/'source';dk=source/'DKR-R';receipts=json.loads((source/'dependency-patch-receipts.json').read_text())
     selected={'N64ModernRuntime','N64Recomp','sljit','RT64','hlslpp','plume','nativefiledialog-extended','libdatachannel','LibJuice','usrsctp'}
     manifest=json.loads((dk/'patches/manifest.json').read_text());expected=[row['sha256'] for dep in manifest['dependencies'] if dep['name'] in selected for row in dep['patches']]
-    assert len(receipts)==60 and [r['patch_sha256'] for r in receipts]==expected
+    # 1.0.15 adds libdatachannel's idle-notification repair to the 60 earlier
+    # pinned dependency patches. Receipt order remains authoritative; the count
+    # is reviewed whenever patches/manifest.json adds or removes a dependency.
+    assert len(receipts)==61 and [r['patch_sha256'] for r in receipts]==expected
     assert all(r['files'] and all(f['before_sha256']!=f['after_sha256'] for f in r['files']) for r in receipts)
     events=(source/'N64ModernRuntime/ultramodern/src/events.cpp').read_text();assert 'rdram_snapshot' in events and 'presentation_allowed' in events
     recomp=(source/'N64Recomp/include/recomp.h').read_text();assert 'struct recomp_context' in recomp
@@ -24,4 +27,4 @@ with tempfile.TemporaryDirectory(prefix='dkrr-real-dependencies-') as folder:
     subprocess.run(['python3',str(root/'tools/test_ps5_shared_save_entry.py'),str(work)],check=True)
     subprocess.run(['python3',str(root/'tools/test_ps5_audio_scratch.py'),str(work)],check=True)
     subprocess.run(['python3',str(root/'tools/test_ps5_audio_block.py'),str(work)],check=True)
-    print('PASS actual 57 pinned dependency patches including RTC inside outer Git, required runtime ABI/snapshot prerequisites, mirrored compiler headers, outer Git preservation and complete source-stamp reuse')
+    print(f'PASS actual {len(receipts)} pinned dependency patches including RTC inside outer Git, required runtime ABI/snapshot prerequisites, mirrored compiler headers, outer Git preservation and complete source-stamp reuse')

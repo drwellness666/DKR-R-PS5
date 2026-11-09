@@ -145,7 +145,10 @@ bool allowed_cleanup(const Path& name,bool directory) {
     }return false;
 }
 bool collect_cleanup(const Path& root,const Path& relative,std::vector<Path>& files,std::vector<Path>& directories) {
-    if(relative.size()>200||directories.size()>64||files.size()>100)return false;
+    // Each branch holds every public file, its manifest and a possible .tmp
+    // twin, plus the journal markers; derive the cap from the contract.
+    constexpr std::size_t file_limit=2*2*(public_count+1)+7;
+    if(relative.size()>200||directories.size()>64||files.size()>file_limit)return false;
     const auto path=relative.empty()?root:root+"/"+relative;
     if(!private_directory(path))return false;
     DIR* dir=opendir(path.c_str());if(!dir)return false;bool ok=true;
@@ -230,7 +233,7 @@ bool prepare_impl(Context& c,int fd,const Offer& offer) {
         auto bytes=little(row+160,8),mode=little(row+168,4);
         const unsigned expected_mode=(!std::strcmp(name,"eboot.bin")||!std::strcmp(name,"sce_module/libc.prx"))?0755:0644;
         if(bytes>payload_limit||mode!=expected_mode)return c.fail("Invalid native file size or permissions.");
-        auto* entry=const_cast<dkrr_file*>(find(next,name));const auto* previous=find(old,name);if(!entry||!previous)return false;
+        auto* entry=const_cast<dkrr_file*>(find(next,name));const auto* previous=find(old,name);if(!entry||!previous)return c.fail("The installed file record does not match this update. The installed game is unchanged.");
         entry->size=bytes;entry->mode=unsigned(mode);dkrr_hex(row+172,entry->sha1);
         if((!std::strcmp(name,"sce_sys/param.json")||!std::strcmp(name,"sce_module/libc.prx"))&&(previous->size!=bytes||previous->mode!=mode||std::strcmp(previous->sha1,entry->sha1)))return c.fail("This update changes registered title metadata or the runtime ABI and needs a qualified migration. The installed game is unchanged.");
         if(!parents(c.root+"/new",name)||!copy_stream(fd,c.root+"/new/"+name,bytes,unsigned(mode))||!matches(c.root+"/new/"+name,*entry))return c.fail("The staged update file failed verification.");

@@ -3,13 +3,13 @@
 ![Diddy Kong Racing Recompiled — Grafik des Originalprojekts](https://github.com/user-attachments/assets/c913bee2-029c-4e29-9921-0f6abe7a3bf1)
 
 **Diddy Kong Racing Recompiled, nativ auf PlayStation 5.**
-Ein inoffizieller PS5-Port von [DKR-R 1.0.14](https://github.com/ThatGuyMcd/DKR-R). Die originale Rekompilierung stammt von **ThatGuyMcd und den DKR-R-Mitwirkenden**.
+Ein inoffizieller PS5-Port von [DKR-R 1.0.15](https://github.com/ThatGuyMcd/DKR-R). Die originale Rekompilierung stammt von **ThatGuyMcd und den DKR-R-Mitwirkenden**.
 
 [📦 Downloads](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇬🇧 English](README.md) · [📖 Hilfe](docs/README.md) · [❤️ Mitwirkende](CREDITS.md) · [🐛 Fehler melden](https://github.com/drwellness666/DKR-R-PS5/issues)
 
 **Ein kostenloses Open-Source-Hobbyprojekt für die Community.** Der Quellcode der PS5-Integration, des Installers, Updaters und der Bauwerkzeuge liegt unter [GPL-3.0-or-later](LICENSE) bei.
 
-**Version 1.1** bringt den Port auf DKR-R 1.0.14 und vereint weiterhin das Originalspiel, beide US-Revisionen und optionale PS5-Funktionen in einer App im Hauptmenü. Installationen von Version 1.0 lassen sich im Spiel unter **Touchpad → Updates** aktualisieren.
+**Version 1.2** bringt den Port auf DKR-R 1.0.15 und öffnet zuerst den DKR-R-Launcher: Version, Mods und Einstellungen wählen, dann das Rennen starten. Originalspiel, beide US-Revisionen und optionale PS5-Funktionen bleiben in einer App im Hauptmenü vereint. Installationen von Version 1.0 und 1.1 lassen sich im Spiel unter **Touchpad → Updates** aktualisieren.
 
 ## 🎮 Für die PS5 angepasst
 

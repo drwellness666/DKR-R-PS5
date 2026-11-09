@@ -206,8 +206,9 @@ int main() {
     if((revision==77 && !DKR_PAYLOAD_V77_ENABLED)||(revision==80 && !DKR_PAYLOAD_V80_ENABLED)) {
         report("requested revision %u is not included in this own-ROM build",revision);
     } else if(!ordinary_rom(rom)) {
-        report("missing own ROM: %s (required canonical 12 MiB; no ROM included)",rom);
-    } else {
+        report("missing own ROM: %s; opening launcher for ROM selection (no ROM included)",rom);
+    }
+    {
         FILE *check=std::fopen(rom,"rb");
         report("own ROM fopen=%s errno=%d",check?"ok":"failed",errno);
         if(check)std::fclose(check);
@@ -217,14 +218,16 @@ int main() {
         errno=0;fd=sceKernelOpen(rom,O_RDONLY,0);
         report("own ROM SCE open=0x%08x errno=%d",unsigned(fd),errno);
         if(fd>=0)sceKernelClose(fd);
-        // The game performs its own full revision/content validation before boot.
-        char name[]="/app0/eboot.bin",rom_flag[]="--rom",config_flag[]="--config";
-        char *args[]={name,rom_flag,const_cast<char *>(rom),config_flag,const_cast<char *>(profile),nullptr};
+        // Launcher first: no --rom, so DKR-R opens its native launcher with the
+        // preferred installed revision selected. Play starts the game; the
+        // launcher validates the ROM and switches to that revision's saves.
+        char name[]="/app0/eboot.bin",config_flag[]="--config";
+        char *args[]={name,config_flag,const_cast<char *>(profile),nullptr};
         dkrr_diag_stage(DKR_DIAG_GAME);
         rtcInitLogger(RTC_LOG_INFO,nullptr);
         dkrr::updates::initialize();
         report("update startup: %s",dkrr::updates::view().message);
-        try { status=dkrr_game_main(5,args); }
+        try { status=dkrr_game_main(3,args); }
         catch(const std::exception &e) { report("runtime exception: %s",e.what());status=2; }
         if(status==0 && runtime_error_reported.load(std::memory_order_relaxed))status=5;
     }

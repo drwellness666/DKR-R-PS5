@@ -3,13 +3,13 @@
 ![Diddy Kong Racing Recompiled — original project artwork](https://github.com/user-attachments/assets/c913bee2-029c-4e29-9921-0f6abe7a3bf1)
 
 **Diddy Kong Racing Recompiled, native on PlayStation 5.**
-An unofficial PS5 port of [DKR-R 1.0.14](https://github.com/ThatGuyMcd/DKR-R), the original recompilation by **ThatGuyMcd and the DKR-R contributors**.
+An unofficial PS5 port of [DKR-R 1.0.15](https://github.com/ThatGuyMcd/DKR-R), the original recompilation by **ThatGuyMcd and the DKR-R contributors**.
 
 [📦 Downloads](https://github.com/drwellness666/DKR-R-PS5/releases) · [🇩🇪 Deutsch](README.de.md) · [📖 Help](docs/README.md) · [❤️ Credits](CREDITS.md) · [🐛 Report a bug](https://github.com/drwellness666/DKR-R-PS5/issues)
 
 **A free, open-source hobby project for the community.** Source for the PS5 integration, installer, updater and build tools is included under [GPL-3.0-or-later](LICENSE).
 
-**Version 1.1** updates the port to DKR-R 1.0.14 and keeps the original game, both US revisions and optional PS5 features together in one home-screen app. Version 1.0 installations update in game under **Touchpad → Updates**.
+**Version 1.2** updates the port to DKR-R 1.0.15 and opens the DKR-R launcher first: choose the version, mods and settings, then start the race. The original game, both US revisions and optional PS5 features stay together in one home-screen app. Version 1.0 and 1.1 installations update in game under **Touchpad → Updates**.
 
 ## 🎮 Made for PS5
 
@@ -20,7 +20,7 @@ An unofficial PS5 port of [DKR-R 1.0.14](https://github.com/ThatGuyMcd/DKR-R), t
 - Choose up to **4K**, optional **HDR10**, and **120 Hz / VRR**. [Display settings](docs/DISPLAY.md).
 - Install once and play on the console. Updates can be installed under **Touchpad → Updates**.
 
-DKR-R 1.0.14 provides Modern/Accurate presentation, custom cups, the mod library and SDK 2 mods, texture packs, online features and English/French/German game text. The settings menu follows the PS5 system language where a translation exists; a Language choice is available in **Play**. Some translations are still drafts. Compatibility notes are in the [known issues](docs/KNOWN_ISSUES.md).
+DKR-R 1.0.15 provides Modern/Accurate presentation, custom cups, the mod library and SDK 2 mods, texture packs, online features and English/French/German game text. The settings menu follows the PS5 system language where a translation exists; a Language choice is available in **Play**. Some translations are still drafts. Compatibility notes are in the [known issues](docs/KNOWN_ISSUES.md).
 
 ## 📦 Install
 

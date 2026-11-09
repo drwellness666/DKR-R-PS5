@@ -178,20 +178,28 @@
          add_library(DKRPortGame SHARED ${DKR_GAME_SOURCES} src/android/android_platform.cpp src/android/mobile_ui.cpp)
          target_link_libraries(DKRPortGame PRIVATE SDL2::SDL2 SDL2::SDL2main android log)
      else()
-@@ -926,7 +984,11 @@
+@@ -926,9 +984,17 @@
          DKR_PATCH_POLICY_SHA256="${DKR_PATCH_POLICY_SHA256}"
          NOMINMAX
      )
 -    target_link_libraries(DKRPortGame PRIVATE DKRUpdateClient)
+-    include(cmake/FilePicker.cmake)
+-    dkr_add_file_picker()
 +    if(PS5)
 +        target_link_libraries(DKRPortGame PRIVATE DKRUpdateCore)
 +    else()
 +        target_link_libraries(DKRPortGame PRIVATE DKRUpdateClient)
 +    endif()
++    # PS5 cannot start a helper process; its NFD adapter (ps5_nfd.c) remains
++    # the in-process picker, which file_picker/client.hpp leaves unmapped.
++    if(NOT PS5)
++        include(cmake/FilePicker.cmake)
++        dkr_add_file_picker()
++    endif()
      if(DKR_EXPERIMENTAL_RACE_TEST)
          target_compile_definitions(DKRPortGame PRIVATE DKR_EXPERIMENTAL_RACE_TEST=1)
      endif()
-@@ -942,14 +1004,15 @@
+@@ -944,14 +1010,15 @@
      # unresolved on Linux. MSVC is order-independent, and this ordering keeps
      # both platforms on the same single-runtime link graph.
      target_link_libraries(DKRPortGame PRIVATE
@@ -210,7 +218,7 @@
      if(MSVC)
          target_compile_options(DKRPortGame PRIVATE /FS)
      endif()
-@@ -989,6 +1052,9 @@
+@@ -991,6 +1058,9 @@
                      "$<TARGET_FILE_DIR:DKRPortGame>/SDL2.dll"
                  VERBATIM
              )
@@ -220,7 +228,7 @@
          elseif(IOS)
              dkr_ios_finish(DKRPortGame)
          else()
-@@ -2675,3 +2741,7 @@
+@@ -2693,3 +2763,7 @@
              -P "${CMAKE_CURRENT_LIST_DIR}/tests/cmake/test_assertions.cmake")
      set_tests_properties(DKRTestAssertionContract PROPERTIES TIMEOUT 120)
  endif()
@@ -5026,14 +5034,17 @@
  sys.dont_write_bytecode=True
  import transforms
  AUTH=Path(__file__).resolve().parent
-@@ -15,13 +15,16 @@
+@@ -15,13 +15,19 @@
   if not path.is_file() or path.read_bytes()!=data:path.write_bytes(data)
  def upstream():
   pins=json.loads((AUTH/'pins.json').read_text())
 - for commit in pins['prs'].values():
 -  subprocess.run(['git','-C',str(ROOT),'merge-base','--is-ancestor',commit,'HEAD'],check=True)
 + archive=ROOT/'runtime-recomp/ps5-release/upstream-sync-inputs'
-+ archive_mode=archive.is_dir() and os.environ.get('DKRR_PINNED_ARCHIVE')=='fbae505f9fe2dae63d3a351aa3a82da2b4e7dae1'
++ # Verified release archives (1.0.14, 1.0.15) carry the pinned PR sources
++ # unchanged; their bytes are still checked against pins.json below.
++ archive_mode=archive.is_dir() and os.environ.get('DKRR_PINNED_ARCHIVE') in (
++  'fbae505f9fe2dae63d3a351aa3a82da2b4e7dae1','d2925302d961b46a8492cb3da2169f290ea724b6')
 + if not archive_mode:
 +  for commit in pins['prs'].values():
 +   subprocess.run(['git','-C',str(ROOT),'merge-base','--is-ancestor',commit,'HEAD'],check=True)
@@ -5058,3 +5069,92 @@
      (void)exe;
      (void)arguments;
      (void)directory;
+--- a/runtime-recomp/cmake/FilePicker.cmake
++++ b/runtime-recomp/cmake/FilePicker.cmake
+@@ -1,6 +1,8 @@
+ include_guard(GLOBAL)
+ function(dkr_add_file_picker)
+-    if(ANDROID OR APPLE)
++    # PS5 uses its in-process NFD adapter and cannot spawn desktop helpers.
++    # This guard also covers registration through LibraryUi.cmake.
++    if(ANDROID OR APPLE OR PS5)
+         return()
+     endif()
+     # Retained releases register new services at the existing late UI boundary,
+--- a/patches/online-performance/pipeline.py
++++ b/patches/online-performance/pipeline.py
+@@ -33,20 +33,24 @@
+     """
+     game=ROOT/'runtime-recomp/src/game'
+     include=lambda n:'#include "'+(game/n).as_posix()+'"\n'
++    # PS5 archive builds compose the 1.0.7 capsule into src/; read the
++    # in-place upstream edits from the unmodified release tree instead.
++    current_game=ROOT.parent/'_release-current/runtime-recomp/src/game'
++    if not current_game.is_dir():current_game=game
+     # These first-party definitions already contain the repair when their
+     # direct source is compiled. Retained capsule aliases still need the same
+     # declaration/body below, through this existing compatibility boundary.
+     repaired={
+-        'game_payload.hpp':game/'game_payload.hpp',
+-        'game_payload_v77.cpp':game/'game_payload_v77.cpp',
+-        'game_payload_v80.cpp':game/'game_payload_v80.cpp',
+-        'legacy_character_menu.hpp':game/'mods/legacy_character_menu.hpp',
+-        'legacy_character_menu_render.hpp':game/'mods/legacy_character_menu_render.hpp',
+-        'legacy_character_stage.hpp':game/'mods/legacy_character_stage.hpp',
+-        'legacy_character_menu_render.cpp':game/'mods/legacy_character_menu_render.cpp',
+-        'legacy_character_stage.cpp':game/'mods/legacy_character_stage.cpp',
+-        'runtime_legacy_mods.cpp':game/'runtime_legacy_mods.cpp',
+-        'update_process.hpp':game/'updates/update_process.hpp',
++        'game_payload.hpp':current_game/'game_payload.hpp',
++        'game_payload_v77.cpp':current_game/'game_payload_v77.cpp',
++        'game_payload_v80.cpp':current_game/'game_payload_v80.cpp',
++        'legacy_character_menu.hpp':current_game/'mods/legacy_character_menu.hpp',
++        'legacy_character_menu_render.hpp':current_game/'mods/legacy_character_menu_render.hpp',
++        'legacy_character_stage.hpp':current_game/'mods/legacy_character_stage.hpp',
++        'legacy_character_menu_render.cpp':current_game/'mods/legacy_character_menu_render.cpp',
++        'legacy_character_stage.cpp':current_game/'mods/legacy_character_stage.cpp',
++        'runtime_legacy_mods.cpp':current_game/'runtime_legacy_mods.cpp',
++        'update_process.hpp':current_game/'updates/update_process.hpp',
+     }
+     if name in repaired and text==repaired[name].read_text():return text
+     if name=='game_payload.hpp':
+@@ -67,10 +71,10 @@
+             '    bool redirect_spawn(std::span<std::uint8_t>,recomp_context&);\n    void label_anchors(std::span<std::uint8_t>,CharacterMenuView&)const;')
+     elif name=='legacy_character_menu_render.cpp':
+         marker='void CharacterMenuRenderer::draw_hint('
+-        text=once(text,function(text,marker),function((game/'mods'/name).read_text(),marker))
++        text=once(text,function(text,marker),function((current_game/'mods'/name).read_text(),marker))
+     elif name=='legacy_character_stage.cpp':
+         marker='bool CharacterStage::redirect_spawn('
+-        text=once(text,marker,function((game/'mods'/name).read_text(),'void CharacterStage::label_anchors(')+'\n'+marker)
++        text=once(text,marker,function((current_game/'mods'/name).read_text(),'void CharacterStage::label_anchors(')+'\n'+marker)
+     elif name=='runtime_legacy_mods.cpp':
+         text=once(text,'p->menu_texture_draw,p->menu_font,p->menu_colour,p->menu_background,p->menu_text,p->menu_render_reset};',
+             'p->menu_texture_draw,p->menu_font,p->menu_colour,p->menu_background,p->menu_text,p->menu_render_reset,\n                p->menu_text_width,p->menu_view_matrix,p->menu_projection};\n            state->stage.label_anchors({rdram,legacy::guest_memory_size()},view);')
+@@ -78,7 +82,7 @@
+         text=once(text,'bool inherit_update_environment = false);','bool inherit_update_environment = false, bool system_desktop_libraries = false);')
+         text=once(text,'    int wait(unsigned timeout_ms);','    int wait(unsigned timeout_ms);\n    void terminate();')
+     elif name=='update_process.cpp':
+-        current=(game/'updates/update_process.cpp').read_text()
++        current=(current_game/'updates/update_process.cpp').read_text()
+         if 'void Child::terminate(' not in text:
+             text=once(text,function(text,'Child::Child('),function(current,'Child::Child('))
+             text=once(text,'bool parent_alive(',function(current,'void Child::terminate(')+'\n'+'bool parent_alive(')
+@@ -110,7 +114,7 @@
+             '[this,config=std::move(config),rom=std::move(rom),online,enabled=dkr::session_content::next_enabled.load()](std::stop_token stop) {\n            dkr::session_content::Preparation selection(enabled);')
+     elif name=='game_main.cpp':
+         text=include('crash_reports/native_context.hpp')+text
+-        current=(game/name).read_text()
++        current=(current_game/name).read_text()
+         for marker in ('LONG WINAPI RuntimeCrashFilter(','void RuntimeSignalHandler(','void InstallRuntimeSignalHandlers('):
+             text=once(text,function(text,marker),function(current,marker))
+         if 'dkr::crash_reports::refresh_native_context(true);' not in text:
+@@ -149,7 +153,7 @@
+         text=include('crash_reports/native_context.hpp')+text
+         if '[boot][graphics] requested-api=' not in text:
+             text=once(text,'    dkr::runtime::texture_packs::renderer_started();',
+-                function((game/name).read_text(),'if(application_->device)')+'\n    dkr::runtime::texture_packs::renderer_started();')
++                function((current_game/name).read_text(),'if(application_->device)')+'\n    dkr::runtime::texture_packs::renderer_started();')
+         if 'dkr::crash_reports::refresh_native_context();' not in text:
+             text=once(text,'    dkr::runtime::startup_performance::report("renderer-ready",',
+                 '    dkr::crash_reports::refresh_native_context();\n    dkr::runtime::startup_performance::report("renderer-ready",')

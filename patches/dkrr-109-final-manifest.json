@@ -1,6 +1,6 @@
 {
-  "upstream_version": "1.0.14",
-  "upstream_revision": "fbae505f9fe2dae63d3a351aa3a82da2b4e7dae1",
+  "upstream_version": "1.0.15",
+  "upstream_revision": "d2925302d961b46a8492cb3da2169f290ea724b6",
   "files": {
     "runtime-recomp/src/game/crash_reports/transport.cpp": {
       "original_sha256": "3e6228796401ab980e757783791f2712f0541bd7897a4dc6a47597bcfa274a4e",
@@ -11,36 +11,36 @@
       "patched_sha256": "a3098286763ca0c23db06fd284364cca842dfe90c89e01f18882b1ddc9719a6b"
     },
     "runtime-recomp/src/game/game_main.cpp": {
-      "original_sha256": "44eb154fa8e265568a48e31a0d1dea0caad2ffa1193c0414d868102b0999f745",
-      "patched_sha256": "2b76cd32d1fcdd0f51fce87381af2cf59b9e79c1ed22b9f64cd7a5d405960c79"
+      "original_sha256": "31343b62292b39b8b09afcb46fb83b29b59d97ae8b84b0a0985d786dbd907af8",
+      "patched_sha256": "2bbce63352825e4fba5d809be15d623a07d62a8debeb8b602bc22212beca854e"
     },
     "runtime-recomp/src/game/game_payload.cpp": {
       "original_sha256": "b23f259eb05fc3ffdf8d8e538cd62cd2b74ee3ca07f324d62a872eb1e1f9d451",
       "patched_sha256": "ef81088eda219fc0b146a9ff4aec7c24e5318e68ce3d336baa0e3f521db8b280"
     },
     "runtime-recomp/src/game/game_registration.cpp": {
-      "original_sha256": "946a32cdffe14be501db713ca3e17976c8b7f4fd960007314c81f2a1a538908a",
-      "patched_sha256": "c6ddad958cc305f1b65be79b3d9bc9a6dab04a039d053c7bf38a4c5c1d88b40a"
+      "original_sha256": "ffbdda3fd30a18b8111619328e8c223e94c79e33e7dba4c500e316a45dfdaa83",
+      "patched_sha256": "386fe1e365c56374ab306bd7ac3070300f00f3d5d133242f164a424dd0a45042"
     },
     "runtime-recomp/src/game/launcher_themes/system.hpp": {
       "original_sha256": "43d2171ee2085d652224006aa18be08726685b2abfad49f7f7e0ff4c18e18a6d",
       "patched_sha256": "82b3bc100203d0748602360df115a9454dba59f908842acebe4c42c01a7e768c"
     },
     "runtime-recomp/src/game/library_ui/shared_page_ui.inl": {
-      "original_sha256": "411215dda8015342b8efcb202ed5d2513786efd2e463388cb6d7db645ad3ff64",
-      "patched_sha256": "badd7b00fbe7cbf9e22f93bfd4b6fa2ef98144f00d4954cd2eca12a0a1894647"
+      "original_sha256": "3277176ac662d7175040ab9854ab872180af41a260d5d74f0c5a18c2da9df2e6",
+      "patched_sha256": "997fcb5f432252eb472a37124791c630f687186edef1188327596fba413b85fc"
     },
     "runtime-recomp/src/game/localisation/service.cpp": {
       "original_sha256": "3b91c29b21f870c3e286ae46e3ac4b351e9f42ab4dd996afeecf9c4b325cba9a",
       "patched_sha256": "5820707db5ee0afa54511911776e778d2484f5e605dfb91c4f973ab1ed80f75c"
     },
     "runtime-recomp/src/game/mod_store.cpp": {
-      "original_sha256": "4cc673f5d79f9cc14bb430c73465d523bb0b2a8103fd275c31ca0231bea58b6a",
-      "patched_sha256": "34cc34ed184aadeaa5558ad9e2d0c14f1c71bdc88511eeeb09bfa4c5373784cb"
+      "original_sha256": "4368dc0c0972dc3cd9beecbff60da380d3fc556fb881c40314e6804503f127c1",
+      "patched_sha256": "7891cda23fb7ddfd5e52fcf66dd8e3edd04906a7d9db8c86c5fd1b3ab57f4aab"
     },
     "runtime-recomp/src/game/mod_store_install.cpp": {
-      "original_sha256": "efa6caa311bc136770a79aa1ccbef667bd6a46eb79f51c5050226c8947ab22dd",
-      "patched_sha256": "3475adf4051936c9fb1f6db57fba12b65b19452a867eea4175185230a123e1c5"
+      "original_sha256": "065679eba73fecf695b117c458990d1c687a89744be0540d50bdf2c7be590202",
+      "patched_sha256": "d38f84c3b233887f97e9fd9650614f200a0d77a4483d8df422062de1d2d4106e"
     },
     "runtime-recomp/src/game/mod_store_names.cpp": {
       "original_sha256": "28988f6fd5931c0649f29ac80d4417ac6b2cec9649a52f438d0f591bb502938c",
@@ -55,8 +55,8 @@
       "patched_sha256": "4034f19424627fcdc5a59b25dbb353ed8847e20b49f46bbff1ea17451a6c2bfb"
     },
     "runtime-recomp/src/game/mods/online_mod_runtime.cpp": {
-      "original_sha256": "e73d6517e0aa3f6947b92e6f422f2ab4a70c375553d7804a4c203d2a23b15788",
-      "patched_sha256": "6272faa28c6a45638453eb0ab91f0413e5f6272db4d6fccc96dbeffb39529300"
+      "original_sha256": "8be766ba146613b12e090405ad023536176dd596a361eb7a0f92d2762fc6a6d5",
+      "patched_sha256": "46bb3039273f80c1fa0692026fca02146cb8cb50a040713c8bb4758dd9d6286a"
     },
     "runtime-recomp/src/game/netplay/datagram_socket.cpp": {
       "original_sha256": "1660d05cb728d8494036fd22dc3e1c9c752dc4b05c7c61a76bdefa6dba341f1e",
@@ -75,8 +75,8 @@
       "patched_sha256": "c7871b9e4de9576dc59e9a9f8a8f0edccc87272368e028a6a07c1706861cf8d5"
     },
     "runtime-recomp/src/game/netplay/quick_join_transport.cpp": {
-      "original_sha256": "200f9dcf611129245815c137c034d26cc15825f061d5a2b92de3cdcdd8f09c61",
-      "patched_sha256": "5d2dfc788ddd3b0ad6c7a4cfa527131dd88f15b24e55e35d60fe3de80023e1c9"
+      "original_sha256": "7e13ac212285d126d860a4ed1a71a0a91a1eaee08eb77718643971ca072422fc",
+      "patched_sha256": "031a3831ca62aa9a9ac00f0f309122bdb958efab51786a9140c0f88d330454c0"
     },
     "runtime-recomp/src/game/netplay/secure_channel.cpp": {
       "original_sha256": "b76792261aac49f60e51c21e7b86999d49a50423c9bf157797f3acb981b90f0b",
@@ -91,8 +91,8 @@
       "patched_sha256": "485d238d7004f5eb404cd285e151656c54ddac67baec60d84f60a1ba9636125a"
     },
     "runtime-recomp/src/game/rt64_renderer.cpp": {
-      "original_sha256": "2fa62847a8c29bed6f32252c881af025d4649cde51ace4dfd56a39dc32f1f46b",
-      "patched_sha256": "f8e90b8d56bb68019ceb167babf4e684d03f6ed0c91a05d1a9f93b149001e3b1"
+      "original_sha256": "92f302d49d22c77b444ae244ac0d54daebe5fc888e3a0bf83a707f80a2e10e45",
+      "patched_sha256": "9f644333ea1167869cbddcc9990e3d08bcf8f953cc11d32b763cec2dd3156370"
     },
     "runtime-recomp/src/game/runtime_code_mods_ui.inl": {
       "original_sha256": "b0eeb403bed9b08085376cb05b9eab97999f26cb144caaf7f39fc208b597d515",
@@ -100,7 +100,7 @@
     },
     "runtime-recomp/src/game/runtime_controls_ui.inl": {
       "original_sha256": "ced785acc0801c9d39c8303325369c493313d39c8b38733012dfb1f0cc3f3f8e",
-      "patched_sha256": "2758d12c277e76844068b7c5dcf82ab86453e64075d96787e9cc4a75506fc24e"
+      "patched_sha256": "3dd4d0c732bb8d2e204be34e88fa0271f49e328899fc87adddb7a4cf97f22580"
     },
     "runtime-recomp/src/game/runtime_crt_overlay.cpp": {
       "original_sha256": "9af25c08cd67d4534d9c60661096514b2f413b6858886ddc85408b611c491ee1",
@@ -127,40 +127,44 @@
       "patched_sha256": "1a8608183e578d03032cb594f91d2c72c90f7d8de273f43a7ed199bbae788faa"
     },
     "runtime-recomp/src/game/runtime_online_ui.inl": {
-      "original_sha256": "1e6385e5883c08d3f28c9c41d5708af181fb73c91354e60aae9a5ff468d48f3d",
-      "patched_sha256": "c809e33e4ee2af935092afc4864062c43c52dfa06940f7ba137773467d9d2210"
+      "original_sha256": "a87f078ad9cf42d9618844faece2ce849a79a92fd8e090c97235f7015e63e1ae",
+      "patched_sha256": "dcd40e010d7bb7bb589446b04dbfee113d5553caedb393a6d4ef9af4131332da"
     },
     "runtime-recomp/src/game/runtime_platform.cpp": {
-      "original_sha256": "0a1fdcbe8d53b26cad0151d85bde4d27998d466ce86b13c74eb719c074b655b6",
-      "patched_sha256": "07b45f658ca25972185f79d67c0f3205c030d84c42dcacf62e10dc1f56b253ce"
+      "original_sha256": "11de5cbedf82474ea28a10f18dd22dd4230e44c71260301cd8e431313161abf7",
+      "patched_sha256": "50d194f41b8fb1a13c70ede68120ffc078976d4135d4cec6025bfa4e98db89cf"
     },
     "runtime-recomp/src/game/runtime_platform.hpp": {
       "original_sha256": "51f44b3b0719a09e3b6176a8e4e4d92a041f1fe16205ef2199c320f4898d6c22",
       "patched_sha256": "0e8098c6db429510883888dd883c667c1453706322f5107a11b036f9bf7d05ac"
+    },
+    "runtime-recomp/src/game/runtime_play_ui.inl": {
+      "original_sha256": "21de9cdedf88397250a5251e32d0ce8758fe1f1b5a388e7e52b44e8c0d42fab6",
+      "patched_sha256": "0a280e1818d835b55293c9902ae2734743009c0d51d6298dc7f8c6cbf5501c6a"
     },
     "runtime-recomp/src/game/runtime_portable.cpp": {
       "original_sha256": "e9d9d2e1982df32a83c38e554a1609e07757202fe5653c504ff75c623246b6ab",
       "patched_sha256": "b240f0027e4790ae63454f3cdd86d67ee052eba5c7c9e6eafbb7309df579b5f8"
     },
     "runtime-recomp/src/game/runtime_save_routing.cpp": {
-      "original_sha256": "ff5044db1d1838eef635d48df7a3c1ab9100627ea45a01ed9e0359d6a34028c5",
-      "patched_sha256": "7d4fad853b56d13371ea5150b8d291dc5bac3740c692abbb1c4db0ed99bc7179"
+      "original_sha256": "5c63e8a82afbd08071780b9be25ed076ffe6c01f0a48355a3024739124d02824",
+      "patched_sha256": "da2f3556895fb9c7b694fbb8f051fde999b96c491fe84f1d58711876cc21bc83"
     },
     "runtime-recomp/src/game/runtime_saves_ui.inl": {
-      "original_sha256": "9f07930b7d7ee044d477a6981b2be2ea3519efc0dbcc6792f45fe444741e0d9b",
-      "patched_sha256": "41c54a6351e27ae923f0a941f24a12f3c9bec04b890d4005747671e11db1014e"
+      "original_sha256": "f4aec3f5a6bf301875a4e2eff51eefb323f95605041a301f5d5a40bdd23c7aa9",
+      "patched_sha256": "67b27e7a0254214506243d50816e15662bfa8622834045df00adb922fceac24c"
     },
     "runtime-recomp/src/game/runtime_support.cpp": {
       "original_sha256": "c99e4334b2a4a6558154c7753145881e386cb19032383346dd536566f795f26c",
       "patched_sha256": "f394adac886c598cd69e07d11d461ed22e2e5074248c8ec44f1b3fda1aeaea21"
     },
     "runtime-recomp/src/game/runtime_texture_packs.cpp": {
-      "original_sha256": "03e0e05b851ddc86026079529427d3c53b39b25f1ab0fd4840bcff6446639fb6",
-      "patched_sha256": "64fa615bb16e2802223d7286fc5be4561e3fbd4223ee0b6c49ffa57e822547c0"
+      "original_sha256": "6306ea26f4fb2370d9633dc68f5a1e73001d1ff52b21a4772d76d9d69c80d924",
+      "patched_sha256": "b6e5c5583ef38bb9bb84649d907d76ce2e5bb0f3c72258e9722202831127cc52"
     },
     "runtime-recomp/src/game/runtime_ui.cpp": {
-      "original_sha256": "1342ec41820ab54f533305e1961479b88e4b08e33073fa24684fecce3b420e6a",
-      "patched_sha256": "475219f3eae3bce82f8d376e735955310643125d420c0b2a1f184f98672b765a"
+      "original_sha256": "c2ae61e836739da160490f5381e31bf47c821bb35a8ed1cd6e837424a38c6878",
+      "patched_sha256": "8f0e5c129459d6d54262769c1d1399c4e7e0448b0df2a48bb612ad5ab649f126"
     },
     "runtime-recomp/src/game/runtime_ui.hpp": {
       "original_sha256": "ad7c87220d85b9c354590931036d6deeee5ca2492066c9becc1f052d91cf4d7d",
@@ -186,18 +190,154 @@
       "original_sha256": "993570d1dd27996b92dbccdcd8a05ff4d6c7d7348235286f12831f1d158b6ac0",
       "patched_sha256": "666c68bbaf530bc08c7b46b7bf7a9d14199ee25e05ce14099179283aa89902de"
     },
+    "runtime-recomp/src/game/storage/maintenance.cpp": {
+      "original_sha256": "a7ff365e98e94702c7ae174780e4f5650ed3dbe14df7c3c9819b4f62c3262d5b",
+      "patched_sha256": "cacbb144a85d21a94948083972b8123627bf3c22688bb11611780e79694e8e0c"
+    },
+    "runtime-recomp/src/game/storage/service.cpp": {
+      "original_sha256": "424aec789ac1683005e9f2c39727642fabc83752bbeeb33175a2a2163aecece0",
+      "patched_sha256": "06b1f9f6c71763347c26bdbe9d6ebb140f9c9d737fe4e338d0dbf83565dbef63"
+    },
     "runtime-recomp/src/game/updates/update_core.cpp": {
       "original_sha256": "0c2f5cd124906bd00bc70f988534aa547bc19595fbcef0025c9ebd3c39de74b2",
       "patched_sha256": "3034682c20c7f3bea0306af5967b30f9d1e656781e8e636aab0054d242b430da"
     },
     "runtime-recomp/src/game/updates/update_process.cpp": {
-      "original_sha256": "5f13c2c12c4f9bc6e96f777b4b23a4d75b973d5c5617b33f5e1151e191784027",
-      "patched_sha256": "4ebdf987a7d6fac7545ead0c1c3a60226a465ad737b51deeda42801a1b41eecf"
+      "original_sha256": "53c0ad5d0bc303fc2a7b7430ba24a3e0dbf39472cf000708c5c118ebe88d152c",
+      "patched_sha256": "291b05c05ae800192c37a8066d710c6cde06dfed7c927ebaf085f8a634423bb7"
     },
     "runtime-recomp/src/game/vehicle_lighting/road_wheels.hpp": {
       "original_sha256": "32545c1070e352f575d7b815bdd83327492f9a614f82fb24cf7581642743a5dd",
       "patched_sha256": "272159c120de1cb1eeeb9889bdf63613d2f0692e287ef8e6a0ef1bf59c572c06"
     }
   },
-  "patch_sha256": "0cb8084dcaa576e831e844e5b7ecb009da41344492dd921372cf4345a1b895c7"
+  "patch_sha256": "614fabcfe3542577b02b23f0ac6205a8dbb401bfcd237329748f202f2d63bfad",
+  "include_directories": {
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/updates/update_process.hpp": "163af62b1302cead",
+    "@DKRR_BUILD@/generated/rollback-only/rollback_policy.hpp": "46ecb14696367aea",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/netplay_types.hpp": "0bf4a7b47c43acef",
+    "@DKRR_BUILD@/generated/spectators/party_link.hpp": "996f1c9e9a8d85c9",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/runtime_netplay.hpp": "a396958986ebccbf",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/direct_session.hpp": "9de0cb1252aabc2c",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/experimental_network.hpp": "a6e97f3afeac37ef",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/experimental_session.hpp": "78d507713cf16af8",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/experimental_timeline.hpp": "1002a825a345ab08",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/experimental_owner_inputs.hpp": "918ff90ec1e6b18a",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/experimental_rollback.hpp": "3c7b2fee6d078de7",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/netplay_lobby.hpp": "f3105074585bb58e",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/netplay_protocol.hpp": "57ea067444694854",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/netplay_timeline.hpp": "ad45c9e313533346",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/replay_recorder.hpp": "17fd6713116c66ea",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/netplay_pacing_policy.hpp": "35a6d87168d1da6f",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/runtime_legacy_mods.hpp": "c4b385b554eb221b",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/mods/legacy_mod_launch.hpp": "fdf9722f0bcbec06",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/mods/online_mod_music.hpp": "4099f78cb7de2ed7",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/mods/legacy_character_menu.hpp": "d4121ec26f0177c6",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/game_payload.hpp": "9ab78c4bc59674b4",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/mods/online_mod_runtime.hpp": "404459024ff7b86b",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/experimental_runtime.hpp": "456e7aea7b3eb9e4",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/experimental_pump.hpp": "d67bc3460d90bd07",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/camera_runtime.hpp": "304f75d8bb28cb86",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/camera_session.hpp": "310c118367f79a50",
+    "@DKRR_BUILD@/generated/spectators/party_runtime.hpp": "0954d353735d38e9",
+    "@DKRR_SOURCE@/runtime-recomp/tests/replay_probe/owned_game.hpp": "34ecb19deb0cb854",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/experimental_session.hpp": "7265b7be1ae7f0f0",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/experimental_timeline.hpp": "81c5d1a6d84f2d05",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/experimental_owner_inputs.hpp": "b7e58253fcc1db81",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/experimental_rollback.hpp": "d20dac4865750d59",
+    "@DKRR_BUILD@/generated/party-departure-repair/departure.hpp": "cc117bcc2fac9431",
+    "@DKRR_BUILD@/generated/party-start-repair/start_gate.hpp": "00dce9bc37adcd12",
+    "@DKRR_BUILD@/generated/rollback-scoreboard/rollback_check.hpp": "5c979de31bc7938f",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/netplay_protocol.hpp": "6a84486f48273cbe",
+    "@DKRR_BUILD@/generated/lobby-restoration/lobby_adapter.hpp": "b2ad4393d0e348ad",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/direct_session.hpp": "e3092cc00d6b258f",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/experimental_network.hpp": "7baa8f00b16305b5",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/experimental_session.hpp": "127266e5eb2518e8",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/experimental_timeline.hpp": "58de9b584aa9581b",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/experimental_owner_inputs.hpp": "66f5220f6c199c0e",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/experimental_rollback.hpp": "f83c4b04f4b3a966",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/netplay_protocol.hpp": "1637f66b6c16dc49",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/netplay_timeline.hpp": "7174189db07cf0e3",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/replay_recorder.hpp": "9cd05376a528f6fa",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/experimental_runtime_admission.hpp": "2333cbd08367585e",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/online_lobby_policy.hpp": "4e054af5b7a855e5",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/netplay_pacing_policy.hpp": "7add52b90eee7aa4",
+    "@DKRR_BUILD@/generated/online-directory/owner_pump.inl": "837290b9ce917c26",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/experimental_lobby_admission.hpp": "75e513ee1b975142",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/online_input_broker.hpp": "ea44686da35b733f",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/experimental_lobby_admission.hpp": "b02b7557750a96ba",
+    "@DKRR_BUILD@/generated/custom-vehicles/native/resident_music.hpp": "19025189a500d46b",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/mods/online_mod_music.hpp": "639f810a39ed7bff",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/mods/legacy_character_menu.hpp": "102c6ad752b8d837",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/friend_service.hpp": "56b121e9d9714777",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/gekko_direct_adapter.hpp": "ab3001bf21738048",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/lan_discovery.hpp": "4f5557ab25c8d63d",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/online_input_broker.hpp": "04dacbbddfcb1838",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/experimental_launch.hpp": "33f373d42f7fa159",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/experimental_pump.hpp": "a9949f4e3e850bff",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2_BASE/native/src/game/netplay/replay_qualification.hpp": "87dd8434aeffca3e",
+    "@DKRR_BUILD@/generated/rollback-scoreboard/assessment.hpp": "2dd48f0b83325a5a",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/mods/legacy_character_menu_render.hpp": "9525e1b65efbfccf",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/mods/legacy_character_stage.hpp": "239095e222529f14",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/mods/legacy_character_presentation.hpp": "11f9eb4ec672c229",
+    "@DKRR_BUILD@/generated/spectator-admission-repair/observer_music.hpp": "a017d7a62775b79c",
+    "@DKRR_BUILD@/generated/music-preview-repair/resident_music.hpp": "25d4a76a15a7a019",
+    "@DKRR_BUILD@/generated/mod-runtime-repair/native/mods/sdk2_world.inl": "a50195b4a9231d47",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/live_fov/runtime.hpp": "75aa1f10cbe3268b",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/runtime_input.hpp": "203defb456e04349",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/gekko_direct_adapter.hpp": "6172f6089f73169b",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/two_player_adventure_policy.hpp": "835a59333695bf3d",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/experimental_runtime_admission.hpp": "ec299196d86a6769",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/android/mobile_ui.hpp": "df9c0b211273890c",
+    "@DKRR_BUILD@/generated/custom-vehicles/native/vehicle_world.hpp": "e999a4eb5bd9d24f",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/game_payload.hpp": "47ec5c63415c0cc4",
+    "@DKRR_BUILD@/generated/online-vehicle-menu/owned_vehicle_menu.hpp": "0f59cf796c79e9c7",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/camera_rt64.hpp": "50851eb39dac07c4",
+    "@DKRR_BUILD@/generated/render-stability/water_residency_rt64.hpp": "08893d78d15e3369",
+    "@DKRR_BUILD@/generated/all-player-detail/styled_water_rt64.hpp": "2f9ce509153efe7c",
+    "@DKRR_BUILD@/generated/lobby-stability/online_mod_sync_link.hpp": "31a8c5a49c326e32",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/friend_service.hpp": "c2a9a82a2eac5102",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/netplay_build_identity.hpp": "4758cd853a87446f",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/experimental_runtime_presence.hpp": "0f58a754e75c6687",
+    "@DKRR_BUILD@/generated/lobby-stability/runtime_online_mods_ui.inl": "4db4410b5299caa9",
+    "@DKRR_BUILD@/generated/upstream-sync/graphics.inl": "8bcece18573a017d",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/runtime_controls_ui.inl": "9cce91c822020ebf",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/direct_session.hpp": "565ebb78fa5f31a4",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/experimental_network.hpp": "b4071b0f3cb3d4d2",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/netplay_timeline.hpp": "bafc9bfc6fb91fa1",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/replay_recorder.hpp": "1b8531284ee2d5b9",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/runtime_netplay.hpp": "b72bf8b99e549dad",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/netplay_pacing_policy.hpp": "806817bb474b3e95",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/replay_qualification.hpp": "50b594112a189f29",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/tests/replay_probe/owned_game.hpp": "951b803c380726f0",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/netplay/experimental_session.hpp": "dd96c0733b84c759",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/netplay/experimental_timeline.hpp": "8170c090f8035196",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/netplay/experimental_owner_inputs.hpp": "6fa9da75d6d656ce",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/netplay/experimental_rollback.hpp": "2d3e379b688e07da",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/netplay/experimental_network.hpp": "70ca0b7b3b9e6c11",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/netplay/experimental_pump.hpp": "8372d8b70b1227f0",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/netplay/replay_qualification.hpp": "f4be3e75ec03cf08",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/runtime_legacy_mods.hpp": "38817304d4cf42fb",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/mods/legacy_mod_launch.hpp": "5bdeda77c9711bcc",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/game_payload.hpp": "9858eface3d2e606",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/roles/SDK2/native/src/game/mods/online_mod_runtime.hpp": "29d4dbe66115bc32",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/runtime_legacy_mods.hpp": "3f15f65b4767dd23",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/mods/legacy_mod_launch.hpp": "bbd3720f310cae03",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/mods/online_mod_music.hpp": "a8adf7a2336376f4",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/mods/legacy_character_menu.hpp": "a9aa9ed9da7f142c",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/experimental_launch.hpp": "71ba9901aca5a8cf",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/experimental_pump.hpp": "537d4423f201e1d9",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/online_input_broker.hpp": "b055f015051669c7",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/mods/online_mod_runtime.hpp": "1d0f5f2e7b54a139",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/water_residency_rt64.hpp": "a70f4cbd854bbcce",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/enhanced_water_rt64.hpp": "b6317e2b5d8ed1f4",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/netplay/online_mod_sync_link.hpp": "f972b15edad74789",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/runtime_online_mods_ui.inl": "1de252f32199411a",
+    "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/runtime_graphics_ui.inl": "fd17c962591db897",
+    "@DKRR_BUILD@/generated/spectator-admission-repair/retained_fixture.inl": "53887d26106ba986",
+    "@DKRR_SOURCE@/patches/spectators/native/party_link.hpp": "ae8eda1718171953",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/netplay/experimental_lobby_admission.hpp": "65ada9c6ee1557e8",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/camera_session.hpp": "a739d3c67b68aacc",
+    "@DKRR_SOURCE@/runtime-recomp/src/game/runtime_input.hpp": "0dd53b4ea83b9b4e"
+  }
 }

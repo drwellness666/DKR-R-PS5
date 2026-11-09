@@ -169,7 +169,8 @@ void run_check() {
         if(!n)break;used+=static_cast<std::size_t>(n);
     }
 #endif
-    Offer result;if(stopping.load())return;
+    // A cancelled check must not leave the UI in Checking.
+    Offer result;if(stopping.load()){state(State::Idle,"Update check cancelled.");return;}
 #if !defined(DKRR_STATIC_HTTPS)
     if(Clock::now()>=deadline){state(State::Unavailable,"Update check timed out.");return;}
 #endif
@@ -188,7 +189,8 @@ void run_install() {
     Services services;int fd=temporary_file();
     struct Close {int fd;~Close(){if(fd>=0)close(fd);}} close_file{fd};
     if(fd<0||!services.start()||!download(services,release,fd)){state(State::Failed,"Download cancelled or verification failed. The installed game is unchanged.");return;}
-    if(stopping.load())return;
+    // A cancel after the last byte must not leave the UI in Downloading.
+    if(stopping.load()){state(State::Failed,"Update cancelled. The installed game is unchanged.");return;}
     state(State::HandingOff,"Preparing installation on this PS5...");
     if(!native::prepare(fd,release,error,sizeof(error))){state(State::Failed,error[0]?error:"The native update could not be prepared. The installed game is unchanged.");return;}
     state(State::Closing,"Saving and closing DKR-R. The game installs this update itself.");
@@ -200,7 +202,7 @@ void launch(bool installing) {
     if(worker.joinable())worker.join();stopping.store(false);
     if(installing){std::lock_guard lock(mutex);if(current.state!=State::Available){busy.store(false);return;}current.state=State::Downloading;current.received=0;}
     else state(State::Checking,"Checking for updates...");
-    try {worker=std::thread([installing]{try {if(installing)run_install();else run_check();}catch(const std::exception& e){std::fprintf(stderr,"[ps5][updates] %s\n",e.what());state(State::Failed,"The secure update request failed. Retry when connected.");}catch(...){state(State::Failed,"Update stopped. The installed game is unchanged.");}busy.store(false);});}
+    try {worker=std::thread([installing]{try {if(installing)run_install();else run_check();}catch(const std::exception& e){std::fprintf(stderr,"[ps5][updates] %s\n",e.what());state(State::Failed,stopping.load()?"Update cancelled. The installed game is unchanged.":"The secure update request failed. Retry when connected.");}catch(...){state(State::Failed,"Update stopped. The installed game is unchanged.");}busy.store(false);});}
     catch(...){busy.store(false);state(State::Unavailable,"Update worker could not start.");}
 }
 }
@@ -236,7 +238,10 @@ bool set_automatic_check(bool enabled){
     char value=enabled?'1':'0';bool good=write(fd,&value,1)==1&&fsync(fd)==0;if(close(fd)<0)good=false;
     if(good)good=rename(pending,path)==0;
     if(!good){unlink(pending);return false;}
+    // The renamed file is already the visible setting; keep memory in step
+    // with it even if the directory sync below cannot be confirmed.
+    automatic_enabled.store(enabled);
     fd=open(folder,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);if(fd<0)return false;good=fsync(fd)==0;if(close(fd)<0)good=false;
-    if(good)automatic_enabled.store(enabled);return good;
+    return good;
 }
 }

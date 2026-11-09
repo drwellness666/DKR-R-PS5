@@ -6,7 +6,7 @@
 
 | Project / people | Contribution |
 |---|---|
-| **[ThatGuyMcd and all DKR-R contributors](https://github.com/ThatGuyMcd/DKR-R)** | The original Diddy Kong Racing Recompiled project, its interface and game features. This PS5 port is based on 1.0.14. |
+| **[ThatGuyMcd and all DKR-R contributors](https://github.com/ThatGuyMcd/DKR-R)** | The original Diddy Kong Racing Recompiled project, its interface and game features. This PS5 port is based on 1.0.15. |
 | **[DavidSM64 and the Diddy Kong Racing decompilation contributors](https://github.com/DavidSM64/Diddy-Kong-Racing)** | Matching source, symbols and game structures. |
 | **[Wiseguy and the N64Recomp contributors](https://github.com/N64Recomp/N64Recomp)** | Static recompilation, with [N64ModernRuntime](https://github.com/N64Recomp/N64ModernRuntime) providing the runtime. |
 | **[RT64 contributors](https://github.com/rt64/rt64)** | Rendering and presentation; [Plume](https://github.com/rt64/Plume) supplies graphics abstraction. |
