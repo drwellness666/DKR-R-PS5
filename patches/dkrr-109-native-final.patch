@@ -375,6 +375,37 @@
      error.clear();
      return true;
  }
+--- a/runtime-recomp/src/game/hud_layout_editor.cpp
++++ b/runtime-recomp/src/game/hud_layout_editor.cpp
+@@ -111,7 +111,7 @@
+ }
+ void start_move() {
+     e.gesture=e.draft; activate_override(); e.moving=true;
+-    e.message="Move the whole group. A / Enter places it; B / Escape cancels this move.";
++    e.message="Move the whole group. Cross places it; Circle cancels this move.";
+ }
+ void nudge(float x,float y) {
+     auto& p=selected();
+@@ -268,8 +268,8 @@
+         draw_canvas({ImGui::GetContentRegionAvail().x,std::max(80.0F,ImGui::GetContentRegionAvail().y-110)});
+         if (!e.moving) { if(button("MOVE GROUP",std::min(210.0F,left))) start_move(); }
+         else { if(button("PLACE GROUP")) finish_move(true); ImGui::SameLine(); if(button("CANCEL MOVE")) finish_move(false); }
+-        ImGui::TextWrapped(e.moving ? "D-pad: nudge | Stick: move | LB: fine | RB: coarse | A: place | B: cancel" :
+-            "Select a group, then Move. LB / RB selects a group. Y opens details. Menu opens Apply / Discard.");
++        ImGui::TextWrapped(e.moving ? "D-Pad: Nudge | Stick: Move | L1: Fine | R1: Coarse | Cross: Place | Circle: Cancel" :
++            "Select a group, then Move. L1 / R1 selects a group. Triangle opens details. Options opens Apply / Discard.");
+         ImGui::EndChild(); ImGui::SameLine();
+         ImGui::BeginChild("hud-inspector",{0,body},true);
+         ImGui::BeginDisabled(e.moving);
+@@ -439,7 +439,7 @@
+     ImGui::TextWrapped("LIVE HUD PREVIEW - current gameplay only. Online play continues; game input stays captured by the overlay.");
+     ImGui::Text("Editing: %s / %s / %s",hg::kScenarioNames[e.scenario].data(),hg::kTargetNames[e.target].data(),hg::kWidgetNames[e.widget].data());
+     const bool was_moving=e.moving;
+-    if(e.moving) {move_input(ImGui::GetMainViewport()->Size.y/240);ImGui::TextUnformatted("D-pad / stick: move | A: place | B: cancel");}
++    if(e.moving) {move_input(ImGui::GetMainViewport()->Size.y/240);ImGui::TextUnformatted("D-Pad / Stick: Move | Cross: Place | Circle: Cancel");}
+     else {if(button("MOVE"))start_move();ImGui::SameLine();}
+     if(button("WORKSHOP") || (back&&!was_moving) || (!was_moving&&ImGui::IsKeyPressed(ImGuiKey_GamepadFaceRight,false))) {
+         if(e.moving)finish_move(false);e.live_review=false;e.opened=true;e.reopen=true;
 --- a/runtime-recomp/src/game/launcher_themes/system.hpp
 +++ b/runtime-recomp/src/game/launcher_themes/system.hpp
 @@ -17,7 +17,11 @@
@@ -1919,7 +1950,19 @@
  }
 --- a/runtime-recomp/src/game/runtime_details_ui.inl
 +++ b/runtime-recomp/src/game/runtime_details_ui.inl
-@@ -564,6 +564,16 @@
+@@ -399,7 +399,11 @@
+         {"GRAPHICS", "Enhanced water, reflections, waterfalls and lava, with separate lava lighting and quality controls. Widescreen track menus and custom-row backgrounds."},
+         {"TEXTURES AND CONTROLS", "Mix texture packs using priorities. Switch controller backends without closing the game. Adjust bindings, steering and gyro."},
+         {"SAVES AND SOUND", "Manage offline, online and modded saves separately. Back up, transfer and edit progress. Adjust sound levels and music for 3-4 player races."},
++#if defined(__PROSPERO__)
++        {"LAUNCHER AND UPDATES", "Shorter settings help and clearer dialogs, with technical details available when needed. Check for updates on the Updates page; downloads and installation stay optional."},
++#else
+         {"LAUNCHER AND UPDATES", "Shorter settings help and clearer dialogs, with technical details available when needed. Check for updates from Play or About; downloads and installation stay optional."},
++#endif
+     }};
+     const float footer = 24.0F + 44.0F;
+     ImGui::BeginChild("##patch-body", {inner, std::max(ImGui::GetContentRegionAvail().y - footer, 80.0F)}, false,
+@@ -564,6 +568,16 @@
  
  #include "runtime_updates_ui.inl"
  
@@ -1936,7 +1979,7 @@
  void DrawAboutPage(float width, bool support) {
      struct Credit {
          const char* name;
-@@ -610,8 +620,12 @@
+@@ -610,8 +624,36 @@
      DetailText("Requires your own legally obtained, supported Diddy Kong Racing ROM.",
                 width, kSetMuted, 0.0F);
  
@@ -1945,6 +1988,30 @@
      if (support) DrawAboutSupport(width);
 +#else
 +    (void)support;
++    // The PS5 build is a port of DKR-R: show which port release this is and
++    // where it lives, separately from the upstream version above.
++    AboutSectionTitle("PS5 port", width);
++    DetailCard(width, {22.0F, 22.0F}, [&](float inner) {
++        DetailHeading("DKR-R FOR PS5", inner, kSetWarm);
++        DetailText(std::string("Port release ") + dkrr::port_release::tag + ", based on DKR-R " +
++                       dkrr::port_release::upstream_version + ".",
++                   inner);
++        DetailText("Updates are installed from the Updates page in this menu.", inner, kSetMuted, 3.0F);
++        PaddockGap(16.0F);
++        DetailActionPair(inner, inner <= 520.0F, [&](float cell) {
++            if (DetailRaceButton("VISIT PS5 PORT PAGE", cell)) SDL_OpenURL(dkrr::port_release::repository);
++        }, [&](float cell) {
++            if (DetailRaceButton("PS5 RELEASE NOTES", cell, 0xE82E21)) SDL_OpenURL(dkrr::port_release::release_notes);
++        });
++        PaddockGap(16.0F);
++    });
++    // Storage and crash-report choices are part of the upstream Support page,
++    // which also holds desktop-only folder actions. Keep the choices reachable.
++    AboutSectionTitle("Storage and reports", width);
++    DetailCard(width, {20.0F, 18.0F}, [&](float inner) {
++        DrawCrashReportingSettings(inner);
++        PaddockGap(16.0F);
++    });
 +#endif
      AboutSectionTitle("Credits", width);
      DetailCard(width, {20.0F, 18.0F}, [&](float inner) {
@@ -2013,7 +2080,106 @@
      SettingsCard(width, [&](float inner) {
          SettingsCardHead("Performance presets", "Choose a preset, then select Apply.", inner);
          namespace graphics_presets = dkr::runtime::mobile_graphics;
-@@ -174,6 +199,9 @@
+@@ -120,7 +145,22 @@
+ #else
+         constexpr bool low_load = false;
+ #endif
++#if defined(__PROSPERO__)
++        // The PS5 has two presets. Both also save the TV output for the next
++        // start: Performance 1080p / 120 Hz, Quality 4K / 120 Hz.
++        std::vector<SettingsChoice> preset_choices{{"Performance"}, {"Quality"}};
++        const auto ps5_preset_matches = [&](int index) {
++            const bool quality = index == 1;
++            return config.res_option == ultramodern::renderer::Resolution::Auto &&
++                   config.msaa_option == ultramodern::renderer::Antialiasing::None && config.ds_option == 1 &&
++                   config.rr_option == ultramodern::renderer::RefreshRate::Display &&
++                   config.hpfb_option == (quality ? ultramodern::renderer::HighPrecisionFramebuffer::On
++                                                  : ultramodern::renderer::HighPrecisionFramebuffer::Off) &&
++                   enh::anisotropy_level() == (quality ? 16 : 4);
++        };
++#else
+         std::vector<SettingsChoice> preset_choices{{"Battery"}, {"Balanced"}, {"Quality"}};
++#endif
+         if (low_load) {
+             preset_choices.push_back({"Low load - 30 FPS"});
+             preset_choices.push_back({"Low load - 60 FPS"});
+@@ -128,10 +168,19 @@
+         // Shown when the saved settings match no preset; not something Apply can set.
+         const int custom = static_cast<int>(preset_choices.size());
+         preset_choices.push_back({"Custom", {}, true});
++#if defined(__PROSPERO__)
++        int applied_index = custom;
++        if (enh::modern_presentation_enabled() &&
++            dkr::display::legacy_matches(int(config.res_option), int(config.ar_option), config.ds_option)) {
++            for (int index = 0; index != 2; ++index)
++                if (ps5_preset_matches(index)) applied_index = index;
++        }
++#else
+         const auto applied = enh::modern_presentation_enabled()&&dkr::display::legacy_matches(int(config.res_option),int(config.ar_option),config.ds_option)
+             ? graphics_presets::matching_preset(config, enh::anisotropy_level(), low_load)
+             : std::nullopt;
+         const int applied_index = applied ? static_cast<int>(*applied) : custom;
++#endif
+         // Follow the saved settings, but keep a pending pick until it is applied.
+         static int preset = 1;
+         static int synced = -1;
+@@ -141,7 +190,11 @@
+         }
+         SettingsDropdown("performance-preset", "Preset", &preset, preset_choices, inner);
+         PaddockGap(8.0F);
++#if defined(__PROSPERO__)
++        SettingsHelp("Performance: 1080p, up to 120 FPS. Quality: 4K, up to 120 FPS, high precision framebuffer and 16x filtering. The TV output is saved and applies on the next start; 60 Hz is used where 120 Hz is unavailable.", inner);
++#else
+         SettingsHelp("Battery: 480p / 30 FPS. Balanced: 480p / 60 FPS. Quality: display resolution / 60 FPS.", inner);
++#endif
+ #if defined(__ANDROID__)
+         SettingsHelp("Low load uses 240p for slower devices.", inner);
+ #endif
+@@ -151,10 +204,33 @@
+                 enh::set_presentation_profile(enh::PresentationProfile::Modern);
+                 ApplyProfileGraphics(config, enh::PresentationProfile::Modern);
+             }
++#if defined(__PROSPERO__)
++            {
++                const bool quality = preset == 1;
++                config.res_option = ultramodern::renderer::Resolution::Auto;
++                config.msaa_option = ultramodern::renderer::Antialiasing::None;
++                config.ds_option = 1;
++                config.rr_option = ultramodern::renderer::RefreshRate::Display;
++                config.hpfb_option = quality ? ultramodern::renderer::HighPrecisionFramebuffer::On
++                                             : ultramodern::renderer::HighPrecisionFramebuffer::Off;
++                dkr::display::loaded=false;dkr::display::migrate(int(config.res_option),int(config.ar_option),config.ds_option);
++                enh::set_anisotropy_level(quality ? 16 : 4);
++                // Save the matching TV output for the next start; keep the HDR choice as it is.
++                dkrr_ps5_display_choice output{};dkrr_ps5_hdr_choice hdr{};
++                dkrr_ps5_read_output(&output, &hdr);
++                output.resolution = quality ? 2160U : 1080U;
++                output.refresh = dkrr_ps5_display_status().high_refresh_build ? 120U : 60U;
++                g_ps5_display_ui.loaded = false;
++                g_ps5_display_ui.status = dkrr_ps5_choose_output(output, hdr) == 0
++                    ? "Preset applied. TV output saved. Close DKR-R and launch it again to apply."
++                    : "Preset applied, but the TV output could not be saved.";
++            }
++#else
+             const auto chosen = static_cast<graphics_presets::Preset>(preset);
+             graphics_presets::apply_preset(config, chosen);
+             dkr::display::loaded=false;dkr::display::migrate(int(config.res_option),int(config.ar_option),config.ds_option);
+             enh::set_anisotropy_level(graphics_presets::preset_anisotropy(chosen));
++#endif
+             RememberModernGraphics(config);
+             profile = static_cast<int>(enh::PresentationProfile::Modern);
+             resolution = static_cast<int>(config.res_option);
+@@ -167,6 +243,9 @@
+         }
+         PaddockGap(8.0F);
+         SettingsHelp("Applying a preset replaces these graphics settings. Filtering applies next game.", inner);
++#if defined(__PROSPERO__)
++        if (!g_ps5_display_ui.status.empty()) SettingsHelp(g_ps5_display_ui.status.c_str(), inner, 0x83E8D0);
++#endif
+     });
+     PaddockGap(18.0F);
+     SettingsCard(width, [&](float inner) {
+@@ -174,6 +253,9 @@
                           modern ? ""
                                  : "",
                           inner);
@@ -2023,7 +2189,7 @@
          SettingsColumns fields(inner, single);
          fields.Begin();
          if (SettingsDropdown("presentation", "Presentation style", &profile, {"Accurate", "Modern"},
-@@ -201,11 +229,17 @@
+@@ -201,11 +283,17 @@
          fields.End();
          modern = enh::modern_options_visible(enh::presentation_profile());
  
@@ -2041,7 +2207,7 @@
  
          if (modern) {
              fields.Begin();
-@@ -216,11 +250,19 @@
+@@ -216,11 +304,19 @@
              fields.End();
          }
          if (enh::modern_presentation_enabled()) {
@@ -2064,7 +2230,7 @@
                  g_modern_refresh_mode = refresh_mode == 0 ? RefreshRate::Display : RefreshRate::Manual;
                  config.rr_option = g_modern_refresh_mode;
                  changed = true;
-@@ -240,6 +282,7 @@
+@@ -240,6 +336,7 @@
              }
              config.rr_option = g_modern_refresh_mode;
              config.rr_manual_value = g_modern_refresh_target;
@@ -2072,7 +2238,7 @@
          } else {
              config.rr_option = RefreshRate::Original;
              config.rr_manual_value = 30;
-@@ -367,6 +410,10 @@
+@@ -367,6 +464,10 @@
              ImGui::Unindent(36.0F);
          }
  
@@ -2083,7 +2249,7 @@
          PaddockGap(16.0F);
          bool fps_overlay = g_fps_overlay_enabled;
          if (SettingsCheck("##fps-overlay", "Show performance overlay", &fps_overlay, inner,
-@@ -445,6 +492,8 @@
+@@ -445,6 +546,8 @@
          config.ds_option = downsample;
      });
  
@@ -2092,7 +2258,7 @@
      if (changed) {
          if (modern) RememberModernGraphics(config);
          ultramodern::renderer::set_graphics_config(config);
-@@ -454,7 +503,10 @@
+@@ -454,7 +557,10 @@
      }
  
      // ------------------------------------------------------------ hud, scenery
@@ -2104,7 +2270,7 @@
          PaddockGap(18.0F);
          SettingsCardPair("graphics", width, stacked, 18.0F, [&](float inner) {
              SettingsCardHead("HUD & effects", "", inner);
-@@ -592,6 +644,7 @@
+@@ -592,6 +698,7 @@
  #if defined(DKR_ENHANCED_WATER)
      // Shared by launcher and in-game overlay; these are local renderer
      // preferences, not synchronized water physics or guest settings.
@@ -2112,7 +2278,7 @@
      PaddockGap(18.0F);
      SettingsCard(width, [&](float inner) {
          namespace water = dkr::runtime::water::enhanced;
-@@ -731,9 +784,11 @@
+@@ -731,9 +838,11 @@
              PaddockGap(8.0F);
          }
      });
@@ -2124,7 +2290,7 @@
      PaddockGap(18.0F);
      {
          const ImVec2 at = ImGui::GetCursorScreenPos();
-@@ -771,6 +826,7 @@
+@@ -771,6 +880,7 @@
              SettingsHelp(state.status, width, kSetWarm);
          }
      }
@@ -2612,7 +2778,38 @@
      if(gamepad)ImGui::ClearActiveID();
      if (active || focused) {
          draw->AddRect({origin.x - 4.5F, origin.y - 4.5F}, {max.x + 4.5F, max.y + 4.5F},
-@@ -2868,14 +2868,21 @@
+@@ -1360,23 +1360,13 @@
+     panel.drop = 0x041822;
+     panel.drop_offset = 5.0F;
+     PaintOlPanel(draw, a, b, panel);
+-    // Ten-pixel squares every twenty, clipped by the 26 px inner corner.
+-    constexpr float kRadius = 26.0F;
+-    const float top = a.y + 2.0F;
+-    const float right = b.x - 2.0F;
+-    for (float x = right - 96.0F + 10.0F; x < right; x += 20.0F) {
+-        const float end = std::min(x + 10.0F, right);
+-        for (float column = x; column < end; column += 1.0F) {
+-            const float dx = right - (column + 0.5F);
+-            float start = top;
+-            if (dx < kRadius) {
+-                start = top + kRadius - std::sqrt(kRadius * kRadius - (kRadius - dx) * (kRadius - dx));
+-            }
+-            if (start < top + 10.0F) {
+-                draw->AddRectFilled({column, start}, {std::min(column + 1.0F, end), top + 10.0F},
+-                                    PaddockCol(look.check));
+-            }
+-        }
++    // Four ten-pixel squares every twenty, inset from the border and clear of
++    // the rounded corner (the old strip touched the border and was cut by it).
++    const float top = a.y + 8.0F;
++    const float right = b.x - 20.0F;
++    for (int square = 0; square < 4; ++square) {
++        const float x = right - 10.0F - 20.0F * static_cast<float>(3 - square);
++        draw->AddRectFilled({x, top}, {x + 10.0F, top + 10.0F}, PaddockCol(look.check));
+     }
+ }
+ 
+@@ -2868,14 +2858,21 @@
                                ? &view.room.players[view.local_slot] : nullptr;
      const bool local_ready = local != nullptr && local->ready;
      const std::size_t profile = dkr::runtime::platform::online_input_profile();
@@ -2636,7 +2833,7 @@
      } else if (total < 2U) {
          hint = view.host ? "You need at least one other player to start." : "Waiting for more racers.";
      } else if (ready < total) {
-@@ -3537,7 +3544,20 @@
+@@ -3537,7 +3534,20 @@
      }
      case OlSection::Play:
          if (!frame.launcher) {
@@ -2657,7 +2854,7 @@
              PaddockGap(20.0F);
          }
          DrawOlChoices(width, frame);
-@@ -3591,11 +3611,28 @@
+@@ -3591,11 +3601,28 @@
      }
  }
  
@@ -2686,7 +2883,7 @@
      using namespace dkr::runtime::netplay;
      DirectSession& online = session();
      PumpDirectSessionIfDue();
-@@ -3623,7 +3660,7 @@
+@@ -3623,7 +3650,7 @@
                             (view.state == ConnectionState::Hosting || view.state == ConnectionState::Lobby);
      if(OlPartyActive())has_space=in_lobby&&view.host&&!view.lobby_locked&&!g_ol_party.link.stopping&&
          !g_ol_rollback_check.active&&g_ol_party.link.party.members.size()<lobby_party::MaximumMembers;
@@ -3213,7 +3410,7 @@
 +namespace dkr::runtime::platform { unsigned controller_speaker_categories(); void set_controller_speaker_categories(unsigned); }
 --- a/runtime-recomp/src/game/runtime_play_ui.inl
 +++ b/runtime-recomp/src/game/runtime_play_ui.inl
-@@ -461,9 +461,32 @@
+@@ -461,9 +461,34 @@
          PaddockGap(16.0F);
      }
      ImGui::EndDisabled();
@@ -3221,6 +3418,8 @@
      DrawSkipLauncherSetting(width);
 +#endif
      DrawLanguageSetting(width);
++    // The language help text ran straight into the "Modded adventure" heading.
++    PaddockGap(16.0F);
      DrawPlaySaveSummary(width,live);
 +#if defined(__PROSPERO__)
 +    if(live) {
@@ -3246,6 +3445,43 @@
  }
  
  #include "@DKRR_SOURCE@/runtime-recomp/src/game/library_ui/play_launch_bar.inl"
+@@ -585,6 +610,15 @@
+         const float body_height = 6.0F + heading.line + 8.0F + detail_height + 2.0F +
+                                   meta_height + 16.0F + actions_height;
+         const float height = 2.0F + 20.0F + std::max(112.0F, body_height) + 20.0F + 2.0F;
++        // Centre the start pass in the space the options column leaves: when the
++        // options are taller than the ROM block the pass sat at the top edge.
++        // The previous frame's panel height is used (one frame behind, no flicker).
++        static float previous_final_height = 0.0F;
++        const float pre_tools_width = side ? width - options_width - 26.F - 58.F : width - 52.F;
++        const float pre_left_height = height + PlayToolsHeight(pre_tools_width) + 16.F;
++        const float pass_shift = side ? std::floor(std::max(0.0F, previous_final_height - pre_left_height) * 0.5F) : 0.0F;
++        // The traffic light keeps its size but is centred against taller content.
++        const float lights_shift = std::floor(std::max(0.0F, body_height - 112.0F) * 0.5F);
+ 
+         // The border turns green with the last light.
+         const float since = static_cast<float>(PaddockClock() - state.arrived_at);
+@@ -598,9 +632,9 @@
+         panel.fill = PaddockRgb(0x0B2E40, 245U);
+         panel.border = border;
+         panel.border_width = 2.0F;
+-        DrawPlayLights(draw, {content_x + 2.0F + 24.0F, at.y + 2.0F + 20.0F}, ready, state.arrived_at);
+-
+-        float y = at.y + 2.0F + 20.0F + 6.0F;
++        DrawPlayLights(draw, {content_x + 2.0F + 24.0F, at.y + pass_shift + lights_shift + 2.0F + 20.0F}, ready, state.arrived_at);
++
++        float y = at.y + pass_shift + 2.0F + 20.0F + 6.0F;
+         const auto title=dkr::localisation::source(ready?"Ready to race":"ROM not loaded");
+         PaddockDrawRun(draw, heading, {body_x, y}, PaddockCol(ready ? 0x1AC2A3U : 0xFFAA97U),
+                        title.data(), title.data() + title.size());
+@@ -679,6 +713,7 @@
+         ImGui::BeginGroup();DrawPlayLaunchOptions(options_width,entered,live);ImGui::EndGroup();
+         const float options_height=ImGui::GetItemRectSize().y;
+         const float final_height=side?std::max(left_height,options_height+52.F):left_height+options_height+34.F;
++        previous_final_height=final_height;
+         ImGui::SetCursorScreenPos({at.x+26.F,at.y+(side?final_height:left_height)-26.F-tools_height});
+         DrawPlayTools(tools_width);
+         if(side)draw->AddLine({options_x-16.F,at.y+26.F},{options_x-16.F,at.y+final_height-26.F},PaddockCol(0x325365));
 --- a/runtime-recomp/src/game/runtime_portable.cpp
 +++ b/runtime-recomp/src/game/runtime_portable.cpp
 @@ -100,7 +100,7 @@
@@ -3464,13 +3700,14 @@
              const bool is_directory = entry.is_directory(error);
 --- a/runtime-recomp/src/game/runtime_ui.cpp
 +++ b/runtime-recomp/src/game/runtime_ui.cpp
-@@ -50,6 +50,13 @@
+@@ -50,6 +50,14 @@
  #include "@DKRR_BUILD@/generated/online-performance/includes/996f1c9e9a8d85c9/party_link.hpp"
  #include "online_presentation/test_receive_delay.hpp"
  #include "online_stability/qualification_delivery.hpp"
 +#include "ps5_menu_pointer.hpp"
 +#if defined(__PROSPERO__)
 +#include "ps5_internet_update.hpp"
++#include "ps5_port_release.hpp"
 +#include "ps5_frontend_presenter.hpp"
 +#include "ps5_online_platform.h"
 +#include "ps5_ui_event_queue.hpp"
@@ -3478,7 +3715,7 @@
  #include "runtime_ui.hpp"
  #include "@DKRR_BUILD@/generated/achievements/achievements.hpp"
  #include <cfloat>
-@@ -64,7 +71,9 @@
+@@ -64,7 +72,9 @@
  #include "online_view_policy.hpp"
  #include <charconv>
  #include "runtime_portable.hpp"
@@ -3488,7 +3725,7 @@
  #include "render_power_policy.hpp"
  #include "performance_trace.hpp"
  #include "mobile_graphics_preset.hpp"
-@@ -84,6 +93,14 @@
+@@ -84,6 +94,14 @@
  #include "generated/jumpman_font.h"
  #include "generated/racing_banana_font.h"
  #include "generated/selawik_font.h"
@@ -3503,7 +3740,7 @@
  #include "countdown_tone_policy.hpp"
  #include "custom_tracks.hpp"
  #include "launcher_render_policy.hpp"
-@@ -135,6 +152,9 @@
+@@ -135,6 +153,9 @@
  #include "startup_performance.hpp"
  #include "runtime_telemetry.hpp"
  #include "runtime_texture_packs.hpp"
@@ -3513,7 +3750,7 @@
  #include "save_manager.hpp"
  #include "runtime_save_routing.hpp"
  #include "texture_pack_browser_policy.hpp"
-@@ -485,10 +505,16 @@
+@@ -485,10 +506,16 @@
  // mouse click or gamepad direction, which makes the content panel impossible
  // to operate once the RT64 inspector owns the in-game UI.
  std::atomic<bool> g_overlay_focus_requested{false};
@@ -3530,7 +3767,7 @@
  #if defined(DKR_IOS)
  dkr::runtime::ios::UiEventQueue g_ios_ui_events;
  #endif
-@@ -518,7 +544,7 @@
+@@ -518,7 +545,7 @@
  }
  bool g_online_guide_do_not_show_again = true;
  bool g_online_guide_reopen_requested = false;
@@ -3539,7 +3776,7 @@
  RefreshRate g_modern_refresh_mode = RefreshRate::Display;
  #elif defined(__ANDROID__)
  // Conservative first-use defaults only. The settings loader restores all
-@@ -530,7 +556,7 @@
+@@ -530,7 +557,7 @@
  int g_modern_refresh_target = 60;
  #if defined(DKR_IOS)
  Resolution g_modern_resolution = Resolution::Original2x;
@@ -3548,7 +3785,7 @@
  Resolution g_modern_resolution = Resolution::Original2x;
  #else
  Resolution g_modern_resolution = Resolution::Auto;
-@@ -539,7 +565,7 @@
+@@ -539,7 +566,7 @@
  Antialiasing g_modern_antialiasing = Antialiasing::None;
  #if defined(DKR_IOS)
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
@@ -3557,7 +3794,7 @@
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::Off;
  #else
  HighPrecisionFramebuffer g_modern_high_precision_fb = HighPrecisionFramebuffer::On;
-@@ -592,6 +618,7 @@
+@@ -592,6 +619,7 @@
  std::string g_texture_pack_manage_id;
  std::string g_texture_pack_remove_id;
  std::string g_texture_pack_remove_name;
@@ -3565,7 +3802,7 @@
  // Set when an action in Track Lab (import, arm, play) switched the presentation
  // profile to Modern on the player's behalf. Shown in Track Lab and Graphics,
  // cleared when the player changes the profile there by hand.
-@@ -751,9 +778,9 @@
+@@ -751,9 +779,9 @@
  constexpr int kPageTextures = 8;
  constexpr int kPageAchievements = 9;
  constexpr int kPageModLibrary = dkr::library_ui::LibraryPage;
@@ -3578,7 +3815,7 @@
  int StepSidebarSelection(int current,int direction) {
      current=dkr::library_ui::sidebar_parent(current);
      const auto found=std::find(kSidebarOrder.begin(),kSidebarOrder.end(),current);
-@@ -781,7 +808,11 @@
+@@ -781,7 +809,11 @@
  bool g_capture_popup_pending = false;
  bool g_capture_finished = false;
  std::size_t g_selected_player = 0;
@@ -3590,7 +3827,7 @@
  constexpr int kShortcutCaptureAction = -2;
  constexpr int kAssignControllerCaptureAction = -3;
  constexpr std::size_t kShortcutActionCount = static_cast<std::size_t>(
-@@ -790,6 +821,7 @@
+@@ -790,6 +822,7 @@
      "quick_restart", "toggle_overlay", "toggle_texture_pack",
      "toggle_fullscreen", "recenter_gyro"};
  bool g_capture_secondary_controller = false;
@@ -3598,7 +3835,7 @@
  dkr::runtime::input::ShortcutAction g_capture_shortcut_action =
      dkr::runtime::input::ShortcutAction::QuickRestart;
  std::array<int, 2> g_shortcut_capture_sources{
-@@ -1292,6 +1324,10 @@
+@@ -1292,6 +1325,10 @@
          0x0030, 0x0039,
          0,
      };
@@ -3609,7 +3846,7 @@
  
      const auto merge_fallback = [&](float size, const ImWchar* ranges) {
          ImFontConfig fallback_config{};
-@@ -1304,23 +1340,45 @@
+@@ -1304,23 +1341,45 @@
          fallback_config.GlyphRanges = ranges;
          io.Fonts->AddFontDefault(&fallback_config);
      };
@@ -3664,7 +3901,7 @@
      };
      const auto add_racing_font = [&](float size) -> ImFont* {
          ImFontConfig config{};
-@@ -1333,7 +1391,7 @@
+@@ -1333,7 +1392,7 @@
              static_cast<int>(dkr_racing_banana_font_size), size, &config,
              kLauncherNonDigitGlyphRanges);
          if (font != nullptr) {
@@ -3673,7 +3910,7 @@
                  merge_fallback(size, kJumpmanDigitGlyphRanges);
              }
              merge_fallback(size, kLauncherNonDigitGlyphRanges);
-@@ -1353,7 +1411,7 @@
+@@ -1353,7 +1412,7 @@
      control_config.RasterizerMultiply = 1.20F;
      control_config.GlyphRanges = kLauncherNonDigitGlyphRanges;
      g_font_controls = io.Fonts->AddFontDefault(&control_config);
@@ -3682,7 +3919,7 @@
          merge_fallback(21.0F, kJumpmanDigitGlyphRanges);
      }
  
-@@ -1363,7 +1421,7 @@
+@@ -1363,7 +1422,7 @@
          fallback_config.SizePixels = 19.0F;
          fallback_config.GlyphRanges = kLauncherNonDigitGlyphRanges;
          body_font = io.Fonts->AddFontDefault(&fallback_config);
@@ -3691,7 +3928,7 @@
              merge_fallback(19.0F, kJumpmanDigitGlyphRanges);
          }
          std::fprintf(stderr,
-@@ -1559,6 +1617,9 @@
+@@ -1559,6 +1618,9 @@
          config.api_option = g_modern_graphics_api;
          config.hr_option = HUDRatioMode::Original;
          config.ds_option = g_modern_downsample;
@@ -3701,7 +3938,7 @@
          config.rr_option = g_modern_refresh_mode;
          config.rr_manual_value = g_modern_refresh_target;
          return;
-@@ -1580,6 +1641,10 @@
+@@ -1580,6 +1642,10 @@
      // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
      dkr::runtime::mobile_graphics::apply_accurate_budget(config);
  #endif
@@ -3712,7 +3949,7 @@
  }
  
  // The Sound page's volumes: Master, then the four-part island mix. A muted
-@@ -1633,6 +1698,56 @@
+@@ -1633,6 +1699,56 @@
      }
      g_sound_muted[channel] = muted;
  }
@@ -3769,7 +4006,7 @@
  
  void SaveSettings() {
      std::error_code error;
-@@ -1803,6 +1918,15 @@
+@@ -1803,6 +1919,15 @@
          output << "memory_pak=" << (dkr::runtime::pak::enabled() ? 1 : 0) << '\n';
          output << "rumble=" << (dkr::runtime::platform::rumble_enabled() ? 1 : 0) << '\n';
          output << "rumble_strength=" << dkr::runtime::platform::rumble_strength() << '\n';
@@ -3785,7 +4022,7 @@
          output << "stick_deadzone=" << dkr::runtime::input::stick_deadzone() << '\n';
          output << "stick_anti_deadzone=" << dkr::runtime::input::stick_anti_deadzone() << '\n';
          output << "stick_sensitivity=" << dkr::runtime::input::stick_sensitivity() << '\n';
-@@ -1832,22 +1956,7 @@
+@@ -1832,22 +1957,7 @@
          output << "quick_restart_keyboard_secondary=" << quick_keyboard.secondary << '\n';
          output << "quick_restart_controller_primary=" << quick_controller.primary << '\n';
          output << "quick_restart_controller_secondary=" << quick_controller.secondary << '\n';
@@ -3809,7 +4046,7 @@
          output << "gyro_enabled=" << (dkr::runtime::input::gyro_enabled() ? 1 : 0) << '\n';
          output << "gyro_sensitivity=" << dkr::runtime::input::gyro_sensitivity() << '\n';
          output << "gyro_y_sensitivity=" << dkr::runtime::input::gyro_y_sensitivity() << '\n';
-@@ -2094,6 +2203,7 @@
+@@ -2094,6 +2204,7 @@
          shortcut_keyboard{};
      std::array<dkr::runtime::input::ShortcutBinding, kShortcutActionCount>
          shortcut_controller{};
@@ -3817,7 +4054,7 @@
      for (std::size_t index = 0; index < shortcut_keyboard.size(); ++index) {
          const auto action = static_cast<
              dkr::runtime::input::ShortcutAction>(index);
-@@ -2101,6 +2211,7 @@
+@@ -2101,6 +2212,7 @@
              dkr::runtime::input::shortcut_keyboard_binding(action);
          shortcut_controller[index] =
              dkr::runtime::input::shortcut_controller_binding(action);
@@ -3825,7 +4062,7 @@
      }
      auto assignment_mode = dkr::runtime::platform::controller_assignment_mode();
      auto controller_assignments =
-@@ -2242,7 +2353,11 @@
+@@ -2242,7 +2354,11 @@
          try {
              const int number = std::stoi(value);
              if(dkr::feedback::load_setting(key,number))continue;
@@ -3837,7 +4074,7 @@
              if(dkr::launcher_themes::load(key,number))continue;
              if(dkr::chat::load_setting(key,number)||dkr::relay::load_setting(key,number))continue;
              if(dkr::display::load(key,number))continue;
-@@ -2284,25 +2399,7 @@
+@@ -2284,25 +2400,7 @@
                  continue;
              }
  #endif
@@ -3864,7 +4101,7 @@
              // Outside the long compatibility parser below (MSVC nesting limit).
              if(dkr::runtime::driving::load(key,number))continue;
              if(key=="standalone_look_behind"){dkr::runtime::look_behind::enabled=number!=0;continue;}
-@@ -2533,6 +2630,20 @@
+@@ -2533,6 +2631,20 @@
                  dkr::runtime::pak::set_enabled(number != 0);
              } else if (key == "rumble") {
                  dkr::runtime::platform::set_rumble_enabled(number != 0);
@@ -3885,7 +4122,7 @@
              } else if (key == "rumble_strength") {
                  dkr::runtime::platform::set_rumble_strength(std::stof(value));
              } else if (key == "stick_deadzone") {
-@@ -2622,6 +2733,16 @@
+@@ -2622,6 +2734,16 @@
      // still owns an open handle. Migration may call SaveSettings below, so
      // release the read handle before attempting that replacement.
      input.close();
@@ -3902,7 +4139,7 @@
      // Canonicalize legacy backend flags after reading the complete file.
      // Retain valid delay/player/development preferences, not the removed modes.
      const bool migrated_rollback_backend = !has_legacy_backend_setting ||
-@@ -2661,6 +2782,7 @@
+@@ -2661,6 +2783,7 @@
              action, shortcut_keyboard[index]);
          dkr::runtime::input::set_shortcut_controller_binding(
              action, shortcut_controller[index]);
@@ -3910,7 +4147,7 @@
      }
      // Early launcher builds defaulted to 8x MSAA, which can turn busy races
      // GPU-bound at high desktop resolutions. Migrate that one legacy default
-@@ -2802,9 +2924,9 @@
+@@ -2802,9 +2925,9 @@
  std::vector<RomCatalogEntry> LoadRomCatalog() {
      std::vector<RomCatalogEntry> catalog;
      std::ifstream input(RomCatalogPath());
@@ -3923,7 +4160,7 @@
      bool cleaned = false;
      std::string encoded_path;
      while (std::getline(input, encoded_path)) {
-@@ -2836,6 +2958,17 @@
+@@ -2836,6 +2959,17 @@
              : "Imported Game Pak - " + PathUtf8(path.filename());
          catalog.push_back({path, label, key});
      }
@@ -3941,7 +4178,7 @@
      if (cleaned) {
          SaveRomCatalog(catalog);
      }
-@@ -2873,6 +3006,11 @@
+@@ -2873,6 +3007,11 @@
      selected = NormalizeRomPath(path);
      g_mod_browser_revision=identity.revision==dkr::runtime::rom::Revision::UsV80?2U:identity.revision==dkr::runtime::rom::Revision::UsV77?1U:0U;
      SaveLastRom(selected);
@@ -3953,7 +4190,7 @@
      RememberRomInCatalog(selected, identity, catalog);
      status = dkr::runtime::rom::describe(identity) + ". Ready to race!";
  }
-@@ -3046,6 +3184,46 @@
+@@ -3046,6 +3185,46 @@
      return true;
  }
  
@@ -4000,7 +4237,7 @@
  bool SelectRomWithDialog(std::filesystem::path& selected,
                           std::vector<RomCatalogEntry>& catalog,
                           std::string& status) {
-@@ -3090,22 +3268,8 @@
+@@ -3090,22 +3269,8 @@
              "local filters folder before importing another.";
          return false;
      }
@@ -4024,7 +4261,7 @@
      std::error_code error;
      constexpr std::uintmax_t maximum_filter_bytes = 64U * 1024U * 1024U;
      const std::uintmax_t size = std::filesystem::file_size(source, error);
-@@ -3144,6 +3308,7 @@
+@@ -3144,6 +3309,7 @@
      g_crt_status = "Imported " + destination.filename().string() + ".";
      SaveSettings();
      return true;
@@ -4032,7 +4269,7 @@
  }
  
  bool TexturePackImportRunning() {
-@@ -3172,60 +3337,70 @@
+@@ -3172,60 +3338,70 @@
          g_texture_import_worker.join();
      }
  
@@ -4156,7 +4393,7 @@
      return true;
  }
  
-@@ -3245,38 +3420,44 @@
+@@ -3245,38 +3421,44 @@
  bool DialogJobRunning() {
      if(SharedSaveBusy())return true;
      std::scoped_lock lock(g_dialog_job_mutex);
@@ -4224,7 +4461,7 @@
      return true;
  }
  
-@@ -3293,6 +3474,10 @@
+@@ -3293,6 +3475,10 @@
  
  // A folder picker, for the dialog-job thread (which owns its own COM
  // initialization). False with an empty error means the player cancelled.
@@ -4235,7 +4472,7 @@
  bool PickFolder(std::filesystem::path& chosen, std::string& error) {
      if (NFD_Init() != NFD_OKAY) {
          error = "The system folder picker could not be initialized.";
-@@ -3345,180 +3530,84 @@
+@@ -3345,180 +3531,84 @@
  
  void ImportLegacyModWithDialog() {
      if (g_legacy_imports.snapshot().busy || dkr::store::installations().view()->busy) return;
@@ -4462,7 +4699,7 @@
  }
  
  void DrawRaceBadge(const char* label, const ImVec4& color, float width = 0.0F);
-@@ -3891,7 +3980,7 @@
+@@ -3891,7 +3981,7 @@
          ImGui_ImplSDLRenderer2_RenderDrawData(data);
          return;
      }
@@ -4471,7 +4708,7 @@
  #if defined(_WIN32)
      // Share the proven software solid/panel adapter only on the returned
      // recovery launcher. Initial/ordinary Windows launchers stay accelerated.
-@@ -4010,7 +4099,7 @@
+@@ -4010,7 +4100,7 @@
  
  void DrawLinuxSoftwarePanelUnderlay(const ImVec2& size,
                                      const ImVec4& color) {
@@ -4480,7 +4717,7 @@
      // Keep this underlay on Linux as a guard for software-renderer fallback and
      // fractional scaling. A simple axis-aligned rounded rectangle beneath the
      // normal ImGui child prevents raster seams from exposing or folding the
-@@ -4352,6 +4441,11 @@
+@@ -4352,6 +4442,11 @@
      float item_spacing_y = 8.0F;
  };
  
@@ -4492,7 +4729,7 @@
  SidebarLayout CalculateSidebarLayout(float panel_height, float panel_width) {
      SidebarLayout result{};
      const bool compact = panel_height < 840.0F;
-@@ -4364,13 +4458,18 @@
+@@ -4364,13 +4459,18 @@
  
      constexpr float kMinimumLogoSize = 64.0F;
      constexpr float kMinimumButtonHeight = 26.0F;
@@ -4513,7 +4750,7 @@
          result.action_section_gap + result.action_gap +
          result.item_spacing_y * kItemSpacingCount;
      const float content_budget = std::max(panel_height - fixed_height, 1.0F);
-@@ -4417,6 +4516,11 @@
+@@ -4417,6 +4517,11 @@
  }
  
  void DrawSidebarCurrentStripe() {
@@ -4525,7 +4762,7 @@
      const ImVec2 minimum = ImGui::GetItemRectMin();
      const ImVec2 maximum = ImGui::GetItemRectMax();
      ImDrawList* draw = ImGui::GetWindowDrawList();
-@@ -4432,6 +4536,7 @@
+@@ -4432,6 +4537,7 @@
      draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
                          std::max(rounding - 1.0F, 0.0F));
      draw->PopClipRect();
@@ -4533,7 +4770,7 @@
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -4986,7 +5091,7 @@
+@@ -4986,7 +5092,7 @@
      PushHeadingFont();
      ImGui::TextUnformatted(spec.heading);
      PopHeadingFont();
@@ -4542,7 +4779,7 @@
      ImGui::Dummy({0.0F, 8.0F});
      ImGui::SetNextItemWidth(-1.0F);
      {
-@@ -5538,7 +5643,6 @@
+@@ -5538,7 +5644,6 @@
      dkr::online::hidden(friend_service().appear_offline());
  }
  void PumpFriendPresence() {
@@ -4550,7 +4787,7 @@
      // Presence has its own worker and does not need to be rebuilt at display
      // refresh rate. A 100 ms frontend cadence keeps notifications responsive
      // while avoiding lock/copy work on every launcher or overlay frame.
-@@ -5546,6 +5650,7 @@
+@@ -5546,6 +5651,7 @@
      const auto now = std::chrono::steady_clock::now();
      if (now < next_pump) return;
      next_pump = now + std::chrono::milliseconds{100};
@@ -4558,7 +4795,7 @@
  
      using namespace dkr::runtime::netplay;
      const SessionView view = session().presentation_view();
-@@ -6567,11 +6672,18 @@
+@@ -6567,11 +6673,18 @@
      ImGui::TextWrapped(
          "Hide keeps the pack installed. Restore it using the Hidden filter.");
      ImGui::Dummy({0.0F, 8.0F});
@@ -4578,7 +4815,7 @@
      ImGui::Dummy({0.0F, 12.0F});
      const float available = std::max(ImGui::GetContentRegionAvail().x, 1.0F);
      const float gap = ImGui::GetStyle().ItemSpacing.x;
-@@ -6589,11 +6701,13 @@
+@@ -6589,11 +6702,13 @@
      }
      if (!compact) ImGui::SameLine();
      ImGui::PushStyleColor(ImGuiCol_Button, {0.45F, 0.09F, 0.10F, 1.0F});
@@ -4592,7 +4829,7 @@
      ImGui::PopStyleColor();
      ImGui::EndPopup();
  }
-@@ -6670,6 +6784,10 @@
+@@ -6670,6 +6785,10 @@
              ImGui::TextWrapped("%s", value.c_str());
          };
          detail_row("TYPE", dkr::runtime::texture_packs::format_name(pack.format));
@@ -4603,7 +4840,7 @@
          detail_row("PRIORITY", std::to_string(pack.priority) +
                     (pack.priority == 1U ? " (highest)" : " (lower number wins)"));
          detail_row("INSTALLED SIZE",
-@@ -6729,6 +6847,11 @@
+@@ -6729,6 +6848,11 @@
      if (ImGui::Button("REMOVE PACK...", {action_width, 42.0F})) {
          g_texture_pack_remove_id = pack.id;
          g_texture_pack_remove_name = pack.name;
@@ -4615,7 +4852,17 @@
          request_removal = true;
          ImGui::CloseCurrentPopup();
      }
-@@ -7947,9 +8070,24 @@
+@@ -6808,7 +6932,8 @@
+                 PaddockApply(PaddockMix(PaddockRgb(0x085B78), PaddockRgb(0x79601C), on)));
+     draw->AddRectFilled({board_min.x, board_max.y - 2.0F}, board_max, PaddockCol(0x042338));
+     const bool checker_on = card.enabled;
+-    PaddockChecker(draw, {board_min.x + 12.0F, board_min.y}, 8, 6.0F,
++    // Inset from the board edge instead of touching it (same fix as the Online cards).
++    PaddockChecker(draw, {board_min.x + 12.0F, board_min.y + 5.0F}, 8, 6.0F,
+                    checker_on ? 0x675016U : 0x074961U, checker_on ? 0xFFE29AU : 0xA5DCE5U);
+ 
+     // The whole board is the checkbox.
+@@ -7947,9 +8072,24 @@
          PaddockGap(14.0F);
          PaddockAlert("Prepare the affected mods for the selected ROM.", width);
      }
@@ -4643,7 +4890,49 @@
      if (mods.busy) {
          PaddockGap(14.0F);
          const ImVec2 at = ImGui::GetCursorScreenPos();
-@@ -8138,18 +8276,20 @@
+@@ -8093,6 +8233,41 @@
+ #include "@DKRR_BUILD@/generated/character-library-portraits/graphics.inl"
+ #include "runtime_saves_ui.inl"
+ #define DrawTexturesPage DrawTexturesPageWithoutDump
++#if defined(__PROSPERO__)
++// Controller-setup prompts come from shared upstream text with shouting
++// directions ("UP", "D-PAD UP", "START"). Show them in Title Case; one-letter
++// names (A, B, Z, L, R) and names with digits (N64) stay as they are.
++std::string TitleCasePrompt(const std::string& text) {
++    static constexpr std::string_view small[] = {"the", "a", "an", "of", "to"};
++    std::string out;
++    std::size_t word = 0;
++    for (std::size_t at = 0; at <= text.size();) {
++        const std::size_t end = std::min(text.find(' ', at), text.size());
++        std::string token = text.substr(at, end - at);
++        const bool keep = (token.size() == 1 && std::isupper(static_cast<unsigned char>(token[0]))) ||
++                          std::any_of(token.begin(), token.end(), [](unsigned char c) { return std::isdigit(c); });
++        if (!keep) {
++            std::string lowered = token;
++            for (char& c : lowered) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
++            if (word > 0 && std::find(std::begin(small), std::end(small), lowered) != std::end(small)) {
++                token = lowered;
++            } else {
++                bool start = true;
++                token.clear();
++                for (const char c : lowered) {
++                    token.push_back(start ? static_cast<char>(std::toupper(static_cast<unsigned char>(c))) : c);
++                    start = c == '-';
++                }
++            }
++        }
++        if (!out.empty()) out.push_back(' ');
++        out += token;
++        ++word;
++        at = end + 1;
++    }
++    return out;
++}
++#endif
+ #include "runtime_details_ui.inl"
+ #undef DrawTexturesPage
+ #include "@DKRR_BUILD@/generated/character-library-portraits/texture_dump_ui.inl"
+@@ -8138,18 +8313,20 @@
          dkr::runtime::input::set_shortcut_keyboard_binding(
              g_capture_shortcut_action, binding);
      } else if (g_capture_device == CaptureDevice::Controller) {
@@ -4667,10 +4956,23 @@
      g_capture_popup_pending = true;
      g_capture_finished = false;
      g_shortcut_capture_sources = {
-@@ -8257,6 +8397,15 @@
+@@ -8210,7 +8387,11 @@
+             " of " + std::to_string(progress.total);
+         ImGui::ProgressBar(fraction, {-1.0F, 28.0F}, overlay.c_str());
+         ImGui::Dummy({0.0F, 8.0F});
++#if defined(__PROSPERO__)
++        ImGui::TextColored(kWarm, "%s", TitleCasePrompt(progress.prompt).c_str());
++#else
+         ImGui::TextColored(kWarm, "%s", progress.prompt.c_str());
++#endif
+     }
+     if (!progress.message.empty()) {
+         if ((progress.complete && !progress.success) || dkr::runtime::copy::looks_like_error(progress.message))
+@@ -8256,6 +8437,15 @@
+     }
      if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
          return false;
-     }
++    }
 +    if (kConsoleMenuLayout && event->type == SDL_CONTROLLERBUTTONDOWN &&
 +        event->cbutton.button == SDL_CONTROLLER_BUTTON_BACK &&
 +        event->cbutton.which == dkr::runtime::platform::controller_instance_for_player(
@@ -4679,11 +4981,10 @@
 +        // overlay toggle cancels capture without assigning or closing the menu.
 +        g_capture_finished = true;
 +        return true;
-+    }
+     }
      if (g_capture_action == kShortcutCaptureAction) {
          if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
-             event->key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-@@ -8422,9 +8571,13 @@
+@@ -8422,9 +8612,13 @@
          }
      }
  #endif
@@ -4697,7 +4998,7 @@
  #if defined(_WIN32)
      constexpr const char* update_helper_name="DKR-R-Updater.exe";
  #else
-@@ -8432,6 +8585,7 @@
+@@ -8432,6 +8626,7 @@
  #endif
      dkr::updates::configure(config_directory,dkr::runtime::portable::application_directory(),
          mod_worker.parent_path()/update_helper_name,DKR_RELEASE_VERSION);
@@ -4705,7 +5006,7 @@
      shutdown_online_mods();
      g_online_mod_settings={config_directory / "online-mods",mod_worker,{}};
      g_online_mod_link=std::make_unique<dkr::runtime::netplay::DirectModSyncLink>(dkr::runtime::netplay::session());
-@@ -8483,6 +8637,29 @@
+@@ -8483,6 +8678,29 @@
                   "[boot][settings] unavailable graphics API recovered to Automatic\n");
  }
  
@@ -4735,7 +5036,7 @@
  dkr::runtime::ui::StartupResult dkr::runtime::ui::run_startup_screen(
      SDL_Window* window, const std::filesystem::path& preselected_rom,
      bool software_failure_recovery) {
-@@ -8502,6 +8679,14 @@
+@@ -8502,6 +8720,14 @@
      SDL_Renderer* renderer = dkr::runtime::launcher::create_linux_launcher_renderer(window);
  #else
      SDL_Renderer* renderer = nullptr;
@@ -4750,7 +5051,7 @@
      struct ReturnFramebufferHint {
          std::optional<std::string> previous;
          bool active=false;
-@@ -8579,7 +8764,12 @@
+@@ -8579,7 +8805,12 @@
                       (renderer_info.flags & SDL_RENDERER_ACCELERATED) != 0 ? "yes" : "no",
                       static_cast<unsigned>(SDL_GetWindowFlags(window)));
      }
@@ -4764,7 +5065,7 @@
          (renderer_info.flags&SDL_RENDERER_ACCELERATED)==0;
      if(software_failure_recovery)std::fprintf(stderr,
          "[rollback][recovery] fresh launcher return renderer=%s bounded-software=%d\n",
-@@ -8587,6 +8777,9 @@
+@@ -8587,6 +8818,9 @@
  
      IMGUI_CHECKVERSION();
      ImGui::CreateContext();
@@ -4774,7 +5075,7 @@
      ImGui::GetIO().ConfigFlags |=
          ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
      const auto launcher_assets_started_at =
-@@ -8595,7 +8788,14 @@
+@@ -8595,7 +8829,14 @@
      LibraryInstallNavigationHook(false);
      ApplyStyle();
      ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
@@ -4789,7 +5090,7 @@
      dkr::store::service().gameplay(false);
      g_mod_store_renderer = renderer;
      g_store_in_game=false;
-@@ -8676,9 +8876,14 @@
+@@ -8676,9 +8917,14 @@
  #endif
      dkr::runtime::startup_performance::report(
          "rom-catalog-load", rom_catalog_started_at);
@@ -4806,7 +5107,7 @@
              : LoadLastRom();
      if (initial_rom.has_value()) {
          std::string error;
-@@ -8698,26 +8903,51 @@
+@@ -8698,26 +8944,51 @@
      }
  
      int page = 0;
@@ -4859,7 +5160,7 @@
          const auto launcher_services_started = std::chrono::steady_clock::now();
          // Hash only the already-imported catalog on a worker. Applying the
          // authenticated offer still happens exclusively on this UI thread.
-@@ -8940,13 +9170,16 @@
+@@ -8940,13 +9211,16 @@
              running=false;continue;
          }
          constexpr int launcher_page_count = kMenuPageCount;
@@ -4877,7 +5178,7 @@
          dkr::runtime::platform::pump_input_backend_events();
          SDL_Event event{};
          const auto process_launcher_event = [&](SDL_Event& event) {
-@@ -9140,6 +9373,9 @@
+@@ -9140,6 +9414,9 @@
              if (!launcher_window_visible) ++launcher_hidden_wakes;
              // Input interrupts the wait, not the redraw budget. Services run
              // on every wake (at most 50 ms between waits), even while hidden.
@@ -4887,7 +5188,7 @@
              if (SDL_WaitEventTimeout(&event, launcher_wait_ms) != 0) {
                  process_launcher_event(event);
              }
-@@ -9162,15 +9398,27 @@
+@@ -9162,15 +9439,27 @@
  
          const auto launcher_ui_build_started =
              std::chrono::steady_clock::now();
@@ -4915,7 +5216,7 @@
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
          SDL_GetWindowSize(window, &hud_viewport_width, &hud_viewport_height);
-@@ -9231,7 +9479,7 @@
+@@ -9231,7 +9520,7 @@
          const auto sidebar_position=dkr::library_ui::sidebar_placement(
              ImGui::GetWindowSize().y,nav_padding,ImGui::GetCursorPosY(),
              sidebar_layout.button_height,sidebar_layout.item_spacing_y,
@@ -4924,7 +5225,7 @@
          ImGui::SetCursorPosY(sidebar_position.navigation);
          if (g_page_navigation_request >= 0) {
              page = g_page_navigation_request;
-@@ -9243,6 +9491,11 @@
+@@ -9243,6 +9532,11 @@
          LibraryNavigationCheckRoute(false,page);
          if(!g_launcher_layout_root.empty())sidebar_selection=page;
          if(LibraryRedirectTextures(page))sidebar_selection=page;
@@ -4936,7 +5237,7 @@
          LauncherSidebarButton("PLAY", 0, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("DKR-R ONLINE", kPageOnlineMp, page, sidebar_selection,
-@@ -9259,9 +9512,14 @@
+@@ -9259,9 +9553,14 @@
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("ABOUT DKR-R", kPageAbout, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
@@ -4951,7 +5252,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9284,6 +9542,7 @@
+@@ -9284,6 +9583,7 @@
              request_quit_popup = true;
          }
          ImGui::PopStyleColor();
@@ -4959,7 +5260,7 @@
          --g_race_button_sidebar;
          ImGui::PopItemFlag();
          ImGui::EndGroup();
-@@ -9316,7 +9575,11 @@
+@@ -9316,7 +9616,11 @@
          }
  #endif
          const PaddockLauncherTypographyScope launcher_typography;
@@ -4971,7 +5272,7 @@
          ImGui::BeginDisabled(update_handoff);
          const PlayPageContext play_context{selected_rom, rom_status, rom_ready, rom_catalog,
                                             launch_requested};
-@@ -9381,10 +9644,25 @@
+@@ -9381,10 +9685,25 @@
              ImGui::GetMainViewport()->Size,launcher_theme.theme(),dkr::launcher_themes::preferences.calendar);
          }
          if(automatic_start.active()||online_start_pending)DrawLauncherFade(launch_fade,PaddockClock());
@@ -4997,7 +5298,7 @@
          DrawPaddockLegacyModImportModal();
          LibraryManualHandoffRequest(rom_ready&&!g_legacy_imports.snapshot().busy&&!g_code_library.view()->busy&&!g_vehicle_library.view()->busy&&dkr::store::installations().view()->ready&&!dkr::store::installations().view()->busy,launch_requested);
          if(!dkr::library_ui::inline_preparation(automatic_start.active(),g_mod_launch.snapshot().modal,!g_mod_launch.snapshot().error.empty()))DrawModLaunchModal();
-@@ -9394,6 +9672,9 @@
+@@ -9394,6 +9713,9 @@
          DrawSessionAnalogueModal();
          LibraryFinishUiFrame();
          PumpFeedbackUi(true);
@@ -5007,7 +5308,7 @@
          DrawTextEntryKeyboard();
          DrawOnlineNotification();
          DrawOlToast();
-@@ -9415,6 +9696,9 @@
+@@ -9415,6 +9737,9 @@
          }
  #endif
          DrawAchievementToast();
@@ -5017,7 +5318,7 @@
          ImGui::Render();
          const auto launcher_ui_build_finished =
              std::chrono::steady_clock::now();
-@@ -9434,8 +9718,13 @@
+@@ -9434,8 +9759,13 @@
                  std::chrono::microseconds>(launcher_ui_build_finished -
                                             launcher_ui_build_started).count());
          const auto launcher_present_started = launcher_ui_build_finished;
@@ -5031,7 +5332,7 @@
  #if defined(__APPLE__)
          // With a non-1 render scale the ImGui SDL backend stops applying
          // FramebufferScale itself (clips included), so SDL scales clips and
-@@ -9444,8 +9733,10 @@
+@@ -9444,8 +9774,10 @@
              SDL_RenderSetScale(renderer, launcher_draw_data->FramebufferScale.x,
                                 launcher_draw_data->FramebufferScale.y);
  #endif
@@ -5042,7 +5343,7 @@
          // SDL's software backend normally executes its queued drawing inside
          // Present. Flush only in the opt-in profiler to separate those costs.
          if (launcher_profile.enabled()) SDL_RenderFlush(renderer);
-@@ -9454,7 +9745,18 @@
+@@ -9454,7 +9786,18 @@
          if((launch_requested&&!automatic_start.active())||(online_start_pending&&!launch_fade.started()))launch_fade.capture(renderer,PaddockClock());
          LibraryCaptureHandoff(renderer,launch_fade,automatic_start.active());
          LauncherLayoutCheckCapture(renderer);
@@ -5061,7 +5362,7 @@
          const auto launcher_present_finished =
              std::chrono::steady_clock::now();
          launcher_present_microseconds +=
-@@ -9468,14 +9770,22 @@
+@@ -9468,14 +9811,22 @@
              }
              dkr::runtime::startup_performance::mark(
                  "launcher-first-frame-presented");
@@ -5087,7 +5388,7 @@
                  static_cast<unsigned long long>(frames),
                  frames ? double(draw_us)/double(frames)/1000.0 : 0.0,
                  static_cast<unsigned long long>(launcher_panel_cache.hits()));
-@@ -9498,8 +9808,13 @@
+@@ -9498,8 +9849,13 @@
              launcher_window_flags, launcher_frame_rate);
      }
  
@@ -5101,7 +5402,7 @@
      g_mod_launch.abandon();
      if(!result.start_game)shutdown_online_mods();
  
-@@ -9512,7 +9827,11 @@
+@@ -9512,7 +9868,11 @@
          static_cast<unsigned long long>(launcher_panel_cache.builds()),
          static_cast<unsigned long long>(launcher_panel_cache.hits()));
      launcher_panel_cache.clear();
@@ -5113,7 +5414,7 @@
      ImGui_ImplSDL2_Shutdown();
      ImGui::DestroyContext();
      while(SharedSaveBusy()){PumpSharedSaveJob();SDL_PumpEvents();std::this_thread::sleep_for(std::chrono::milliseconds(2));}
-@@ -9525,6 +9844,12 @@
+@@ -9525,6 +9885,12 @@
      ReleaseModStoreTextures();
      launch_fade.clear();
      SDL_DestroyRenderer(renderer);
@@ -5126,7 +5427,7 @@
      const auto launcher_elapsed_microseconds =
          std::chrono::duration_cast<std::chrono::microseconds>(
              std::chrono::steady_clock::now() - launcher_animation_epoch)
-@@ -9581,6 +9906,10 @@
+@@ -9581,6 +9947,10 @@
          static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window()));
      application.presentQueue->inspector->setIniPath(g_config_directory / "dkr-port-ui.ini");
      g_inspector = application.presentQueue->inspector.get();
@@ -5137,7 +5438,7 @@
  #if defined(DKR_IOS)
      g_ios_ui_events.clear();
  #endif
-@@ -9596,6 +9925,9 @@
+@@ -9596,6 +9966,9 @@
  void dkr::runtime::ui::detach(RT64::Application& application) {
      std::scoped_lock guard(g_inspector_guard);
      g_inspector = nullptr;
@@ -5147,7 +5448,7 @@
  #if defined(DKR_IOS)
      g_ios_ui_events.clear();
  #endif
-@@ -9609,6 +9941,13 @@
+@@ -9609,6 +9982,13 @@
  }
  
  void dkr::runtime::ui::draw(RT64::Application& application) {
@@ -5161,7 +5462,7 @@
      // Publish only an atomic value; the raster worker snapshots it into the
      // next pass's push constants. No GPU resources or samplers are rebuilt.
      // Keep this before visibility checks so closing the overlay or changing
-@@ -9668,6 +10007,9 @@
+@@ -9668,6 +10048,9 @@
          return;
      }
      if (application.presentQueue->inspector == nullptr) {
@@ -5171,7 +5472,7 @@
          attach(application);
          if (show_overlay) {
              g_overlay_focus_requested.store(true, std::memory_order_release);
-@@ -9676,9 +10018,13 @@
+@@ -9676,9 +10059,13 @@
      if (application.presentQueue->inspector == nullptr) {
          return;
      }
@@ -5186,7 +5487,7 @@
      RT64::Inspector* inspector = application.presentQueue->inspector.get();
      dkr::runtime::performance_trace::Scope ui_measure(dkr::runtime::performance_trace::Region::UiBuild);
  #if defined(DKR_IOS)
-@@ -9689,6 +10035,23 @@
+@@ -9689,6 +10076,23 @@
          for (auto& event : pending.events) inspector->handleSdlEvent(&event);
      }
  #endif
@@ -5210,7 +5511,7 @@
      inspector->newFrame(application.framebufferGraphicsWorker.get());
      if(show_overlay)if(const int step=LibraryTakeSidebarStep(true)) {
          const int selected=StepSidebarSelection(g_overlay_sidebar_selection.load(),step);
-@@ -9699,6 +10062,12 @@
+@@ -9699,6 +10103,12 @@
          g_overlay_sidebar_selection.store(dkr::library_ui::sidebar_parent(g_overlay_page.load()));
      dkr::store::overlay::begin(application);
      if(show_overlay)StoreOverlayTestFrame();
@@ -5223,7 +5524,7 @@
      if (auto* hud_window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window())) {
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
-@@ -9739,7 +10108,7 @@
+@@ -9739,7 +10149,7 @@
          const PaddockLauncherTypographyScope overlay_typography;
          bool request_quit_popup = false;
          bool request_restart_popup = false;
@@ -5232,7 +5533,7 @@
          int sidebar_selection = std::clamp(
              g_overlay_sidebar_selection.load(std::memory_order_acquire), 0,
              overlay_sidebar_count - 1);
-@@ -9764,7 +10133,8 @@
+@@ -9764,7 +10174,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -5242,7 +5543,7 @@
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9789,7 +10159,7 @@
+@@ -9789,7 +10200,7 @@
          const auto sidebar_position=dkr::library_ui::sidebar_placement(
              ImGui::GetWindowSize().y,nav_padding,ImGui::GetCursorPosY(),
              sidebar_layout.button_height,sidebar_layout.item_spacing_y,
@@ -5251,7 +5552,7 @@
          ImGui::SetCursorPosY(sidebar_position.navigation);
          // The sidebar is a shoulder-button rail. Excluding its widgets from
          // ImGui navigation keeps the D-pad entirely inside the content panel.
-@@ -9803,6 +10173,11 @@
+@@ -9803,6 +10214,11 @@
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
          LibraryNavigationCheckOverlayRoute();
@@ -5263,7 +5564,7 @@
          SidebarButton("PLAY", 0, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
          SidebarButton("DKR-R ONLINE", kPageOnlineMp, sidebar_selection, nav_inner_width,
-@@ -9819,9 +10194,14 @@
+@@ -9819,9 +10235,14 @@
                        sidebar_layout.button_height);
          SidebarButton("ABOUT DKR-R", kPageAbout, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
@@ -5278,7 +5579,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9850,6 +10230,7 @@
+@@ -9850,6 +10271,7 @@
              request_quit_popup = true;
          }
          ImGui::PopStyleColor();
@@ -5286,7 +5587,7 @@
          --g_race_button_sidebar;
          ImGui::PopItemFlag();
          ImGui::EndGroup();
-@@ -9884,6 +10265,11 @@
+@@ -9884,6 +10306,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -5298,7 +5599,7 @@
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9938,15 +10324,33 @@
+@@ -9938,15 +10365,33 @@
          // or the game HUD. These dialogs render outside the content child.
          const PaddockLauncherTypographyScope modal_typography(show_overlay);
          if(g_store_in_game)StorePolishModals();
@@ -5332,7 +5633,7 @@
          DrawTextEntryKeyboard();
      }
      // Over the race, not the menu: the panel is for tuning while driving.
-@@ -9973,6 +10377,9 @@
+@@ -9973,6 +10418,9 @@
      DrawPinnedAchievement();
      DrawAchievementToast();
      dkr::store::overlay::end();
@@ -5342,7 +5643,7 @@
      inspector->endFrame();
  }
  
-@@ -9995,8 +10402,12 @@
+@@ -9995,8 +10443,12 @@
             (event->type==SDL_CONTROLLERBUTTONDOWN&&event->cbutton.button==SDL_CONTROLLER_BUTTON_B)) {
              dkr::runtime::invites::cancel_dialog();return true;
          }
@@ -5355,7 +5656,7 @@
      }
  
  #if defined(__ANDROID__) || defined(DKR_IOS)
-@@ -10082,7 +10493,11 @@
+@@ -10082,7 +10534,11 @@
              // carry NoNav and therefore cannot steal this focus.
          }
      }
@@ -5368,7 +5669,7 @@
      // UIKit presentation may wait for the main thread while the renderer holds
      // frameMutex. Keep the main event pump free to service that presentation.
      return g_ios_ui_events.push(*event);
-@@ -10092,6 +10507,7 @@
+@@ -10092,6 +10548,7 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -5376,7 +5677,7 @@
      // RT64's ImGui backend owns normal pointer, keyboard and gamepad event
      // delivery. Do not turn those events into page-focus requests: ImGui must
      // be allowed to retain the item selected by the previous event so the
-@@ -10111,6 +10527,15 @@
+@@ -10111,6 +10568,15 @@
  }
  
  void dkr::runtime::ui::toggle_overlay() {
@@ -5392,7 +5693,7 @@
  #if defined(__ANDROID__) || defined(DKR_IOS)
      dkr::runtime::mobile::clear();
  #endif
-@@ -10133,6 +10558,11 @@
+@@ -10133,6 +10599,11 @@
      return g_lifecycle_request.load(std::memory_order_acquire);
  }
  
@@ -5404,7 +5705,7 @@
  void dkr::runtime::ui::reset_lifecycle_request() {
      g_lifecycle_request.store(LifecycleRequest::None, std::memory_order_release);
  }
-@@ -10295,3 +10725,22 @@
+@@ -10295,3 +10766,22 @@
      return true;
  }
  #endif
@@ -5458,16 +5759,31 @@
  
 --- a/runtime-recomp/src/game/runtime_updates_ui.inl
 +++ b/runtime-recomp/src/game/runtime_updates_ui.inl
-@@ -1,3 +1,8 @@
+@@ -1,3 +1,23 @@
 +#if defined(__PROSPERO__)
-+void DrawPlayUpdateButton(float) {}
++// The PS5 updates itself on its own page. The Play header only points there and
++// says when something is waiting, so an available update is not missed.
++void DrawPlayUpdateButton(float width) {
++    const auto update = dkrr::updates::view();
++    using UpdateState = dkrr::updates::State;
++    const bool available = update.state == UpdateState::Available;
++    const bool working = update.state == UpdateState::Checking || update.state == UpdateState::Downloading ||
++                         update.state == UpdateState::HandingOff || update.state == UpdateState::Closing;
++    const char *label = available ? "Update available###play-update-check"
++                        : working  ? "Updating...###play-update-check"
++                                   : "Updates###play-update-check";
++    if (PaddockImportButton(label, width, true)) g_page_navigation_request = kPageUpdates;
++    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
++        ImGui::SetTooltip(available ? "A verified update is ready. Open the Updates page to install it."
++                                    : "Open the Updates page.");
++}
 +void DrawUpdatesCard(float) {}
 +void DrawUpdateNotice(dkr::runtime::ui::StartupResult &, bool &) {}
 +#else
  // Shared launcher/overlay look; update work runs only from the launcher.
  std::string g_update_notice_seen;
  std::string g_update_action_status;
-@@ -223,3 +228,5 @@
+@@ -223,3 +243,5 @@
      }
      ImGui::EndPopup();
  }

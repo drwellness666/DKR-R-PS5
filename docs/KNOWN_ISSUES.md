@@ -5,10 +5,12 @@
 | Problem | Details |
 |---|---|
 | Large texture packs | Conversion and verification can take time. Keep DKR-R open until installation completes; copy/verification progress is displayed. |
+| Menu stutter when scrolling up | In the launcher, scrolling up can stutter briefly. The cause is not found yet. |
+| Water flickers on first load | The first time water appears after starting the game, it can flicker briefly. The cause is not found yet. |
 
 ## Tested setup
 
-Version 1.2 is based on **DKR-R 1.0.15** and opens the launcher first. It was built and checked on PC with the same PS5 adaptations as 1.1; its console confirmation is through the in-game update. Report anything that worked in 1.1 and no longer does.
+Version 1.2.1 is based on **DKR-R 1.0.15** and opens the launcher first. Version 1.2 was tried on a PS5 and the problems found there are fixed in 1.2.1. That fix was checked on a PC and still needs its own test on the console. Please report anything that worked in 1.1 and no longer does.
 
 For version 1.0 (DKR-R 1.0.9), PS5 sessions confirmed installation from owned USB ROMs, both US revisions, save/load after a full console restart, shared settings and texture choices, classic controls, vibration, balloon lighting, gyro, adaptive L2 and controller sounds. 4K/119.88 Hz, VRR Automatic and neutral HDR10 output were confirmed on an LG C1.
 
@@ -18,6 +20,6 @@ Sherbet Land, Moggy and Sr.gu’s HD Texture Pack 0.2.8 installed through the Mo
 
 The online directory, Discord connection and lobbies were exercised on PS5. Full races between two physical consoles have not yet been confirmed in these sessions. Host checks and lobby access do not substitute for that test.
 
-The in-game updater verifies signed releases and preserves installed data. Local transaction/recovery checks have passed. The first 1.0 → 1.1 attempt on PS5 found a package-check bug in 1.0; it is fixed in 1.1, and the republished 1.1 package was checked on PC with the exact 1.0 update code. If an earlier attempt failed, simply try **Touchpad → Updates** again. **DKRR-Update.elf** remains the offline alternative. Other loaders/displays, ghosts/Paks and the Windows/WSL2 source-build route have limited coverage. Constant 120 rendered FPS is not guaranteed.
+The in-game updater only installs signed releases and keeps your data. If an update ever fails with "Download cancelled or verification failed", simply try **Touchpad → Updates** again; your installation stays unchanged. **DKRR-Update.elf** remains the offline alternative. Other loaders and displays, ghosts/Paks and the Windows/WSL2 build route have had little testing. A constant 120 rendered FPS is not guaranteed.
 
 [Report a problem](https://github.com/drwellness666/DKR-R-PS5/issues) · [What to include](DIAGNOSTICS.md) · [Planned improvements](ROADMAP.md)

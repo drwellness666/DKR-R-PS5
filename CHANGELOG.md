@@ -1,14 +1,28 @@
 # Changelog
 
+## 1.2.1 — 2026-11-10
+
+Fixes for problems found in 1.2. Installed 1.0, 1.1 and 1.2 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept.
+
+- The crash-report question is asked only once. Before, your answer was not saved and the question came back at every start.
+- **Keep me signed in** now works on the PS5: sign in to Online once and you stay signed in the next time you start. Signing out removes the saved sign-in.
+- **Play:** the Ready to Race panel and its traffic light are centred, and Modded Adventure no longer touches the text above it. A new **Update available** button appears when an update is waiting.
+- **Online:** the pencil button next to the lobby name and the decorative squares on the lobby cards are adjusted. The squares on the Magic Code cards got the same fix.
+- **Updates:** the page now shows which step is running (checking, downloading, verifying, installing), with megabytes and percent.
+- **About DKR-R:** shows the PS5 port version with links to its GitHub page and release notes. **Storage and reports** is back: there you can turn off the automatic cleanup and set the crash-report choice. It was hidden on the PS5 in 1.2.
+- **Graphics:** the presets are now **Performance** (1080p, up to 120 FPS) and **Quality** (4K, up to 120 FPS). Applying one also sets the TV output, which takes effect the next time you start the game.
+- Cleaner button names in the controller setup and the HUD layout editor (Cross, Circle, Triangle, L1/R1, Options).
+- Not fixed yet: menus can stutter briefly when scrolling up, and water can flicker the first time it appears. See the [known issues](docs/KNOWN_ISSUES.md).
+
 ## 1.2 — 2026-11-09
 
-Update to **DKR-R 1.0.15**. Installed 1.0 and 1.1 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. Online lobbies need matching 1.0.15 games on every player.
+Update to **DKR-R 1.0.15**. Installed 1.0 and 1.1 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. Online lobbies need matching 1.0.15 games on every player's side.
 
-- Launcher first: starting DKR-R from the PS5 home screen opens the launcher. Choose the version, mods and settings, then press **Start Game**. Stopping a race returns to the launcher; the "Skip launcher" option is no longer offered on PS5.
-- New from DKR-R 1.0.15: smoother online recovery after delays, live host settings (prediction window and input delay during a race), better spectators, Start Game kept at the bottom of Play, character names in Player Select and automatic storage cleanup of old downloads and caches (About DKR-R → Support → Storage; saves, ROMs, installed mods and texture packs are kept).
-- Launcher text: hyphens, slashes, brackets and counts now sit on the same line as the letters ("D-PAD" no longer looks like "D_PAD"); digits match the letter height, also in button names such as L1/R2.
-- Controls: PS5 button names in Title Case ("D-Pad Up", "Left Stick Up") and the controller shown as "DualSense (PS5)". The sidebar navigation switch is removed; L1/R1 change pages and the D-pad moves inside a page.
-- In-game updater: cancelling no longer leaves it stuck on "Downloading"/"Checking", slow but working connections no longer fail after 10 minutes, and clearer error messages.
+- **Launcher first:** DKR-R opens its launcher when you start it from the PS5 home screen. Choose the version, mods and settings, then press **Start Game**. Stopping a race returns you to the launcher. **Skip launcher** is no longer offered on the PS5.
+- New from DKR-R 1.0.15: smoother online recovery after delays, host settings you can change during a race, better spectating, Start Game kept at the bottom of Play, character names in Player Select, and automatic cleanup of old downloads and caches. Saves, ROMs, installed mods and texture packs are never touched.
+- Clearer launcher text: dashes, slashes, brackets and counts line up with the letters ("D-PAD" no longer looks like "D_PAD").
+- Controls: PS5 button names ("D-Pad Up", "Left Stick Up") and the controller shown as "DualSense (PS5)". The sidebar navigation switch is gone: L1/R1 change pages and the D-pad moves inside a page.
+- The in-game updater no longer gets stuck when you cancel, slow connections no longer fail after 10 minutes, and error messages are clearer.
 
 ## 1.1 — 2026-11-07
 

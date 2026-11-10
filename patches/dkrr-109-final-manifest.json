@@ -22,6 +22,10 @@
       "original_sha256": "ffbdda3fd30a18b8111619328e8c223e94c79e33e7dba4c500e316a45dfdaa83",
       "patched_sha256": "386fe1e365c56374ab306bd7ac3070300f00f3d5d133242f164a424dd0a45042"
     },
+    "runtime-recomp/src/game/hud_layout_editor.cpp": {
+      "original_sha256": "fca25c7aadf89655b8fae5c1f764798b9b7218c1952dc208e3b07adf8400028a",
+      "patched_sha256": "9e3c4dac1db6280d79b04dd32eb0590c5fa38bcb57607b52210417396b641a79"
+    },
     "runtime-recomp/src/game/launcher_themes/system.hpp": {
       "original_sha256": "43d2171ee2085d652224006aa18be08726685b2abfad49f7f7e0ff4c18e18a6d",
       "patched_sha256": "82b3bc100203d0748602360df115a9454dba59f908842acebe4c42c01a7e768c"
@@ -108,11 +112,11 @@
     },
     "runtime-recomp/src/game/runtime_details_ui.inl": {
       "original_sha256": "eb014b5bebbedc60464104dae9341d65e7209c556bbf954e12235e3205047f0c",
-      "patched_sha256": "d7806732c1770c1a39e80c696e621c250774cfec5a4cba3ce12e1858184c122f"
+      "patched_sha256": "5d074004eaeb7d5d98065a8c6959ffe78afb61e47b23b45a774da065ea9b4375"
     },
     "runtime-recomp/src/game/runtime_graphics_ui.inl": {
       "original_sha256": "0f9e3c2a501d64e2bdeea909d891284b0d4e376d99e949870edd3458540b3da9",
-      "patched_sha256": "5a484d82ea45ee87bfb4904b5c16d41c862ac201421eb009cc4d926526b7f19a"
+      "patched_sha256": "c9936888154e84ed4849297006f9bd4671fe01fb026732f62ae366ed37fbbac6"
     },
     "runtime-recomp/src/game/runtime_hud_layout.cpp": {
       "original_sha256": "789c5ab20049017d197545531b2704a39d4924336dfcb7112f9da2f6b7a4e92b",
@@ -128,7 +132,7 @@
     },
     "runtime-recomp/src/game/runtime_online_ui.inl": {
       "original_sha256": "a87f078ad9cf42d9618844faece2ce849a79a92fd8e090c97235f7015e63e1ae",
-      "patched_sha256": "dcd40e010d7bb7bb589446b04dbfee113d5553caedb393a6d4ef9af4131332da"
+      "patched_sha256": "443e21134c881ba5cfc27e277c94e2e86ea8d09de76e0b8f9b8d267fbe6b0b87"
     },
     "runtime-recomp/src/game/runtime_platform.cpp": {
       "original_sha256": "11de5cbedf82474ea28a10f18dd22dd4230e44c71260301cd8e431313161abf7",
@@ -140,7 +144,7 @@
     },
     "runtime-recomp/src/game/runtime_play_ui.inl": {
       "original_sha256": "21de9cdedf88397250a5251e32d0ce8758fe1f1b5a388e7e52b44e8c0d42fab6",
-      "patched_sha256": "0a280e1818d835b55293c9902ae2734743009c0d51d6298dc7f8c6cbf5501c6a"
+      "patched_sha256": "43fa9a9afdf69f664b46a9e1de72a579f874014a2924ad1d9ad67d8be40a4bf2"
     },
     "runtime-recomp/src/game/runtime_portable.cpp": {
       "original_sha256": "e9d9d2e1982df32a83c38e554a1609e07757202fe5653c504ff75c623246b6ab",
@@ -164,7 +168,7 @@
     },
     "runtime-recomp/src/game/runtime_ui.cpp": {
       "original_sha256": "c2ae61e836739da160490f5381e31bf47c821bb35a8ed1cd6e837424a38c6878",
-      "patched_sha256": "8f0e5c129459d6d54262769c1d1399c4e7e0448b0df2a48bb612ad5ab649f126"
+      "patched_sha256": "338444dfe7cb903b11dcc263f18f7cd57899ff3a1f379201a005e9c170ab86e5"
     },
     "runtime-recomp/src/game/runtime_ui.hpp": {
       "original_sha256": "ad7c87220d85b9c354590931036d6deeee5ca2492066c9becc1f052d91cf4d7d",
@@ -176,7 +180,7 @@
     },
     "runtime-recomp/src/game/runtime_updates_ui.inl": {
       "original_sha256": "ddd6d745367cd360e6623fd757951d26a29e1f980bf488a0156f9e9179a6d287",
-      "patched_sha256": "88f41b86249171da952924ff6ffa20185843ce88ec924cd30dc470550a6335ae"
+      "patched_sha256": "ef81b3aa7265d589e3b05e2f72fba700fcc38cec01cbc02b6bb0aad9659c709b"
     },
     "runtime-recomp/src/game/save_storage.hpp": {
       "original_sha256": "373e967270c33be76ebf659daa6e6fbfc07a55c45df1ba6bd33f70413c7f2437",
@@ -211,7 +215,7 @@
       "patched_sha256": "272159c120de1cb1eeeb9889bdf63613d2f0692e287ef8e6a0ef1bf59c572c06"
     }
   },
-  "patch_sha256": "614fabcfe3542577b02b23f0ac6205a8dbb401bfcd237329748f202f2d63bfad",
+  "patch_sha256": "3dd4ba69f4823735fadb809a41f587a08cf7d22d677af4f865fd6b10e5d9bd47",
   "include_directories": {
     "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/updates/update_process.hpp": "163af62b1302cead",
     "@DKRR_BUILD@/generated/rollback-only/rollback_policy.hpp": "46ecb14696367aea",

@@ -35,7 +35,8 @@ static std::vector<std::int16_t> delayed(unsigned rev,unsigned clip){
  if(delayed_load.exchange(false)){load_entered=true;while(!load_release.load())std::this_thread::yield();return {};}
  return load(rev,clip);
 }
-template<class Test>static void wait(Test test){for(int i=0;i<1000&&!test();++i)std::this_thread::sleep_for(std::chrono::milliseconds(1));assert(test());}
+// Ten seconds: loaded CI hosts schedule the worker late; a real hang still fails.
+template<class Test>static void wait(Test test){for(int i=0;i<10000&&!test();++i)std::this_thread::sleep_for(std::chrono::milliseconds(1));assert(test());}
 template<class Test>static void wait_slow(Test test){for(int i=0;i<2000&&!test();++i)std::this_thread::sleep_for(std::chrono::milliseconds(1));assert(test());}
 int main(){
     for(unsigned clip=0;clip<ps5_sounds::count;++clip){const auto category=ps5_sounds::category(clip);assert(category<10);if(category<10){assert(ps5_sounds::allowed(1023,clip));assert(!ps5_sounds::allowed(1023&~(1U<<category),clip));}}

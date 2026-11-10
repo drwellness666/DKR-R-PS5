@@ -44,9 +44,10 @@ def compose(name,text):
     PaddockStroke(draw,press.min,press.max,PaddockRound(8),PaddockCol(0x476373),1);
     // A vector pencil stays sharp at every TV output scale.
     const auto p=press.min;const auto ink=PaddockCol(0xFFF0C2);
-    draw->AddQuadFilled({p.x+12,p.y+28},{p.x+27,p.y+13},{p.x+32,p.y+18},{p.x+17,p.y+33},ink);
-    draw->AddTriangleFilled({p.x+10,p.y+35},{p.x+12,p.y+28},{p.x+17,p.y+33},ink);
-    draw->AddLine({p.x+12,p.y+37},{p.x+33,p.y+37},ink,1.5F);
+    // The glyph spans x 10.5..33.5, y 10..34: centred in the 44 px button.
+    draw->AddQuadFilled({p.x+12.5F,p.y+25},{p.x+27.5F,p.y+10},{p.x+32.5F,p.y+15},{p.x+17.5F,p.y+30},ink);
+    draw->AddTriangleFilled({p.x+10.5F,p.y+32},{p.x+12.5F,p.y+25},{p.x+17.5F,p.y+30},ink);
+    draw->AddLine({p.x+12.5F,p.y+34},{p.x+33.5F,p.y+34},ink,1.5F);
     PaddockEndPress(press,8,1);
     if(press.hovered||press.focused){const auto item=GImGui->LastItemData;ImGui::SetTooltip("Enter text with the controller");GImGui->LastItemData=item;}
     return press.pressed;

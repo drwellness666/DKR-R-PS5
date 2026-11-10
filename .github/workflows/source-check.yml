@@ -50,6 +50,8 @@ jobs:
       - run: python3 tools/test_console_play_navigation.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_menu_sections.py "$PWD/work/controller-test-inputs"
       - run: python3 tools/test_ps5_launcher_first.py
+      - run: python3 tools/test_ps5_online_keyring.py
+      - run: python3 tools/test_ps5_about_release.py
       - run: python3 tools/test_ps5_release_relocation.py
       - run: python3 tests/test_build_assistant.py
       - run: python3 tools/test_ps5_internet_update.py

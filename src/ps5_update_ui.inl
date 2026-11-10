@@ -10,9 +10,22 @@ DetailCard(width,{22.0F,22.0F},[&](float inner) {
             "The update preference could not be confirmed saved. Try again.";
     if(!preference_status.empty())DetailText(preference_status.c_str(),inner);
     PaddockGap(12.0F);
+    // Name the step the updater is in; the message below carries the detail.
+    const bool received_all=update.state==UpdateState::Downloading&&update.bytes&&update.received>=update.bytes;
+    const char *phase=update.state==UpdateState::Checking?"STEP 1 OF 4: CHECKING":
+        received_all?"STEP 3 OF 4: VERIFYING DOWNLOAD":
+        update.state==UpdateState::Downloading?"STEP 2 OF 4: DOWNLOADING":
+        update.state==UpdateState::HandingOff?"STEP 4 OF 4: PREPARING INSTALLATION":
+        update.state==UpdateState::Closing?"STEP 4 OF 4: CLOSING TO INSTALL":nullptr;
+    if(phase){DetailText(phase,inner,kSetWarm);PaddockGap(6.0F);}
     DetailText(update.message[0]?update.message:"Check for updates to download and install directly on this PS5.",inner);
-    if(update.state==UpdateState::Downloading&&update.bytes)
-        ImGui::ProgressBar(float(double(update.received)/double(update.bytes)),{inner,0.0F});
+    if(update.state==UpdateState::Downloading&&update.bytes){
+        const double fraction=double(update.received)/double(update.bytes);
+        char progress[96];constexpr unsigned long long mib=1024*1024;
+        std::snprintf(progress,sizeof(progress),"%llu of %llu MiB (%u%%)",(unsigned long long)(update.received/mib),
+            (unsigned long long)((update.bytes+mib-1)/mib),unsigned(fraction<0.0?0.0:fraction>1.0?100.0:fraction*100.0));
+        ImGui::ProgressBar(float(fraction),{inner,0.0F},progress);
+    }
     const bool waiting=update.state==UpdateState::Checking||update.state==UpdateState::Downloading||
         update.state==UpdateState::HandingOff||update.state==UpdateState::Closing;
     ImGui::BeginDisabled(waiting);

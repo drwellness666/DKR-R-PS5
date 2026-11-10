@@ -152,6 +152,15 @@ int main() {
     // creating the PS5 SDL video device would call unavailable keyboard/IME
     // imports even when no keyboard or text entry is being used.
     setenv("SDL_VIDEODRIVER","dummy",1);
+    // The PS5 has no usable /tmp. std::filesystem::temp_directory_path() backs
+    // DKR-R's installation locks, which guard consent, storage and report
+    // writes; without a private temp directory those writes failed and the
+    // crash-report question reappeared at every start. Keep it inside our tree.
+    {
+        const char *scratch="/data/dkrr/tmp";
+        if(mkdir(scratch,0700)!=0&&errno!=EEXIST)report("private temp directory unavailable errno=%d",errno);
+        else{chmod(scratch,0700);setenv("TMPDIR",scratch,1);}
+    }
     // The public SDL PS5 driver's default map omits Back. DKR-R uses that
     // logical button for its settings overlay, so map the touchpad click to it.
     setenv("SDL_GAMECONTROLLERCONFIG",dkrr_ps5_controller_mapping,1);
