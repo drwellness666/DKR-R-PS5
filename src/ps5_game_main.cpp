@@ -153,13 +153,24 @@ int main() {
     // imports even when no keyboard or text entry is being used.
     setenv("SDL_VIDEODRIVER","dummy",1);
     // The PS5 has no usable /tmp. std::filesystem::temp_directory_path() backs
-    // DKR-R's installation locks, which guard consent, storage and report
-    // writes; without a private temp directory those writes failed and the
-    // crash-report question reappeared at every start. Keep it inside our tree.
+    // DKR-R's installation locks, which guard consent, storage and sign-in
+    // writes; without a temp directory those writes fail and the crash-report
+    // question comes back at every start. /data/dkrr itself belongs to root
+    // (the installer made it) and this title cannot create folders in it, so
+    // the scratch folder lives inside a profile, which the title owns.
     {
-        const char *scratch="/data/dkrr/tmp";
-        if(mkdir(scratch,0700)!=0&&errno!=EEXIST)report("private temp directory unavailable errno=%d",errno);
-        else{chmod(scratch,0700);setenv("TMPDIR",scratch,1);}
+        const char *candidates[]={"/data/dkrr/profile-us-v77/tmp","/data/dkrr/profile-us-v80/tmp","/data/dkrr/diagnostics/tmp"};
+        bool ready=false;
+        for(const char *scratch:candidates) {
+            if(mkdir(scratch,0700)!=0&&errno!=EEXIST) {
+                report("private temp directory %s unavailable errno=%d",scratch,errno);
+                continue;
+            }
+            chmod(scratch,0700);setenv("TMPDIR",scratch,1);
+            report("private temp directory: %s",scratch);
+            ready=true;break;
+        }
+        if(!ready)report("no private temp directory; locks for consent, storage and sign-in will fail");
     }
     // The public SDL PS5 driver's default map omits Back. DKR-R uses that
     // logical button for its settings overlay, so map the touchpad click to it.

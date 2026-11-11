@@ -2,6 +2,7 @@
 #pragma once
 #include <atomic>
 #include <cerrno>
+#include <cstdio>
 #include <string>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -14,6 +15,8 @@
 // native titles see uid=0/nlink=0 (see ps5_native_metadata.hpp); this store
 // applies the same checks with that redaction accepted. The path is fixed by
 // the caller, opened without following links, and never leaves the profile.
+// Plain path calls (mkdir/open/rename) are used on purpose: the *at() family
+// is not reliably available to a native title and silently failed in 1.2.3.
 namespace dkr::online::keyring {
 namespace ps5_detail {
 struct Fd {
@@ -27,32 +30,43 @@ inline bool valid(const std::string& value) {
     return value.size() == 43 &&
            value.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-") == value.npos;
 }
-inline int directory(const std::string& root, bool create) {
-    if (root.empty() || root.front() != '/') return -1;
-    if (create) mkdir(root.c_str(), 0700); // The profile root already exists in practice.
-    Fd parent(open(root.c_str(), O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC));
-    if (parent.value < 0) return -1;
-    if (create && mkdirat(parent.value, "device-session", 0700) != 0 && errno != EEXIST) return -1;
-    int fd = openat(parent.value, "device-session", O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
-    struct stat info{};
-    if (fd >= 0 && (fstat(fd, &info) != 0 || !S_ISDIR(info.st_mode) ||
-                    !dkrr::native_metadata::same_user(info, geteuid()) || (info.st_mode & 0077))) {
-        close(fd);
-        return -1;
+// The private directory <root>/device-session, or "" when it is not usable.
+inline std::string directory(const std::string& root, bool create) {
+    if (root.empty() || root.front() != '/') return {};
+    const std::string path = root + "/device-session";
+    if (create && mkdir(path.c_str(), 0700) != 0 && errno != EEXIST) {
+        std::fprintf(stderr, "[ps5][keyring] mkdir failed errno=%d path=%s\n", errno, path.c_str());
+        return {};
     }
-    return fd;
+    struct stat info{};
+    if (lstat(path.c_str(), &info) != 0) {
+        if (create) std::fprintf(stderr, "[ps5][keyring] lstat failed errno=%d path=%s\n", errno, path.c_str());
+        return {};
+    }
+    // The mode requested at creation can be widened by the volume; tighten it
+    // once, on our own directory, before judging it.
+    if (create && S_ISDIR(info.st_mode) && (info.st_mode & 0077)) {
+        chmod(path.c_str(), 0700);
+        lstat(path.c_str(), &info);
+    }
+    if (!S_ISDIR(info.st_mode) || !dkrr::native_metadata::same_user(info, geteuid()) || (info.st_mode & 0077)) {
+        std::fprintf(stderr, "[ps5][keyring] directory refused uid=%u euid=%u mode=%o nlink=%u\n",
+                     unsigned(info.st_uid), unsigned(geteuid()), unsigned(info.st_mode), unsigned(info.st_nlink));
+        return {};
+    }
+    return path;
 }
 } // namespace ps5_detail
 inline bool available() { return true; }
 inline bool store(const std::string& root, const std::string& value) {
     using namespace ps5_detail;
     if (!valid(value)) return false;
-    Fd dir(directory(root, true));
-    if (dir.value < 0) return false;
+    const std::string dir = directory(root, true);
+    if (dir.empty()) return false;
     static std::atomic<unsigned> sequence{0};
-    const auto temporary = "new-" + std::to_string(getpid()) + "-" + std::to_string(++sequence);
-    Fd fd(openat(dir.value, temporary.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600));
-    if (fd.value < 0) return false;
+    const std::string temporary = dir + "/new-" + std::to_string(getpid()) + "-" + std::to_string(++sequence);
+    Fd fd(open(temporary.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600));
+    if (fd.value < 0) { std::fprintf(stderr, "[ps5][keyring] token create failed errno=%d\n", errno); return false; }
     bool ok = true;
     std::size_t written = 0;
     while (ok && written < value.size()) {
@@ -61,17 +75,18 @@ inline bool store(const std::string& root, const std::string& value) {
         if (count <= 0) { ok = false; break; }
         written += static_cast<std::size_t>(count);
     }
-    ok = ok && fsync(fd.value) == 0 &&
-         renameat(dir.value, temporary.c_str(), dir.value, "device.token") == 0;
-    if (ok) fsync(dir.value); // Best effort: the rename itself is the commit.
-    else unlinkat(dir.value, temporary.c_str(), 0);
+    // The rename is the commit; a refused flush on the console's data volume
+    // must not turn a stored token into "could not be saved".
+    if (ok && fsync(fd.value) != 0) std::fprintf(stderr, "[ps5][keyring] fsync ignored errno=%d\n", errno);
+    ok = ok && rename(temporary.c_str(), (dir + "/device.token").c_str()) == 0;
+    if (!ok) { std::fprintf(stderr, "[ps5][keyring] token write failed errno=%d\n", errno); unlink(temporary.c_str()); }
     return ok;
 }
 inline std::string load(const std::string& root) {
     using namespace ps5_detail;
-    Fd dir(directory(root, false));
-    if (dir.value < 0) return {};
-    Fd fd(openat(dir.value, "device.token", O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK));
+    const std::string dir = directory(root, false);
+    if (dir.empty()) return {};
+    Fd fd(open((dir + "/device.token").c_str(), O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK));
     struct stat info{};
     if (fd.value < 0 || fstat(fd.value, &info) != 0 || !S_ISREG(info.st_mode) ||
         !dkrr::native_metadata::same_user(info, geteuid()) || (info.st_mode & 0077) ||
@@ -89,7 +104,7 @@ inline std::string load(const std::string& root) {
 }
 inline void clear(const std::string& root) {
     using namespace ps5_detail;
-    Fd dir(directory(root, false));
-    if (dir.value >= 0) { unlinkat(dir.value, "device.token", 0); fsync(dir.value); }
+    const std::string dir = directory(root, false);
+    if (!dir.empty()) unlink((dir + "/device.token").c_str());
 }
 } // namespace dkr::online::keyring

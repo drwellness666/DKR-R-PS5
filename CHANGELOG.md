@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.4 — 2026-11-11
+
+Fixes for problems found on the PS5 in 1.2.3. Installed 1.0 to 1.2.3 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. These fixes were checked on a PC and still need their own test on the console.
+
+- **Saving settings:** the crash-report choice, **Keep me signed in** and the **Storage and reports** page all failed for one reason. DKR-R needs a temporary folder for the safety lock it takes before writing them. Since 1.2.1 it tried to create that folder in `/data/dkrr`, which belongs to the system and cannot be written by the game, so the folder never existed. It now lives inside the game's own profile folder. The saved sign-in token also uses plain file calls now, and a refused flush to disk no longer throws a saved choice away. If anything still fails, the reason is written to the game log.
+- **Storage and reports:** with the lock working, Check Storage, the automatic cleanup and the cache buttons can run.
+- **Lobby chat button:** the PS5 now shows one control (the old keyboard-key button is hidden). Press a free button within ten seconds; if the button is already used, the page says what it does. Circle is free by default.
+- **Magic Codes:** the dark squares that looked like a shadow above each card are gone, and long names such as OppositesAttract shrink to fit on one line.
+- **Controls → PS5:** the settings are grouped under Menu navigation, DualSense feedback, Controller sounds and Motion steering, with even spacing.
+- **Graphics:** the closed Texture Diagnostics header is compact again.
+
 ## 1.2.3 — 2026-11-11
 
 Corrects a mistake in 1.2.2. Installed 1.0, 1.1, 1.2, 1.2.1 and 1.2.2 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. This change was checked on a PC and still needs its own test on the console.

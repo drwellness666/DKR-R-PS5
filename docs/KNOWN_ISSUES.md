@@ -10,7 +10,7 @@
 
 ## Tested setup
 
-Version 1.2.3 is based on **DKR-R 1.0.15** and opens the launcher first. Version 1.2.1 was tried on a PS5 and several problems found there (a few menu-text/layout details, a duplicated About entry, no gamepad way to open lobby chat) are addressed in 1.2.2 and 1.2.3. Those fixes were checked on a PC and still need their own test on the console. Lobby chat has no default controller button; choose one under **Online → Overlays → Lobby chat**. Please report anything that worked in 1.2.1 and no longer does.
+Version 1.2.4 is based on **DKR-R 1.0.15** and opens the launcher first. Version 1.2.3 was tried on a PS5; the saving problems (crash-report choice, sign-in, storage tools) and the layout details found there are addressed in 1.2.4. Those fixes were checked on a PC and still need their own test on the console. Lobby chat has no default controller button; choose a free one under **Online → Overlays → Lobby chat**. Please report anything that worked in 1.2.3 and no longer does.
 
 For version 1.0 (DKR-R 1.0.9), PS5 sessions confirmed installation from owned USB ROMs, both US revisions, save/load after a full console restart, shared settings and texture choices, classic controls, vibration, balloon lighting, gyro, adaptive L2 and controller sounds. 4K/119.88 Hz, VRR Automatic and neutral HDR10 output were confirmed on an LG C1.
 

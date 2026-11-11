@@ -9,7 +9,8 @@ namespace dkrr::native_metadata {
 inline bool same_user(const struct stat& st,uid_t owner) {
     if(st.st_uid==owner)return true;
 #if defined(__PROSPERO__) || defined(DKRR_TEST_NATIVE_METADATA)
-    return owner!=0 && owner==getuid() && st.st_uid==0 && st.st_nlink==0 &&
+    // Regular files report zero links; directories may report their real count.
+    return owner!=0 && owner==getuid() && st.st_uid==0 && (st.st_nlink==0||S_ISDIR(st.st_mode)) &&
         st.st_dev!=0 && st.st_ino!=0 && (S_ISREG(st.st_mode)||S_ISDIR(st.st_mode));
 #else
     return false;

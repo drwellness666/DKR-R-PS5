@@ -36,7 +36,15 @@ assert 'p.y+10' in wording and 'p.y+37' not in wording,'text-entry pencil must s
 if game.is_dir():
     online=(game/'runtime_online_ui.inl').read_text()
     ui_cpp=(game/'runtime_ui.cpp').read_text()
-    assert 'board_min.y + 5.0F}, 8, 6.0F' in ui_cpp,'magic-code checker must stay inset'
+    assert 'board_min.y + 5.0F}, {x + 6.0F, board_min.y + 11.0F}' in ui_cpp,'magic-code squares must stay inset and shadow-free'
+    assert 'MagicCodeLabelType(' in ui_cpp,'magic-code names must fit on one line'
+    updates=game/'updates'
+    lock=(updates/'update_process.cpp').read_text()
+    assert 'permission_error' in lock and 'flock unsupported' in lock,'install lock must tolerate the console volume'
+    assert 'ps5][durable-write] fsync ignored' in (updates/'update_core.cpp').read_text()
+    assert 'could not save the choice' in (game/'crash_reports/service.cpp').read_text()
+    chat_text=(game/'netplay/session_chat/ui.inl').read_text()
+    assert chat_text.count('Chat key')==1 and 'defined(__PROSPERO__)' in chat_text,'one chat control per platform'
     assert 'clipped by the 26 px inner corner' not in online and 'top = a.y + 8.0F' in online
 if game.is_dir():
     # Lobby chat must never take a controller button by default: Touchpad opens
@@ -45,11 +53,11 @@ if game.is_dir():
     settings=(chat/'settings.hpp').read_text()
     assert 'shortcut_button{-1}' in settings and 'online_chat_button' in settings
     chat_ui=(chat/'ui.inl').read_text()
-    assert 'SessionChatButtonInUse(button)' in chat_ui and 'shortcut_controller_binding' in chat_ui and 'controller_binding(player' in chat_ui
+    assert 'SessionChatButtonConflict(button)' in chat_ui and 'shortcut_controller_binding' in chat_ui and 'controller_binding(player' in chat_ui
     assert 'SDL_CONTROLLER_BUTTON_BACK:return "Touchpad"' in chat_ui
     assert 'is free\n    // in gameplay' not in (game/'runtime_ui.cpp').read_text(),'chat must not be hard-wired to Touchpad'
     online_ui=(game/'runtime_online_ui.inl').read_text()
     assert 'Touchpad opens lobby chat' not in online_ui
 main=(port/'src/ps5_game_main.cpp').read_text()
-assert 'setenv("TMPDIR",scratch,1)' in main
+assert 'setenv("TMPDIR",scratch,1)' in main and '/data/dkrr/profile-us-v77/tmp' in main and 'mkdir("/data/dkrr/tmp"' not in main,'temp folder must be inside a profile the title can write'
 print('PASS PS5 About identity, storage controls, update phases, presets and private temp directory')
