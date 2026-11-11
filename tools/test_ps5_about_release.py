@@ -38,6 +38,18 @@ if game.is_dir():
     ui_cpp=(game/'runtime_ui.cpp').read_text()
     assert 'board_min.y + 5.0F}, 8, 6.0F' in ui_cpp,'magic-code checker must stay inset'
     assert 'clipped by the 26 px inner corner' not in online and 'top = a.y + 8.0F' in online
+if game.is_dir():
+    # Lobby chat must never take a controller button by default: Touchpad opens
+    # the DKR-R menu, so the chat button is user-chosen and refuses used buttons.
+    chat=game/'netplay/session_chat'
+    settings=(chat/'settings.hpp').read_text()
+    assert 'shortcut_button{-1}' in settings and 'online_chat_button' in settings
+    chat_ui=(chat/'ui.inl').read_text()
+    assert 'SessionChatButtonInUse(button)' in chat_ui and 'shortcut_controller_binding' in chat_ui and 'controller_binding(player' in chat_ui
+    assert 'SDL_CONTROLLER_BUTTON_BACK:return "Touchpad"' in chat_ui
+    assert 'is free\n    // in gameplay' not in (game/'runtime_ui.cpp').read_text(),'chat must not be hard-wired to Touchpad'
+    online_ui=(game/'runtime_online_ui.inl').read_text()
+    assert 'Touchpad opens lobby chat' not in online_ui
 main=(port/'src/ps5_game_main.cpp').read_text()
 assert 'setenv("TMPDIR",scratch,1)' in main
 print('PASS PS5 About identity, storage controls, update phases, presets and private temp directory')

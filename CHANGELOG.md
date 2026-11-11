@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.3 — 2026-11-11
+
+Corrects a mistake in 1.2.2. Installed 1.0, 1.1, 1.2, 1.2.1 and 1.2.2 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. This change was checked on a PC and still needs its own test on the console.
+
+- **Online:** 1.2.2 made the Touchpad button open lobby chat during an online race. Touchpad also opens and closes the DKR-R menu, so both could happen at once. That is removed. The chat button is now your choice: **Online → Overlays → Lobby chat → Chat button**. It is off by default, and a button that already opens the menu, runs a shortcut or drives the kart is refused. **Clear chat button** turns it off again.
+
 ## 1.2.2 — 2026-11-10
 
 Fixes for problems found on the PS5 in 1.2.1. Installed 1.0, 1.1, 1.2 and 1.2.1 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. These fixes were checked on a PC and still need their own test on the console.

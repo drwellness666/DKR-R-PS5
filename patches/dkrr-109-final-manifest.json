@@ -86,6 +86,14 @@
       "original_sha256": "b76792261aac49f60e51c21e7b86999d49a50423c9bf157797f3acb981b90f0b",
       "patched_sha256": "47f46132ad90a85d6597dbf6d158215b84efae82cbb644806bb2625bf9bb11e4"
     },
+    "runtime-recomp/src/game/netplay/session_chat/settings.hpp": {
+      "original_sha256": "7e9384c1bb9db85ae618ba5ef9ff077ed527fc58594e5cc6fa38f795113efd46",
+      "patched_sha256": "dd7d93da2291fd4569552c786d9d2cdcdd0d788d0630757b8e9ce8aa84c59919"
+    },
+    "runtime-recomp/src/game/netplay/session_chat/ui.inl": {
+      "original_sha256": "5a6f184abae91e5529fab2809f1aebc9670737ba6c92a47f886aa757df878f97",
+      "patched_sha256": "891d23e1b2fcfc1f3e423dbdb75bf862834aa7324f75c4735e8f4f5a30c176c8"
+    },
     "runtime-recomp/src/game/online_profile/profile_service.inl": {
       "original_sha256": "b8108701eb50d0c8d4b5b6cc3b1afbadced58005e4fcda409633fc42fa08f25e",
       "patched_sha256": "35d0b7fcde7e6ae23ce51e17f5e04d0d8392498b3a2a9376e94f733a3f06f160"
@@ -132,7 +140,7 @@
     },
     "runtime-recomp/src/game/runtime_online_ui.inl": {
       "original_sha256": "a87f078ad9cf42d9618844faece2ce849a79a92fd8e090c97235f7015e63e1ae",
-      "patched_sha256": "6949fff3248121ccac51b7c2e36a2f7ba997cb496cbb8ab130b207ebcf4cdde9"
+      "patched_sha256": "443e21134c881ba5cfc27e277c94e2e86ea8d09de76e0b8f9b8d267fbe6b0b87"
     },
     "runtime-recomp/src/game/runtime_platform.cpp": {
       "original_sha256": "11de5cbedf82474ea28a10f18dd22dd4230e44c71260301cd8e431313161abf7",
@@ -168,7 +176,7 @@
     },
     "runtime-recomp/src/game/runtime_ui.cpp": {
       "original_sha256": "c2ae61e836739da160490f5381e31bf47c821bb35a8ed1cd6e837424a38c6878",
-      "patched_sha256": "885d1c690786aaef197667d0dcfca622c870ea8ce4be6330d65c09c00bd45631"
+      "patched_sha256": "338444dfe7cb903b11dcc263f18f7cd57899ff3a1f379201a005e9c170ab86e5"
     },
     "runtime-recomp/src/game/runtime_ui.hpp": {
       "original_sha256": "ad7c87220d85b9c354590931036d6deeee5ca2492066c9becc1f052d91cf4d7d",
@@ -215,7 +223,7 @@
       "patched_sha256": "272159c120de1cb1eeeb9889bdf63613d2f0692e287ef8e6a0ef1bf59c572c06"
     }
   },
-  "patch_sha256": "44c7a5b498617fdc23534219013ce42206d35fba413c09fd6821699e15e7caa9",
+  "patch_sha256": "df80d5f03f9cf6047490ffadfa018273b9c98c3c1c921bc56df9d228640cd60f",
   "include_directories": {
     "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/updates/update_process.hpp": "163af62b1302cead",
     "@DKRR_BUILD@/generated/rollback-only/rollback_policy.hpp": "46ecb14696367aea",

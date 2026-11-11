@@ -1163,6 +1163,145 @@
  #elif defined(__linux__)
      std::size_t offset = 0U;
      while (offset < output.size()) {
+--- a/runtime-recomp/src/game/netplay/session_chat/settings.hpp
++++ b/runtime-recomp/src/game/netplay/session_chat/settings.hpp
+@@ -6,17 +6,25 @@
+ inline std::atomic<bool> host_enabled{true}, show_feed{true};
+ inline std::atomic<int> shortcut_key{23}; // SDL_SCANCODE_T, overridden by the chat key picker.
+ inline std::atomic<int> feed_corner{0};
++// Optional controller button for opening chat; -1 = not set (default), so no
++// button that already opens the DKR-R menu or drives the kart is ever taken.
++inline std::atomic<int> shortcut_button{-1};
++inline std::atomic<bool> capture_button{false};
++inline std::atomic<int> button_note{0}; // 1 = the last picked button was refused (already in use)
+ inline bool valid_shortcut(int key) {return key>3&&key<512&&key!=41&&key!=58&&key!=68;}
++inline bool valid_button(int button) {return button>=-1&&button<64;}
+ inline void save_settings(std::ostream& out) {
+     out << "online_chat_host=" << int(host_enabled.load()) << '\n'
+         << "online_chat_feed=" << int(show_feed.load()) << '\n'
+         << "online_chat_key=" << shortcut_key.load() << '\n'
++        << "online_chat_button=" << shortcut_button.load() << '\n'
+         << "online_chat_corner=" << feed_corner.load() << '\n';
+ }
+ inline bool load_setting(std::string_view key,int value) {
+     if(key=="online_chat_host")host_enabled=value!=0;
+     else if(key=="online_chat_feed")show_feed=value!=0;
+     else if(key=="online_chat_key"){if(valid_shortcut(value))shortcut_key=value;}
++    else if(key=="online_chat_button"){if(valid_button(value))shortcut_button=value;}
+     else if(key=="online_chat_corner"){if(value>=0&&value<4)feed_corner=value;}
+     else return false;
+     return true;
+--- a/runtime-recomp/src/game/netplay/session_chat/ui.inl
++++ b/runtime-recomp/src/game/netplay/session_chat/ui.inl
+@@ -113,13 +113,69 @@
+     const float chat_height=ImGui::GetItemRectSize().y;
+     ImGui::SetCursorScreenPos(at);ImGui::Dummy({width,side?std::max(height,chat_height):height+14.F+chat_height});
+ }
++std::string SessionChatButtonName(int button) {
++    if(button<0)return "not set";
++#if defined(__PROSPERO__)
++    switch(button) {
++        case SDL_CONTROLLER_BUTTON_A:return "Cross";
++        case SDL_CONTROLLER_BUTTON_B:return "Circle";
++        case SDL_CONTROLLER_BUTTON_X:return "Square";
++        case SDL_CONTROLLER_BUTTON_Y:return "Triangle";
++        case SDL_CONTROLLER_BUTTON_START:return "Options";
++        case SDL_CONTROLLER_BUTTON_BACK:return "Touchpad";
++        case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:return "L1";
++        case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:return "R1";
++        case SDL_CONTROLLER_BUTTON_LEFTSTICK:return "L3";
++        case SDL_CONTROLLER_BUTTON_RIGHTSTICK:return "R3";
++        case SDL_CONTROLLER_BUTTON_DPAD_UP:return "D-Pad Up";
++        case SDL_CONTROLLER_BUTTON_DPAD_DOWN:return "D-Pad Down";
++        case SDL_CONTROLLER_BUTTON_DPAD_LEFT:return "D-Pad Left";
++        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:return "D-Pad Right";
++        case SDL_CONTROLLER_BUTTON_MISC1:return "Create";
++        default:break;
++    }
++#endif
++    const char* name=SDL_GameControllerGetStringForButton(SDL_GameControllerButton(button));
++    return name!=nullptr?name:"button "+std::to_string(button);
++}
++// A chat button must not be one the game already acts on: the DKR-R menu,
++// restart and gyro shortcuts, or any driving binding of any player.
++bool SessionChatButtonInUse(int button) {
++    namespace input=dkr::runtime::input;
++    for(std::size_t index=0;index<static_cast<std::size_t>(input::ShortcutAction::Count);++index) {
++        const auto action=static_cast<input::ShortcutAction>(index);
++        for(const auto& binding:{input::shortcut_controller_binding(action),input::alternate_shortcut_controller_binding(action)})
++            if(binding.primary==button||binding.secondary==button)return true;
++    }
++    for(std::size_t player=0;player<input::kPlayerCount;++player)
++        for(std::size_t index=0;index<input::action_count();++index) {
++            const auto action=static_cast<input::Action>(index);
++            if(input::controller_binding(player,action)==button||input::secondary_controller_binding(player,action)==button)return true;
++        }
++    return false;
++}
+ void DrawSessionChatPreferences(float width) {
+     DrawOlFeature(width,"Lobby chat","Text chat for your current online session.",[&](float inner){
+         bool feed=dkr::chat::show_feed.load();if(OlSwitchRow("##chat-feed","Show messages during races","Recent messages fade after a few seconds.",&feed,inner,false)){dkr::chat::show_feed=feed;SaveSettings();}
+         PaddockGap(10.F);
+         const auto key=dkr::chat::shortcut_key.load();
+         const std::string label=dkr::chat::capture_key.load()?"Press a key... Esc cancels":"Chat key: "+std::string(SDL_GetScancodeName(SDL_Scancode(key)));
+-        if(OlButton(label.c_str(),OlTone::Plain,inner))dkr::chat::capture_key=true;
++        if(OlButton(label.c_str(),OlTone::Plain,inner)){dkr::chat::capture_key=true;dkr::chat::capture_button=false;}
++#if defined(__PROSPERO__)
++        // No keyboard on a console: the chat button is chosen here, off by default.
++        PaddockGap(10.F);
++        const int pad=dkr::chat::shortcut_button.load();
++        const std::string pad_label=dkr::chat::capture_button.load()?"Press a button... same button cancels":"Chat button: "+SessionChatButtonName(pad);
++        if(OlButton(pad_label.c_str(),OlTone::Plain,inner)){dkr::chat::capture_button=true;dkr::chat::capture_key=false;dkr::chat::button_note=0;}
++        if(pad>=0&&!dkr::chat::capture_button.load()) {
++            PaddockGap(6.F);
++            if(OlButton("Clear chat button",OlTone::Plain,inner)){dkr::chat::shortcut_button=-1;dkr::chat::settings_changed=true;}
++        }
++        if(dkr::chat::button_note.load()==1) {
++            PaddockGap(6.F);
++            OlParagraph("That button already opens the DKR-R menu, runs a shortcut or drives the kart. Free it under Controls first, or pick another one.",13.F,kOlSoft,inner);
++        }
++#endif
+         PaddockGap(10.F);
+         static const std::vector<std::string> corners{"Bottom left","Bottom right","Top left","Top right"};
+         int corner=dkr::chat::feed_corner.load();if(OlSelect("chat-corner","In-game position",&corner,corners,inner)){dkr::chat::feed_corner=corner;SaveSettings();}
+@@ -152,8 +208,13 @@
+     else {
+         OlParagraph("LOBBY CHAT",12.F,kOlGoText,inner);PaddockGap(5.F);
+         for(const auto* m:feed){OlParagraph(m->name+": "+m->text,14.F,m->author==view.local?kOlGoText:kOlCream,inner);PaddockGap(5.F);}
++#if defined(__PROSPERO__)
++        const int pad_hint=dkr::chat::shortcut_button.load();
++        if(pad_hint>=0)OlParagraph(SessionChatButtonName(pad_hint)+" to chat",11.F,kOlSoft,inner);
++#else
+         const std::string key=SDL_GetScancodeName(SDL_Scancode(dkr::chat::shortcut_key.load()));
+         OlParagraph(key+" to chat",11.F,kOlSoft,inner);
++#endif
+     }
+     ImGui::End();ImGui::PopStyleColor();ImGui::PopStyleVar(2);
+ }
+@@ -164,6 +225,23 @@
+         const int key=event->key.keysym.scancode;
+         if(dkr::chat::valid_shortcut(key)){dkr::chat::shortcut_key=key;dkr::chat::settings_changed=true;}
+         dkr::chat::capture_key=false;return true;
++    }
++    if(dkr::chat::capture_button.load()&&event->type==SDL_CONTROLLERBUTTONDOWN) {
++        const int button=event->cbutton.button;
++        if(button==dkr::chat::shortcut_button.load()){dkr::chat::button_note=0;}                     // same button: cancel
++        else if(SessionChatButtonInUse(button)){dkr::chat::button_note=1;}                           // refuse, never share a button
++        else{dkr::chat::shortcut_button=button;dkr::chat::button_note=0;dkr::chat::settings_changed=true;}
++        dkr::chat::capture_button=false;return true;
++    }
++    if(dkr::chat::capture_button.load()&&keydown&&!event->key.repeat&&event->key.keysym.scancode==SDL_SCANCODE_ESCAPE){
++        dkr::chat::capture_button=false;return true;
++    }
++    if(!dkr::chat::typing.load()&&!dkr::chat::capture_key.load()&&!dkr::chat::capture_button.load()&&event->type==SDL_CONTROLLERBUTTONDOWN&&
++       dkr::chat::shortcut_button.load()>=0&&event->cbutton.button==dkr::chat::shortcut_button.load()&&
++       !SessionChatButtonInUse(event->cbutton.button)&&
++       dkr::runtime::netplay::session().presentation_active()&&!g_overlay_visible.load()&&g_text_entry_target==TextEntryTarget::None&&
++       !g_online_code_keyboard_visible.load()&&!dkr::runtime::hud::editor::active()){
++        dkr::chat::request_open();return true;
+     }
+     if(dkr::chat::typing.load()&&!dkr::chat::on_screen_keyboard.load()&&event->type==SDL_CONTROLLERBUTTONDOWN&&event->cbutton.button==SDL_CONTROLLER_BUTTON_B){
+         dkr::chat::request_close();return true;
 --- a/runtime-recomp/src/game/online_profile/profile_service.inl
 +++ b/runtime-recomp/src/game/online_profile/profile_service.inl
 @@ -70,7 +70,7 @@
@@ -2862,18 +3001,7 @@
      }
  }
  
-@@ -2459,6 +2449,10 @@
- 
- void DrawOlOverlays(float width) {
-     DrawSessionChatPreferences(width);
-+#if defined(__PROSPERO__)
-+    OlParagraph("Touchpad opens lobby chat while racing.", 13.0F, kOlSoft, width);
-+    PaddockGap(10.0F);
-+#endif
-     DrawOlFeature(width, "Online overlays", "",
-                   [&](float inner) {
-         static const std::vector<std::string> corners{"Top left", "Top right", "Bottom left", "Bottom right"};
-@@ -2868,14 +2862,21 @@
+@@ -2868,14 +2858,21 @@
                                ? &view.room.players[view.local_slot] : nullptr;
      const bool local_ready = local != nullptr && local->ready;
      const std::size_t profile = dkr::runtime::platform::online_input_profile();
@@ -2897,7 +3025,7 @@
      } else if (total < 2U) {
          hint = view.host ? "You need at least one other player to start." : "Waiting for more racers.";
      } else if (ready < total) {
-@@ -3537,7 +3538,20 @@
+@@ -3537,7 +3534,20 @@
      }
      case OlSection::Play:
          if (!frame.launcher) {
@@ -2918,7 +3046,7 @@
              PaddockGap(20.0F);
          }
          DrawOlChoices(width, frame);
-@@ -3591,11 +3605,28 @@
+@@ -3591,11 +3601,28 @@
      }
  }
  
@@ -2947,7 +3075,7 @@
      using namespace dkr::runtime::netplay;
      DirectSession& online = session();
      PumpDirectSessionIfDue();
-@@ -3623,7 +3654,7 @@
+@@ -3623,7 +3650,7 @@
                             (view.state == ConnectionState::Hosting || view.state == ConnectionState::Lobby);
      if(OlPartyActive())has_space=in_lobby&&view.host&&!view.lobby_locked&&!g_ol_party.link.stopping&&
          !g_ol_rollback_check.active&&g_ol_party.link.party.members.size()<lobby_party::MaximumMembers;
@@ -5707,25 +5835,7 @@
      inspector->endFrame();
  }
  
-@@ -9989,14 +10437,30 @@
-     if(dkr::library_ui::runtime_intro_visible.load()&&((event->type==SDL_KEYDOWN&&event->key.keysym.scancode==SDL_SCANCODE_ESCAPE)||(event->type==SDL_CONTROLLERBUTTONDOWN&&event->cbutton.button==SDL_CONTROLLER_BUTTON_B))) {
-         g_lifecycle_request.store(dkr::runtime::ui::LifecycleRequest::StopGame);g_overlay_visible=false;ultramodern::quit();return true;
-     }
-+#if defined(__PROSPERO__)
-+    // PS5 has no keyboard shortcut to open lobby chat (dkr::chat::shortcut_key
-+    // is a keyboard scancode); Touchpad (SDL_CONTROLLER_BUTTON_BACK) is free
-+    // in gameplay, so use it as the controller equivalent.
-+    if(!dkr::chat::typing.load()&&event->type==SDL_CONTROLLERBUTTONDOWN&&
-+       event->cbutton.button==SDL_CONTROLLER_BUTTON_BACK&&
-+       dkr::runtime::netplay::session().presentation_active()&&!g_overlay_visible.load()&&
-+       g_text_entry_target==TextEntryTarget::None&&!g_online_code_keyboard_visible.load()&&
-+       !dkr::runtime::hud::editor::active()) {
-+        dkr::chat::request_open();return true;
-+    }
-+#endif
-     if(HandleSessionChatEvent(event))return true;
-     if(dkr::runtime::invites::dialog()) {
-         if((event->type==SDL_KEYDOWN&&!event->key.repeat&&event->key.keysym.scancode==SDL_SCANCODE_ESCAPE)||
+@@ -9995,8 +10443,12 @@
             (event->type==SDL_CONTROLLERBUTTONDOWN&&event->cbutton.button==SDL_CONTROLLER_BUTTON_B)) {
              dkr::runtime::invites::cancel_dialog();return true;
          }
@@ -5738,7 +5848,7 @@
      }
  
  #if defined(__ANDROID__) || defined(DKR_IOS)
-@@ -10082,7 +10546,11 @@
+@@ -10082,7 +10534,11 @@
              // carry NoNav and therefore cannot steal this focus.
          }
      }
@@ -5751,7 +5861,7 @@
      // UIKit presentation may wait for the main thread while the renderer holds
      // frameMutex. Keep the main event pump free to service that presentation.
      return g_ios_ui_events.push(*event);
-@@ -10092,6 +10560,7 @@
+@@ -10092,6 +10548,7 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -5759,7 +5869,7 @@
      // RT64's ImGui backend owns normal pointer, keyboard and gamepad event
      // delivery. Do not turn those events into page-focus requests: ImGui must
      // be allowed to retain the item selected by the previous event so the
-@@ -10111,6 +10580,15 @@
+@@ -10111,6 +10568,15 @@
  }
  
  void dkr::runtime::ui::toggle_overlay() {
@@ -5775,7 +5885,7 @@
  #if defined(__ANDROID__) || defined(DKR_IOS)
      dkr::runtime::mobile::clear();
  #endif
-@@ -10133,6 +10611,11 @@
+@@ -10133,6 +10599,11 @@
      return g_lifecycle_request.load(std::memory_order_acquire);
  }
  
@@ -5787,7 +5897,7 @@
  void dkr::runtime::ui::reset_lifecycle_request() {
      g_lifecycle_request.store(LifecycleRequest::None, std::memory_order_release);
  }
-@@ -10295,3 +10778,22 @@
+@@ -10295,3 +10766,22 @@
      return true;
  }
  #endif
