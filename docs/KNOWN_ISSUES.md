@@ -10,7 +10,7 @@
 
 ## Tested setup
 
-Version 1.2.1 is based on **DKR-R 1.0.15** and opens the launcher first. Version 1.2 was tried on a PS5 and the problems found there are fixed in 1.2.1. That fix was checked on a PC and still needs its own test on the console. Please report anything that worked in 1.1 and no longer does.
+Version 1.2.2 is based on **DKR-R 1.0.15** and opens the launcher first. Version 1.2.1 was tried on a PS5 and several problems found there (lobby chat with no gamepad shortcut, a few menu-text/layout details, a duplicated About entry) are addressed in 1.2.2. Those fixes were checked on a PC and still need their own test on the console. Please report anything that worked in 1.2.1 and no longer does.
 
 For version 1.0 (DKR-R 1.0.9), PS5 sessions confirmed installation from owned USB ROMs, both US revisions, save/load after a full console restart, shared settings and texture choices, classic controls, vibration, balloon lighting, gyro, adaptive L2 and controller sounds. 4K/119.88 Hz, VRR Automatic and neutral HDR10 output were confirmed on an LG C1.
 

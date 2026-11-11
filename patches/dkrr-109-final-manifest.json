@@ -104,7 +104,7 @@
     },
     "runtime-recomp/src/game/runtime_controls_ui.inl": {
       "original_sha256": "ced785acc0801c9d39c8303325369c493313d39c8b38733012dfb1f0cc3f3f8e",
-      "patched_sha256": "3dd4d0c732bb8d2e204be34e88fa0271f49e328899fc87adddb7a4cf97f22580"
+      "patched_sha256": "ac6a68ecdc3f5b9c8a52d39c32dd48d6a8701406c2bb93cd7548c87ea608de4c"
     },
     "runtime-recomp/src/game/runtime_crt_overlay.cpp": {
       "original_sha256": "9af25c08cd67d4534d9c60661096514b2f413b6858886ddc85408b611c491ee1",
@@ -112,11 +112,11 @@
     },
     "runtime-recomp/src/game/runtime_details_ui.inl": {
       "original_sha256": "eb014b5bebbedc60464104dae9341d65e7209c556bbf954e12235e3205047f0c",
-      "patched_sha256": "5d074004eaeb7d5d98065a8c6959ffe78afb61e47b23b45a774da065ea9b4375"
+      "patched_sha256": "5a68f6cfce70c91b9a48b873be95ec0d2d1e17349c2741a434e380cb0fd34691"
     },
     "runtime-recomp/src/game/runtime_graphics_ui.inl": {
       "original_sha256": "0f9e3c2a501d64e2bdeea909d891284b0d4e376d99e949870edd3458540b3da9",
-      "patched_sha256": "c9936888154e84ed4849297006f9bd4671fe01fb026732f62ae366ed37fbbac6"
+      "patched_sha256": "455432487ed879d4058963e4c8d1795920755725b8b14aecc76fc5afd5bca37a"
     },
     "runtime-recomp/src/game/runtime_hud_layout.cpp": {
       "original_sha256": "789c5ab20049017d197545531b2704a39d4924336dfcb7112f9da2f6b7a4e92b",
@@ -132,7 +132,7 @@
     },
     "runtime-recomp/src/game/runtime_online_ui.inl": {
       "original_sha256": "a87f078ad9cf42d9618844faece2ce849a79a92fd8e090c97235f7015e63e1ae",
-      "patched_sha256": "443e21134c881ba5cfc27e277c94e2e86ea8d09de76e0b8f9b8d267fbe6b0b87"
+      "patched_sha256": "6949fff3248121ccac51b7c2e36a2f7ba997cb496cbb8ab130b207ebcf4cdde9"
     },
     "runtime-recomp/src/game/runtime_platform.cpp": {
       "original_sha256": "11de5cbedf82474ea28a10f18dd22dd4230e44c71260301cd8e431313161abf7",
@@ -168,7 +168,7 @@
     },
     "runtime-recomp/src/game/runtime_ui.cpp": {
       "original_sha256": "c2ae61e836739da160490f5381e31bf47c821bb35a8ed1cd6e837424a38c6878",
-      "patched_sha256": "338444dfe7cb903b11dcc263f18f7cd57899ff3a1f379201a005e9c170ab86e5"
+      "patched_sha256": "885d1c690786aaef197667d0dcfca622c870ea8ce4be6330d65c09c00bd45631"
     },
     "runtime-recomp/src/game/runtime_ui.hpp": {
       "original_sha256": "ad7c87220d85b9c354590931036d6deeee5ca2492066c9becc1f052d91cf4d7d",
@@ -215,7 +215,7 @@
       "patched_sha256": "272159c120de1cb1eeeb9889bdf63613d2f0692e287ef8e6a0ef1bf59c572c06"
     }
   },
-  "patch_sha256": "3dd4ba69f4823735fadb809a41f587a08cf7d22d677af4f865fd6b10e5d9bd47",
+  "patch_sha256": "44c7a5b498617fdc23534219013ce42206d35fba413c09fd6821699e15e7caa9",
   "include_directories": {
     "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/updates/update_process.hpp": "163af62b1302cead",
     "@DKRR_BUILD@/generated/rollback-only/rollback_policy.hpp": "46ecb14696367aea",

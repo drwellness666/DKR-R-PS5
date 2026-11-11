@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.2 — 2026-11-10
+
+Fixes for problems found on the PS5 in 1.2.1. Installed 1.0, 1.1, 1.2 and 1.2.1 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. These fixes were checked on a PC and still need their own test on the console.
+
+- Signing in with Discord now stores the sign-in token correctly.
+- **Online:** in a lobby, the Touchpad button now opens chat even without a connected keyboard; a hint next to the chat explains this.
+- **Graphics:** the Texture Diagnostics list no longer runs past the edge of the page; it scrolls in its own area now.
+- **Controls:** "D-pad" is written "D-Pad" everywhere on the PS5, and the vehicle rows no longer overlap the stick icons.
+- **About DKR-R:** the release-info block that duplicated the Updates page is hidden on the PS5. Extra spacing around the crash-reporting section avoids an overlap with the storage buttons.
+- Not fixed: a reported shadow difference between the My Mods and Magic Codes cards could not be reproduced as a code difference; no change was made.
+- Still open: menus can stutter briefly when scrolling up, and water can flicker the first time it appears. See the [known issues](docs/KNOWN_ISSUES.md).
+
 ## 1.2.1 — 2026-11-10
 
 Fixes for problems found in 1.2. Installed 1.0, 1.1 and 1.2 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept.

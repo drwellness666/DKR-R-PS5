@@ -1555,7 +1555,8 @@
 +    const std::array<std::pair<const char*, std::array<int, 6>>, 6> kGroups{{
          {"Analogue stick", {0, 1, 2, 3, -1, -1}},
          {"Main buttons", {4, 5, 6, 7, 12, 13}},
-         {"D-pad", {8, 9, 10, 11, -1, -1}},
+-        {"D-pad", {8, 9, 10, 11, -1, -1}},
++        {"D-Pad", {8, 9, 10, 11, -1, -1}},
          {"C-buttons", {14, 15, 16, 17, -1, -1}},
          {"Camera", {18, 19, -1, -1, -1, -1}},
 +        {"Game shortcuts", {kShortcutRow, kShortcutRow + 1, kShortcutRow + 2, -1, -1, -1}},
@@ -1704,7 +1705,25 @@
      }
  }
  
-@@ -718,20 +841,28 @@
+@@ -633,9 +756,16 @@
+         y += 1.0F;
+         constexpr std::array<const char*, 3> kVehicles{{"Car", "Hovercraft", "Plane"}};
+         const PaddockType row_type = PaddockReading(16.0F, true, 1.45F);
++        // Matches SettingsCheck's own height formula so the row never grows
++        // taller than the slot reserved for it below (the "Invert" label can
++        // wrap onto two lines in a narrow column at larger text scales).
++        const PaddockType check_type = SetLabelType();
++        const float check_text_width = std::max((column - 16.0F) - 36.0F, 1.0F);
++        const float check_height = std::max(
++            44.0F, check_type.line * static_cast<float>(PaddockWrap(check_type, "Invert", check_text_width).size()));
+         for (std::size_t vehicle = 0; vehicle < kVehicles.size(); ++vehicle) {
+             const auto type = static_cast<input::VehicleClass>(vehicle);
+-            const float row_height = 8.0F + 44.0F + 8.0F;
++            const float row_height = 8.0F + check_height + 8.0F;
+             PaddockDrawRun(draw, row_type, {at.x + 8.0F, std::round(y + (row_height - row_type.line) * 0.5F)},
+                            PaddockCol(kSetText), kVehicles[vehicle], kVehicles[vehicle] + std::strlen(kVehicles[vehicle]));
+             ImGui::PushID(static_cast<int>(vehicle));
+@@ -718,20 +848,28 @@
      const std::size_t player = g_selected_player;
      ControlsScope(false, width);
      ControlsHeading("Motion steering", width);
@@ -1735,7 +1754,7 @@
      PaddockGap(16.0F);
      const auto percent = [](int value) { return SettingsRangeValue{std::to_string(value), "%"}; };
      int sensitivity = static_cast<int>(std::lround(input::gyro_sensitivity(player)));
-@@ -746,6 +877,7 @@
+@@ -746,6 +884,7 @@
          commit();
      }
      PaddockGap(16.0F);
@@ -1743,7 +1762,7 @@
      int deadzone = static_cast<int>(std::lround(input::gyro_deadzone(player) * 10.0F));
      if (SettingsRange("##gyro-deadzone", "Motion deadzone", &deadzone, 0, 120, width, [](int value) {
              char text[16]{};
-@@ -756,6 +888,7 @@
+@@ -756,6 +895,7 @@
          commit();
      }
      PaddockGap(16.0F);
@@ -1751,7 +1770,7 @@
      bool inverted = input::gyro_inverted(player);
      if (SettingsCheck("##gyro-invert-x", "Invert horizontal gyro", &inverted, width)) {
          input::set_gyro_inverted(inverted, player);
-@@ -807,6 +940,47 @@
+@@ -807,6 +947,47 @@
      }
  }
  
@@ -1760,7 +1779,7 @@
 +    namespace platform=dkr::runtime::platform;
 +    ControlsScope(true,width);
 +    bool pointer=dkrr::menu_pointer::enabled.load();
-+    if(SettingsCheck("##menu-pointer","Left stick menu pointer",&pointer,width,"Move the left stick to point; Cross clicks. D-pad and L1/R1 return to button navigation.")){dkrr::menu_pointer::enabled.store(pointer);commit();}
++    if(SettingsCheck("##menu-pointer","Left stick menu pointer",&pointer,width,"Move the left stick to point; Cross clicks. D-Pad and L1/R1 return to button navigation.")){dkrr::menu_pointer::enabled.store(pointer);commit();}
 +    if(pointer) {
 +        int speed=dkrr::menu_pointer::speed();
 +        if(SettingsRange("##menu-pointer-speed","Pointer speed",&speed,50,200,width,[](int v){return SettingsRangeValue{std::to_string(v),"%"};})) {
@@ -1799,7 +1818,7 @@
  // ------------------------------------------------------------ shortcuts
  
  void DrawControlsShortcuts(float width, const std::function<void()>& commit) {
-@@ -831,11 +1005,23 @@
+@@ -831,11 +1012,23 @@
      for (const auto& [shortcut, raw_label] : kShortcuts) {
          const auto label=dkr::localisation::source(raw_label).data();
          if (shortcut == input::ShortcutAction::QuickRestart && !quick_restart) continue;
@@ -1824,7 +1843,7 @@
              PaddockText(PaddockReading(14.0F, false, 1.45F), PaddockRgb(kSetMuted), "Keyboard", cell);
              PaddockGap(6.0F);
              const auto binding = input::shortcut_keyboard_binding(shortcut);
-@@ -849,14 +1035,7 @@
+@@ -849,14 +1042,7 @@
          }, [&](float cell) {
              PaddockText(PaddockReading(14.0F, false, 1.45F), PaddockRgb(kSetMuted), "Controller", cell);
              PaddockGap(6.0F);
@@ -1840,7 +1859,7 @@
          });
          PaddockGap(20.0F);
          const ImVec2 at = ImGui::GetCursorScreenPos();
-@@ -911,7 +1090,8 @@
+@@ -911,7 +1097,8 @@
              {"action",dkr::localisation::source(dkr::runtime::input::action_label(static_cast<Action>(g_capture_action)))}});
          help = g_capture_device == CaptureDevice::Keyboard
              ? "Press a keyboard key. Escape cancels."
@@ -1850,7 +1869,7 @@
      } else if (g_capture_action == kShortcutCaptureAction) {
          heading = dkr::localisation::source(ShortcutActionLabel(g_capture_shortcut_action));
          help=dkr::localisation::text(g_capture_device==CaptureDevice::Keyboard?"controls.shortcut_key_help":"controls.shortcut_button_help");
-@@ -950,6 +1130,8 @@
+@@ -950,6 +1137,8 @@
              const dkr::runtime::input::ShortcutBinding unbound{};
              if (g_capture_device == CaptureDevice::Keyboard) {
                  dkr::runtime::input::set_shortcut_keyboard_binding(g_capture_shortcut_action, unbound);
@@ -1859,7 +1878,7 @@
              } else {
                  dkr::runtime::input::set_shortcut_controller_binding(g_capture_shortcut_action, unbound);
              }
-@@ -1001,9 +1183,9 @@
+@@ -1001,9 +1190,9 @@
      // h1 { min-height: 0; margin-bottom: 10px }: the heading's box is 6 px
      // taller than the study's 58 px line.
      PaddockGap(4.0F);
@@ -1872,7 +1891,7 @@
  
      // The local player (.controls-player-bar): four painted chips.
  #if defined(__ANDROID__)
-@@ -1015,7 +1197,7 @@
+@@ -1015,7 +1204,7 @@
          const PaddockType label_type = PaddockReading(14.0F, false, 1.45F);
          const float label_width = std::ceil(PaddockMeasure(label_type, "Local player"));
          const ImVec2 at = ImGui::GetCursorScreenPos();
@@ -1881,7 +1900,7 @@
          float chips_x = at.x + label_width + 16.0F;
          float chips_width = std::min(520.0F, width - label_width - 16.0F);
          float chips_y = at.y;
-@@ -1036,14 +1218,17 @@
+@@ -1036,14 +1225,17 @@
              ImGui::SetCursorScreenPos({chips_x + (chip_width + 10.0F) * static_cast<float>(player), chips_y});
              const std::string label = "Player " + std::to_string(player + 1U);
              if (DrawSoundChip(label.c_str(), player == g_selected_player, chip_width)) {
@@ -1901,7 +1920,7 @@
      if (picked >= 0) g_controls_section = picked;
      PaddockGap(22.0F);
  
-@@ -1074,7 +1259,7 @@
+@@ -1074,7 +1266,7 @@
  
      const bool modern = dkr::runtime::enhancements::modern_options_visible(
          dkr::runtime::enhancements::presentation_profile());
@@ -1910,7 +1929,7 @@
          ControlsScope(g_controls_section == 2, width);
          ControlsHeading(g_controls_section == 2 ? "Stick response" : "Motion steering", width);
          ControlsNote("Requires Modern graphics.",
-@@ -1084,10 +1269,12 @@
+@@ -1084,10 +1276,12 @@
          DrawControlsDevice(state, width, commit);
      } else if (g_controls_section == 1) {
          DrawControlsBindings(state, width, commit);
@@ -1962,10 +1981,25 @@
      }};
      const float footer = 24.0F + 44.0F;
      ImGui::BeginChild("##patch-body", {inner, std::max(ImGui::GetContentRegionAvail().y - footer, 80.0F)}, false,
-@@ -564,6 +568,16 @@
+@@ -539,7 +543,13 @@
+             ImGui::Dummy({inner, 0.0F});
+         }
+         PaddockGap(20.0F);
++        // DrawCrashReportingSettings stacks several full-width race buttons
++        // without its own vertical gap between them; restore one so they
++        // don't render flush against each other under this page's zero
++        // ItemSpacing.
++        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.0F, 10.0F});
+         DrawCrashReportingSettings(inner);
++        ImGui::PopStyleVar();
+         bool logging = dkr::runtime::support::diagnostic_logging_enabled();
+         if (SettingsCheck("##diagnostic-logging", "Extra diagnostic logging", &logging, inner)) {
+             dkr::runtime::support::set_diagnostic_logging_enabled(logging);
+@@ -563,6 +573,16 @@
+ }
  
  #include "runtime_updates_ui.inl"
- 
++
 +#if defined(__PROSPERO__)
 +void DrawPs5UpdatesPage(float width) {
 +    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.0F, 0.0F});
@@ -1975,15 +2009,20 @@
 +    ImGui::PopStyleVar();
 +}
 +#endif
-+
+ 
  void DrawAboutPage(float width, bool support) {
      struct Credit {
-         const char* name;
-@@ -610,8 +624,36 @@
-     DetailText("Requires your own legally obtained, supported Diddy Kong Racing ROM.",
-                width, kSetMuted, 0.0F);
+@@ -604,14 +624,43 @@
+         PaddockGap(16.0F);
+     });
  
 +#if !defined(__PROSPERO__)
+     AboutSectionTitle("Release information", width);
+     DetailText(std::string("DKR-R ") + DKR_RELEASE_VERSION, width);
+     DetailText("", width);
+     DetailText("Requires your own legally obtained, supported Diddy Kong Racing ROM.",
+                width, kSetMuted, 0.0F);
+-
      DrawUpdatesCard(width);
      if (support) DrawAboutSupport(width);
 +#else
@@ -2009,7 +2048,9 @@
 +    // which also holds desktop-only folder actions. Keep the choices reachable.
 +    AboutSectionTitle("Storage and reports", width);
 +    DetailCard(width, {20.0F, 18.0F}, [&](float inner) {
++        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.0F, 10.0F});
 +        DrawCrashReportingSettings(inner);
++        ImGui::PopStyleVar();
 +        PaddockGap(16.0F);
 +    });
 +#endif
@@ -2238,7 +2279,19 @@
          } else {
              config.rr_option = RefreshRate::Original;
              config.rr_manual_value = 30;
-@@ -367,6 +464,10 @@
+@@ -363,10 +460,22 @@
+                           static_cast<unsigned long long>(stats.replacements),
+                           static_cast<unsigned long long>(stats.authored),
+                           static_cast<unsigned long long>(stats.singleLevel));
++            // DrawTechnicalDetails is a shared widget: its CollapsingHeader
++            // and "Copy details" button stretch to the full ImGui content
++            // region, not to the narrower indented column used by the
++            // Settings* rows around it. Bound it to that column so it
++            // doesn't render oversized next to them.
++            ImGui::BeginChild("##texture-diagnostics-bounds", {inner - 36.0F, 260.0F}, false,
++                              ImGuiWindowFlags_NavFlattened | ImGuiWindowFlags_NoBackground);
+             DrawTechnicalDetails(uploads, "Texture diagnostics");
++            ImGui::EndChild();
              ImGui::Unindent(36.0F);
          }
  
@@ -2249,7 +2302,7 @@
          PaddockGap(16.0F);
          bool fps_overlay = g_fps_overlay_enabled;
          if (SettingsCheck("##fps-overlay", "Show performance overlay", &fps_overlay, inner,
-@@ -445,6 +546,8 @@
+@@ -445,6 +554,8 @@
          config.ds_option = downsample;
      });
  
@@ -2258,7 +2311,7 @@
      if (changed) {
          if (modern) RememberModernGraphics(config);
          ultramodern::renderer::set_graphics_config(config);
-@@ -454,7 +557,10 @@
+@@ -454,7 +565,10 @@
      }
  
      // ------------------------------------------------------------ hud, scenery
@@ -2270,7 +2323,7 @@
          PaddockGap(18.0F);
          SettingsCardPair("graphics", width, stacked, 18.0F, [&](float inner) {
              SettingsCardHead("HUD & effects", "", inner);
-@@ -592,6 +698,7 @@
+@@ -592,6 +706,7 @@
  #if defined(DKR_ENHANCED_WATER)
      // Shared by launcher and in-game overlay; these are local renderer
      // preferences, not synchronized water physics or guest settings.
@@ -2278,7 +2331,7 @@
      PaddockGap(18.0F);
      SettingsCard(width, [&](float inner) {
          namespace water = dkr::runtime::water::enhanced;
-@@ -731,9 +838,11 @@
+@@ -731,9 +846,11 @@
              PaddockGap(8.0F);
          }
      });
@@ -2290,7 +2343,7 @@
      PaddockGap(18.0F);
      {
          const ImVec2 at = ImGui::GetCursorScreenPos();
-@@ -771,6 +880,7 @@
+@@ -771,6 +888,7 @@
              SettingsHelp(state.status, width, kSetWarm);
          }
      }
@@ -2809,7 +2862,18 @@
      }
  }
  
-@@ -2868,14 +2858,21 @@
+@@ -2459,6 +2449,10 @@
+ 
+ void DrawOlOverlays(float width) {
+     DrawSessionChatPreferences(width);
++#if defined(__PROSPERO__)
++    OlParagraph("Touchpad opens lobby chat while racing.", 13.0F, kOlSoft, width);
++    PaddockGap(10.0F);
++#endif
+     DrawOlFeature(width, "Online overlays", "",
+                   [&](float inner) {
+         static const std::vector<std::string> corners{"Top left", "Top right", "Bottom left", "Bottom right"};
+@@ -2868,14 +2862,21 @@
                                ? &view.room.players[view.local_slot] : nullptr;
      const bool local_ready = local != nullptr && local->ready;
      const std::size_t profile = dkr::runtime::platform::online_input_profile();
@@ -2833,7 +2897,7 @@
      } else if (total < 2U) {
          hint = view.host ? "You need at least one other player to start." : "Waiting for more racers.";
      } else if (ready < total) {
-@@ -3537,7 +3534,20 @@
+@@ -3537,7 +3538,20 @@
      }
      case OlSection::Play:
          if (!frame.launcher) {
@@ -2854,7 +2918,7 @@
              PaddockGap(20.0F);
          }
          DrawOlChoices(width, frame);
-@@ -3591,11 +3601,28 @@
+@@ -3591,11 +3605,28 @@
      }
  }
  
@@ -2883,7 +2947,7 @@
      using namespace dkr::runtime::netplay;
      DirectSession& online = session();
      PumpDirectSessionIfDue();
-@@ -3623,7 +3650,7 @@
+@@ -3623,7 +3654,7 @@
                             (view.state == ConnectionState::Hosting || view.state == ConnectionState::Lobby);
      if(OlPartyActive())has_space=in_lobby&&view.host&&!view.lobby_locked&&!g_ol_party.link.stopping&&
          !g_ol_rollback_check.active&&g_ol_party.link.party.members.size()<lobby_party::MaximumMembers;
@@ -5643,7 +5707,25 @@
      inspector->endFrame();
  }
  
-@@ -9995,8 +10443,12 @@
+@@ -9989,14 +10437,30 @@
+     if(dkr::library_ui::runtime_intro_visible.load()&&((event->type==SDL_KEYDOWN&&event->key.keysym.scancode==SDL_SCANCODE_ESCAPE)||(event->type==SDL_CONTROLLERBUTTONDOWN&&event->cbutton.button==SDL_CONTROLLER_BUTTON_B))) {
+         g_lifecycle_request.store(dkr::runtime::ui::LifecycleRequest::StopGame);g_overlay_visible=false;ultramodern::quit();return true;
+     }
++#if defined(__PROSPERO__)
++    // PS5 has no keyboard shortcut to open lobby chat (dkr::chat::shortcut_key
++    // is a keyboard scancode); Touchpad (SDL_CONTROLLER_BUTTON_BACK) is free
++    // in gameplay, so use it as the controller equivalent.
++    if(!dkr::chat::typing.load()&&event->type==SDL_CONTROLLERBUTTONDOWN&&
++       event->cbutton.button==SDL_CONTROLLER_BUTTON_BACK&&
++       dkr::runtime::netplay::session().presentation_active()&&!g_overlay_visible.load()&&
++       g_text_entry_target==TextEntryTarget::None&&!g_online_code_keyboard_visible.load()&&
++       !dkr::runtime::hud::editor::active()) {
++        dkr::chat::request_open();return true;
++    }
++#endif
+     if(HandleSessionChatEvent(event))return true;
+     if(dkr::runtime::invites::dialog()) {
+         if((event->type==SDL_KEYDOWN&&!event->key.repeat&&event->key.keysym.scancode==SDL_SCANCODE_ESCAPE)||
             (event->type==SDL_CONTROLLERBUTTONDOWN&&event->cbutton.button==SDL_CONTROLLER_BUTTON_B)) {
              dkr::runtime::invites::cancel_dialog();return true;
          }
@@ -5656,7 +5738,7 @@
      }
  
  #if defined(__ANDROID__) || defined(DKR_IOS)
-@@ -10082,7 +10534,11 @@
+@@ -10082,7 +10546,11 @@
              // carry NoNav and therefore cannot steal this focus.
          }
      }
@@ -5669,7 +5751,7 @@
      // UIKit presentation may wait for the main thread while the renderer holds
      // frameMutex. Keep the main event pump free to service that presentation.
      return g_ios_ui_events.push(*event);
-@@ -10092,6 +10548,7 @@
+@@ -10092,6 +10560,7 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -5677,7 +5759,7 @@
      // RT64's ImGui backend owns normal pointer, keyboard and gamepad event
      // delivery. Do not turn those events into page-focus requests: ImGui must
      // be allowed to retain the item selected by the previous event so the
-@@ -10111,6 +10568,15 @@
+@@ -10111,6 +10580,15 @@
  }
  
  void dkr::runtime::ui::toggle_overlay() {
@@ -5693,7 +5775,7 @@
  #if defined(__ANDROID__) || defined(DKR_IOS)
      dkr::runtime::mobile::clear();
  #endif
-@@ -10133,6 +10599,11 @@
+@@ -10133,6 +10611,11 @@
      return g_lifecycle_request.load(std::memory_order_acquire);
  }
  
@@ -5705,7 +5787,7 @@
  void dkr::runtime::ui::reset_lifecycle_request() {
      g_lifecycle_request.store(LifecycleRequest::None, std::memory_order_release);
  }
-@@ -10295,3 +10766,22 @@
+@@ -10295,3 +10778,22 @@
      return true;
  }
  #endif
