@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.9 — 2026-11-12
+
+Fix for a problem found on the PS5 in 1.2.8. Checked on a PC; still needs its own test on the console.
+
+- **Could not create a lobby after a rejected join:** a connection that failed to join or spectate (for example "Game Pak revisions do not match") stayed in that failed state until the app restarted. **Start a lobby** looked clickable, but every attempt was instantly cancelled with "Preparation cancelled because the lobby, ROM or Magic Codes changed." even though nothing had changed. Starting a lobby now clears a leftover failed connection first instead of refusing to host. The same stale-state check was hardened in the related mod-preparation code path.
+
 ## 1.2.8 — 2026-11-12
 
 Fixes for what was found on the PS5 in 1.2.5. This also contains everything of internal 1.2.6 and 1.2.7 builds. Installed 1.0 to 1.2.7 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. These fixes were checked on a PC and still need their own test on the console.

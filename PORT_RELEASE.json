@@ -1,8 +1,8 @@
 {
-  "tag": "ps5-v1.2.8",
+  "tag": "ps5-v1.2.9",
   "upstream_version": "1.0.15",
   "source_only": false,
   "qualification": "Native PS5 release based on DKR-R 1.0.15. See the player guide for compatibility and known issues.",
-  "installer_sequence": 55,
+  "installer_sequence": 56,
   "release_status": "release"
 }

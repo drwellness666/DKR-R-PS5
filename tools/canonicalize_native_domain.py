@@ -92,6 +92,32 @@ for dest,path in sorted(planned.items()):
         if text.count(before)!=1:raise ValueError('Join rejection logging site changed')
         text=text.replace(before,after)
         text='#if defined(__PROSPERO__)\nextern "C" void dkrr_diag_step(const char *, const char *);\n#endif\n'+text
+    if path.name=='runtime_online_mods_ui.inl':
+        # ConnectionState::Failed is terminal by design (direct_session.cpp)
+        # until the player explicitly leaves. A rejected join or spectate
+        # attempt (for example the "Game Pak revisions do not match" case)
+        # leaves it set, and the very next PumpOnlineMods tick then blames a
+        # nonexistent ROM/Magic Code change and cancels host preparation
+        # before it starts. Hosting is an explicit fresh start: clear a
+        # stale Failed session first instead of silently refusing to host.
+        before='''bool CreateOnlineLobby() {
+    using namespace dkr::runtime::netplay;
+    if(!g_online_mod_sync || !g_online_mod_identity.supported() || session().active() ||'''
+        after='''bool CreateOnlineLobby() {
+    using namespace dkr::runtime::netplay;
+    if(session().view().state==ConnectionState::Failed)session().disconnect({});
+    if(!g_online_mod_sync || !g_online_mod_identity.supported() || session().active() ||'''
+        if text.count(before)!=1:raise ValueError('CreateOnlineLobby entry point changed')
+        text=text.replace(before,after)
+        # PumpOnlineMods must not rely on CreateOnlineLobby having already
+        # cleared a stale Failed session: harden this gate the same way so
+        # the two stay correct independently of call order.
+        before2='''    if(g_online_mod_host_request) {
+        if(network.state!=ConnectionState::Offline ||'''
+        after2='''    if(g_online_mod_host_request) {
+        if((network.state!=ConnectionState::Offline && network.state!=ConnectionState::Failed) ||'''
+        if text.count(before2)!=1:raise ValueError('PumpOnlineMods host-request gate changed')
+        text=text.replace(before2,after2)
     if path.name=='online_directory.cpp':
         # A transient socket error stays on screen after the retry succeeded.
         # Drop only that notice once the connection is open; join errors stay.

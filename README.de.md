@@ -9,7 +9,7 @@ Ein inoffizieller PS5-Port von [DKR-R 1.0.15](https://github.com/ThatGuyMcd/DKR-
 
 **Ein kostenloses Open-Source-Hobbyprojekt für die Community.** Der Quellcode der PS5-Integration, des Installers, Updaters und der Bauwerkzeuge liegt unter [GPL-3.0-or-later](LICENSE) bei.
 
-**Version 1.2.8** basiert auf DKR-R 1.0.15 und öffnet zuerst den DKR-R-Launcher: Version, Mods und Einstellungen wählen, dann das Rennen starten. Originalspiel, beide US-Revisionen und optionale PS5-Funktionen bleiben in einer App im Hauptmenü vereint. Installierte Versionen 1.0 bis 1.2.7 lassen sich im Spiel unter **Touchpad → Updates** aktualisieren.
+**Version 1.2.9** basiert auf DKR-R 1.0.15 und öffnet zuerst den DKR-R-Launcher: Version, Mods und Einstellungen wählen, dann das Rennen starten. Originalspiel, beide US-Revisionen und optionale PS5-Funktionen bleiben in einer App im Hauptmenü vereint. Installierte Versionen 1.0 bis 1.2.8 lassen sich im Spiel unter **Touchpad → Updates** aktualisieren.
 
 ## 🎮 Für die PS5 angepasst
 
