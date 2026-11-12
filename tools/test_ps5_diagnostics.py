@@ -30,6 +30,12 @@ with tempfile.TemporaryDirectory(prefix='dkrr-diagnostics-') as temp:
             assert 'DKRR_CRASH' in text and 'stage=0x0000000000000004' in text
             assert 'DKRR_SESSION_END' not in text
             if mode=='fault':assert 'address=0x00000000000000d0' in text
+            assert 'DKRR_STACK v=1 rsp=0x' in text and ' words=' in text,'crash record needs the stack evidence line'
+            if mode=='fault':
+                assert any(l.startswith('DKRR_STEP t=') and l.endswith('sub=test before-fault second line') for l in text.splitlines()),'step marker missing or newline not flattened'
+            assert text.index('DKRR_CRASH')<text.index('DKRR_STACK'),'the crash line must be written before the riskier stack scan'
+        import stat
+        assert stat.S_IMODE(next(iter(after)).stat().st_mode)==0o666,'journal must be readable over the console FTP'
     print('PASS actual journal, symlink/missing refusal, repeated init, preserved handler, SIGSEGV/SIGABRT default termination and crash records')
     before=set((data/'diagnostics').iterdir());subprocess.run([str(work/'checked'),'watchdog'],env=env,check=True,timeout=5)
     text=next(iter(set((data/'diagnostics').iterdir())-before)).read_text()

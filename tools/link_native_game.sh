@@ -78,6 +78,8 @@ cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_dns.c" -o "$build/obj/dns.o"
 cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_isatty.c" -o "$build/obj/isatty.o"
+cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Werror -fvisibility=hidden \
+    -c "$root/src/ps5_missing_libc.c" -o "$build/obj/missing_libc.o"
 cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_process_policy.c" -o "$build/obj/process_policy.o"
 cc -std=c++20 -O2 -Wall -Wextra -Werror -fexceptions -fcxx-exceptions \
@@ -183,12 +185,12 @@ cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -c "$root/src/ps5_c_locale.c" -o "$build/obj/c_locale.o"
 cc -std=c11 -O2 -Wall -Wextra -Werror -fvisibility=hidden \
     -I "$root/src" -c "$root/src/ps5_async_log.c" -o "$build/obj/async_log.o"
-printf '{ local: _Zn*; _Zd*; system; dkrr_ps5_no_shell; localeconv; dkrr_ps5_localeconv; getargv; realpath; lstat; getcwd; pathconf; __wrap_mmap; __wrap_mprotect; __wrap_munmap; };\n' > "$build/gen/game-symbols.map"
+printf '{ local: _Zn*; _Zd*; system; dkrr_ps5_no_shell; localeconv; dkrr_ps5_localeconv; getargv; realpath; lstat; getcwd; pathconf; readlink; symlink; link; fchown; mkstemp; strcasestr; __wrap_mmap; __wrap_mprotect; __wrap_munmap; };\n' > "$build/gen/game-symbols.map"
 link_game() {
 "$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
     --version-script "$build/gen/game-symbols.map" --exclude-libs=ALL -e _start -o "$build/llvm-pie.elf" \
     "$build/obj/app_crt.o" "$build/obj/app_cpp_runtime.o" "$build/obj/game_main.o" "$build/obj/revision_selection.o" "$build/obj/display_options.o" "$build/obj/display_videoout.o" "$build/obj/hdr_options.o" "$build/obj/hdr_videoout.o" "$build/obj/diagnostics.o" "$build/obj/timegm.o" "$build/obj/emutls.o" "$build/obj/madvise.o" "$build/obj/realpath.o" "$build/obj/lstat.o" "$build/obj/getcwd.o" "$build/obj/pathconf.o" "$build/obj/rdram.o" "$build/obj/import_check.o" "$build/obj/c_locale.o" "$build/obj/async_log.o" \
-    "$build/obj/sdl_texture_tracking.o" "$build/obj/controller_speaker.o" "$build/obj/custom_horn.o" "$build/obj/speaker_vadpcm.o" "$build/obj/file_picker.o" "$build/obj/game_audio_hooks.o" "$build/obj/rtc_net.o" "$build/obj/net.o" "$build/obj/dns.o" "$build/obj/isatty.o" "$build/obj/process_policy.o" "$build/obj/internet_update.o" "$build/obj/https.o" "$build/obj/native_update.o" "$build/obj/update_files.o" "$build/obj/update_sha1.o" "$build/obj/update_policy.o" "$build/obj/update_ed25519.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
+    "$build/obj/sdl_texture_tracking.o" "$build/obj/controller_speaker.o" "$build/obj/custom_horn.o" "$build/obj/speaker_vadpcm.o" "$build/obj/file_picker.o" "$build/obj/game_audio_hooks.o" "$build/obj/rtc_net.o" "$build/obj/net.o" "$build/obj/dns.o" "$build/obj/isatty.o" "$build/obj/missing_libc.o" "$build/obj/process_policy.o" "$build/obj/internet_update.o" "$build/obj/https.o" "$build/obj/native_update.o" "$build/obj/update_files.o" "$build/obj/update_sha1.o" "$build/obj/update_policy.o" "$build/obj/update_ed25519.o" "$build/stubs/libSceAgc.so" "$build/stubs/libSceAgcDriver.so" \
     --start-group "$game/native-https/build/lib/libcurl.a" "$game/native-dns/build/lib/libcares.a" "${libs[@]}" "$sdl/build/sdl/libSDL2.a" "$sdl/build/samplerate/src/libsamplerate.a" --end-group \
     "${radv_link_inputs[@]}" --no-as-needed "$sdk/target/lib/libSceHttp.so" "$sdk/target/lib/libSceSsl.so" "$sdk/target/lib/libSceNet.so" "$sdk/target/lib/libSceNetCtl.so" "$sdk/target/lib/libSceRandom.so" --as-needed "$sdk"/target/lib/*.so
 }

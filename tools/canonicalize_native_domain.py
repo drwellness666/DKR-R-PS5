@@ -70,6 +70,35 @@ from stage_ps5_texture_io import compose as native_texture_io
 for dest,path in sorted(planned.items()):
     text=path.read_text()
     if path.name=='online_directory.cpp':text=snapshots.compose(path,domain).decode()
+    if path.name=='direct_session.cpp':
+        # A rejected join said only "Game Pak revisions do not match": log both
+        # manifests (the host sends its own with the rejection) so a mismatch
+        # can be read from the journal instead of guessed.
+        before='''            std::fprintf(stderr,"[online][admission] rejected reason=%s settings-sync-offered=%u\\n",
+                status_.c_str(),unsigned(compatibility_sync_offer_.has_value()));'''
+        after=before+'''
+            {
+                const auto& host_manifest=compatibility_sync_offer_;
+                char detail[640];
+                std::snprintf(detail,sizeof(detail),"local revision=%u rom=%016llx release=%s build=%.24s | host revision=%d rom=%016llx release=%s build=%.24s",
+                    unsigned(manifest_.revision),(unsigned long long)manifest_.canonical_rom_hash,manifest_.release_version.c_str(),manifest_.build_fingerprint.c_str(),
+                    host_manifest?int(host_manifest->revision):-1,(unsigned long long)(host_manifest?host_manifest->canonical_rom_hash:0ULL),
+                    host_manifest?host_manifest->release_version.c_str():"-",host_manifest?host_manifest->build_fingerprint.c_str():"-");
+                std::fprintf(stderr,"[online][admission] %s\\n",detail);
+#if defined(__PROSPERO__)
+                dkrr_diag_step("online-admission",detail);
+#endif
+            }'''
+        if text.count(before)!=1:raise ValueError('Join rejection logging site changed')
+        text=text.replace(before,after)
+        text='#if defined(__PROSPERO__)\nextern "C" void dkrr_diag_step(const char *, const char *);\n#endif\n'+text
+    if path.name=='online_directory.cpp':
+        # A transient socket error stays on screen after the retry succeeded.
+        # Drop only that notice once the connection is open; join errors stay.
+        before='s.ui.connected=true;s.ui.status="Connected to DKR-R Online.";'
+        after='s.ui.connected=true;if(s.ui.error=="The directory connection failed. Retrying...")s.ui.error.clear();s.ui.status="Connected to DKR-R Online.";'
+        if text.count(before)!=1:raise ValueError('Directory connection status changed')
+        text=text.replace(before,after)
     elif path.name in ('vehicle_binding.cpp','achievements.cpp'):text=shared.compose(path).decode()
     elif path.name=='texture_gallery.inl':text=text.replace('std::to_string(stamp.modified.time_since_epoch().count())','dkr::release::file_stamp(stamp.modified)')
     elif path.name=='texture_dump.cpp':text='#include "ps5_store_compat.hpp"\n'+text

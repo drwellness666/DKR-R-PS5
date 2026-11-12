@@ -19,6 +19,10 @@ size_t dkrr_diag_format_crash(char *out, size_t capacity, const char *build,
 int dkrr_diag_initialize(const char *build, uintptr_t entry);
 void dkrr_diag_stage(unsigned);
 void dkrr_diag_note(const char *);
+/* Timestamped step marker ("DKRR_STEP t=<ms> sub=<name> <text>") written
+ * synchronously to the crash-safe journal: the last one before a fault names
+ * the step. Not for signal handlers or hot loops. */
+void dkrr_diag_step(const char *subsystem,const char *text);
 void dkrr_diag_shutdown(void);
 const char *dkrr_diag_build(void);
 int dkrr_diag_journal_ready(void);

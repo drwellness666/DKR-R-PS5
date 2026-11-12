@@ -24,6 +24,7 @@
 #include "ps5_display_options.h"
 #include "ps5_hdr_options.h"
 #include "ps5_diagnostics.h"
+#include "ps5_selftest.hpp"
 #include "ps5_async_log.h"
 #include "ps5_installation_lease.hpp"
 #include "ps5_internet_update.hpp"
@@ -101,6 +102,7 @@ static void missing_import(const char *name) {
         "sceNetEpollCreate","sceNetEpollControl","sceNetEpollWait","sceNetEpollDestroy"};
     for(const char* function:network)if(!strcmp(name,function))native_network_apis_ready.store(false,std::memory_order_relaxed);
     report("unresolved function import: %s",name);
+    dkrr_diag_step("imports",name); // crash-safe, so tools/pull_console_debug.py can compare with docs/IMPORTS_BASELINE.json
 }
 #define DKR_NATIVE_TITLE_ID "PPSA94678"
 #include "ps5_native_close.h"
@@ -171,6 +173,16 @@ int main() {
             ready=true;break;
         }
         if(!ready)report("no private temp directory; locks for consent, storage and sign-in will fail");
+    }
+    // Measure the console environment once per start (docs/PS5_FACTS.md). It
+    // only creates and removes files in its own folder and writes
+    // logs/selftest.json; a crashing check is skipped on the next start.
+    for(const char *profile:{"/data/dkrr/profile-us-v77","/data/dkrr/profile-us-v80"}) {
+        if(access(profile,F_OK)!=0)continue;
+        const auto results=dkrr::selftest::run(profile,dkrr_diag_build());
+        unsigned unsupported=0;for(const auto&result:results)if(!result.ok)++unsupported;
+        report("self-test %s: %u checks, %u calls refused (details: logs/selftest.json)",profile,unsigned(results.size()),unsupported);
+        break;
     }
     // The public SDL PS5 driver's default map omits Back. DKR-R uses that
     // logical button for its settings overlay, so map the touchpad click to it.

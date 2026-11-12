@@ -9,6 +9,8 @@
 #include <sys/resource.h>
 #include <unistd.h>
 static volatile sig_atomic_t handled;
+/* An import the platform did not resolve stays bound to address 0, like readlink on the console. */
+extern void dkrr_missing_import(void) __attribute__((weak));
 static void preserved(int n){(void)n;handled=1;}
 int main(int argc,char **argv){
     if(argc>1){
@@ -29,7 +31,8 @@ int main(int argc,char **argv){
             dkrr_diag_ui_phase(DKR_UI_IDLE);usleep(500000);
             dkrr_diag_shutdown();return 0;
         }
-        if(!strcmp(argv[1],"fault")){*(volatile unsigned long *)(uintptr_t)0xd0=42;abort();}
+        if(!strcmp(argv[1],"fault")){dkrr_diag_step("test","before-fault\nsecond line");*(volatile unsigned long *)(uintptr_t)0xd0=42;abort();}
+        if(!strcmp(argv[1],"nullcall")){dkrr_diag_step("test","call unresolved import");dkrr_missing_import();return 99;}
         if(!strcmp(argv[1],"abort")){raise(SIGABRT);return 99;}
         if(!strcmp(argv[1],"preserve")){raise(SIGABRT);assert(handled);dkrr_diag_shutdown();return 0;}
         assert(dkrr_diag_capture_start_at(1)==0);dkrr_diag_present_at(2);dkrr_diag_present_at(100000002);assert(dkrr_diag_capture_finish()==0);

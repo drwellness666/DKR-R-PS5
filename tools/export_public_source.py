@@ -23,7 +23,8 @@ for name in files:
 public_docs = ('README.md', 'INSTALLER.md', 'UPDATES.md', 'CONTROLS.md',
                'DISPLAY.md', 'SAVES.md', 'KNOWN_ISSUES.md', 'DIAGNOSTICS.md',
                'FILES.md', 'LICENSES.md', 'ROADMAP.md', 'DEVELOPMENT.md',
-               'BUILD.md', 'WINDOWS.md', 'ARCHITECTURE.md', 'GPU.md', 'RT64.md')
+               'BUILD.md', 'WINDOWS.md', 'ARCHITECTURE.md', 'GPU.md', 'RT64.md',
+               'DEBUGGING.md', 'PS5_FACTS.md', 'IMPORTS_BASELINE.json', 'STACK_BASELINE.json')
 (output / 'docs').mkdir()
 for name in public_docs:
     shutil.copy2(root / 'docs' / name, output / 'docs' / name)

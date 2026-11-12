@@ -58,6 +58,12 @@ jobs:
       - run: python3 tools/test_ps5_update_digest_abi.py
       - run: python3 tools/test_ps5_native_update.py
       - run: python3 tools/test_ps5_diagnostics.py
+      - run: python3 tools/test_ps5_crash_report.py
+      - run: python3 tools/test_ps5_env_shim.py
+      - run: python3 tools/test_ps5_selftest.py
+      - run: python3 tools/test_ps5_missing_libc.py
+      - run: python3 tools/test_check_import_baseline.py
+      - run: python3 tools/test_check_stack_frames.py
       - run: python3 tools/test_ps5_startup_diagnostics.py
       - run: python3 tools/test_native_game_installer.py
       - run: python3 tools/test_native_game_deployer.py

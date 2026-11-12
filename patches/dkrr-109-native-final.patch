@@ -1,6 +1,6 @@
 --- a/runtime-recomp/src/game/crash_reports/service.cpp
 +++ b/runtime-recomp/src/game/crash_reports/service.cpp
-@@ -1,6 +1,7 @@
+@@ -1,13 +1,24 @@
  #include "reporting.hpp"
  #include "updates/update_process.hpp"
  #include <condition_variable>
@@ -8,7 +8,62 @@
  #include <cstdlib>
  #include <memory>
  #include <mutex>
-@@ -88,7 +89,10 @@
+ #include <thread>
++#if defined(__PROSPERO__)
++extern "C" void dkrr_diag_step(const char *, const char *);
++#endif
+ 
+ namespace dkr::crash_reports {
+ namespace {
++void step(const std::string& text) {
++#if defined(__PROSPERO__)
++    dkrr_diag_step("crash-reports", text.c_str());
++#else
++    (void)text;
++#endif
++}
+ struct Service {
+     std::mutex mutex;
+     std::condition_variable_any changed;
+@@ -32,6 +43,7 @@
+             std::vector<std::string> identities;
+             for (const auto* name : {"USERNAME", "USER", "COMPUTERNAME", "HOSTNAME"})
+                 if (const auto* value = std::getenv(name)) identities.emplace_back(value);
++            step("worker start");
+             Queue queue(profile, version, std::move(identities));
+             bool discover = true;
+             while (!stop.stop_requested()) {
+@@ -54,8 +66,9 @@
+                         consent = read_consent(root);
+                         snapshot.consent = consent;
+                     }
++                    step("reconcile");
+                     queue.reconcile(consent, now_ms());
+-                    if (discover) { queue.discover(consent, now_ms()); discover = false; }
++                    if (discover) { step("discover"); queue.discover(consent, now_ms()); discover = false; }
+                     const auto job = consent.choice == 1 ? queue.due(now_ms()) : Pending{};
+                     std::stop_token upload_stop;
+                     {
+@@ -67,13 +80,18 @@
+                         if (stop.stop_requested() || snapshot.consent.choice != 1) sending.request_stop();
+                     }
+                     if (!job.id.empty()) {
++                        step("upload");
+                         const auto result = upload(job, upload_stop);
+                         queue.delivered(job.id, result, now_ms());
+                         std::lock_guard lock(mutex);
+                         snapshot.sending = false; snapshot.queued = queue.count();
+                         if (epoch == generation) snapshot.status = result.confirmed ? "support.reporting.sent" : queue.blocked() ? "support.reporting.attention" : "support.reporting.queued";
+                     }
++                } catch (const std::exception& error) {
++                    step(std::string("worker error: ") + error.what());
++                    std::lock_guard lock(mutex); snapshot.sending = false; snapshot.status = "support.reporting.local_error";
+                 } catch (...) {
++                    step("worker error: unknown");
+                     std::lock_guard lock(mutex); snapshot.sending = false; snapshot.status = "support.reporting.local_error";
+                 }
+                 std::unique_lock lock(mutex);
+@@ -88,7 +106,10 @@
      dkr::storage::start(profile);
      if (owner) return;
      try { owner = std::make_unique<Service>(profile, std::move(version)); }
@@ -20,7 +75,7 @@
  }
  void shutdown() { owner.reset(); dkr::storage::shutdown(); }
  View view() {
-@@ -105,6 +109,11 @@
+@@ -105,6 +126,11 @@
          write_consent(owner->root, next);
          owner->sending.request_stop(); owner->snapshot.consent = next;
          owner->snapshot.status = enabled ? "support.reporting.ready" : "support.reporting.disabled";
@@ -1228,10 +1283,13 @@
      return true;
 --- a/runtime-recomp/src/game/netplay/session_chat/ui.inl
 +++ b/runtime-recomp/src/game/netplay/session_chat/ui.inl
-@@ -113,13 +113,91 @@
+@@ -113,13 +113,97 @@
      const float chat_height=ImGui::GetItemRectSize().y;
      ImGui::SetCursorScreenPos(at);ImGui::Dummy({width,side?std::max(height,chat_height):height+14.F+chat_height});
  }
++#if defined(__PROSPERO__)
++extern "C" void dkrr_diag_step(const char *, const char *);
++#endif
 +std::string SessionChatButtonName(int button) {
 +    if(button<0)return "not set";
 +#if defined(__PROSPERO__)
@@ -1302,6 +1360,9 @@
 +        const std::string pad_label=waiting?"Press a free button for chat... (cancels by itself)":"Chat button: "+SessionChatButtonName(pad);
 +        if(OlButton(pad_label.c_str(),OlTone::Plain,inner)){
 +            dkr::chat::capture_button=!waiting;dkr::chat::capture_key=false;SetSessionChatButtonNote({});
++#if defined(__PROSPERO__)
++            dkrr_diag_step("chat",!waiting?"capture started":"capture cancelled");
++#endif
 +            dkr::chat::capture_button_started=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 +        }
 +        if(pad>=0&&!waiting) {
@@ -1320,7 +1381,7 @@
          PaddockGap(10.F);
          static const std::vector<std::string> corners{"Bottom left","Bottom right","Top left","Top right"};
          int corner=dkr::chat::feed_corner.load();if(OlSelect("chat-corner","In-game position",&corner,corners,inner)){dkr::chat::feed_corner=corner;SaveSettings();}
-@@ -152,8 +230,13 @@
+@@ -152,10 +236,49 @@
      else {
          OlParagraph("LOBBY CHAT",12.F,kOlGoText,inner);PaddockGap(5.F);
          for(const auto* m:feed){OlParagraph(m->name+": "+m->text,14.F,m->author==view.local?kOlGoText:kOlCream,inner);PaddockGap(5.F);}
@@ -1333,21 +1394,31 @@
 +#endif
      }
      ImGui::End();ImGui::PopStyleColor();ImGui::PopStyleVar(2);
- }
-@@ -164,6 +247,30 @@
-         const int key=event->key.keysym.scancode;
-         if(dkr::chat::valid_shortcut(key)){dkr::chat::shortcut_key=key;dkr::chat::settings_changed=true;}
-         dkr::chat::capture_key=false;return true;
-+    }
++}
++// Button capture for the lobby-chat control. Called from every event loop that
++// can show the settings page: the race overlay (handle_runtime_event) and the
++// launcher's own loop, which never reaches handle_runtime_event.
++bool HandleSessionChatButtonCapture(SDL_Event* event) {
++    if(!dkr::chat::capture_button.load())return false;
++    const bool keydown=event->type==SDL_KEYDOWN;
 +    if(dkr::chat::capture_button.load()) {
 +        const auto now_ms=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-+        if(!g_overlay_visible.load()||now_ms-dkr::chat::capture_button_started.load()>10000){
++        // The settings page is also shown by the launcher, where the in-race
++        // overlay flag is false; only the ten-second window ends a capture.
++        if(now_ms-dkr::chat::capture_button_started.load()>10000){
++            std::fprintf(stderr,"[ps5][chat] capture timed out\n");
++#if defined(__PROSPERO__)
++            dkrr_diag_step("chat","capture timed out");
++#endif
 +            dkr::chat::capture_button=false;SetSessionChatButtonNote("Chat button not changed.");
 +        }
 +    }
 +    if(dkr::chat::capture_button.load()&&event->type==SDL_CONTROLLERBUTTONDOWN) {
 +        const int button=event->cbutton.button;
 +        std::fprintf(stderr,"[ps5][chat] capture got button %d\n",button);
++#if defined(__PROSPERO__)
++        dkrr_diag_step("chat",("capture got button "+std::to_string(button)).c_str());
++#endif
 +        if(const auto conflict=SessionChatButtonConflict(button);!conflict.empty()) // never share a button
 +            SetSessionChatButtonNote(SessionChatButtonName(button)+" "+conflict+". Free it under Controls or pick another button.");
 +        else{dkr::chat::shortcut_button=button;SetSessionChatButtonNote({});dkr::chat::settings_changed=true;}
@@ -1356,6 +1427,16 @@
 +    if(dkr::chat::capture_button.load()&&keydown&&!event->key.repeat&&event->key.keysym.scancode==SDL_SCANCODE_ESCAPE){
 +        dkr::chat::capture_button=false;return true;
 +    }
++    return false;
+ }
+ bool HandleSessionChatEvent(SDL_Event* event) {
+     const bool keydown=event->type==SDL_KEYDOWN,keyup=event->type==SDL_KEYUP;
+@@ -164,6 +287,14 @@
+         const int key=event->key.keysym.scancode;
+         if(dkr::chat::valid_shortcut(key)){dkr::chat::shortcut_key=key;dkr::chat::settings_changed=true;}
+         dkr::chat::capture_key=false;return true;
++    }
++    if(HandleSessionChatButtonCapture(event))return true;
 +    if(!dkr::chat::typing.load()&&!dkr::chat::capture_key.load()&&!dkr::chat::capture_button.load()&&event->type==SDL_CONTROLLERBUTTONDOWN&&
 +       dkr::chat::shortcut_button.load()>=0&&event->cbutton.button==dkr::chat::shortcut_button.load()&&
 +       !SessionChatButtonInUse(event->cbutton.button)&&
@@ -1707,7 +1788,39 @@
      static const std::map<std::string, std::string> kNames{
          {"Unbound", "Not assigned"}, {"a", "A"}, {"b", "B"}, {"x", "X"}, {"y", "Y"},
          {"start", "Menu / Start"}, {"back", "View / Select"}, {"guide", "Guide"},
-@@ -208,6 +249,9 @@
+@@ -129,6 +170,14 @@
+     PaddockGap(16.0F);
+ }
+ 
++// Same hairline the disclosure rows use, to separate the groups of a page.
++void ControlsRule(float width) {
++    PaddockGap(12.0F);
++    const ImVec2 at = ImGui::GetCursorScreenPos();
++    ImGui::GetWindowDrawList()->AddRectFilled(at, {at.x + width, at.y + 1.0F}, PaddockCol(kCtlLine));
++    ImGui::Dummy({width, 1.0F});
++}
++
+ template<class T> void ControlsNote(T&& raw, float width, unsigned colour = kSetMuted) {
+     const auto text=LocalisedUi::copy(std::forward<T>(raw));
+     PaddockText(PaddockReading(14.0F, false, 1.45F), PaddockRgb(colour), text, width);
+@@ -136,12 +185,13 @@
+ }
+ 
+ // .controls-page .disclosure: a hairline, a quiet label and a + / - marker.
+-bool ControlsDisclosure(const char* id, std::string_view label, bool& open, float width) {
++// `own_rule=false` is for a choice that belongs to the group above it: no line, less space.
++bool ControlsDisclosure(const char* id, std::string_view label, bool& open, float width, bool own_rule = true) {
+     label=dkr::localisation::source(label);
+-    PaddockGap(24.0F);
++    PaddockGap(own_rule ? 24.0F : 8.0F);
+     const ImVec2 at = ImGui::GetCursorScreenPos();
+     ImDrawList* draw = ImGui::GetWindowDrawList();
+-    draw->AddRectFilled(at, {at.x + width, at.y + 1.0F}, PaddockCol(kCtlLine));
++    if (own_rule) draw->AddRectFilled(at, {at.x + width, at.y + 1.0F}, PaddockCol(kCtlLine));
+     ImGui::SetCursorScreenPos({at.x, at.y + 1.0F});
+     const PaddockPress press = PaddockBeginPress(id, {width, 48.0F});
+     if (press.pressed) open = !open;
+@@ -208,6 +258,9 @@
  }
  
  void BeginControllerCapture(int action, CaptureDevice device, bool secondary = false) {
@@ -1717,7 +1830,7 @@
      g_capture_action = action;
      g_capture_device = device;
      g_capture_secondary_controller = secondary;
-@@ -433,11 +477,14 @@
+@@ -433,11 +486,14 @@
  
  void DrawControlsBindings(ControlsPageState& state, float width, const std::function<void()>& commit) {
      namespace input = dkr::runtime::input;
@@ -1735,7 +1848,7 @@
                            : "Keyboard input belongs to Player " + std::to_string(input::keyboard_player() + 1) +
                                  ". Change it in Device \xE2\x86\x92 Shared settings.",
                   width);
-@@ -461,34 +508,69 @@
+@@ -461,34 +517,69 @@
                             PaddockCol(kSetMuted), kHeads[index], kHeads[index] + std::strlen(kHeads[index]));
              ++slot;
          }
@@ -1813,7 +1926,7 @@
                  const int source = is_keyboard ? input::keyboard_binding(g_selected_player, action)
                                   : secondary ? input::secondary_controller_binding(g_selected_player, action)
                                               : input::controller_binding(g_selected_player, action);
-@@ -513,7 +595,7 @@
+@@ -513,7 +604,7 @@
                  }
                  draw->AddRectFilled({at.x, at.y + row_height - 1.0F}, {at.x + width, at.y + row_height},
                                      PaddockCol(0xFFFFFF, 12U));
@@ -1822,7 +1935,7 @@
                  PaddockDrawRun(draw, label_type, {at.x + 8.0F, std::round(at.y + (row_height - label_type.line) * 0.5F)},
                                 PaddockCol(kSetText), label, label + std::strlen(label));
                  int slot = 1;
-@@ -529,17 +611,18 @@
+@@ -529,17 +620,18 @@
                  // Narrow: the label on its own line, then labelled cells.
                  PaddockGap(8.0F);
                  ImGui::Indent(4.0F);
@@ -1844,7 +1957,7 @@
                      ImGui::BeginGroup();
                      PaddockText(PaddockReading(12.0F, false, 1.45F), PaddockRgb(kSetMuted),
                                  kHeads[static_cast<std::size_t>(device_column + 1)], cell - 8.0F);
-@@ -547,6 +630,7 @@
+@@ -547,6 +639,7 @@
                      binding_button(device_column, cell - 8.0F);
                      ImGui::EndGroup();
                      bottom = std::max(bottom, ImGui::GetItemRectMax().y);
@@ -1852,7 +1965,7 @@
                      ++slot;
                  }
                  ImGui::SetCursorScreenPos({row_at.x, bottom + 8.0F});
-@@ -558,7 +642,45 @@
+@@ -558,7 +651,45 @@
              ++row_index;
          }
      }
@@ -1899,7 +2012,7 @@
      const std::string player = std::to_string(g_selected_player + 1U);
      if (SettingsButton("Restore this player\xE2\x80\x99s bindings")) {
          ControlsSnapshot before = TakeControlsSnapshot();
-@@ -585,6 +707,7 @@
+@@ -585,6 +716,7 @@
              state.undo = before;
              state.undo_message = "All player bindings restored.";
          }
@@ -1907,7 +2020,7 @@
      }
  }
  
-@@ -633,9 +756,16 @@
+@@ -633,9 +765,16 @@
          y += 1.0F;
          constexpr std::array<const char*, 3> kVehicles{{"Car", "Hovercraft", "Plane"}};
          const PaddockType row_type = PaddockReading(16.0F, true, 1.45F);
@@ -1925,7 +2038,7 @@
              PaddockDrawRun(draw, row_type, {at.x + 8.0F, std::round(y + (row_height - row_type.line) * 0.5F)},
                             PaddockCol(kSetText), kVehicles[vehicle], kVehicles[vehicle] + std::strlen(kVehicles[vehicle]));
              ImGui::PushID(static_cast<int>(vehicle));
-@@ -718,20 +848,28 @@
+@@ -718,20 +857,28 @@
      const std::size_t player = g_selected_player;
      ControlsScope(false, width);
      ControlsHeading("Motion steering", width);
@@ -1956,7 +2069,7 @@
      PaddockGap(16.0F);
      const auto percent = [](int value) { return SettingsRangeValue{std::to_string(value), "%"}; };
      int sensitivity = static_cast<int>(std::lround(input::gyro_sensitivity(player)));
-@@ -746,6 +884,7 @@
+@@ -746,6 +893,7 @@
          commit();
      }
      PaddockGap(16.0F);
@@ -1964,7 +2077,7 @@
      int deadzone = static_cast<int>(std::lround(input::gyro_deadzone(player) * 10.0F));
      if (SettingsRange("##gyro-deadzone", "Motion deadzone", &deadzone, 0, 120, width, [](int value) {
              char text[16]{};
-@@ -756,6 +895,7 @@
+@@ -756,6 +904,7 @@
          commit();
      }
      PaddockGap(16.0F);
@@ -1972,7 +2085,7 @@
      bool inverted = input::gyro_inverted(player);
      if (SettingsCheck("##gyro-invert-x", "Invert horizontal gyro", &inverted, width)) {
          input::set_gyro_inverted(inverted, player);
-@@ -807,6 +947,52 @@
+@@ -807,6 +956,55 @@
      }
  }
  
@@ -1992,6 +2105,7 @@
 +        }
 +    }
 +    PaddockGap(12.0F);
++    ControlsRule(width);
 +    ControlsHeading("DualSense feedback",width,12.0F);
 +    bool feedback=platform::item_feedback_enabled();
 +    if(SettingsCheck("##item-feedback","Adaptive L2 item feedback",&feedback,width)){platform::set_item_feedback_enabled(feedback);commit();}
@@ -1999,6 +2113,7 @@
 +    bool lights=platform::controller_lights_enabled();
 +    if(SettingsCheck("##balloon-light","Match held balloon color",&lights,width)){platform::set_controller_lights_enabled(lights);commit();}
 +    PaddockGap(12.0F);
++    ControlsRule(width);
 +    ControlsHeading("Controller sounds",width,12.0F);
 +    bool speaker=platform::controller_speaker_enabled();
 +    if(SettingsCheck("##ps5-speaker","Controller sounds",&speaker,width)){platform::set_controller_speaker_enabled(speaker);commit();}
@@ -2008,7 +2123,7 @@
 +            platform::set_controller_speaker_volume(float(volume)/100.0F);commit();
 +        }
 +        static bool sounds_open=false;
-+        if(ControlsDisclosure("ps5-sound-selection","Choose controller sounds",sounds_open,width)){
++        if(ControlsDisclosure("ps5-sound-selection","Choose controller sounds",sounds_open,width,false)){
 +            static constexpr const char* names[]={"Blue balloon / boost","Red balloon / missile","Green balloon / trap","Yellow balloon / shield","Rainbow balloon / magnet","Horn","Weapon pickup","Silver coin","Golden balloon","Boost strips"};
 +            unsigned mask=platform::controller_speaker_categories();
 +            for(unsigned i=0;i<10;++i){bool on=(mask&(1U<<i))!=0;const std::string id="ps5-sound-"+std::to_string(i);
@@ -2018,6 +2133,7 @@
 +        if(status&&*status)ControlsNote(status,width);
 +    }
 +    PaddockGap(12.0F);
++    ControlsRule(width);
 +    if(dkr::runtime::enhancements::modern_options_visible(dkr::runtime::enhancements::presentation_profile()))DrawControlsMotion(width,live,commit);
 +    else{ControlsHeading("Motion steering",width,12.0F);ControlsNote("Gyro steering requires Modern presentation.",width);}
 +}
@@ -2025,7 +2141,7 @@
  // ------------------------------------------------------------ shortcuts
  
  void DrawControlsShortcuts(float width, const std::function<void()>& commit) {
-@@ -831,11 +1017,23 @@
+@@ -831,11 +1029,23 @@
      for (const auto& [shortcut, raw_label] : kShortcuts) {
          const auto label=dkr::localisation::source(raw_label).data();
          if (shortcut == input::ShortcutAction::QuickRestart && !quick_restart) continue;
@@ -2050,7 +2166,7 @@
              PaddockText(PaddockReading(14.0F, false, 1.45F), PaddockRgb(kSetMuted), "Keyboard", cell);
              PaddockGap(6.0F);
              const auto binding = input::shortcut_keyboard_binding(shortcut);
-@@ -849,14 +1047,7 @@
+@@ -849,14 +1059,7 @@
          }, [&](float cell) {
              PaddockText(PaddockReading(14.0F, false, 1.45F), PaddockRgb(kSetMuted), "Controller", cell);
              PaddockGap(6.0F);
@@ -2066,7 +2182,7 @@
          });
          PaddockGap(20.0F);
          const ImVec2 at = ImGui::GetCursorScreenPos();
-@@ -911,7 +1102,8 @@
+@@ -911,7 +1114,8 @@
              {"action",dkr::localisation::source(dkr::runtime::input::action_label(static_cast<Action>(g_capture_action)))}});
          help = g_capture_device == CaptureDevice::Keyboard
              ? "Press a keyboard key. Escape cancels."
@@ -2076,7 +2192,7 @@
      } else if (g_capture_action == kShortcutCaptureAction) {
          heading = dkr::localisation::source(ShortcutActionLabel(g_capture_shortcut_action));
          help=dkr::localisation::text(g_capture_device==CaptureDevice::Keyboard?"controls.shortcut_key_help":"controls.shortcut_button_help");
-@@ -950,6 +1142,8 @@
+@@ -950,6 +1154,8 @@
              const dkr::runtime::input::ShortcutBinding unbound{};
              if (g_capture_device == CaptureDevice::Keyboard) {
                  dkr::runtime::input::set_shortcut_keyboard_binding(g_capture_shortcut_action, unbound);
@@ -2085,7 +2201,7 @@
              } else {
                  dkr::runtime::input::set_shortcut_controller_binding(g_capture_shortcut_action, unbound);
              }
-@@ -1001,9 +1195,9 @@
+@@ -1001,9 +1207,9 @@
      // h1 { min-height: 0; margin-bottom: 10px }: the heading's box is 6 px
      // taller than the study's 58 px line.
      PaddockGap(4.0F);
@@ -2098,7 +2214,7 @@
  
      // The local player (.controls-player-bar): four painted chips.
  #if defined(__ANDROID__)
-@@ -1015,7 +1209,7 @@
+@@ -1015,7 +1221,7 @@
          const PaddockType label_type = PaddockReading(14.0F, false, 1.45F);
          const float label_width = std::ceil(PaddockMeasure(label_type, "Local player"));
          const ImVec2 at = ImGui::GetCursorScreenPos();
@@ -2107,7 +2223,7 @@
          float chips_x = at.x + label_width + 16.0F;
          float chips_width = std::min(520.0F, width - label_width - 16.0F);
          float chips_y = at.y;
-@@ -1036,14 +1230,17 @@
+@@ -1036,14 +1242,17 @@
              ImGui::SetCursorScreenPos({chips_x + (chip_width + 10.0F) * static_cast<float>(player), chips_y});
              const std::string label = "Player " + std::to_string(player + 1U);
              if (DrawSoundChip(label.c_str(), player == g_selected_player, chip_width)) {
@@ -2127,7 +2243,7 @@
      if (picked >= 0) g_controls_section = picked;
      PaddockGap(22.0F);
  
-@@ -1074,7 +1271,7 @@
+@@ -1074,7 +1283,7 @@
  
      const bool modern = dkr::runtime::enhancements::modern_options_visible(
          dkr::runtime::enhancements::presentation_profile());
@@ -2136,7 +2252,7 @@
          ControlsScope(g_controls_section == 2, width);
          ControlsHeading(g_controls_section == 2 ? "Stick response" : "Motion steering", width);
          ControlsNote("Requires Modern graphics.",
-@@ -1084,10 +1281,12 @@
+@@ -1084,10 +1293,12 @@
          DrawControlsDevice(state, width, commit);
      } else if (g_controls_section == 1) {
          DrawControlsBindings(state, width, commit);
@@ -4101,7 +4217,15 @@
  dkr::runtime::input::ShortcutAction g_capture_shortcut_action =
      dkr::runtime::input::ShortcutAction::QuickRestart;
  std::array<int, 2> g_shortcut_capture_sources{
-@@ -1292,6 +1325,10 @@
+@@ -850,6 +883,7 @@
+ #include "shared_save_jobs.inl"
+ 
+ bool HandleInputCaptureEvent(SDL_Event* event);
++bool HandleSessionChatButtonCapture(SDL_Event* event);
+ 
+ struct BrowserEntry {
+     std::filesystem::path path;
+@@ -1292,6 +1326,10 @@
          0x0030, 0x0039,
          0,
      };
@@ -4112,7 +4236,7 @@
  
      const auto merge_fallback = [&](float size, const ImWchar* ranges) {
          ImFontConfig fallback_config{};
-@@ -1304,23 +1341,45 @@
+@@ -1304,23 +1342,45 @@
          fallback_config.GlyphRanges = ranges;
          io.Fonts->AddFontDefault(&fallback_config);
      };
@@ -4167,7 +4291,7 @@
      };
      const auto add_racing_font = [&](float size) -> ImFont* {
          ImFontConfig config{};
-@@ -1333,7 +1392,7 @@
+@@ -1333,7 +1393,7 @@
              static_cast<int>(dkr_racing_banana_font_size), size, &config,
              kLauncherNonDigitGlyphRanges);
          if (font != nullptr) {
@@ -4176,7 +4300,7 @@
                  merge_fallback(size, kJumpmanDigitGlyphRanges);
              }
              merge_fallback(size, kLauncherNonDigitGlyphRanges);
-@@ -1353,7 +1412,7 @@
+@@ -1353,7 +1413,7 @@
      control_config.RasterizerMultiply = 1.20F;
      control_config.GlyphRanges = kLauncherNonDigitGlyphRanges;
      g_font_controls = io.Fonts->AddFontDefault(&control_config);
@@ -4185,7 +4309,7 @@
          merge_fallback(21.0F, kJumpmanDigitGlyphRanges);
      }
  
-@@ -1363,7 +1422,7 @@
+@@ -1363,7 +1423,7 @@
          fallback_config.SizePixels = 19.0F;
          fallback_config.GlyphRanges = kLauncherNonDigitGlyphRanges;
          body_font = io.Fonts->AddFontDefault(&fallback_config);
@@ -4194,7 +4318,7 @@
              merge_fallback(19.0F, kJumpmanDigitGlyphRanges);
          }
          std::fprintf(stderr,
-@@ -1559,6 +1618,9 @@
+@@ -1559,6 +1619,9 @@
          config.api_option = g_modern_graphics_api;
          config.hr_option = HUDRatioMode::Original;
          config.ds_option = g_modern_downsample;
@@ -4204,7 +4328,7 @@
          config.rr_option = g_modern_refresh_mode;
          config.rr_manual_value = g_modern_refresh_target;
          return;
-@@ -1580,6 +1642,10 @@
+@@ -1580,6 +1643,10 @@
      // Accurate retains original timing/HUD, not desktop-resolution GPU cost.
      dkr::runtime::mobile_graphics::apply_accurate_budget(config);
  #endif
@@ -4215,7 +4339,7 @@
  }
  
  // The Sound page's volumes: Master, then the four-part island mix. A muted
-@@ -1633,6 +1699,56 @@
+@@ -1633,6 +1700,56 @@
      }
      g_sound_muted[channel] = muted;
  }
@@ -4272,7 +4396,7 @@
  
  void SaveSettings() {
      std::error_code error;
-@@ -1803,6 +1919,15 @@
+@@ -1803,6 +1920,15 @@
          output << "memory_pak=" << (dkr::runtime::pak::enabled() ? 1 : 0) << '\n';
          output << "rumble=" << (dkr::runtime::platform::rumble_enabled() ? 1 : 0) << '\n';
          output << "rumble_strength=" << dkr::runtime::platform::rumble_strength() << '\n';
@@ -4288,7 +4412,7 @@
          output << "stick_deadzone=" << dkr::runtime::input::stick_deadzone() << '\n';
          output << "stick_anti_deadzone=" << dkr::runtime::input::stick_anti_deadzone() << '\n';
          output << "stick_sensitivity=" << dkr::runtime::input::stick_sensitivity() << '\n';
-@@ -1832,22 +1957,7 @@
+@@ -1832,22 +1958,7 @@
          output << "quick_restart_keyboard_secondary=" << quick_keyboard.secondary << '\n';
          output << "quick_restart_controller_primary=" << quick_controller.primary << '\n';
          output << "quick_restart_controller_secondary=" << quick_controller.secondary << '\n';
@@ -4312,7 +4436,7 @@
          output << "gyro_enabled=" << (dkr::runtime::input::gyro_enabled() ? 1 : 0) << '\n';
          output << "gyro_sensitivity=" << dkr::runtime::input::gyro_sensitivity() << '\n';
          output << "gyro_y_sensitivity=" << dkr::runtime::input::gyro_y_sensitivity() << '\n';
-@@ -2094,6 +2204,7 @@
+@@ -2094,6 +2205,7 @@
          shortcut_keyboard{};
      std::array<dkr::runtime::input::ShortcutBinding, kShortcutActionCount>
          shortcut_controller{};
@@ -4320,7 +4444,7 @@
      for (std::size_t index = 0; index < shortcut_keyboard.size(); ++index) {
          const auto action = static_cast<
              dkr::runtime::input::ShortcutAction>(index);
-@@ -2101,6 +2212,7 @@
+@@ -2101,6 +2213,7 @@
              dkr::runtime::input::shortcut_keyboard_binding(action);
          shortcut_controller[index] =
              dkr::runtime::input::shortcut_controller_binding(action);
@@ -4328,7 +4452,7 @@
      }
      auto assignment_mode = dkr::runtime::platform::controller_assignment_mode();
      auto controller_assignments =
-@@ -2242,7 +2354,11 @@
+@@ -2242,7 +2355,11 @@
          try {
              const int number = std::stoi(value);
              if(dkr::feedback::load_setting(key,number))continue;
@@ -4340,7 +4464,7 @@
              if(dkr::launcher_themes::load(key,number))continue;
              if(dkr::chat::load_setting(key,number)||dkr::relay::load_setting(key,number))continue;
              if(dkr::display::load(key,number))continue;
-@@ -2284,25 +2400,7 @@
+@@ -2284,25 +2401,7 @@
                  continue;
              }
  #endif
@@ -4367,7 +4491,7 @@
              // Outside the long compatibility parser below (MSVC nesting limit).
              if(dkr::runtime::driving::load(key,number))continue;
              if(key=="standalone_look_behind"){dkr::runtime::look_behind::enabled=number!=0;continue;}
-@@ -2533,6 +2631,20 @@
+@@ -2533,6 +2632,20 @@
                  dkr::runtime::pak::set_enabled(number != 0);
              } else if (key == "rumble") {
                  dkr::runtime::platform::set_rumble_enabled(number != 0);
@@ -4388,7 +4512,7 @@
              } else if (key == "rumble_strength") {
                  dkr::runtime::platform::set_rumble_strength(std::stof(value));
              } else if (key == "stick_deadzone") {
-@@ -2622,6 +2734,16 @@
+@@ -2622,6 +2735,16 @@
      // still owns an open handle. Migration may call SaveSettings below, so
      // release the read handle before attempting that replacement.
      input.close();
@@ -4405,7 +4529,7 @@
      // Canonicalize legacy backend flags after reading the complete file.
      // Retain valid delay/player/development preferences, not the removed modes.
      const bool migrated_rollback_backend = !has_legacy_backend_setting ||
-@@ -2661,6 +2783,7 @@
+@@ -2661,6 +2784,7 @@
              action, shortcut_keyboard[index]);
          dkr::runtime::input::set_shortcut_controller_binding(
              action, shortcut_controller[index]);
@@ -4413,7 +4537,7 @@
      }
      // Early launcher builds defaulted to 8x MSAA, which can turn busy races
      // GPU-bound at high desktop resolutions. Migrate that one legacy default
-@@ -2802,9 +2925,9 @@
+@@ -2802,9 +2926,9 @@
  std::vector<RomCatalogEntry> LoadRomCatalog() {
      std::vector<RomCatalogEntry> catalog;
      std::ifstream input(RomCatalogPath());
@@ -4426,7 +4550,7 @@
      bool cleaned = false;
      std::string encoded_path;
      while (std::getline(input, encoded_path)) {
-@@ -2836,6 +2959,17 @@
+@@ -2836,6 +2960,17 @@
              : "Imported Game Pak - " + PathUtf8(path.filename());
          catalog.push_back({path, label, key});
      }
@@ -4444,7 +4568,7 @@
      if (cleaned) {
          SaveRomCatalog(catalog);
      }
-@@ -2873,6 +3007,11 @@
+@@ -2873,6 +3008,11 @@
      selected = NormalizeRomPath(path);
      g_mod_browser_revision=identity.revision==dkr::runtime::rom::Revision::UsV80?2U:identity.revision==dkr::runtime::rom::Revision::UsV77?1U:0U;
      SaveLastRom(selected);
@@ -4456,7 +4580,7 @@
      RememberRomInCatalog(selected, identity, catalog);
      status = dkr::runtime::rom::describe(identity) + ". Ready to race!";
  }
-@@ -3046,6 +3185,46 @@
+@@ -3046,6 +3186,46 @@
      return true;
  }
  
@@ -4503,7 +4627,7 @@
  bool SelectRomWithDialog(std::filesystem::path& selected,
                           std::vector<RomCatalogEntry>& catalog,
                           std::string& status) {
-@@ -3090,22 +3269,8 @@
+@@ -3090,22 +3270,8 @@
              "local filters folder before importing another.";
          return false;
      }
@@ -4527,7 +4651,7 @@
      std::error_code error;
      constexpr std::uintmax_t maximum_filter_bytes = 64U * 1024U * 1024U;
      const std::uintmax_t size = std::filesystem::file_size(source, error);
-@@ -3144,6 +3309,7 @@
+@@ -3144,6 +3310,7 @@
      g_crt_status = "Imported " + destination.filename().string() + ".";
      SaveSettings();
      return true;
@@ -4535,7 +4659,7 @@
  }
  
  bool TexturePackImportRunning() {
-@@ -3172,60 +3338,70 @@
+@@ -3172,60 +3339,70 @@
          g_texture_import_worker.join();
      }
  
@@ -4659,7 +4783,7 @@
      return true;
  }
  
-@@ -3245,38 +3421,44 @@
+@@ -3245,38 +3422,44 @@
  bool DialogJobRunning() {
      if(SharedSaveBusy())return true;
      std::scoped_lock lock(g_dialog_job_mutex);
@@ -4727,7 +4851,7 @@
      return true;
  }
  
-@@ -3293,6 +3475,10 @@
+@@ -3293,6 +3476,10 @@
  
  // A folder picker, for the dialog-job thread (which owns its own COM
  // initialization). False with an empty error means the player cancelled.
@@ -4738,7 +4862,7 @@
  bool PickFolder(std::filesystem::path& chosen, std::string& error) {
      if (NFD_Init() != NFD_OKAY) {
          error = "The system folder picker could not be initialized.";
-@@ -3345,180 +3531,84 @@
+@@ -3345,180 +3532,84 @@
  
  void ImportLegacyModWithDialog() {
      if (g_legacy_imports.snapshot().busy || dkr::store::installations().view()->busy) return;
@@ -4965,7 +5089,7 @@
  }
  
  void DrawRaceBadge(const char* label, const ImVec4& color, float width = 0.0F);
-@@ -3891,7 +3981,7 @@
+@@ -3891,7 +3982,7 @@
          ImGui_ImplSDLRenderer2_RenderDrawData(data);
          return;
      }
@@ -4974,7 +5098,7 @@
  #if defined(_WIN32)
      // Share the proven software solid/panel adapter only on the returned
      // recovery launcher. Initial/ordinary Windows launchers stay accelerated.
-@@ -4010,7 +4100,7 @@
+@@ -4010,7 +4101,7 @@
  
  void DrawLinuxSoftwarePanelUnderlay(const ImVec2& size,
                                      const ImVec4& color) {
@@ -4983,7 +5107,7 @@
      // Keep this underlay on Linux as a guard for software-renderer fallback and
      // fractional scaling. A simple axis-aligned rounded rectangle beneath the
      // normal ImGui child prevents raster seams from exposing or folding the
-@@ -4352,6 +4442,11 @@
+@@ -4352,6 +4443,11 @@
      float item_spacing_y = 8.0F;
  };
  
@@ -4995,7 +5119,7 @@
  SidebarLayout CalculateSidebarLayout(float panel_height, float panel_width) {
      SidebarLayout result{};
      const bool compact = panel_height < 840.0F;
-@@ -4364,13 +4459,18 @@
+@@ -4364,13 +4460,18 @@
  
      constexpr float kMinimumLogoSize = 64.0F;
      constexpr float kMinimumButtonHeight = 26.0F;
@@ -5016,7 +5140,7 @@
          result.action_section_gap + result.action_gap +
          result.item_spacing_y * kItemSpacingCount;
      const float content_budget = std::max(panel_height - fixed_height, 1.0F);
-@@ -4417,6 +4517,11 @@
+@@ -4417,6 +4518,11 @@
  }
  
  void DrawSidebarCurrentStripe() {
@@ -5028,7 +5152,7 @@
      const ImVec2 minimum = ImGui::GetItemRectMin();
      const ImVec2 maximum = ImGui::GetItemRectMax();
      ImDrawList* draw = ImGui::GetWindowDrawList();
-@@ -4432,6 +4537,7 @@
+@@ -4432,6 +4538,7 @@
      draw->AddRectFilled(inner_min, inner_max, ImGui::GetColorU32(kCream),
                          std::max(rounding - 1.0F, 0.0F));
      draw->PopClipRect();
@@ -5036,7 +5160,7 @@
  }
  
  bool SidebarButton(const char* label, int page, int& sidebar_selection,
-@@ -4986,7 +5092,7 @@
+@@ -4986,7 +5093,7 @@
      PushHeadingFont();
      ImGui::TextUnformatted(spec.heading);
      PopHeadingFont();
@@ -5045,7 +5169,7 @@
      ImGui::Dummy({0.0F, 8.0F});
      ImGui::SetNextItemWidth(-1.0F);
      {
-@@ -5538,7 +5644,6 @@
+@@ -5538,7 +5645,6 @@
      dkr::online::hidden(friend_service().appear_offline());
  }
  void PumpFriendPresence() {
@@ -5053,7 +5177,7 @@
      // Presence has its own worker and does not need to be rebuilt at display
      // refresh rate. A 100 ms frontend cadence keeps notifications responsive
      // while avoiding lock/copy work on every launcher or overlay frame.
-@@ -5546,6 +5651,7 @@
+@@ -5546,6 +5652,7 @@
      const auto now = std::chrono::steady_clock::now();
      if (now < next_pump) return;
      next_pump = now + std::chrono::milliseconds{100};
@@ -5061,7 +5185,7 @@
  
      using namespace dkr::runtime::netplay;
      const SessionView view = session().presentation_view();
-@@ -6567,11 +6673,18 @@
+@@ -6567,11 +6674,18 @@
      ImGui::TextWrapped(
          "Hide keeps the pack installed. Restore it using the Hidden filter.");
      ImGui::Dummy({0.0F, 8.0F});
@@ -5081,7 +5205,7 @@
      ImGui::Dummy({0.0F, 12.0F});
      const float available = std::max(ImGui::GetContentRegionAvail().x, 1.0F);
      const float gap = ImGui::GetStyle().ItemSpacing.x;
-@@ -6589,11 +6702,13 @@
+@@ -6589,11 +6703,13 @@
      }
      if (!compact) ImGui::SameLine();
      ImGui::PushStyleColor(ImGuiCol_Button, {0.45F, 0.09F, 0.10F, 1.0F});
@@ -5095,7 +5219,7 @@
      ImGui::PopStyleColor();
      ImGui::EndPopup();
  }
-@@ -6670,6 +6785,10 @@
+@@ -6670,6 +6786,10 @@
              ImGui::TextWrapped("%s", value.c_str());
          };
          detail_row("TYPE", dkr::runtime::texture_packs::format_name(pack.format));
@@ -5106,7 +5230,7 @@
          detail_row("PRIORITY", std::to_string(pack.priority) +
                     (pack.priority == 1U ? " (highest)" : " (lower number wins)"));
          detail_row("INSTALLED SIZE",
-@@ -6729,6 +6848,11 @@
+@@ -6729,6 +6849,11 @@
      if (ImGui::Button("REMOVE PACK...", {action_width, 42.0F})) {
          g_texture_pack_remove_id = pack.id;
          g_texture_pack_remove_name = pack.name;
@@ -5118,7 +5242,7 @@
          request_removal = true;
          ImGui::CloseCurrentPopup();
      }
-@@ -6766,8 +6890,21 @@
+@@ -6766,8 +6891,21 @@
      bool enabled = false;
  };
  
@@ -5141,7 +5265,7 @@
      const PaddockType effect = PaddockReading(14.0F, false, 1.55F);
      const PaddockType where = PaddockReading(11.0F, false, 1.55F);
      const float label_height = std::max(
-@@ -6798,8 +6935,8 @@
+@@ -6798,8 +6936,8 @@
      panel.border_width = 2.0F;
      PaddockPanel(draw, origin, end, panel);
  
@@ -5151,7 +5275,7 @@
      const float label_height = std::max(PaddockTextHeight(label, definition.phrase, label_width), 24.0F);
      const float header = std::max(66.0F, 16.0F + label_height + 13.0F + 2.0F);
      const ImVec2 board_min{origin.x + 2.0F, origin.y + 2.0F};
-@@ -6808,8 +6945,13 @@
+@@ -6808,8 +6946,13 @@
                  PaddockApply(PaddockMix(PaddockRgb(0x085B78), PaddockRgb(0x79601C), on)));
      draw->AddRectFilled({board_min.x, board_max.y - 2.0F}, board_max, PaddockCol(0x042338));
      const bool checker_on = card.enabled;
@@ -5167,7 +5291,7 @@
  
      // The whole board is the checkbox.
      const float content_top = board_min.y + 16.0F;
-@@ -7947,9 +8089,24 @@
+@@ -7947,9 +8090,24 @@
          PaddockGap(14.0F);
          PaddockAlert("Prepare the affected mods for the selected ROM.", width);
      }
@@ -5195,7 +5319,7 @@
      if (mods.busy) {
          PaddockGap(14.0F);
          const ImVec2 at = ImGui::GetCursorScreenPos();
-@@ -8093,6 +8250,41 @@
+@@ -8093,6 +8251,41 @@
  #include "@DKRR_BUILD@/generated/character-library-portraits/graphics.inl"
  #include "runtime_saves_ui.inl"
  #define DrawTexturesPage DrawTexturesPageWithoutDump
@@ -5237,7 +5361,7 @@
  #include "runtime_details_ui.inl"
  #undef DrawTexturesPage
  #include "@DKRR_BUILD@/generated/character-library-portraits/texture_dump_ui.inl"
-@@ -8138,18 +8330,20 @@
+@@ -8138,18 +8331,20 @@
          dkr::runtime::input::set_shortcut_keyboard_binding(
              g_capture_shortcut_action, binding);
      } else if (g_capture_device == CaptureDevice::Controller) {
@@ -5261,7 +5385,7 @@
      g_capture_popup_pending = true;
      g_capture_finished = false;
      g_shortcut_capture_sources = {
-@@ -8210,7 +8404,11 @@
+@@ -8210,7 +8405,11 @@
              " of " + std::to_string(progress.total);
          ImGui::ProgressBar(fraction, {-1.0F, 28.0F}, overlay.c_str());
          ImGui::Dummy({0.0F, 8.0F});
@@ -5273,7 +5397,7 @@
      }
      if (!progress.message.empty()) {
          if ((progress.complete && !progress.success) || dkr::runtime::copy::looks_like_error(progress.message))
-@@ -8256,6 +8454,15 @@
+@@ -8256,6 +8455,15 @@
      }
      if (event == nullptr || g_capture_action == -1 || g_capture_finished) {
          return false;
@@ -5289,7 +5413,7 @@
      }
      if (g_capture_action == kShortcutCaptureAction) {
          if (event->type == SDL_KEYDOWN && event->key.repeat == 0 &&
-@@ -8422,9 +8629,13 @@
+@@ -8422,9 +8630,13 @@
          }
      }
  #endif
@@ -5303,7 +5427,7 @@
  #if defined(_WIN32)
      constexpr const char* update_helper_name="DKR-R-Updater.exe";
  #else
-@@ -8432,6 +8643,7 @@
+@@ -8432,6 +8644,7 @@
  #endif
      dkr::updates::configure(config_directory,dkr::runtime::portable::application_directory(),
          mod_worker.parent_path()/update_helper_name,DKR_RELEASE_VERSION);
@@ -5311,7 +5435,7 @@
      shutdown_online_mods();
      g_online_mod_settings={config_directory / "online-mods",mod_worker,{}};
      g_online_mod_link=std::make_unique<dkr::runtime::netplay::DirectModSyncLink>(dkr::runtime::netplay::session());
-@@ -8483,6 +8695,29 @@
+@@ -8483,6 +8696,29 @@
                   "[boot][settings] unavailable graphics API recovered to Automatic\n");
  }
  
@@ -5341,7 +5465,7 @@
  dkr::runtime::ui::StartupResult dkr::runtime::ui::run_startup_screen(
      SDL_Window* window, const std::filesystem::path& preselected_rom,
      bool software_failure_recovery) {
-@@ -8502,6 +8737,14 @@
+@@ -8502,6 +8738,14 @@
      SDL_Renderer* renderer = dkr::runtime::launcher::create_linux_launcher_renderer(window);
  #else
      SDL_Renderer* renderer = nullptr;
@@ -5356,7 +5480,7 @@
      struct ReturnFramebufferHint {
          std::optional<std::string> previous;
          bool active=false;
-@@ -8579,7 +8822,12 @@
+@@ -8579,7 +8823,12 @@
                       (renderer_info.flags & SDL_RENDERER_ACCELERATED) != 0 ? "yes" : "no",
                       static_cast<unsigned>(SDL_GetWindowFlags(window)));
      }
@@ -5370,7 +5494,7 @@
          (renderer_info.flags&SDL_RENDERER_ACCELERATED)==0;
      if(software_failure_recovery)std::fprintf(stderr,
          "[rollback][recovery] fresh launcher return renderer=%s bounded-software=%d\n",
-@@ -8587,6 +8835,9 @@
+@@ -8587,6 +8836,9 @@
  
      IMGUI_CHECKVERSION();
      ImGui::CreateContext();
@@ -5380,7 +5504,7 @@
      ImGui::GetIO().ConfigFlags |=
          ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
      const auto launcher_assets_started_at =
-@@ -8595,7 +8846,14 @@
+@@ -8595,7 +8847,14 @@
      LibraryInstallNavigationHook(false);
      ApplyStyle();
      ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
@@ -5395,7 +5519,7 @@
      dkr::store::service().gameplay(false);
      g_mod_store_renderer = renderer;
      g_store_in_game=false;
-@@ -8676,9 +8934,14 @@
+@@ -8676,9 +8935,14 @@
  #endif
      dkr::runtime::startup_performance::report(
          "rom-catalog-load", rom_catalog_started_at);
@@ -5412,7 +5536,7 @@
              : LoadLastRom();
      if (initial_rom.has_value()) {
          std::string error;
-@@ -8698,26 +8961,51 @@
+@@ -8698,26 +8962,51 @@
      }
  
      int page = 0;
@@ -5465,7 +5589,7 @@
          const auto launcher_services_started = std::chrono::steady_clock::now();
          // Hash only the already-imported catalog on a worker. Applying the
          // authenticated offer still happens exclusively on this UI thread.
-@@ -8940,13 +9228,16 @@
+@@ -8940,13 +9229,16 @@
              running=false;continue;
          }
          constexpr int launcher_page_count = kMenuPageCount;
@@ -5483,7 +5607,17 @@
          dkr::runtime::platform::pump_input_backend_events();
          SDL_Event event{};
          const auto process_launcher_event = [&](SDL_Event& event) {
-@@ -9140,6 +9431,9 @@
+@@ -8991,6 +9283,9 @@
+                 return;
+             }
+             if (HandleInputCaptureEvent(&event)) {
++                return;
++            }
++            if (HandleSessionChatButtonCapture(&event)) {
+                 return;
+             }
+             LibrarySidebarEvent(event);
+@@ -9140,6 +9435,9 @@
              if (!launcher_window_visible) ++launcher_hidden_wakes;
              // Input interrupts the wait, not the redraw budget. Services run
              // on every wake (at most 50 ms between waits), even while hidden.
@@ -5493,7 +5627,7 @@
              if (SDL_WaitEventTimeout(&event, launcher_wait_ms) != 0) {
                  process_launcher_event(event);
              }
-@@ -9162,15 +9456,27 @@
+@@ -9162,15 +9460,27 @@
  
          const auto launcher_ui_build_started =
              std::chrono::steady_clock::now();
@@ -5521,7 +5655,7 @@
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
          SDL_GetWindowSize(window, &hud_viewport_width, &hud_viewport_height);
-@@ -9231,7 +9537,7 @@
+@@ -9231,7 +9541,7 @@
          const auto sidebar_position=dkr::library_ui::sidebar_placement(
              ImGui::GetWindowSize().y,nav_padding,ImGui::GetCursorPosY(),
              sidebar_layout.button_height,sidebar_layout.item_spacing_y,
@@ -5530,7 +5664,7 @@
          ImGui::SetCursorPosY(sidebar_position.navigation);
          if (g_page_navigation_request >= 0) {
              page = g_page_navigation_request;
-@@ -9243,6 +9549,11 @@
+@@ -9243,6 +9553,11 @@
          LibraryNavigationCheckRoute(false,page);
          if(!g_launcher_layout_root.empty())sidebar_selection=page;
          if(LibraryRedirectTextures(page))sidebar_selection=page;
@@ -5542,7 +5676,7 @@
          LauncherSidebarButton("PLAY", 0, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("DKR-R ONLINE", kPageOnlineMp, page, sidebar_selection,
-@@ -9259,9 +9570,14 @@
+@@ -9259,9 +9574,14 @@
                                nav_inner_width, sidebar_layout.button_height);
          LauncherSidebarButton("ABOUT DKR-R", kPageAbout, page, sidebar_selection,
                                nav_inner_width, sidebar_layout.button_height);
@@ -5557,7 +5691,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9284,6 +9600,7 @@
+@@ -9284,6 +9604,7 @@
              request_quit_popup = true;
          }
          ImGui::PopStyleColor();
@@ -5565,7 +5699,7 @@
          --g_race_button_sidebar;
          ImGui::PopItemFlag();
          ImGui::EndGroup();
-@@ -9316,7 +9633,11 @@
+@@ -9316,7 +9637,11 @@
          }
  #endif
          const PaddockLauncherTypographyScope launcher_typography;
@@ -5577,7 +5711,7 @@
          ImGui::BeginDisabled(update_handoff);
          const PlayPageContext play_context{selected_rom, rom_status, rom_ready, rom_catalog,
                                             launch_requested};
-@@ -9381,10 +9702,25 @@
+@@ -9381,10 +9706,25 @@
              ImGui::GetMainViewport()->Size,launcher_theme.theme(),dkr::launcher_themes::preferences.calendar);
          }
          if(automatic_start.active()||online_start_pending)DrawLauncherFade(launch_fade,PaddockClock());
@@ -5603,7 +5737,7 @@
          DrawPaddockLegacyModImportModal();
          LibraryManualHandoffRequest(rom_ready&&!g_legacy_imports.snapshot().busy&&!g_code_library.view()->busy&&!g_vehicle_library.view()->busy&&dkr::store::installations().view()->ready&&!dkr::store::installations().view()->busy,launch_requested);
          if(!dkr::library_ui::inline_preparation(automatic_start.active(),g_mod_launch.snapshot().modal,!g_mod_launch.snapshot().error.empty()))DrawModLaunchModal();
-@@ -9394,6 +9730,9 @@
+@@ -9394,6 +9734,9 @@
          DrawSessionAnalogueModal();
          LibraryFinishUiFrame();
          PumpFeedbackUi(true);
@@ -5613,7 +5747,7 @@
          DrawTextEntryKeyboard();
          DrawOnlineNotification();
          DrawOlToast();
-@@ -9415,6 +9754,9 @@
+@@ -9415,6 +9758,9 @@
          }
  #endif
          DrawAchievementToast();
@@ -5623,7 +5757,7 @@
          ImGui::Render();
          const auto launcher_ui_build_finished =
              std::chrono::steady_clock::now();
-@@ -9434,8 +9776,13 @@
+@@ -9434,8 +9780,13 @@
                  std::chrono::microseconds>(launcher_ui_build_finished -
                                             launcher_ui_build_started).count());
          const auto launcher_present_started = launcher_ui_build_finished;
@@ -5637,7 +5771,7 @@
  #if defined(__APPLE__)
          // With a non-1 render scale the ImGui SDL backend stops applying
          // FramebufferScale itself (clips included), so SDL scales clips and
-@@ -9444,8 +9791,10 @@
+@@ -9444,8 +9795,10 @@
              SDL_RenderSetScale(renderer, launcher_draw_data->FramebufferScale.x,
                                 launcher_draw_data->FramebufferScale.y);
  #endif
@@ -5648,7 +5782,7 @@
          // SDL's software backend normally executes its queued drawing inside
          // Present. Flush only in the opt-in profiler to separate those costs.
          if (launcher_profile.enabled()) SDL_RenderFlush(renderer);
-@@ -9454,7 +9803,18 @@
+@@ -9454,7 +9807,18 @@
          if((launch_requested&&!automatic_start.active())||(online_start_pending&&!launch_fade.started()))launch_fade.capture(renderer,PaddockClock());
          LibraryCaptureHandoff(renderer,launch_fade,automatic_start.active());
          LauncherLayoutCheckCapture(renderer);
@@ -5667,7 +5801,7 @@
          const auto launcher_present_finished =
              std::chrono::steady_clock::now();
          launcher_present_microseconds +=
-@@ -9468,14 +9828,22 @@
+@@ -9468,14 +9832,22 @@
              }
              dkr::runtime::startup_performance::mark(
                  "launcher-first-frame-presented");
@@ -5693,7 +5827,7 @@
                  static_cast<unsigned long long>(frames),
                  frames ? double(draw_us)/double(frames)/1000.0 : 0.0,
                  static_cast<unsigned long long>(launcher_panel_cache.hits()));
-@@ -9498,8 +9866,13 @@
+@@ -9498,8 +9870,13 @@
              launcher_window_flags, launcher_frame_rate);
      }
  
@@ -5707,7 +5841,7 @@
      g_mod_launch.abandon();
      if(!result.start_game)shutdown_online_mods();
  
-@@ -9512,7 +9885,11 @@
+@@ -9512,7 +9889,11 @@
          static_cast<unsigned long long>(launcher_panel_cache.builds()),
          static_cast<unsigned long long>(launcher_panel_cache.hits()));
      launcher_panel_cache.clear();
@@ -5719,7 +5853,7 @@
      ImGui_ImplSDL2_Shutdown();
      ImGui::DestroyContext();
      while(SharedSaveBusy()){PumpSharedSaveJob();SDL_PumpEvents();std::this_thread::sleep_for(std::chrono::milliseconds(2));}
-@@ -9525,6 +9902,12 @@
+@@ -9525,6 +9906,12 @@
      ReleaseModStoreTextures();
      launch_fade.clear();
      SDL_DestroyRenderer(renderer);
@@ -5732,7 +5866,7 @@
      const auto launcher_elapsed_microseconds =
          std::chrono::duration_cast<std::chrono::microseconds>(
              std::chrono::steady_clock::now() - launcher_animation_epoch)
-@@ -9581,6 +9964,10 @@
+@@ -9581,6 +9968,10 @@
          static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window()));
      application.presentQueue->inspector->setIniPath(g_config_directory / "dkr-port-ui.ini");
      g_inspector = application.presentQueue->inspector.get();
@@ -5743,7 +5877,7 @@
  #if defined(DKR_IOS)
      g_ios_ui_events.clear();
  #endif
-@@ -9596,6 +9983,9 @@
+@@ -9596,6 +9987,9 @@
  void dkr::runtime::ui::detach(RT64::Application& application) {
      std::scoped_lock guard(g_inspector_guard);
      g_inspector = nullptr;
@@ -5753,7 +5887,7 @@
  #if defined(DKR_IOS)
      g_ios_ui_events.clear();
  #endif
-@@ -9609,6 +9999,13 @@
+@@ -9609,6 +10003,13 @@
  }
  
  void dkr::runtime::ui::draw(RT64::Application& application) {
@@ -5767,7 +5901,7 @@
      // Publish only an atomic value; the raster worker snapshots it into the
      // next pass's push constants. No GPU resources or samplers are rebuilt.
      // Keep this before visibility checks so closing the overlay or changing
-@@ -9668,6 +10065,9 @@
+@@ -9668,6 +10069,9 @@
          return;
      }
      if (application.presentQueue->inspector == nullptr) {
@@ -5777,7 +5911,7 @@
          attach(application);
          if (show_overlay) {
              g_overlay_focus_requested.store(true, std::memory_order_release);
-@@ -9676,9 +10076,13 @@
+@@ -9676,9 +10080,13 @@
      if (application.presentQueue->inspector == nullptr) {
          return;
      }
@@ -5792,7 +5926,7 @@
      RT64::Inspector* inspector = application.presentQueue->inspector.get();
      dkr::runtime::performance_trace::Scope ui_measure(dkr::runtime::performance_trace::Region::UiBuild);
  #if defined(DKR_IOS)
-@@ -9689,6 +10093,23 @@
+@@ -9689,6 +10097,23 @@
          for (auto& event : pending.events) inspector->handleSdlEvent(&event);
      }
  #endif
@@ -5816,7 +5950,7 @@
      inspector->newFrame(application.framebufferGraphicsWorker.get());
      if(show_overlay)if(const int step=LibraryTakeSidebarStep(true)) {
          const int selected=StepSidebarSelection(g_overlay_sidebar_selection.load(),step);
-@@ -9699,6 +10120,12 @@
+@@ -9699,6 +10124,12 @@
          g_overlay_sidebar_selection.store(dkr::library_ui::sidebar_parent(g_overlay_page.load()));
      dkr::store::overlay::begin(application);
      if(show_overlay)StoreOverlayTestFrame();
@@ -5829,7 +5963,7 @@
      if (auto* hud_window = static_cast<SDL_Window*>(dkr::runtime::platform::sdl_window())) {
          int hud_viewport_width = 0;
          int hud_viewport_height = 0;
-@@ -9739,7 +10166,7 @@
+@@ -9739,7 +10170,7 @@
          const PaddockLauncherTypographyScope overlay_typography;
          bool request_quit_popup = false;
          bool request_restart_popup = false;
@@ -5838,7 +5972,7 @@
          int sidebar_selection = std::clamp(
              g_overlay_sidebar_selection.load(std::memory_order_acquire), 0,
              overlay_sidebar_count - 1);
-@@ -9764,7 +10191,8 @@
+@@ -9764,7 +10195,8 @@
          const MenuPanelLayout menu = CalculateMenuPanelLayout(ImGui::GetContentRegionAvail());
          const float overlay_margin = menu.margin;
          const float sidebar_width = menu.sidebar_width;
@@ -5848,7 +5982,7 @@
          const float content_x = menu.content_x;
          const float content_panel_width = menu.content_width;
          ImGui::SetCursorPos({overlay_margin, overlay_margin});
-@@ -9789,7 +10217,7 @@
+@@ -9789,7 +10221,7 @@
          const auto sidebar_position=dkr::library_ui::sidebar_placement(
              ImGui::GetWindowSize().y,nav_padding,ImGui::GetCursorPosY(),
              sidebar_layout.button_height,sidebar_layout.item_spacing_y,
@@ -5857,7 +5991,7 @@
          ImGui::SetCursorPosY(sidebar_position.navigation);
          // The sidebar is a shoulder-button rail. Excluding its widgets from
          // ImGui navigation keeps the D-pad entirely inside the content panel.
-@@ -9803,6 +10231,11 @@
+@@ -9803,6 +10235,11 @@
          ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
          ++g_race_button_sidebar;
          LibraryNavigationCheckOverlayRoute();
@@ -5869,7 +6003,7 @@
          SidebarButton("PLAY", 0, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
          SidebarButton("DKR-R ONLINE", kPageOnlineMp, sidebar_selection, nav_inner_width,
-@@ -9819,9 +10252,14 @@
+@@ -9819,9 +10256,14 @@
                        sidebar_layout.button_height);
          SidebarButton("ABOUT DKR-R", kPageAbout, sidebar_selection, nav_inner_width,
                        sidebar_layout.button_height);
@@ -5884,7 +6018,7 @@
          SidebarActionGap(nav_inner_width, sidebar_layout.action_section_gap);
          ImGui::PushStyleColor(
              ImGuiCol_Button,
-@@ -9850,6 +10288,7 @@
+@@ -9850,6 +10292,7 @@
              request_quit_popup = true;
          }
          ImGui::PopStyleColor();
@@ -5892,7 +6026,7 @@
          --g_race_button_sidebar;
          ImGui::PopItemFlag();
          ImGui::EndGroup();
-@@ -9884,6 +10323,11 @@
+@@ -9884,6 +10327,11 @@
          ImGui::PopItemWidth();
          ImGui::EndChild();
          ImGui::PopStyleColor(2);
@@ -5904,7 +6038,7 @@
  #endif
          if (request_quit_popup) {
              // Open the modal in the same parent ID scope where it is rendered.
-@@ -9938,15 +10382,33 @@
+@@ -9938,15 +10386,33 @@
          // or the game HUD. These dialogs render outside the content child.
          const PaddockLauncherTypographyScope modal_typography(show_overlay);
          if(g_store_in_game)StorePolishModals();
@@ -5938,7 +6072,7 @@
          DrawTextEntryKeyboard();
      }
      // Over the race, not the menu: the panel is for tuning while driving.
-@@ -9973,6 +10435,9 @@
+@@ -9973,6 +10439,9 @@
      DrawPinnedAchievement();
      DrawAchievementToast();
      dkr::store::overlay::end();
@@ -5948,7 +6082,7 @@
      inspector->endFrame();
  }
  
-@@ -9995,8 +10460,12 @@
+@@ -9995,8 +10464,12 @@
             (event->type==SDL_CONTROLLERBUTTONDOWN&&event->cbutton.button==SDL_CONTROLLER_BUTTON_B)) {
              dkr::runtime::invites::cancel_dialog();return true;
          }
@@ -5961,7 +6095,7 @@
      }
  
  #if defined(__ANDROID__) || defined(DKR_IOS)
-@@ -10082,7 +10551,11 @@
+@@ -10082,7 +10555,11 @@
              // carry NoNav and therefore cannot steal this focus.
          }
      }
@@ -5974,7 +6108,7 @@
      // UIKit presentation may wait for the main thread while the renderer holds
      // frameMutex. Keep the main event pump free to service that presentation.
      return g_ios_ui_events.push(*event);
-@@ -10092,6 +10565,7 @@
+@@ -10092,6 +10569,7 @@
          return false;
      }
      std::scoped_lock frame_lock(g_inspector->frameMutex);
@@ -5982,7 +6116,7 @@
      // RT64's ImGui backend owns normal pointer, keyboard and gamepad event
      // delivery. Do not turn those events into page-focus requests: ImGui must
      // be allowed to retain the item selected by the previous event so the
-@@ -10111,6 +10585,15 @@
+@@ -10111,6 +10589,15 @@
  }
  
  void dkr::runtime::ui::toggle_overlay() {
@@ -5998,7 +6132,7 @@
  #if defined(__ANDROID__) || defined(DKR_IOS)
      dkr::runtime::mobile::clear();
  #endif
-@@ -10133,6 +10616,11 @@
+@@ -10133,6 +10620,11 @@
      return g_lifecycle_request.load(std::memory_order_acquire);
  }
  
@@ -6010,7 +6144,7 @@
  void dkr::runtime::ui::reset_lifecycle_request() {
      g_lifecycle_request.store(LifecycleRequest::None, std::memory_order_release);
  }
-@@ -10295,3 +10783,22 @@
+@@ -10295,3 +10787,22 @@
      return true;
  }
  #endif
@@ -6257,7 +6391,19 @@
  void PumpSharedSaveJob() {
 --- a/runtime-recomp/src/game/storage/maintenance.cpp
 +++ b/runtime-recomp/src/game/storage/maintenance.cpp
-@@ -56,7 +56,12 @@
+@@ -1,6 +1,11 @@
+ #include "maintenance.hpp"
+ #include "updates/update_core.hpp"
+ #include "updates/update_process.hpp"
++#include <atomic>
++#if defined(__PROSPERO__)
++extern "C" void dkrr_diag_step(const char *, const char *);
++#endif
++#include <vector>
+ #include <json/json.hpp>
+ #include <mbedtls/sha256.h>
+ #include <algorithm>
+@@ -56,7 +61,12 @@
      if (flags == INVALID_FILE_ATTRIBUTES || (flags & FILE_ATTRIBUTE_REPARSE_POINT))
          throw std::runtime_error("Linked storage was left untouched.");
  #endif
@@ -6270,9 +6416,38 @@
          throw std::runtime_error("Shared file was left untouched.");
  }
  bool present(const fs::path& p) {
+@@ -163,7 +173,8 @@
+         } free{context};
+         if (mbedtls_sha256_starts(&context, 0))
+             throw std::runtime_error("Could not start storage verification.");
+-        std::array<char, 65536> buffer{};
++        // Heap, not stack: a 64 KiB frame in a worker thread (measured in the linked image).
++    std::vector<char> buffer(65536);
+         std::uint64_t total = 0;
+         while (input) {
+             stop();
+@@ -276,6 +287,18 @@
+         stop();
+         if (!checked(p, owner))
+             return;
++#if defined(__PROSPERO__)
++        {
++            // Which files a pass removes (or would remove) goes to the crash-safe journal, bounded per run.
++            static std::atomic<unsigned> logged{0};
++            if (logged.fetch_add(1) < 200) {
++                const std::string note = std::string(options.dry_run ? "would remove " : "remove ") +
++                                         utf8(p.lexically_relative(root)) + " files=" + std::to_string(bytes.files) +
++                                         " bytes=" + std::to_string(bytes.bytes);
++                dkrr_diag_step("storage-erase", note.c_str());
++            }
++        }
++#endif
+         if (options.dry_run) {
+             result.removed_bytes += bytes.bytes;
+             result.removed_files += bytes.files;
 --- a/runtime-recomp/src/game/storage/service.cpp
 +++ b/runtime-recomp/src/game/storage/service.cpp
-@@ -5,6 +5,7 @@
+@@ -5,10 +5,17 @@
  #include <algorithm>
  #include <chrono>
  #include <condition_variable>
@@ -6280,7 +6455,40 @@
  #include <memory>
  #include <map>
  #include <optional>
-@@ -56,7 +57,12 @@
+ #include <thread>
++#if defined(__PROSPERO__)
++extern "C" void dkrr_diag_step(const char *, const char *);
++#endif
++#if defined(__PROSPERO__)
++#include <unistd.h>
++#endif
+ #ifdef _WIN32
+ #include <windows.h>
+ #elif defined(__linux__)
+@@ -52,11 +59,35 @@
+ #endif
+     }
+ };
++// The unattended pass is on for every platform. A pass that never finished
++// (crash, power loss) leaves automatic-pass.running behind; the next launch
++// skips the automatic pass once instead of crashing in a loop.
++constexpr bool background_maintenance = true;
++#if defined(__PROSPERO__)
++// Synchronous on purpose: the bounded runtime log can lose its tail in a crash.
++void trace(const fs::path& profile, const std::string& text, bool reset = false) noexcept {
++    std::fprintf(stderr, "[ps5][storage] %s\n", text.c_str());
++    dkrr_diag_step("storage", text.c_str());
++    if (FILE* file = std::fopen((profile / "logs" / "storage-trace.log").c_str(), reset ? "w" : "a")) {
++        std::fprintf(file, "%lld %s\n", static_cast<long long>(now()), text.c_str());
++        std::fflush(file);
++        fsync(fileno(file));
++        std::fclose(file);
++    }
++}
++#else
++void trace(const fs::path&, const std::string&, bool = false) noexcept {}
++#endif
+ Json read(const fs::path& p) {
      if (!fs::exists(p))
          return Json::object();
      dkr::updates::require_private_tree(p.parent_path());
@@ -6293,7 +6501,124 @@
          throw std::runtime_error("Storage preferences were kept.");
      return Json::parse(dkr::updates::read_text(p, 8192));
  }
-@@ -271,6 +277,8 @@
+@@ -85,7 +116,7 @@
+         fs::create_directory(instance);
+         life = std::make_unique<dkr::updates::InstallLock>(instance, 0);
+         const auto preferences = read(root / "preferences.json");
+-        enabled = preferences.value("automatic", true);
++        enabled = background_maintenance && preferences.value("automatic", true);
+         worker = std::jthread([this](std::stop_token stop) { run(stop); });
+     }
+     ~Service() {
+@@ -136,10 +167,14 @@
+                     preferences_dirty = false;
+                     lock.unlock();
+                     try {
++                        trace(profile, "preferences lock");
+                         dkr::updates::InstallLock gate(root, 0);
++                        trace(profile, "preferences write");
+                         dkr::updates::durable_write(root / "preferences.json",
+                                                     Json{{"schema", 1}, {"automatic", value}}.dump());
++                        trace(profile, "preferences done");
+                     } catch (const std::exception& error) {
++                        trace(profile, std::string("preferences failed ") + error.what());
+                         lock.lock();
+                         preferences_dirty = true;
+                         snapshot.status = error.what();
+@@ -167,10 +202,40 @@
+                 snapshot.busy = true;
+                 snapshot.status = "Waiting to start storage cleanup...";
+             }
++            std::string traced;
++            struct PassMarker {
++                fs::path path;
++                ~PassMarker() {
++                    if (!path.empty()) {
++                        std::error_code ec;
++                        fs::remove(path, ec);
++                    }
++                }
++            } marker;
+             try {
++                trace(profile, "begin action=" + std::to_string(static_cast<int>(action)), true);
++                if (action == Action::Automatic) {
++                    const auto running = root / "automatic-pass.running";
++                    std::error_code ec;
++                    if (fs::exists(running, ec)) {
++                        fs::remove(running, ec);
++                        trace(profile, "automatic pass skipped: the previous one did not finish");
++                        std::unique_lock lock(mutex);
++                        snapshot.busy = false;
++                        snapshot.status = "Automatic cleanup was skipped once because the previous one did not finish.";
++                        startup_complete = true;
++                        continue;
++                    }
++                    if (FILE* file = std::fopen(running.c_str(), "w")) {
++                        std::fclose(file);
++                        marker.path = running;
++                    }
++                }
+                 // Publishers never wait for an idle cleanup to acquire their
+                 // barrier. If a publisher already owns it, try maintenance later.
++                trace(profile, "lock");
+                 dkr::updates::InstallLock gate(root, 0);
++                trace(profile, "instances");
+                 for (const auto& e : fs::directory_iterator(root / "instances")) {
+                     if (e.path() == instance)
+                         continue;
+@@ -185,10 +250,20 @@
+                     fs::remove(e.path(), ec);
+                 }
+                 fs::path install;
++#if defined(__PROSPERO__)
++                // /proc does not exist for a native title; the update-process
++                // lookup of the executable is not safe there. The title's
++                // read-only mount is the installation directory.
++                trace(profile, "install-directory");
++                if (fs::exists("/app0"))
++                    install = "/app0";
++#else
+                 try {
+                     install = dkr::updates::application_directory();
+                 } catch (...) {
+                 }
++#endif
++                trace(profile, "options");
+                 Options options;
+                 options.action = action;
+                 options.installed_digest = installed_digest;
+@@ -198,7 +273,11 @@
+                 }
+                 options.background = true;
+                 options.gameplay = &playing;
+-                options.progress = [this, action](const View& progress) {
++                options.progress = [this, action, &traced](const View& progress) {
++                    if (progress.status != traced) {
++                        traced = progress.status;
++                        trace(profile, "phase " + traced);
++                    }
+                     std::lock_guard lock(mutex);
+                     auto next = progress;
+                     next.busy = true;
+@@ -210,7 +289,9 @@
+                         next.rows = snapshot.rows;
+                     snapshot = std::move(next);
+                 };
++                trace(profile, "maintain");
+                 auto result = maintain(profile, options, install);
++                trace(profile, "end " + result.status);
+                 {
+                     std::lock_guard lock(mutex);
+                     if (!result.preview && action != Action::Scan) {
+@@ -245,6 +326,7 @@
+                     }
+                 }
+             } catch (const std::exception& error) {
++                trace(profile, std::string("failed ") + error.what());
+                 std::unique_lock lock(mutex);
+                 snapshot.busy = false;
+                 snapshot.status = error.what();
+@@ -271,6 +353,8 @@
          return;
      try {
          owner = std::make_shared<Service>(profile);
@@ -6302,9 +6627,30 @@
      } catch (...) {
      }
  }
+@@ -302,7 +386,8 @@
+     }
+ }
+ void installed_package(std::string digest) {
+-    if (digest.size() != 64 || digest.find_first_not_of("0123456789abcdef") != digest.npos)
++    if (!background_maintenance || digest.size() != 64 ||
++        digest.find_first_not_of("0123456789abcdef") != digest.npos)
+         return;
+     if (auto p = current()) {
+         std::lock_guard lock(p->mutex);
+@@ -327,7 +412,7 @@
+ void automatic(bool enabled) {
+     if (auto p = current()) {
+         std::lock_guard lock(p->mutex);
+-        if (p->enabled == enabled)
++        if (!background_maintenance || p->enabled == enabled)
+             return;
+         p->enabled = enabled;
+         p->preferences_dirty = true;
 --- a/runtime-recomp/src/game/updates/update_core.cpp
 +++ b/runtime-recomp/src/game/updates/update_core.cpp
-@@ -2,6 +2,8 @@
+@@ -1,7 +1,10 @@
+ #include "update_core.hpp"
++#include <vector>
  #include <algorithm>
  #include <array>
  #include <cctype>
@@ -6313,7 +6659,7 @@
  #include <charconv>
  #include <fstream>
  #include <json/json.hpp>
-@@ -85,7 +87,7 @@
+@@ -85,7 +88,7 @@
          fail(std::string("Invalid update field: ") + field);
      return s;
  }
@@ -6322,7 +6668,7 @@
      std::error_code ec;
      auto s = std::filesystem::symlink_status(p, ec);
      if (ec || !std::filesystem::is_regular_file(s) || std::filesystem::is_symlink(s))
-@@ -95,7 +97,14 @@
+@@ -95,7 +98,14 @@
      if (a == INVALID_FILE_ATTRIBUTES || (a & FILE_ATTRIBUTE_REPARSE_POINT))
          fail("Update file is a reparse point.");
  #endif
@@ -6338,7 +6684,7 @@
          fail("Update file has another filesystem owner.");
  }
  bool path_exists(const std::filesystem::path &p) {
-@@ -152,7 +161,7 @@
+@@ -152,7 +162,7 @@
      sync_directory(target.parent_path());
  }
  void copy_durable(const std::filesystem::path &source, const std::filesystem::path &target) {
@@ -6347,7 +6693,7 @@
      if (path_exists(target))
          fail("Update staging destination already exists.");
      std::filesystem::copy_file(source, target);
-@@ -321,7 +330,7 @@
+@@ -321,7 +331,7 @@
      return hex(out);
  }
  std::string hash_file(const std::filesystem::path &path, std::uint64_t limit) {
@@ -6356,7 +6702,17 @@
      std::ifstream input(path, std::ios::binary);
      if (!input)
          fail("Could not read update file.");
-@@ -467,7 +476,7 @@
+@@ -335,7 +345,8 @@
+     } free{context};
+     if (mbedtls_sha256_starts(&context, 0) != 0)
+         fail("Could not initialize update hash.");
+-    std::array<char, 65536> buffer{};
++    // Heap, not stack: a 64 KiB frame in a worker thread (measured in the linked image).
++    std::vector<char> buffer(65536);
+     std::uint64_t total = 0;
+     while (input) {
+         input.read(buffer.data(), buffer.size());
+@@ -467,7 +478,7 @@
      return nullptr;
  }
  std::string read_text(const std::filesystem::path &p, std::size_t limit) {
@@ -6365,7 +6721,7 @@
      std::ifstream file(p, std::ios::binary | std::ios::ate);
      if (!file)
          fail("Could not read update metadata.");
-@@ -498,7 +507,15 @@
+@@ -498,7 +509,15 @@
               ").");
  #else
      std::filesystem::rename(from, to);
@@ -6381,7 +6737,7 @@
  #endif
  }
  void durable_write(const std::filesystem::path &path, std::string_view bytes) {
-@@ -532,12 +549,23 @@
+@@ -532,12 +551,23 @@
          }
          offset += std::size_t(n);
      }
@@ -6408,7 +6764,7 @@
  void extract_verified(const std::filesystem::path &package, const Artifact &artifact,
 --- a/runtime-recomp/src/game/updates/update_process.cpp
 +++ b/runtime-recomp/src/game/updates/update_process.cpp
-@@ -2,6 +2,8 @@
+@@ -2,12 +2,17 @@
  #include "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/application_layout.hpp"
  #include <array>
  #include <chrono>
@@ -6417,7 +6773,16 @@
  #include <cstdlib>
  #include <cctype>
  #include <limits>
-@@ -99,8 +101,22 @@
+ #include <random>
+ #include <stdexcept>
+ #include <thread>
++#if defined(__PROSPERO__)
++extern "C" void dkrr_diag_step(const char *, const char *);
++#endif
+ #ifdef _WIN32
+ #define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+@@ -99,8 +104,25 @@
      std::filesystem::create_directory(directory);
      require_private_tree(directory);
  #ifndef _WIN32
@@ -6432,7 +6797,10 @@
 +        // inside this title's private temp tree. Never let that block the lock
 +        // that guards crash-report consent, storage and report writes.
 +        if (permission_error)
++        {
 +            std::fprintf(stderr, "[ps5][install-lock] chmod ignored: %s\n", permission_error.message().c_str());
++            dkrr_diag_step("install-lock", "chmod ignored");
++        }
 +#else
 +        if (permission_error)
 +            throw std::filesystem::filesystem_error("Could not secure installation lock directory",
@@ -6442,7 +6810,7 @@
  #endif
      auto identity = hash(std::span(reinterpret_cast<const std::uint8_t *>(identity_text.data()),
                                     identity_text.size()));
-@@ -138,11 +154,27 @@
+@@ -138,11 +160,30 @@
      }
  #else
      impl->handle = open(file.c_str(), O_RDWR | O_CREAT | O_NOFOLLOW | O_CLOEXEC, 0600);
@@ -6450,6 +6818,7 @@
 +    if (impl->handle < 0) {
 +#if defined(__PROSPERO__)
 +        std::fprintf(stderr, "[ps5][install-lock] open failed errno=%d path=%s\n", errno, file.c_str());
++        dkrr_diag_step("install-lock", ("open failed errno=" + std::to_string(errno) + " " + file.string()).c_str());
 +#endif
          throw std::runtime_error("Could not open installation lock.");
 +    }
@@ -6461,17 +6830,19 @@
 +        // is already serialised by its own installation lease; carry on.
 +        if (errno != EWOULDBLOCK && errno != EAGAIN && errno != EINTR) {
 +            std::fprintf(stderr, "[ps5][install-lock] flock unsupported errno=%d; continuing without it\n", errno);
++            dkrr_diag_step("install-lock", ("flock unsupported errno=" + std::to_string(errno)).c_str());
 +            break;
 +        }
 +#endif
          if (std::chrono::steady_clock::now() >= end) {
 +#if defined(__PROSPERO__)
 +            std::fprintf(stderr, "[ps5][install-lock] flock failed errno=%d path=%s\n", errno, file.c_str());
++            dkrr_diag_step("install-lock", ("flock failed errno=" + std::to_string(errno) + " " + file.string()).c_str());
 +#endif
              close(impl->handle);
              impl->handle = -1;
              throw std::runtime_error("Another application or updater is using this installation.");
-@@ -228,7 +260,7 @@
+@@ -228,7 +269,7 @@
                                   std::to_string(GetLastError()) + ").");
      CloseHandle(process.hThread);
      impl->handle = process.hProcess;

@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.8 — 2026-11-12
+
+Fixes for what was found on the PS5 in 1.2.5. This also contains everything of internal 1.2.6 and 1.2.7 builds. Installed 1.0 to 1.2.7 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. These fixes were checked on a PC and still need their own test on the console.
+
+- **Lobby chat button:** the launcher's own input loop never passed controller buttons to the chat capture, so no button was ever registered there. It does now; press a free button within ten seconds.
+- **Online:** the notice "The directory connection failed. Retrying..." is removed as soon as the connection is open again.
+- **Controls → PS5:** the groups are separated by a thin line, like on the other pages; the sound choice stays with its group, without its own line.
+- **Join and storage evidence:** a rejected online join now logs this device's and the host's Game Pak revision and ROM hash; the storage cleanup records every file it removes (or would remove) in the journal.
+- **Fault evidence:** the game now writes a readable record of what it was doing when it stops unexpectedly (`diagnostics/run-*.log`), plus `logs/selftest.json` with what the console allows. The new `tools/pull_console_debug.py` reads both over FTP, read-only, and names the function and line of a crash. See `docs/DEBUGGING.md` and `docs/PS5_FACTS.md`.
+- **Cause of the storage and first-start crashes, confirmed:** the PS5 does not provide `readlink` (nor `symlink`, `link`, `fchown`, `mkstemp`, `strcasestr`); a call jumps to address 0. The storage cleanup read the install folder through `readlink`, and the new self-test hit the same call at the first start. These six functions now exist in the game and fail with an error instead of crashing; the build checks every import against a recorded list (`docs/IMPORTS_BASELINE.json`).
+
+## 1.2.5 — 2026-11-11
+
+Fix for 1.2.4 closing with an error about ten seconds after it starts. This fix was checked on a PC and still needs its own test on the console.
+
+- **Crash after start:** 1.2.4 was the first version in which the storage tools could run on the PS5, and the game closed just as the automatic cleanup began, ten seconds after launch. The exact fault inside the cleanup is not known yet. Version 1.2.5 switched the automatic cleanup off; 1.2.6 has it on again, with a safeguard: if a cleanup does not finish, the next launch skips it once.
+- **Storage and reports:** Check Storage, Clean and the cache buttons stay available. They may hit the same fault. Each step is now written to `logs/storage-trace.log` in the game's data folder, so a report can name the step that failed.
+- **Updating from 1.2.4:** if the game closes before you reach **Touchpad → Updates**, send `DKRR-Update.elf` to the console the same way as the installer. Settings, saves and texture packs are kept. Versions 1.0 to 1.2.3 update in game as before.
+
 ## 1.2.4 — 2026-11-11
 
 Fixes for problems found on the PS5 in 1.2.3. Installed 1.0 to 1.2.3 games update in game under **Touchpad → Updates**; settings, saves and texture packs are kept. These fixes were checked on a PC and still need their own test on the console.

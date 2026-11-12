@@ -47,6 +47,13 @@ inline std::uintmax_t fixture_link_count(const std::filesystem::path& path) {
         path = tmp / name
         path.write_text(text.replace('fs::hard_link_count(p)', 'fixture_link_count(p)'))
         sources.append(str(path))
+    # The lock and durable write that every PS5 persistence path goes through:
+    # compile the final PS5 sources, not the host library's copy of them.
+    for name in ('update_process.cpp', 'update_core.cpp'):
+        text = (final / 'updates' / name).read_text().replace('@DKRR_SOURCE@', str(source / 'DKR-R'))
+        path = tmp / name
+        path.write_text(text)
+        sources.append(str(path))
     libraries = ['libDKRUpdateInstall.a', 'libDKRUpdateCore.a', 'libDKRUpdateEd25519.a',
                  'libDKRNetplayCrypto.a', 'libDKRUpdateZip.a']
     hash_library = host / 'libDKRUpdateHash.a'
@@ -60,10 +67,23 @@ inline std::uintmax_t fixture_link_count(const std::filesystem::path& path) {
                *hash_defines,
                '-fsanitize=address,undefined', '-fno-omit-frame-pointer',
                '-include', str(seam), '-I' + str(game), '-I' + str(game / 'storage'),
-               '-I' + str(game / 'updates'), '-I' + str(deps / 'n64-modern-runtime/thirdparty'),
+               '-I' + str(game / 'updates'), '-I' + str(host / 'n64-modern-runtime/librecomp/miniz'), '-I' + str(deps / 'n64-modern-runtime/thirdparty/miniz'), '-I' + str(deps / 'monocypher/src/optional'), '-I' + str(deps / 'monocypher/src'), '-I' + str(deps / 'n64-modern-runtime/thirdparty'),
                '-I' + str(deps / 'mbedtls/include'), *sources, str(ROOT / 'tests/ps5_storage.cpp'),
                '-Wl,--start-group', *[str(host / name) for name in libraries], str(hash_library), '-Wl,--end-group',
                '-pthread', '-o', str(tmp / 'test')]
-    subprocess.run(command, check=True)
-    subprocess.run([str(tmp / 'test'), str(tmp / 'fixture')], check=True, timeout=40,
-                   env={**os.environ, 'ASAN_OPTIONS': 'detect_leaks=1', 'UBSAN_OPTIONS': 'halt_on_error=1'})
+    # Shipped configuration first, then the unattended worker the console does not run yet.
+    # "shipped-ps5env" runs the shipped code with the observed PS5 file-system
+    # behaviour and the tolerance rules forced (tests/ps5_env_shim.c, docs/PS5_FACTS.md).
+    shim = ROOT / 'tests/ps5_env_shim.c'
+    # The shipped step markers go to the real crash-safe journal code.
+    diagnostics = tmp / 'diagnostics.o'
+    subprocess.run(['clang', '-std=c11', '-O1', '-g', '-fsanitize=address,undefined', '-I' + str(ROOT / 'src'),
+                    '-DDKR_DIAG_DATA_ROOT="' + str(tmp / 'journal-root') + '"', '-c',
+                    str(ROOT / 'src/ps5_diagnostics.c'), '-o', str(diagnostics)], check=True)
+    for name, extra, shimmed in (('shipped', [], False), ('shipped-ps5env', [], True)):
+        link = [str(diagnostics), *([str(shim), '-ldl'] if shimmed else [])]
+        subprocess.run([*command[:-2], *link, '-o', str(tmp / name), *extra], check=True)
+        env = {**os.environ, 'ASAN_OPTIONS': 'detect_leaks=1', 'UBSAN_OPTIONS': 'halt_on_error=1'}
+        if shimmed:
+            env['DKRR_PS5_ENV'] = 'all'
+        subprocess.run([str(tmp / name), str(tmp / ('fixture-' + name))], check=True, timeout=60, env=env)

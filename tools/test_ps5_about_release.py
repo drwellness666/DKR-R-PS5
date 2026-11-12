@@ -60,4 +60,20 @@ if game.is_dir():
     assert 'Touchpad opens lobby chat' not in online_ui
 main=(port/'src/ps5_game_main.cpp').read_text()
 assert 'setenv("TMPDIR",scratch,1)' in main and '/data/dkrr/profile-us-v77/tmp' in main and 'mkdir("/data/dkrr/tmp"' not in main,'temp folder must be inside a profile the title can write'
+if game.is_dir():
+    service=(game/'storage/service.cpp').read_text()
+    assert 'automatic-pass.running' in service and 'constexpr bool background_maintenance = true;' in service,'the automatic pass needs its crash-loop marker'
+    assert 'storage-trace.log' in service and 'trace(profile, "maintain")' in service,'manual storage passes must leave a synchronous trace'
+if game.is_dir():
+    chat_ui_text=(game/'netplay/session_chat/ui.inl').read_text()
+    assert 'g_overlay_visible.load()||now_ms' not in chat_ui_text,'chat capture must not depend on the race overlay flag'
+    controls=(game/'runtime_controls_ui.inl').read_text()
+    assert controls.count('ControlsRule(width);')>=3,'Controls/PS5 groups need separator lines'
+    for name in ('storage/maintenance.cpp','updates/update_core.cpp'):
+        assert 'std::array<char, 65536>' not in (game/name).read_text(),name+': 64 KiB digest buffer belongs on the heap'
+    assert 'trace(profile, "install-directory")' in service and '/app0' in service,'PS5 storage must not look up /proc/self/exe'
+    assert 'HandleSessionChatButtonCapture(&event)' in (game/'runtime_ui.cpp').read_text(),'the launcher loop must feed chat button capture'
+    assert 'sounds_open,width,false)' in controls,'no rule above the controller sound choice'
+    link=(port/'tools/link_native_game.sh').read_text()
+    assert 'missing_libc.o' in link and 'readlink; symlink; link; fchown; mkstemp; strcasestr' in link,'the stand-ins for unexported libc functions must be linked'
 print('PASS PS5 About identity, storage controls, update phases, presets and private temp directory')

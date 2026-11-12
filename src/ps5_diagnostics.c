@@ -141,6 +141,17 @@ size_t dkrr_diag_format_crash(char *out,size_t capacity,const char *build,const 
     for(unsigned i=0;i<9;++i){at=literal(out,at,capacity,keys[i]);at=literal(out,at,capacity,"0x");at=hex(out,at,capacity,values[i]);}
     out[at++]='\n'; return at;
 }
+enum { STACK_SCAN_WORDS=2048, STACK_REPORT_WORDS=40, PAGE_BYTES=4096 };
+/* A write() of an unreadable address returns EFAULT instead of faulting, so
+ * the handler can test a page before reading it. Opened once at start-up. */
+static int probe_pipe[2]={-1,-1};
+static int readable(const void *address){
+    char sink[8];
+    if(probe_pipe[1]<0)return 0;
+    if(write(probe_pipe[1],address,sizeof(sink))!=(ssize_t)sizeof(sink))return 0;
+    return read(probe_pipe[0],sink,sizeof(sink))==(ssize_t)sizeof(sink);
+}
+static const uint64_t STACK_IMAGE_SPAN=0x10000000ULL;
 static void fatal_signal(int number,siginfo_t *info,void *opaque) {
     struct dkrr_diag_crash c={0};
     c.signal=(unsigned)number;c.code=info?(uint64_t)(int64_t)info->si_code:0;c.address=info?(uintptr_t)info->si_addr:0;
@@ -156,6 +167,30 @@ static void fatal_signal(int number,siginfo_t *info,void *opaque) {
     }
     char line[512];const size_t bytes=dkrr_diag_format_crash(line,sizeof(line),build_id,&c);
     if(journal>=0 && bytes)(void)write(journal,line,bytes);
+    /* The crash line above is already on disk. Everything below may itself
+     * fault (SA_RESETHAND then ends the process); it only adds evidence.
+     * Stack words that point into the image, found without frame pointers:
+     * the offline tool subtracts the image base derived from "entry". */
+    /* rip == 0 right after a call: the call went through an import the platform
+     * could not resolve (observed: readlink, 1.2.6). The return address on top of
+     * the stack is the call site; tools/ps5_crash_report.py names the import. */
+    if(journal>=0 && c.rsp && c.rip==0 && readable((const void *)(uintptr_t)c.rsp)){
+        char line[96];size_t at=literal(line,0,sizeof(line),"DKRR_NULLCALL v=1 return=0x");
+        at=hex(line,at,sizeof(line),*(const uint64_t *)(uintptr_t)c.rsp);line[at++]='\n';(void)write(journal,line,at);
+    }
+    if(journal>=0 && c.rsp){
+        char stack[1024];size_t at=literal(stack,0,sizeof(stack),"DKRR_STACK v=1 rsp=0x");
+        at=hex(stack,at,sizeof(stack),c.rsp);at=literal(stack,at,sizeof(stack)," words=");
+        const uint64_t *word=(const uint64_t *)(uintptr_t)(c.rsp&~(uint64_t)7);
+        const uint64_t low=entry_address>STACK_IMAGE_SPAN?entry_address-STACK_IMAGE_SPAN:0,high=entry_address+STACK_IMAGE_SPAN;
+        unsigned found=0;
+        for(unsigned i=0;i<STACK_SCAN_WORDS&&found<STACK_REPORT_WORDS&&at+20<sizeof(stack);++i){
+            if((i==0||(((uintptr_t)(word+i))&(PAGE_BYTES-1))==0)&&!readable(word+i))break;
+            const uint64_t value=word[i];
+            if(value>=low&&value<high){at=literal(stack,at,sizeof(stack),found?",0x":"0x");at=hex(stack,at,sizeof(stack),value);found++;}
+        }
+        stack[at++]='\n';(void)write(journal,stack,at);
+    }
     /* SA_RESETHAND restored the default disposition on entry. Queue the same
      * signal while it is blocked, so deliberate raise(SIGABRT) also terminates
      * normally after return. kill/getpid/write are async-signal-safe. */
@@ -176,6 +211,14 @@ void dkrr_diag_note(const char *line){
         }
     }else atomic_store(&journal_error,1);
 }
+void dkrr_diag_step(const char *subsystem,const char *text){
+    if(journal<0||!subsystem||!text)return;
+    char line[320];int n=snprintf(line,sizeof(line),"DKRR_STEP t=%llu sub=%.24s ",(unsigned long long)(now_ns()/1000000ULL),subsystem);
+    if(n<0||(size_t)n>=sizeof(line))return;
+    size_t at=(size_t)n;
+    for(const char *p=text;*p&&at+2<sizeof(line);++p)line[at++]=(*p=='\n'||*p=='\r')?' ':*p;
+    line[at++]='\n';line[at]=0;dkrr_diag_note(line);
+}
 int dkrr_diag_initialize(const char *build,uintptr_t entry){
     if(journal>=0)return 0;
     if(!build||!build[0]||strnlen(build,65)>64){errno=EINVAL;return -1;}
@@ -189,8 +232,14 @@ int dkrr_diag_initialize(const char *build,uintptr_t entry){
     struct timeval tv;if(gettimeofday(&tv,NULL)!=0)return -1;
     char path[256];const int n=snprintf(path,sizeof(path),"%s/run-%llu-%06u-%u.log",dir,(unsigned long long)tv.tv_sec,(unsigned)tv.tv_usec,(unsigned)getpid());
     if(n<0||(size_t)n>=sizeof(path)){errno=ENAMETOOLONG;return -1;}
-    journal=open(path,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_APPEND,0600);
+    /* The title runs as its own user, but the file is read over the console's
+     * read-only FTP by the owner of the console. Nothing secret is journalled:
+     * build id, stage, timings, step names and addresses. */
+    journal=open(path,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_APPEND,0666);
     if(journal<0)return -1;
+    (void)fchmod(journal,0666);
+    if(pipe(probe_pipe)==0){for(int i=0;i<2;++i){const int f=fcntl(probe_pipe[i],F_GETFL);if(f>=0)(void)fcntl(probe_pipe[i],F_SETFL,f|O_NONBLOCK);}}
+    else probe_pipe[0]=probe_pipe[1]=-1;
     char line[240];snprintf(line,sizeof(line),"DKRR_SESSION v=1 build=%s pid=%u entry=0x%016llx\n",build_id,(unsigned)getpid(),(unsigned long long)entry);
     dkrr_diag_note(line);
 #if defined(__PROSPERO__)
