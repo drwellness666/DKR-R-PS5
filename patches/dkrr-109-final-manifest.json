@@ -96,7 +96,7 @@
     },
     "runtime-recomp/src/game/netplay/session_chat/ui.inl": {
       "original_sha256": "5a6f184abae91e5529fab2809f1aebc9670737ba6c92a47f886aa757df878f97",
-      "patched_sha256": "f26e387f19a75bdd2842315144dd4ccaa8d7eeab96442e274d1b98ff14d22f86"
+      "patched_sha256": "9aff0a7be559e6ac5090ba4aa46c8a03ce733f12968eb3f91bb088af6a7a3ed8"
     },
     "runtime-recomp/src/game/online_profile/profile_service.inl": {
       "original_sha256": "b8108701eb50d0c8d4b5b6cc3b1afbadced58005e4fcda409633fc42fa08f25e",
@@ -227,7 +227,7 @@
       "patched_sha256": "272159c120de1cb1eeeb9889bdf63613d2f0692e287ef8e6a0ef1bf59c572c06"
     }
   },
-  "patch_sha256": "63e5836877fd741a5204e58726e694c60fdab83799a3af278512c3e00f3b83ce",
+  "patch_sha256": "6dce2149e7fdda9e61d60ae3c9a8d62def6c9cdd7c753a1f88f0293c8c162522",
   "include_directories": {
     "@DKRR_SOURCE@/runtime-recomp/ps5-release/native-base/src/game/updates/update_process.hpp": "163af62b1302cead",
     "@DKRR_BUILD@/generated/rollback-only/rollback_policy.hpp": "46ecb14696367aea",

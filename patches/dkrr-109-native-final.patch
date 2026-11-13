@@ -1283,7 +1283,7 @@
      return true;
 --- a/runtime-recomp/src/game/netplay/session_chat/ui.inl
 +++ b/runtime-recomp/src/game/netplay/session_chat/ui.inl
-@@ -113,13 +113,97 @@
+@@ -113,13 +113,116 @@
      const float chat_height=ImGui::GetItemRectSize().y;
      ImGui::SetCursorScreenPos(at);ImGui::Dummy({width,side?std::max(height,chat_height):height+14.F+chat_height});
  }
@@ -1345,6 +1345,17 @@
 +std::string g_session_chat_button_note;
 +void SetSessionChatButtonNote(std::string value) {std::scoped_lock guard(g_session_chat_button_note_guard);g_session_chat_button_note=std::move(value);}
 +std::string SessionChatButtonNote() {std::scoped_lock guard(g_session_chat_button_note_guard);return g_session_chat_button_note;}
++// ImGui's gamepad nav still sees the physical button held down for a frame or two
++// after HandleSessionChatButtonCapture resolves it, so it can replay as an
++// "activate" on the still-focused capture button. Suppress the capture toggle
++// for a couple of frames after any resolution (resolve/cancel/timeout) to avoid
++// the capture silently re-opening right after it closed.
++std::atomic<int> g_session_chat_capture_resolved_frame{-1000};
++void MarkSessionChatCaptureResolved() {
++#if defined(__PROSPERO__)
++    g_session_chat_capture_resolved_frame=ImGui::GetFrameCount();
++#endif
++}
  void DrawSessionChatPreferences(float width) {
      DrawOlFeature(width,"Lobby chat","Text chat for your current online session.",[&](float inner){
          bool feed=dkr::chat::show_feed.load();if(OlSwitchRow("##chat-feed","Show messages during races","Recent messages fade after a few seconds.",&feed,inner,false)){dkr::chat::show_feed=feed;SaveSettings();}
@@ -1354,16 +1365,24 @@
 +        // controller button. It is off until you pick one.
 +        const int pad=dkr::chat::shortcut_button.load();
 +        if(dkr::chat::capture_button.load()&&std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()-dkr::chat::capture_button_started.load()>10000){
-+            dkr::chat::capture_button=false;SetSessionChatButtonNote("Chat button not changed.");
++            dkr::chat::capture_button=false;SetSessionChatButtonNote("Chat button not changed.");MarkSessionChatCaptureResolved();
 +        }
 +        const bool waiting=dkr::chat::capture_button.load();
 +        const std::string pad_label=waiting?"Press a free button for chat... (cancels by itself)":"Chat button: "+SessionChatButtonName(pad);
++        const int frames_since_resolved=ImGui::GetFrameCount()-g_session_chat_capture_resolved_frame.load();
 +        if(OlButton(pad_label.c_str(),OlTone::Plain,inner)){
-+            dkr::chat::capture_button=!waiting;dkr::chat::capture_key=false;SetSessionChatButtonNote({});
++            if(frames_since_resolved<2){
++                std::fprintf(stderr,"[ps5][chat] suppressed retrigger %d frame(s) after capture resolved\n",frames_since_resolved);
 +#if defined(__PROSPERO__)
-+            dkrr_diag_step("chat",!waiting?"capture started":"capture cancelled");
++                dkrr_diag_step("chat",("suppressed retrigger "+std::to_string(frames_since_resolved)+" frame(s) after resolve").c_str());
 +#endif
-+            dkr::chat::capture_button_started=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
++            } else {
++                dkr::chat::capture_button=!waiting;dkr::chat::capture_key=false;SetSessionChatButtonNote({});
++#if defined(__PROSPERO__)
++                dkrr_diag_step("chat",!waiting?"capture started":"capture cancelled");
++#endif
++                dkr::chat::capture_button_started=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
++            }
 +        }
 +        if(pad>=0&&!waiting) {
 +            PaddockGap(6.F);
@@ -1381,7 +1400,7 @@
          PaddockGap(10.F);
          static const std::vector<std::string> corners{"Bottom left","Bottom right","Top left","Top right"};
          int corner=dkr::chat::feed_corner.load();if(OlSelect("chat-corner","In-game position",&corner,corners,inner)){dkr::chat::feed_corner=corner;SaveSettings();}
-@@ -152,10 +236,49 @@
+@@ -152,10 +255,59 @@
      else {
          OlParagraph("LOBBY CHAT",12.F,kOlGoText,inner);PaddockGap(5.F);
          for(const auto* m:feed){OlParagraph(m->name+": "+m->text,14.F,m->author==view.local?kOlGoText:kOlCream,inner);PaddockGap(5.F);}
@@ -1410,7 +1429,7 @@
 +#if defined(__PROSPERO__)
 +            dkrr_diag_step("chat","capture timed out");
 +#endif
-+            dkr::chat::capture_button=false;SetSessionChatButtonNote("Chat button not changed.");
++            dkr::chat::capture_button=false;SetSessionChatButtonNote("Chat button not changed.");MarkSessionChatCaptureResolved();
 +        }
 +    }
 +    if(dkr::chat::capture_button.load()&&event->type==SDL_CONTROLLERBUTTONDOWN) {
@@ -1419,10 +1438,20 @@
 +#if defined(__PROSPERO__)
 +        dkrr_diag_step("chat",("capture got button "+std::to_string(button)).c_str());
 +#endif
-+        if(const auto conflict=SessionChatButtonConflict(button);!conflict.empty()) // never share a button
++        if(const auto conflict=SessionChatButtonConflict(button);!conflict.empty()) { // never share a button
 +            SetSessionChatButtonNote(SessionChatButtonName(button)+" "+conflict+". Free it under Controls or pick another button.");
-+        else{dkr::chat::shortcut_button=button;SetSessionChatButtonNote({});dkr::chat::settings_changed=true;}
-+        dkr::chat::capture_button=false;return true;
++            std::fprintf(stderr,"[ps5][chat] capture rejected button %d: %s\n",button,conflict.c_str());
++#if defined(__PROSPERO__)
++            dkrr_diag_step("chat",("capture rejected: "+conflict).c_str());
++#endif
++        } else {
++            dkr::chat::shortcut_button=button;SetSessionChatButtonNote({});dkr::chat::settings_changed=true;
++            std::fprintf(stderr,"[ps5][chat] capture accepted button %d\n",button);
++#if defined(__PROSPERO__)
++            dkrr_diag_step("chat","capture accepted");
++#endif
++        }
++        dkr::chat::capture_button=false;MarkSessionChatCaptureResolved();return true;
 +    }
 +    if(dkr::chat::capture_button.load()&&keydown&&!event->key.repeat&&event->key.keysym.scancode==SDL_SCANCODE_ESCAPE){
 +        dkr::chat::capture_button=false;return true;
@@ -1431,7 +1460,7 @@
  }
  bool HandleSessionChatEvent(SDL_Event* event) {
      const bool keydown=event->type==SDL_KEYDOWN,keyup=event->type==SDL_KEYUP;
-@@ -164,6 +287,14 @@
+@@ -164,6 +316,14 @@
          const int key=event->key.keysym.scancode;
          if(dkr::chat::valid_shortcut(key)){dkr::chat::shortcut_key=key;dkr::chat::settings_changed=true;}
          dkr::chat::capture_key=false;return true;

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.10 — 2026-11-13
+
+Fix for a problem found in 1.2.8/1.2.9. Checked on a PC; still needs its own test on the console.
+
+- **Lobby chat button would not stay set:** choosing a button under **Online → Overlays → Lobby chat → Chat button** could immediately reopen the button capture right after it finished, as if the press had not registered. The controller's menu navigation was reading the same button press again for one or two frames after the capture finished and reopening it. The capture now ignores a repeat press for two frames after it resolves.
+
 ## 1.2.9 — 2026-11-12
 
 Fix for a problem found on the PS5 in 1.2.8. Checked on a PC; still needs its own test on the console.
